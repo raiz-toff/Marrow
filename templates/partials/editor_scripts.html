@@ -1,0 +1,1065 @@
+// --- GLOBALS ---
+        let editorInstance = null;
+        let availableIcons = [];
+        const consoleOut = document.getElementById('console');
+        const loader = document.getElementById('loader');
+        const frame = document.getElementById('preview-frame');
+        const statusDot = document.querySelector('.status-dot');
+        const statusText = document.querySelector('#status-display span');
+
+        // Modal & Floating Button
+        const modal = document.getElementById('icon-modal');
+        const iconGrid = document.getElementById('icon-grid');
+        const searchCtx = document.getElementById('icon-search-input');
+        const floatingBtn = document.getElementById('floating-icon-btn');
+        const floatingColorBtn = document.getElementById('floating-color-btn');
+        const floatingNodeBtn = document.getElementById('floating-node-btn');
+        const colorModal = document.getElementById('color-modal');
+        const colorGrid = document.getElementById('color-grid');
+        const nodePickerModal = document.getElementById('node-modal');
+        const nodePickerList = document.getElementById('node-picker-list');
+        const nodeSearchInput = document.getElementById('node-search-input');
+        
+        // Cable Picker
+        const cableModal = document.getElementById('cable-modal');
+        const cableList = document.getElementById('cable-list');
+        const cableSearchInput = document.getElementById('cable-search-input');
+        const floatingCableBtn = document.getElementById('floating-cable-btn');
+        let availableNodes = [];
+        const CABLE_CATALOG = [
+            { id: 'ethernet', label: 'Ethernet', color: '#94a3b8', desc: 'Standard Copper (Solid)', style: 'solid' },
+            { id: 'fiber', label: 'Fiber', color: '#22d3ee', desc: 'Multi-Mode (Neon Cyan)', style: 'solid', glow: true },
+            { id: 'smf', label: 'Single-Mode', color: '#facc15', desc: 'Long Haul (Yellow)', style: 'solid', glow: true },
+            { id: 'trunk', label: 'Trunk', color: '#8b5cf6', desc: 'LACP Bundle (Purple)', style: 'solid', width: '4px' },
+            { id: 'serial', label: 'Serial', color: '#1e40af', desc: 'Legacy WAN (Zig-Zag)', style: 'dashed' },
+            { id: 'console', label: 'Console', color: '#06b6d4', desc: 'Management (Dotted)', style: 'dotted' },
+            { id: 'wireless', label: 'Wireless', color: '#a855f7', desc: 'Air Media (Sparse)', style: 'dashed' },
+            { id: 'tunnel', label: 'Tunnel', color: '#6366f1', desc: 'VPN/Overlay (Ghost)', style: 'solid', opacity: 0.5 },
+            { id: 'power', label: 'Power', color: '#fcd34d', desc: 'Electrical (Heavy)', style: 'solid', width: '5px' },
+            { id: 'crossover', label: 'Crossover', color: '#ef4444', desc: 'Warning (Striped)', style: 'dashed' }
+        ];
+
+        // --- FILE MANAGEMENT ---
+        let currentFilename = localStorage.getItem('netcmd_current_file') || 'plan.yaml';
+        const fileSelect = document.getElementById('file-select');
+
+        async function loadFileList() {
+            try {
+                const res = await fetch('/api/files');
+                const data = await res.json();
+                if (data.success) {
+                    fileSelect.innerHTML = '';
+                    data.files.forEach(f => {
+                        const opt = document.createElement('option');
+                        opt.value = f.name;
+                        opt.textContent = f.name;
+                        if (f.name === currentFilename) {
+                            opt.selected = true;
+                        }
+                        fileSelect.appendChild(opt);
+                    });
+                    // If current file not in list, select first
+                    if (data.files.length > 0 && !data.files.find(f => f.name === currentFilename)) {
+                        currentFilename = data.files[0].name;
+                        fileSelect.value = currentFilename;
+                    }
+                    log(`Found ${data.files.length} topology file(s)`, 'system');
+                }
+            } catch (e) {
+                log('Error loading file list: ' + e, 'error');
+            }
+        }
+
+        async function switchFile(filename) {
+            if (!filename) return;
+            
+            loader.classList.add('active');
+            log(`Loading topology: ${filename}...`, 'system');
+            
+            try {
+                const res = await fetch(`/api/load/${encodeURIComponent(filename)}`);
+                const data = await res.json();
+                if (data.success) {
+                    currentFilename = data.filename;
+                    localStorage.setItem('netcmd_current_file', currentFilename);
+                    
+                    if (editorInstance) {
+                        editorInstance.setValue(data.content);
+                    }
+                    
+                    log(`Loaded: ${currentFilename}`, 'success');
+                    setStatus('ready');
+                    
+                    // Reload preview
+                    const currentSrc = frame.src;
+                    frame.src = '';
+                    setTimeout(() => { frame.src = currentSrc; }, 100);
+                } else {
+                    log('Error: ' + data.error, 'error');
+                    setStatus('error');
+                }
+            } catch (e) {
+                log('Network error: ' + e, 'error');
+            } finally {
+                setTimeout(() => loader.classList.remove('active'), 300);
+            }
+        }
+
+        function createNewFile() {
+            const name = prompt('Enter new topology filename (e.g., my_network.yaml):');
+            if (!name) return;
+            
+            // Ensure .yaml extension
+            let filename = name.trim();
+            if (!filename.endsWith('.yaml') && !filename.endsWith('.yml')) {
+                filename += '.yaml';
+            }
+            
+            // Security check
+            if (filename.includes('..') || filename.includes('/')) {
+                log('Invalid filename', 'error');
+                return;
+            }
+            
+            // Create with template content
+            const template = `title: "New Network"
+description: "Untitled topology"
+author: "Network Architect"
+date: "${new Date().toISOString().split('T')[0]}"
+
+config:
+  layout_engine: hierarchical
+
+nodes:
+  - id: "core-01"
+    label: "Core Switch"
+    icon: "Cisco/Switches/Switch"
+    level: 1
+
+links:
+`;
+            
+            // Save directly using new API
+            fetch(`/api/save/${encodeURIComponent(filename)}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ yaml: template })
+            }).then(res => res.json()).then(data => {
+                if (data.success) {
+                    log(`Created: ${filename}`, 'success');
+                    currentFilename = filename;
+                    localStorage.setItem('netcmd_current_file', currentFilename);
+                    loadFileList();
+                    if (editorInstance) {
+                        editorInstance.setValue(template);
+                    }
+                    // Reload preview
+                    const currentSrc = frame.src;
+                    frame.src = '';
+                    setTimeout(() => { frame.src = currentSrc; }, 100);
+                } else {
+                    log('Error: ' + data.error, 'error');
+                }
+            }).catch(e => {
+                log('Error creating file: ' + e, 'error');
+            });
+        }
+
+        // Wizards
+        const nodeWizard = document.getElementById('node-wizard');
+        const linkWizard = document.getElementById('link-wizard');
+
+        // --- WIZARD LOGIC ---
+        function openNodeWizard() { 
+            nodeWizard.classList.add('active'); 
+            
+            // Populate Parent Datalist (reusing link wizard logic)
+            const content = editorInstance.getValue();
+            const list = document.getElementById('node-list');
+            list.innerHTML = '';
+            
+            const ids = [];
+            const regex = /^\s*-\s*id:\s*["']?([^"'\s]+)["']?/gm;
+            let match;
+            while ((match = regex.exec(content)) !== null) {
+                ids.push(match[1]);
+            }
+            ids.forEach(id => {
+                const opt = document.createElement('option');
+                opt.value = id;
+                list.appendChild(opt);
+            });
+
+            try { document.getElementById('wn-id').focus(); } catch (e) { } 
+        }
+
+        function validateNodeForm() {
+            const idInput = document.getElementById('wn-id');
+            const id = idInput.value.trim();
+            const err = document.getElementById('wn-id-error');
+            const submitBtn = document.getElementById('wn-submit');
+            
+            if (!id) {
+                err.textContent = 'Node ID is required';
+                err.style.color = 'var(--danger)';
+                submitBtn.disabled = true;
+                return false;
+            }
+            
+            // Check for spaces
+            if (/\s/.test(id)) {
+                 err.textContent = 'ID cannot contain spaces';
+                 err.style.color = 'var(--danger)';
+                 submitBtn.disabled = true;
+                 return false;
+            }
+
+            // Check duplication (fast & dirty scan)
+            const content = editorInstance.getValue();
+            if (content.indexOf(`id: "${id}"`) !== -1 || content.indexOf(`id: ${id}`) !== -1) {
+                err.textContent = 'ID already exists';
+                err.style.color = 'var(--danger)';
+                submitBtn.disabled = true;
+                return false;
+            }
+            
+            err.textContent = '✔ Available';
+            err.style.color = 'var(--primary)';
+            submitBtn.disabled = false;
+            return true;
+        }
+
+        function createNode() {
+            if (!validateNodeForm()) return;
+
+            const id = document.getElementById('wn-id').value.trim();
+            const label = document.getElementById('wn-label').value.trim() || id;
+            const level = document.getElementById('wn-level').value;
+            const role = document.getElementById('wn-role').value;
+            const icon = document.getElementById('wn-icon').value.trim();
+            const ip = document.getElementById('wn-ip').value.trim();
+            const parent = document.getElementById('wn-parent').value.trim();
+            
+            const x = document.getElementById('wn-x').value.trim();
+            const y = document.getElementById('wn-y').value.trim();
+            const notes = document.getElementById('wn-notes').value.trim();
+            const config = document.getElementById('wn-config').value.trim();
+
+            let yaml = `  - id: "${id}"
+    label: "${label}"
+    role: "${role}"
+    level: ${level}`;
+
+            if (icon) yaml += `\n    icon: "${icon}"`;
+            else yaml += `\n    icon: "Cisco/${role === 'switch' ? 'Switches/Switch' : role === 'router' ? 'Routers/Router' : 'Servers/Server'}"`;
+
+            if (ip) yaml += `\n    ip: "${ip}"`;
+            if (parent) yaml += `\n    parent: "${parent}"`;
+            
+            if (x && y) {
+                yaml += `\n    x: ${x}\n    y: ${y}`;
+            }
+            
+            if (notes) yaml += `\n    design_notes: "${notes}"`;
+            
+            if (config) {
+                 yaml += `\n    running_config: |\n      ${config.replace(/\n/g, '\n      ')}`;
+            }
+
+            appendToYamlSection('nodes', yaml);
+            closeWizards();
+            
+            // Clear fields
+            document.getElementById('wn-id').value = '';
+            document.getElementById('wn-label').value = '';
+            document.getElementById('wn-ip').value = '';
+            document.getElementById('wn-parent').value = '';
+            document.getElementById('wn-icon').value = '';
+            document.getElementById('wn-id-error').textContent = '';
+        }
+
+        function openLinkWizard() {
+            linkWizard.classList.add('active');
+
+            // Populate Datalist by parsing current YAML editor content roughly
+            const content = editorInstance.getValue();
+            const list = document.getElementById('node-list');
+            list.innerHTML = '';
+
+            // Regex to find 'id: "X"' or 'id: X'
+            const ids = [];
+            const regex = /^\s*-\s*id:\s*["']?([^"'\s]+)["']?/gm;
+            let match;
+            while ((match = regex.exec(content)) !== null) {
+                ids.push(match[1]);
+            }
+
+            ids.forEach(id => {
+                const opt = document.createElement('option');
+                opt.value = id;
+                list.appendChild(opt);
+            });
+
+            try { document.getElementById('wl-from').focus(); } catch (e) { }
+        }
+
+        function closeWizards() {
+            nodeWizard.classList.remove('active');
+            linkWizard.classList.remove('active');
+        }
+
+        function appendToYamlSection(sectionName, yamlText) {
+            // Find the section (e.g., "nodes:")
+            const content = editorInstance.getValue();
+
+            // Regex to find "nodes:" start
+            const regex = new RegExp(`^${sectionName}:`, 'm');
+            const match = regex.exec(content);
+
+            if (match) {
+                // Insert after the key line
+                const insertIndex = match.index + match[0].length;
+                const insertText = '\n' + yamlText;
+
+                const pos = editorInstance.getModel().getPositionAt(insertIndex);
+
+                editorInstance.executeEdits("wizard", [{
+                    range: new monaco.Range(pos.lineNumber + 1, 1, pos.lineNumber + 1, 1),
+                    text: insertText,
+                    forceMoveMarkers: true
+                }]);
+
+            } else {
+                // Section missing, create it at end
+                const text = `\n\n${sectionName}:\n` + yamlText;
+                const lineCount = editorInstance.getModel().getLineCount();
+                editorInstance.executeEdits("wizard", [{
+                    range: new monaco.Range(lineCount + 1, 1, lineCount + 1, 1),
+                    text: text,
+                    forceMoveMarkers: true
+                }]);
+            }
+
+            recompile();
+            closeWizards();
+        }
+
+        function createLink() {
+            const from = document.getElementById('wl-from').value.trim();
+            const to = document.getElementById('wl-to').value.trim();
+            const type = document.getElementById('wl-type').value;
+            const fromPort = document.getElementById('wl-from-port').value.trim();
+            const toPort = document.getElementById('wl-to-port').value.trim();
+            
+            const fromIp = document.getElementById('wl-from-ip').value.trim();
+            const toIp = document.getElementById('wl-to-ip').value.trim();
+            
+            // L2 Config
+            const l2Mode = document.getElementById('wl-l2-mode').value;
+            const l2Vlan = document.getElementById('wl-l2-vlan').value.trim();
+            const l2Allowed = document.getElementById('wl-l2-allowed').value.trim();
+            
+            const notes = document.getElementById('wl-notes').value.trim();
+
+            if (!from || !to) {
+                // Should show error in UI but alert is fine for now
+                return;
+            }
+
+            let yaml = `  - from: "${from}"
+    to: "${to}"
+    cable: "${type}"`;
+
+            if (fromPort) yaml += `\n    from_port: "${fromPort}"`;
+            if (toPort) yaml += `\n    to_port: "${toPort}"`;
+            
+            if (fromIp) yaml += `\n    from_ip: "${fromIp}"`;
+            if (toIp) yaml += `\n    to_ip: "${toIp}"`;
+            
+            // Layer 2 Block
+            if (l2Mode || l2Vlan || l2Allowed) {
+                yaml += `\n    layer2:`;
+                if (l2Mode) yaml += `\n      mode: "${l2Mode}"`;
+                if (l2Vlan) {
+                    if (l2Mode === 'trunk') yaml += `\n      native_vlan: ${l2Vlan}`;
+                    else yaml += `\n      vlan: ${l2Vlan}`;
+                }
+                if (l2Allowed) yaml += `\n      allowed_vlans: "${l2Allowed}"`;
+            }
+            
+            if (notes) yaml += `\n    notes: "${notes}"`;
+
+            appendToYamlSection('links', yaml);
+            closeWizards();
+            
+            // Clear fields (optional, but good UX)
+            document.getElementById('wl-from').value = '';
+            document.getElementById('wl-to').value = '';
+            document.getElementById('wl-from-port').value = '';
+            document.getElementById('wl-to-port').value = '';
+        }
+
+        // --- NODE PICKER LOGIC ---
+        function openNodePicker() {
+            const content = editorInstance.getValue();
+            availableNodes = [];
+            const idRegex = /^\s*-\s*id:\s*["']?([^"'\s]+)["']?/gm;
+            let match;
+            while ((match = idRegex.exec(content)) !== null) {
+                availableNodes.push(match[1]);
+            }
+            renderNodes(availableNodes);
+            nodePickerModal.classList.add('active');
+            nodeSearchInput.value = '';
+            nodeSearchInput.focus();
+        }
+
+        function closeNodePicker() {
+            nodePickerModal.classList.remove('active');
+        }
+
+        function renderNodes(list) {
+            nodePickerList.innerHTML = '';
+            list.forEach(nodeId => {
+                const el = document.createElement('div');
+                el.className = 'node-item';
+                el.textContent = nodeId;
+                el.onclick = () => selectNode(nodeId);
+                nodePickerList.appendChild(el);
+            });
+        }
+
+        function filterNodes() {
+            const query = nodeSearchInput.value.toLowerCase();
+            const filtered = availableNodes.filter(i => i.toLowerCase().includes(query));
+            renderNodes(filtered);
+        }
+
+        nodeSearchInput.addEventListener('input', filterNodes);
+
+        function selectNode(nodeId) {
+            if (editorInstance) {
+                const position = editorInstance.getPosition();
+                const model = editorInstance.getModel();
+                const lineContent = model.getLineContent(position.lineNumber);
+                const colonIndex = lineContent.indexOf(':');
+                const commentIndex = lineContent.indexOf('#');
+                const startColumn = colonIndex + 2;
+                const endColumn = (commentIndex !== -1) ? commentIndex : lineContent.length + 1;
+                editorInstance.executeEdits("node-picker", [{
+                    range: new monaco.Range(position.lineNumber, startColumn, position.lineNumber, endColumn),
+                    text: `"${nodeId}"` + (commentIndex !== -1 ? ' ' : ''),
+                    forceMoveMarkers: true
+                }]);
+            }
+            closeNodePicker();
+            editorInstance.focus();
+        }
+
+
+        // --- CONSOLE LOGGING ---
+        function log(msg, type = 'normal') {
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+
+            const timeSpan = document.createElement('span');
+            timeSpan.className = 'log-time';
+            timeSpan.textContent = `[${new Date().toLocaleTimeString('en-US', { hour12: false })}]`;
+
+            const msgSpan = document.createElement('span');
+            msgSpan.className = 'log-' + type;
+            msgSpan.textContent = msg;
+
+            entry.appendChild(timeSpan);
+            entry.appendChild(msgSpan);
+
+            consoleOut.appendChild(entry);
+            consoleOut.scrollTop = consoleOut.scrollHeight;
+        }
+
+        function setStatus(state) {
+            statusDot.className = 'status-dot';
+            if (state === 'ready') {
+                statusDot.classList.add('ok');
+                statusText.textContent = 'System Operational';
+            } else if (state === 'error') {
+                statusDot.classList.add('err');
+                statusText.textContent = 'Build Error';
+            } else {
+                statusText.textContent = 'Processing...';
+            }
+        }
+
+        // --- DATA FETCHING ---
+        async function fetchIcons() {
+            try {
+                const res = await fetch('/get_icons');
+                const data = await res.json();
+                if (data.success) {
+                    availableIcons = data.icons;
+                    log(`Loaded ${availableIcons.length} asset references.`, 'system');
+                    renderIcons(availableIcons);
+                }
+            } catch (e) {
+                log('Warning: Failed to load icon assets.', 'error');
+            }
+        }
+
+        function renderIcons(list) {
+            iconGrid.innerHTML = '';
+            list.forEach(iconPath => {
+                const el = document.createElement('div');
+                el.className = 'icon-item';
+
+                // Try loading image (assuming implementation handles paths correctly)
+                const name = iconPath.split('/').pop();
+
+                el.innerHTML = `
+                    <img src="/assets/icons/${iconPath}.svg" onerror="this.src='/assets/icons/${iconPath}.png'">
+                    <span>${name}</span>
+                `;
+                el.onclick = () => selectIcon(iconPath);
+                iconGrid.appendChild(el);
+            });
+        }
+
+        function filterIcons() {
+            const query = searchCtx.value.toLowerCase();
+            const filtered = availableIcons.filter(i => i.toLowerCase().includes(query));
+            renderIcons(filtered);
+        }
+
+        searchCtx.addEventListener('input', filterIcons);
+
+        // --- UI ACTIONS ---
+        let iconPickerTargetId = null;
+
+        function openIconPicker(targetId = null) {
+            iconPickerTargetId = targetId;
+            modal.classList.add('active');
+            searchCtx.value = '';
+            renderIcons(availableIcons);
+            searchCtx.focus();
+        }
+
+        function closeIconPicker() {
+            modal.classList.remove('active');
+            // Don't reset targetId here immediately in case we need it? No, safe to reset on close actually, or just let selectIcon handle it.
+            // But if user cancels? 
+            // Better to leave it for next open call to overwrite.
+        }
+
+        const PRESET_COLORS = [
+            'rgba(59, 130, 246, 0.1)',   // Blue
+            'rgba(16, 185, 129, 0.1)',   // Emerald
+            'rgba(249, 115, 22, 0.1)',   // Orange
+            'rgba(239, 68, 68, 0.1)',    // Red
+            'rgba(168, 85, 247, 0.1)',   // Purple
+            'rgba(236, 72, 153, 0.1)',   // Pink
+            'rgba(14, 165, 233, 0.1)',   // Sky
+            'rgba(234, 179, 8, 0.1)',    // Yellow
+            'rgba(71, 85, 105, 0.1)',    // Slate
+            'rgba(20, 184, 166, 0.1)',   // Teal
+            'rgba(101, 163, 13, 0.1)',   // Lime
+            'rgba(220, 38, 38, 0.05)'    // Ghost Red
+        ];
+
+        function openColorPicker() {
+            colorModal.classList.add('active');
+            renderColors();
+        }
+
+        function closeColorPicker() {
+            colorModal.classList.remove('active');
+        }
+
+        function renderColors() {
+            colorGrid.innerHTML = '';
+            PRESET_COLORS.forEach(c => {
+                const el = document.createElement('div');
+                el.className = 'color-swatch';
+                el.style.backgroundColor = c;
+                el.innerHTML = `<span>PICK</span>`;
+                el.onclick = () => selectColor(c);
+                colorGrid.appendChild(el);
+            });
+        }
+
+        function selectColor(colorValue) {
+            if (editorInstance) {
+                const position = editorInstance.getPosition();
+                const model = editorInstance.getModel();
+                const lineContent = model.getLineContent(position.lineNumber);
+
+                const prefixMatch = lineContent.match(/^(\s*-?\s*color:\s*)/);
+
+                if (prefixMatch) {
+                    const prefixLength = prefixMatch[0].length;
+                    const commentIndex = lineContent.indexOf('#', prefixLength);
+                    const startColumn = prefixLength + 1;
+                    const endColumn = (commentIndex !== -1) ? commentIndex + 1 : lineContent.length + 1;
+
+                    editorInstance.executeEdits("color-picker", [{
+                        range: new monaco.Range(position.lineNumber, startColumn, position.lineNumber, endColumn),
+                        text: `"${colorValue}"` + (commentIndex !== -1 ? ' ' : ''),
+                        forceMoveMarkers: true
+                    }]);
+                }
+                editorInstance.focus();
+            }
+            closeColorPicker();
+        }
+
+        function selectIcon(iconValue) {
+            // Check if targeting a form input first
+            if (iconPickerTargetId) {
+                const el = document.getElementById(iconPickerTargetId);
+                if (el) {
+                    el.value = iconValue;
+                }
+                iconPickerTargetId = null;
+                closeIconPicker();
+                return;
+            }
+
+            // Insert into editor
+            if (editorInstance) {
+                const position = editorInstance.getPosition();
+                const model = editorInstance.getModel();
+                const lineContent = model.getLineContent(position.lineNumber);
+
+                // Robust parsing to find where to insert
+                // Regex: Match indent + 'icon:' + whitespace
+                const prefixMatch = lineContent.match(/^(\s*-?\s*icon:\s*)/);
+
+                if (prefixMatch) {
+                    const prefixLength = prefixMatch[0].length;
+                    const commentIndex = lineContent.indexOf('#', prefixLength);
+
+                    // Calculate start and end columns (1-based for Monaco)
+                    const startColumn = prefixLength + 1;
+                    const endColumn = (commentIndex !== -1) ? commentIndex + 1 : lineContent.length + 1;
+
+                    const range = new monaco.Range(
+                        position.lineNumber,
+                        startColumn,
+                        position.lineNumber,
+                        endColumn
+                    );
+
+                    const text = `"${iconValue}"` + (commentIndex !== -1 ? ' ' : '');
+
+                    editorInstance.executeEdits("icon-picker", [{
+                        range: range,
+                        text: text,
+                        forceMoveMarkers: true
+                    }]);
+                } else {
+                    // Fallback: insert at cursor/selection
+                    const selection = editorInstance.getSelection();
+                    const text = `"${iconValue}"`;
+                    editorInstance.executeEdits("icon-picker", [{
+                        range: new monaco.Range(position.lineNumber, position.column, selection.endLineNumber, selection.endColumn),
+                        text: text,
+                        forceMoveMarkers: true
+                    }]);
+                }
+
+                editorInstance.focus();
+            }
+            closeIconPicker();
+        }
+        
+        // --- CABLE PICKER LOGIC ---
+        function openCablePicker() {
+            renderCables(CABLE_CATALOG);
+            cableModal.classList.add('active');
+            cableSearchInput.value = '';
+            cableSearchInput.focus();
+        }
+
+        function closeCablePicker() {
+            cableModal.classList.remove('active');
+        }
+
+        function renderCables(list) {
+            cableList.innerHTML = '';
+            list.forEach(cable => {
+                const el = document.createElement('div');
+                el.className = 'cable-item';
+                
+                // Inline styles for preview
+                let previewStyle = `background-color: ${cable.color};`;
+                if (cable.style === 'dashed') previewStyle += 'background: repeating-linear-gradient(90deg, '+cable.color+', '+cable.color+' 5px, transparent 5px, transparent 10px);';
+                if (cable.style === 'dotted') previewStyle += 'background: repeating-linear-gradient(90deg, '+cable.color+', '+cable.color+' 2px, transparent 2px, transparent 6px);';
+                if (cable.glow) previewStyle += `box-shadow: 0 0 8px ${cable.color};`;
+                if (cable.opacity) previewStyle += `opacity: ${cable.opacity};`;
+                if (cable.width) previewStyle += `height: ${cable.width}; border-radius: 2px;`;
+                
+                el.innerHTML = `
+                    <div class="cable-preview" style="${previewStyle}"></div>
+                    <div class="cable-info">
+                        <div class="cable-name">${cable.label} <span style="font-size:0.7em; opacity:0.6">(${cable.id})</span></div>
+                        <div class="cable-desc">${cable.desc}</div>
+                    </div>
+                `;
+                el.onclick = () => selectCable(cable.id);
+                cableList.appendChild(el);
+            });
+        }
+
+        if (cableSearchInput) {
+            cableSearchInput.addEventListener('input', () => {
+                const query = cableSearchInput.value.toLowerCase();
+                const filtered = CABLE_CATALOG.filter(c => c.id.toLowerCase().includes(query) || c.label.toLowerCase().includes(query));
+                renderCables(filtered);
+            });
+        }
+
+        function selectCable(cableId) {
+             if (editorInstance) {
+                const position = editorInstance.getPosition();
+                const model = editorInstance.getModel();
+                const lineContent = model.getLineContent(position.lineNumber);
+                
+                const prefixMatch = lineContent.match(/^(\s*-?\s*cable:\s*)/);
+
+                if (prefixMatch) {
+                    const prefixLength = prefixMatch[0].length;
+                    const commentIndex = lineContent.indexOf('#', prefixLength);
+                    const startColumn = prefixLength + 1;
+                    const endColumn = (commentIndex !== -1) ? commentIndex + 1 : lineContent.length + 1;
+
+                    editorInstance.executeEdits("cable-picker", [{
+                        range: new monaco.Range(position.lineNumber, startColumn, position.lineNumber, endColumn),
+                        text: `"${cableId}"` + (commentIndex !== -1 ? ' ' : ''),
+                        forceMoveMarkers: true
+                    }]);
+                } else {
+                    const selection = editorInstance.getSelection();
+                    editorInstance.executeEdits("cable-picker", [{
+                        range: new monaco.Range(position.lineNumber, position.column, selection.endLineNumber, selection.endColumn),
+                        text: `"${cableId}"`,
+                        forceMoveMarkers: true
+                    }]);
+                }
+                editorInstance.focus();
+            }
+            closeCablePicker();
+        }
+
+        // --- MONACO SETUP ---
+        require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.38.0/min/vs' } });
+
+        require(['vs/editor/editor.main'], async function () {
+            // Fetch necessary data first
+            await fetchIcons();
+
+            // Register Custom Theme
+            monaco.editor.defineTheme('cyber-dark', {
+                base: 'vs-dark',
+                inherit: true,
+                rules: [
+                    { token: 'comment', foreground: '555555', fontStyle: 'italic' },
+                    { token: 'keyword', foreground: '00e599', fontStyle: 'bold' },
+                    { token: 'string', foreground: '3b82f6' },
+                    { token: 'number', foreground: 'f472b6' },
+                    { token: 'type', foreground: 'c084fc' }
+                ],
+                colors: {
+                    'editor.background': '#0a0a0a',
+                    'editor.foreground': '#ededed',
+                    'editorLineNumber.foreground': '#333333',
+                    'editor.selectionBackground': '#00e59920',
+                    'editor.lineHighlightBackground': '#151515'
+                }
+            });
+
+            // Register YAML Completion Provider
+            monaco.languages.registerCompletionItemProvider('yaml', {
+                provideCompletionItems: function (model, position) {
+                    const textUntilPosition = model.getValueInRange({
+                        startLineNumber: position.lineNumber,
+                        startColumn: 1,
+                        endLineNumber: position.lineNumber,
+                        endColumn: position.column
+                    });
+
+                    const word = model.getWordUntilPosition(position);
+                    const range = {
+                        startLineNumber: position.lineNumber,
+                        endLineNumber: position.lineNumber,
+                        startColumn: word.startColumn,
+                        endColumn: word.endColumn
+                    };
+
+                    const suggestions = [];
+                    const content = model.getValue();
+
+                    // 1. HELPERS: EXTRACT IDs (Improved Regex)
+                    const ids = [];
+                    // Regex to find 'id: "X"', 'id: 'X'', or 'id: X'
+                    const idRegex = /^\s*-\s*id:\s*["']?([^"'\s]+)["']?/gm;
+                    let match;
+                    while ((match = idRegex.exec(content)) !== null) {
+                        ids.push(match[1]);
+                    }
+
+                    // 2. CONTEXT ANALYSIS
+                    const lineContent = textUntilPosition;
+                    const trimLine = lineContent.trim();
+
+                    // --- SCENARIO: NODE PROPERTIES (Improved Trigger) ---
+                    // Triggers if the line starts with from/to/parent/etc.
+                    if (trimLine.match(/^-?\s*(parent|from|to|target|members):\s*/)) {
+                        ids.forEach(id => {
+                            suggestions.push({
+                                label: id,
+                                kind: monaco.languages.CompletionItemKind.Reference,
+                                insertText: `${id}`, // Insert plain text
+                                detail: 'Network Node',
+                                range: range
+                            });
+                        });
+                    }
+
+                    // --- SCENARIO: CABLE TYPES ---
+                    if (trimLine.match(/cable:\s*"?$/)) {
+                        ['trunk', 'ethernet', 'fiber', 'serial'].forEach(c => {
+                            suggestions.push({
+                                label: c,
+                                kind: monaco.languages.CompletionItemKind.Enum,
+                                insertText: ` "${c}"`,
+                                range: range
+                            });
+                        });
+                    }
+
+                    // --- SCENARIO: ICONS ---
+                    if (trimLine.match(/icon:\s*"?$/)) {
+                        availableIcons.forEach(icon => {
+                            suggestions.push({
+                                label: icon,
+                                kind: monaco.languages.CompletionItemKind.File,
+                                insertText: ` "${icon}"`,
+                                detail: 'Asset',
+                                range: range
+                            });
+                        });
+                    }
+
+                    // --- SCENARIO: SNIPPETS ---
+                    if (!lineContent.includes(':')) {
+                        suggestions.push({
+                            label: 'new-node',
+                            kind: monaco.languages.CompletionItemKind.Snippet,
+                            documentation: 'Insert a new node structure',
+                            insertText: [
+                                '- id: "${1:unique_id}"',
+                                '  label: "${2:Device Name}"',
+                                '  icon: "${3:server}"',
+                                '  level: ${4:2}',
+                                '  parent: "${5:parent_id}"'
+                            ].join('\n'),
+                            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+                            range: range
+                        });
+
+                        suggestions.push({
+                            label: 'new-link',
+                            kind: monaco.languages.CompletionItemKind.Snippet,
+                            documentation: 'Insert a new connection link',
+                            insertText: [
+                                '- from: "${1:source_id}"',
+                                '  to: "${2:dest_id}"',
+                                '  cable: "${3:ethernet}"',
+                                '  style: "solid"'
+                            ].join('\n'),
+                            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+                            range: range
+                        });
+
+                        suggestions.push({
+                            label: 'new-group',
+                            kind: monaco.languages.CompletionItemKind.Snippet,
+                            documentation: 'Create a visual grouping of nodes',
+                            insertText: [
+                                '- name: "${1:Group Name}"',
+                                '  nodes: ["${2:node1}", "${3:node2}"]',
+                                '  color: "rgba(16, 185, 129, 0.05)"',
+                                '  style: "dashed"'
+                            ].join('\n'),
+                            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+                            range: range
+                        });
+                    }
+
+                    return { suggestions: suggestions };
+                }
+            });
+
+            // Register Hover Provider (Documentation)
+            monaco.languages.registerHoverProvider('yaml', {
+                provideHover: function (model, position) {
+                    const word = model.getWordAtPosition(position);
+                    if (!word) return null;
+
+                    const dict = {
+                        'nodes': 'List of all devices/entities in the network.',
+                        'links': 'Definitions of connections (cables) between nodes.',
+                        'groups': 'Visual boundaries grouping multiple nodes together.',
+                        'config': 'Global rendering settings (layout engine, export path).',
+                        'id': 'Unique identifier for this node (no spaces recommended).',
+                        'label': 'Visible text displayed under the icon.',
+                        'icon': 'Path to the SVG/PNG asset (use the Picker).',
+                        'level': 'Hierarchy level (1=Core, 2=Distribution, 3=Access).',
+                        'parent': 'ID of the upstream node (anchor) for hierarchical layouts.',
+                        'from': 'Source Node ID.',
+                        'to': 'Destination Node ID.',
+                        'cable': 'Type of connection (draw style/color).',
+                        'semantic': 'Engine: Positions nodes based on "level" and "parent" logic.',
+                        'flow': 'Engine: Calculates tree levels automatically based on connection direction.',
+                        'realistic': 'Layout: Uses realistic port offsets and bundling.'
+                    };
+
+                    if (dict[word.word]) {
+                        return {
+                            range: new monaco.Range(position.lineNumber, word.startColumn, position.lineNumber, word.endColumn),
+                            contents: [
+                                { value: '**' + word.word.toUpperCase() + '**' },
+                                { value: dict[word.word] }
+                            ]
+                        };
+                    }
+                    return null;
+                }
+            });
+
+            // Initialize Editor
+            editorInstance = monaco.editor.create(document.getElementById('editor-container'), {
+                value: '',
+                language: 'yaml',
+                theme: 'cyber-dark',
+                automaticLayout: true,
+                fontSize: 13,
+                fontFamily: 'JetBrains Mono',
+                minimap: { enabled: false },
+                scrollBeyondLastLine: false,
+                tabSize: 2,
+                padding: { top: 20, bottom: 20 }
+            });
+
+            // Keybindings
+            editorInstance.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, function () {
+                recompile();
+            });
+
+            // Cursor Listener for Icon Context
+            editorInstance.onDidChangeCursorPosition((e) => {
+                const model = editorInstance.getModel();
+                const lineContent = model.getLineContent(e.position.lineNumber);
+                
+                // Default all to hidden
+                floatingBtn.style.display = 'none';
+                floatingColorBtn.style.display = 'none';
+                floatingNodeBtn.style.display = 'none';
+                floatingCableBtn.style.display = 'none';
+
+                const colonIdx = lineContent.indexOf(':');
+                if (colonIdx === -1 || e.position.column <= colonIdx + 1) return;
+
+                if (lineContent.trim().startsWith('icon:')) {
+                    floatingBtn.style.display = 'block';
+                } else if (lineContent.trim().startsWith('color:')) {
+                    floatingColorBtn.style.display = 'block';
+                } else if (['from:', 'to:', 'parent:', 'target:'].some(key => lineContent.trim().startsWith(key))) {
+                    floatingNodeBtn.style.display = 'block';
+                } else if (lineContent.trim().startsWith('cable:')) {
+                    floatingCableBtn.style.display = 'block';
+                }
+            });
+
+            // Load Content
+            loadPlan();
+        });
+
+        // --- APP LOGIC ---
+
+        async function loadPlan() {
+            log('Initializing file system...', 'system');
+            
+            // Load file list first
+            await loadFileList();
+            
+            // Then load the current file
+            try {
+                const res = await fetch(`/api/load/${encodeURIComponent(currentFilename)}`);
+                const data = await res.json();
+                if (data.success) {
+                    currentFilename = data.filename;
+                    localStorage.setItem('netcmd_current_file', currentFilename);
+                    fileSelect.value = currentFilename;
+                    
+                    if (editorInstance) {
+                        editorInstance.setValue(data.content);
+                    }
+                    log(`Loaded: ${currentFilename}`, 'success');
+                    setStatus('ready');
+                } else {
+                    // If file not found, try loading first available
+                    log('Stored file not found, loading default...', 'system');
+                    const files = await fetch('/api/files').then(r => r.json());
+                    if (files.success && files.files.length > 0) {
+                        await switchFile(files.files[0].name);
+                    } else {
+                        log('No topology files found. Create one to begin.', 'system');
+                    }
+                }
+            } catch (e) {
+                log('Network error: ' + e, 'error');
+            }
+        }
+
+        async function recompile() {
+            loader.classList.add('active');
+            log(`Compiling: ${currentFilename}...`, 'system');
+
+            try {
+                const content = editorInstance.getValue();
+                const res = await fetch(`/api/save/${encodeURIComponent(currentFilename)}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ yaml: content })
+                });
+
+                const data = await res.json();
+
+                if (data.success) {
+                    log(data.message, 'success');
+                    setStatus('ready');
+                    // Reload Iframe
+                    const currentSrc = frame.src;
+                    frame.src = '';
+                    setTimeout(() => { frame.src = currentSrc; }, 100);
+                } else {
+                    log(data.error, 'error');
+                    setStatus('error');
+                }
+            } catch (e) {
+                log('Critical System Failure: ' + e, 'error');
+            } finally {
+                setTimeout(() => {
+                    loader.classList.remove('active');
+                    editorInstance.focus();
+                }, 500);
+            }
+        }
+
+        function downloadYaml() {
+            const blob = new Blob([editorInstance.getValue()], { type: 'text/yaml' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = currentFilename || 'topology.yaml';
+            a.click();
+        }

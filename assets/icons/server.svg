@@ -1,0 +1,21 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none" preserveAspectRatio="xMidYMid meet">
+  
+  <g transform="translate(1.8966, 8.1034) scale(1.5517)"><rect x="4" y="16" width="56" height="32" rx="2" fill="#1e293b" stroke="#94a3b8" stroke-width="2" />
+  
+  
+  <rect x="2" y="18" width="2" height="28" fill="#cbd5e1" />
+  <rect x="60" y="18" width="2" height="28" fill="#cbd5e1" />
+  
+  
+  <rect x="10" y="24" width="8" height="16" rx="1" fill="#334155" />
+  <rect x="22" y="24" width="8" height="16" rx="1" fill="#334155" />
+  <rect x="34" y="24" width="8" height="16" rx="1" fill="#334155" />
+  
+  
+  <circle cx="50" cy="28" r="1.5" fill="#22c55e" /> 
+  <circle cx="54" cy="28" r="1.5" fill="#eab308" /> 
+  
+  
+  <circle cx="52" cy="38" r="2" fill="#ef4444" />
+</g></svg>

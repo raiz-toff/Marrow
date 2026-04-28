@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} | Network Showcase</title>
+    <meta name="description" content="{{ description }}">
+
+    <!-- External Libraries (CDN for size optimization) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/standalone/umd/vis-network.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.13.5/cdn.min.js" defer></script>
+
+    <!-- Prism.js for syntax highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+
+    <!-- Premium Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+        {% include 'partials/styles.html' %}
+    </style>
+</head>
+
+<body x-data="networkApp()" x-cloak>
+
+    <!-- Top Left Menu Toggle -->
+    <button class="menu-toggle" @click="dockPinned = !dockPinned" :class="{ 'active': dockPinned }" aria-label="Toggle Menu">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+    </button>
+
+    <!-- Main Boxed Viewport -->
+    <div class="viewport-box">
+        <!-- Immersive Canvas -->
+        <div class="canvas-container" :class="{ 'blueprint-bg': visualMode === 'blueprint' }">
+            <div id="network-canvas"></div>
+        </div>
+
+        <!-- Controls (Zoom, Project, Watermark) -->
+        {% include 'partials/controls.html' %}
+    </div>
+
+    <!-- Command Bar (Top Center) -->
+    <div class="command-bar glass">
+        <span class="title">{{ title }}</span>
+        <div class="divider"></div>
+        <div class="command-search" @click="showPalette = true">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <span>Search nodes...</span>
+            <kbd>⌘K</kbd>
+        </div>
+        
+        <!-- SAVE BUTTON (Visible on Drag) -->
+        <button x-show="hasUnsavedChanges" @click="saveLayout()" class="command-action save-btn" :disabled="isSaving">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                <polyline points="7 3 7 8 15 8"></polyline>
+            </svg>
+            <span x-text="isSaving ? 'Saving...' : 'Save Positions'"></span>
+        </button>
+
+        <div class="search-hint" @click="showPalette = true" x-show="!hasUnsavedChanges">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right: 6px; opacity: 0.8;">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <span>Search</span>
+        </div>
+    </div>
+
+    <!-- Dock Trigger Zone (Ubuntu-style auto-hide) -->
+    <div class="dock-trigger"></div>
+
+    <!-- Left Dock -->
+    {% include 'partials/dock.html' %}
+
+    <!-- Contextual Inspector (Right Panel) -->
+    {% include 'partials/inspector.html' %}
+
+
+
+    <!-- Command Palette (Cmd+K) -->
+    {% include 'partials/palette.html' %}
+
+    <!-- Sci-Fi Background Animation -->
+    {% include 'partials/scifi_background.html' %}
+
+    <script>
+        {% include 'partials/scripts.html' %}
+    </script>
+</body>
+
+</html>

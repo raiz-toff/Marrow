@@ -1,0 +1,1273 @@
+const RAW_NODES = {{ nodes | tojson | safe }};
+        const RAW_EDGES = {{ edges | tojson | safe }};
+        const RAW_GROUPS = {{ groups | tojson | safe }};
+        const RAW_ANNOTATIONS = {{ annotations | tojson | safe }};
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // TRAFFIC CONFIGURATION - Cable-specific particle properties
+        // ═══════════════════════════════════════════════════════════════════════
+        const TRAFFIC_CONFIG = {
+            ethernet:  { speed: 0.008, size: 4, glow: false, count: 3 },
+            fiber:     { speed: 0.015, size: 5, glow: true,  count: 4 },
+            smf:       { speed: 0.018, size: 4, glow: true,  count: 5 },
+            trunk:     { speed: 0.012, size: 6, glow: false, count: 5 },
+            serial:    { speed: 0.004, size: 3, glow: false, count: 2 },
+            console:   { speed: 0.003, size: 2, glow: false, count: 1 },
+            wireless:  { speed: 0.010, size: 4, glow: false, count: 2, fade: true },
+            tunnel:    { speed: 0.006, size: 8, glow: true,  count: 2 },
+            power:     { speed: 0.002, size: 6, glow: false, count: 1 },
+            crossover: { speed: 0.007, size: 4, glow: false, count: 2 }
+        };
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // GEOMETRY UTILITIES
+        // ═══════════════════════════════════════════════════════════════════════
+        function getConvexHull(points) {
+            points = points.slice().sort((a, b) => a.x != b.x ? a.x - b.x : a.y - b.y);
+            const n = points.length;
+            if (n <= 2) return points;
+            const cross = (a, b, o) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+            const lower = [];
+            for (let i = 0; i < n; i++) {
+                while (lower.length >= 2 && cross(lower[lower.length - 1], lower[lower.length - 2], points[i]) <= 0) lower.pop();
+                lower.push(points[i]);
+            }
+            const upper = [];
+            for (let i = n - 1; i >= 0; i--) {
+                while (upper.length >= 2 && cross(upper[upper.length - 1], upper[upper.length - 2], points[i]) <= 0) upper.pop();
+                upper.push(points[i]);
+            }
+            upper.pop();
+            lower.pop();
+            return lower.concat(upper);
+        }
+
+        function drawSmoothPolygon(ctx, points, tension) {
+             ctx.beginPath();
+             ctx.moveTo(points[0].x, points[0].y);
+             for (let i = 0; i < points.length; i++) {
+                 const p0 = points[(i - 1 + points.length) % points.length];
+                 const p1 = points[i];
+                 const p2 = points[(i + 1) % points.length];
+                 const mid1 = { x: (p0.x + p1.x) / 2, y: (p0.y + p1.y) / 2 };
+                 const mid2 = { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
+                 if (i === 0) ctx.moveTo(mid1.x, mid1.y);
+                 ctx.quadraticCurveTo(p1.x, p1.y, mid2.x, mid2.y);
+             }
+             ctx.closePath();
+             ctx.fill();
+             ctx.stroke();
+        }
+
+        function networkApp() {
+            return {
+                network: null,
+                nodes: null,
+                edges: null,
+                selectedNode: null,
+                viewMode: '{{ config.engines[0] }}',
+                visualMode: '{{ config.layouts[0] }}',
+                hudTab: 'overview',
+                showPalette: false,
+                searchQuery: '',
+                showLabels: true,
+                showPorts: true,
+                dockPinned: false,
+                darkMode: false,
+                copying: false,
+                highlightedNodeId: null,
+                highlightAngle: 0,
+                isLocked: true,
+                
+                // Traffic animation state
+                showTraffic: true,
+                trafficParticles: [],
+                trafficAnimationId: null,
+
+                // Mini-Map State
+                minimapCanvas: null,
+                minimapCtx: null,
+                mmBounds: null,
+                isDraggingMini: false,
+
+                // Visual Editor State
+                hasUnsavedChanges: false,
+                isSaving: false,
+
+                async saveLayout() {
+                    this.isSaving = true;
+                    const positions = this.network.getPositions();
+                    const changes = [];
+
+                    // Collect changes for all nodes
+                    for (const [id, pos] of Object.entries(positions)) {
+                        changes.push({
+                            type: 'node',
+                            id: id,
+                            x: Math.round(pos.x),
+                            y: Math.round(pos.y)
+                        });
+                    }
+
+                    try {
+                        const res = await fetch('/update_positions', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ changes })
+                        });
+                        const data = await res.json();
+                        
+                        if (data.success) {
+                            this.hasUnsavedChanges = false;
+                            // Optional: Show toast
+                            console.log(`Saved ${data.updated} positions.`);
+                        } else {
+                            alert("Save Failed: " + data.error);
+                        }
+                    } catch (e) {
+                         alert("System Error: " + e);
+                    } finally {
+                        this.isSaving = false;
+                    }
+                },
+
+                get filteredNodes() {
+                    if (!this.searchQuery) return RAW_NODES.slice(0, 8);
+                    const q = this.searchQuery.toLowerCase();
+                    return RAW_NODES.filter(n =>
+                        n.id.toLowerCase().includes(q) ||
+                        (n.label && n.label.toLowerCase().includes(q))
+                    ).slice(0, 8);
+                },
+
+                init() {
+                    console.log("🚀 Network Showcase Engine Initialized");
+
+                    // Apply initial theme
+                    document.body.classList.toggle('light-mode', !this.darkMode);
+                    
+                    // Initialize Mini-Map (Async to wait for DOM)
+                    setTimeout(() => this.initMinimap(), 100);
+
+                    this.nodes = new vis.DataSet(this.processNodes());
+                    this.edges = new vis.DataSet(RAW_EDGES);
+
+                    this.network = new vis.Network(
+                        document.getElementById('network-canvas'),
+                        { nodes: this.nodes, edges: this.edges },
+                        this.getOptions()
+                    );
+
+                    this.network.on("selectNode", (params) => {
+                        this.selectedNode = this.nodes.get(params.nodes[0]);
+                        this.hudTab = 'overview';
+                    });
+
+                    this.network.on("deselectNode", () => {
+                        this.selectedNode = null;
+                    });
+
+                    // ═══════════════════════════════════════════════════════════════════
+                    // VISUAL EDITOR: Drag & Save Logic
+                    // ═══════════════════════════════════════════════════════════════════
+                    this.network.on("dragEnd", (params) => {
+                        if (params.nodes.length > 0) {
+                            this.hasUnsavedChanges = true;
+                            // Optional: Auto-save could go here
+                        }
+                    });
+
+                    // Draw parallel lines for bundled links and groups
+                    this.network.on("beforeDrawing", (ctx) => {
+                        // ═══════════════════════════════════════════════════════════════════
+                        // BACKGROUND LAYOUT GUIDES (The "Visual Differentiators")
+                        // ═══════════════════════════════════════════════════════════════════
+                        ctx.save();
+                        const viewScale = this.network.getScale();
+                        const viewPos = this.network.getViewPosition();
+                        // Only draw if relatively zoomed in/out appropriately
+                        
+                        if (this.viewMode === 'city') {
+                            // MANHATTAN GRID
+                            ctx.strokeStyle = this.darkMode ? 'rgba(99, 102, 241, 0.03)' : 'rgba(0, 0, 0, 0.02)';
+                            ctx.lineWidth = 1;
+                            const gridSize = 400; 
+                            const range = 5000; 
+                            
+                            ctx.beginPath();
+                            for (let i = -range; i <= range; i += gridSize) {
+                                ctx.moveTo(i, -range);
+                                ctx.lineTo(i, range);
+                                ctx.moveTo(-range, i);
+                                ctx.lineTo(range, i);
+                            }
+                            ctx.stroke();
+
+                            // Watermark
+                            ctx.font = "900 60px Inter";
+                            ctx.fillStyle = this.darkMode ? "rgba(255, 255, 255, 0.02)" : "rgba(0, 0, 0, 0.02)";
+                            ctx.textAlign = "center";
+                            ctx.textBaseline = "middle";
+                            ctx.fillText("MANHATTAN SECTOR", 0, -3200);
+
+                        } else if (this.viewMode === 'campus' || this.viewMode === 'radial') {
+                            // RADIAL RINGS REMOVED per user request
+                        }
+                        ctx.restore();
+
+                        // ═══════════════════════════════════════════════════════════════════
+                        // PARALLEL LINKS (Custom Bundle Render)
+                        // ═══════════════════════════════════════════════════════════════════
+                        try {
+                            RAW_EDGES.forEach(edge => {
+                                if (!edge.parallel) return;
+                                
+                                const fromPos = this.network.getPositions([edge.from])[edge.from];
+                                const toPos = this.network.getPositions([edge.to])[edge.to];
+                                if (!fromPos || !toPos) return;
+                                
+                                // Calculate perpendicular offset for parallel lines
+                                const dx = toPos.x - fromPos.x;
+                                const dy = toPos.y - fromPos.y;
+                                const dist = Math.sqrt(dx * dx + dy * dy);
+                                if (dist === 0) return;
+                                
+                                // Perpendicular unit vector
+                                const perpX = -dy / dist;
+                                const perpY = dx / dist;
+                                
+                                // Offset distance (proportional to line width)
+                                const offset = (edge.width || 2) * 1.5;
+                                
+                                // Calculate the two parallel lines
+                                const line1From = { x: fromPos.x + perpX * offset, y: fromPos.y + perpY * offset };
+                                const line1To = { x: toPos.x + perpX * offset, y: toPos.y + perpY * offset };
+                                const line2From = { x: fromPos.x - perpX * offset, y: fromPos.y - perpY * offset };
+                                const line2To = { x: toPos.x - perpX * offset, y: toPos.y - perpY * offset };
+                                
+                                ctx.save();
+                                
+                                // Set line style based on edge properties
+                                ctx.strokeStyle = edge.color || '#8b5cf6';
+                                ctx.lineWidth = Math.max(1.5, (edge.width || 2) * 0.4);
+                                ctx.globalAlpha = 0.6;
+                                
+                                // Apply dash pattern if specified
+                                if (edge.dashes && Array.isArray(edge.dashes)) {
+                                    ctx.setLineDash(edge.dashes);
+                                } else {
+                                    ctx.setLineDash([]);
+                                }
+                                
+                                // Draw line 1
+                                ctx.beginPath();
+                                ctx.moveTo(line1From.x, line1From.y);
+                                ctx.lineTo(line1To.x, line1To.y);
+                                ctx.stroke();
+                                
+                                // Draw line 2
+                                ctx.beginPath();
+                                ctx.moveTo(line2From.x, line2From.y);
+                                ctx.lineTo(line2To.x, line2To.y);
+                                ctx.stroke();
+                                
+                                ctx.restore();
+                            });
+                        } catch (err) {
+                            console.error("Parallel Line Render Error:", err);
+                        }
+                        
+                        // ═══════════════════════════════════════════════════════════════════
+                        // GROUP BOX RENDERING
+                        // ═══════════════════════════════════════════════════════════════════
+                        let groups = [];
+                        
+                        try {
+                            // 1. Determine which group definitions to use
+                            if (this.viewMode === 'hierarchical' || this.viewMode === 'flow') {
+                                // Dynamic layouts don't have pre-calculated boxes, so we calculate from node positions
+                                const sourceMode = RAW_GROUPS['campus']?.length ? 'campus' : 
+                                                 RAW_GROUPS['city']?.length ? 'city' : 
+                                                 Object.keys(RAW_GROUPS)[0];
+                                
+                                if (sourceMode && RAW_GROUPS[sourceMode]) {
+                                    groups = RAW_GROUPS[sourceMode].map(g => {
+                                        const nodeLocations = RAW_NODES
+                                            .filter(rn => g.nodes && g.nodes.includes(rn.id))
+                                            .map(rn => this.network.getPositions([rn.id])[rn.id])
+                                            .filter(p => p !== undefined);
+                                        
+                                        // Shape Logic
+                                        // Force Shape based on Layout Mode if needed
+                                        let forcedShape = g.shape;
+                                        if (this.viewMode === 'city') forcedShape = 'rect';
+                                        if (this.viewMode === 'campus' || this.viewMode === 'radial') forcedShape = (g.shape === 'rect') ? 'hull' : g.shape || 'hull';
+
+                                        if (nodeLocations.length === 0) return null;
+                                        return {
+                                            ...g,
+                                            x: minX - pad, y: minY - pad,
+                                            w: (maxX - minX) + pad * 2, h: (maxY - minY) + pad * 2
+                                        };
+                                    }).filter(g => g !== null);
+                                }
+                            } else {
+                                // Static layouts (City/Campus) use pre-calculated boxes from Python
+                                groups = RAW_GROUPS[this.viewMode] || [];
+                            }
+
+                            // 2. Render the boxes
+                            // 2. Render the boxes (OR Hulls)
+                            groups.forEach(g => {
+                                ctx.save();
+                                const nodePoints = g.nodes
+                                     .map(nid => this.network.getPositions([nid])[nid])
+                                     .filter(p => p !== undefined);
+
+                                if (nodePoints.length === 0) { ctx.restore(); return; }
+
+                                // ─── PREMIUM STYLE ───
+                                // Emulate glassmorphism: faint fill + subtle glow + no border
+                                ctx.lineJoin = "round";
+                                ctx.lineCap = "round";
+                                ctx.fillStyle = g.color ? g.color.replace(/[\d.]+\)$/,"0.08)") : 
+                                               (this.darkMode ? 'rgba(99, 102, 241, 0.08)' : 'rgba(99, 102, 241, 0.05)');
+                                
+                                // Glowing subtle border
+                                ctx.shadowColor = g.color || (this.darkMode ? 'rgba(99, 102, 241, 0.4)' : 'rgba(99, 102, 241, 0.2)');
+                                ctx.shadowBlur = 15;
+                                ctx.strokeStyle = g.color ? g.color.replace('0.1', '0.25') : 
+                                                 (this.darkMode ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)');
+                                ctx.lineWidth = 1;
+                                ctx.setLineDash([]); // No dashes for premium look
+
+                                // ─── SHAPE LOGIC ───
+                                if (nodePoints.length === 1) {
+                                    // 1 Node -> Circle/Blob
+                                    const p = nodePoints[0];
+                                    const r = 50; // generous padding
+                                    ctx.beginPath();
+                                    ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+                                    ctx.fill();
+                                    ctx.stroke();
+                                    g.labelPos = { x: p.x, y: p.y - r };
+                                } else if (nodePoints.length === 2 && g.shape !== 'rect') {
+                                    // 2 Nodes -> Capsule (Pill)
+                                    const p1 = nodePoints[0], p2 = nodePoints[1];
+                                    const dx = p2.x - p1.x, dy = p2.y - p1.y;
+                                    const len = Math.sqrt(dx*dx + dy*dy);
+                                    const angle = Math.atan2(dy, dx);
+                                    const pad = 45;
+                                    
+                                    ctx.translate(p1.x, p1.y);
+                                    ctx.rotate(angle);
+                                    
+                                    ctx.beginPath();
+                                    // Draw capsule in local coords (0,0 to len,0)
+                                    ctx.arc(0, 0, pad, Math.PI/2, Math.PI*1.5); // Left cap
+                                    ctx.lineTo(len, -pad);       // Top edge
+                                    ctx.arc(len, 0, pad, -Math.PI/2, Math.PI/2); // Right cap
+                                    ctx.lineTo(0, pad);          // Bottom edge
+                                    ctx.closePath();
+                                    
+                                    ctx.fill();
+                                    ctx.stroke();
+                                    
+                                    ctx.rotate(-angle);
+                                    ctx.translate(-p1.x, -p1.y);
+                                    
+                                    g.labelPos = { x: (p1.x + p2.x)/2, y: Math.min(p1.y, p2.y) - pad };
+                                } else if (g.shape === 'hull' || g.shape === 'cloud' || nodePoints.length > 2) {
+                                    // 3+ Nodes -> Convex Hull
+                                    const hull = getConvexHull(nodePoints);
+                                    const cx = hull.reduce((s,p)=>s+p.x,0)/hull.length;
+                                    const cy = hull.reduce((s,p)=>s+p.y,0)/hull.length;
+                                    
+                                    // Better Padding: Extrude points outward by a constant visible amount
+                                    // instead of scaling from center (which balloons small groups)
+                                    const paddedHull = hull.map(p => {
+                                        const dx = p.x - cx;
+                                        const dy = p.y - cy;
+                                        const dist = Math.sqrt(dx*dx + dy*dy) || 1; // avoid divide by zero
+                                        
+                                        // Constant padding of 35px
+                                        const pad = 35; 
+                                        const uX = dx / dist;
+                                        const uY = dy / dist;
+                                        
+                                        return {
+                                            x: p.x + uX * pad,
+                                            y: p.y + uY * pad
+                                        };
+                                    });
+                                    
+                                    drawSmoothPolygon(ctx, paddedHull);
+                 
+                                    // Label at top-most point of hull
+                                    const topPoint = paddedHull.reduce((min, p) => p.y < min.y ? p : min, paddedHull[0]);
+                                    g.labelPos = { x: topPoint.x, y: topPoint.y };
+                                } else {
+                                    // Fallback Rect: Dynamically calculate bounds from current node positions
+                                    // instead of using static g.x/g.y/g.w/g.h which don't update on drag.
+                                    let minX = Infinity, minY = Infinity;
+                                    let maxX = -Infinity, maxY = -Infinity;
+                                    
+                                    nodePoints.forEach(p => {
+                                        if (p.x < minX) minX = p.x;
+                                        if (p.x > maxX) maxX = p.x;
+                                        if (p.y < minY) minY = p.y;
+                                        if (p.y > maxY) maxY = p.y;
+                                    });
+                                    
+                                    const pad = 40;
+                                    const x = minX - pad;
+                                    const y = minY - pad;
+                                    const w = (maxX - minX) + pad * 2;
+                                    const h = (maxY - minY) + pad * 2;
+                                    
+                                    if (ctx.roundRect) ctx.roundRect(x, y, w, h, 20);
+                                    else ctx.rect(x, y, w, h);
+                                    ctx.fill();
+                                    ctx.stroke();
+                                    g.labelPos = { x: x + 20, y: y };
+                                }
+
+                                // ─── LABEL RENDERING ───
+                                if (g.name && g.labelPos) {
+                                    ctx.font = "600 11px Inter";
+                                    ctx.fillStyle = this.darkMode ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.5)";
+                                    ctx.textAlign = "center";
+                                    ctx.textBaseline = "bottom";
+                                    ctx.shadowBlur = 0; // clear text shadow validity
+                                    ctx.fillText(g.name.toUpperCase(), g.labelPos.x, g.labelPos.y - 5);
+                                }
+                                ctx.restore();
+                            });
+                        } catch (err) {
+                            console.error("Group Render Error:", err);
+                        }
+                    });
+
+                    // Draw port labels and traffic particles
+                    this.network.on("afterDrawing", (ctx) => {
+
+                        // Draw port labels
+                        if (this.showPorts) {
+                            this.edges.get().forEach(edge => {
+                                const fromPos = this.network.getPositions([edge.from])[edge.from];
+                                const toPos = this.network.getPositions([edge.to])[edge.to];
+                                if (!fromPos || !toPos) return;
+
+                                const dx = toPos.x - fromPos.x;
+                                const dy = toPos.y - fromPos.y;
+                                const angle = Math.atan2(dy, dx);
+                                const nodeSize = 30;
+
+                                if (edge.from_port) {
+                                    const fx = fromPos.x + Math.cos(angle) * (nodeSize + 15);
+                                    const fy = fromPos.y + Math.sin(angle) * (nodeSize + 15);
+                                    this.drawPortLabel(ctx, edge.from_port, fx, fy);
+                                }
+                                if (edge.to_port) {
+                                    const tx = toPos.x - Math.cos(angle) * (nodeSize + 15);
+                                    const ty = toPos.y - Math.sin(angle) * (nodeSize + 15);
+                                    this.drawPortLabel(ctx, edge.to_port, tx, ty);
+                                }
+                            });
+                        }
+
+                        // Draw traffic particles (cable-specific animated dots)
+                        this.drawTrafficParticles(ctx);
+
+                        // ═══════════════════════════════════════════════════════════════════
+                        // ANNOTATION RENDERING
+                        // ═══════════════════════════════════════════════════════════════════
+                        try {
+                            RAW_ANNOTATIONS.forEach(ann => {
+                                ctx.save();
+                                const style = ann.style || 'note';
+                                
+                                // ─── POSITIONING LOGIC ───
+                                let x = ann.x || 0;
+                                let y = ann.y || 0;
+                                let hasTarget = false;
+
+                                // If a target node is specified, we anchor the annotation to it
+                                if (ann.target) {
+                                    const nodePos = this.network.getPositions([ann.target])[ann.target];
+                                    if (nodePos) {
+                                        // ─── OFFSET LOGIC ───
+                                        // If explicit offset_x/y are provided, use them (Cleaner schema)
+                                        if (ann.offset_x !== undefined || ann.offset_y !== undefined) {
+                                            x = nodePos.x + (ann.offset_x || 0);
+                                            y = nodePos.y + (ann.offset_y || 0);
+                                        } else {
+                                            // Fallback: Treat existing x/y as offsets to keep backward compat
+                                            // with the behavior introduced in the previous step
+                                            x = nodePos.x + (ann.x || 0);
+                                            y = nodePos.y + (ann.y || 0);
+                                        }
+                                        hasTarget = true;
+                                    }
+                                }
+
+                                if (style === 'tag') {
+                                    // Tags have specific smart-positioning logic relative to the anchor
+                                    if (hasTarget) {
+                                        // Reset to node center for the specific tag offset logic below
+                                        // (The existing tag logic expects base node coordinates)
+                                        const nodePos = this.network.getPositions([ann.target])[ann.target];
+                                        let tx = nodePos.x; 
+                                        let ty = nodePos.y;
+                                        
+                                        const offset = 45; 
+                                        const diag = 35; 
+
+                                        if (ann.position) {
+                                            switch(ann.position.toLowerCase()) {
+                                                case 'top': ty -= offset; break;
+                                                case 'bottom': ty += offset; break;
+                                                case 'left': tx -= offset; break;
+                                                case 'right': tx += offset; break;
+                                                case 'top-right': tx += diag; ty -= diag; break;
+                                                case 'top-left': tx -= diag; ty -= diag; break;
+                                                case 'bottom-right': tx += diag; ty += diag; break;
+                                                case 'bottom-left': tx -= diag; ty += diag; break;
+                                            }
+                                        } else {
+                                            // Legacy fallback (add manual offsets if defined)
+                                            tx += (ann.offset_x || 0);
+                                            ty += (ann.offset_y || -60);
+                                        }
+                                        this.drawTagAnnotation(ctx, ann.text, tx, ty);
+                                    }
+                                } else {
+                                    // Free-floating text (h2, note) OR Anchored Note
+                                    // If anchored, x/y are already adjusted above to be Node + Offset
+                                    
+                                    if (style === 'h1') {
+                                        this.drawMainTitle(ctx, ann.text, x, y);
+                                    } else if (style === 'h2' || style === 'h3') {
+                                        this.drawHeaderAnnotation(ctx, ann.text, x, y, style);
+                                    } else {
+                                        this.drawNoteAnnotation(ctx, ann.text, x, y);
+                                    }
+                                }
+                                ctx.restore();
+                            });
+                        } catch (err) {
+                            console.error("Annotation Render Error:", err);
+                        }
+                    });
+
+                    // Keyboard shortcuts
+                    document.addEventListener('keydown', (e) => {
+                        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                            e.preventDefault();
+                            this.showPalette = true;
+                            this.$nextTick(() => this.$refs.paletteInput?.focus());
+                        }
+                    });
+
+                    this.updateLayout(this.viewMode);
+                    setTimeout(() => {
+                        this.network.fit();
+                        // Start traffic by default
+                        this.initTrafficParticles();
+                        this.animateTraffic();
+                    }, 500);
+                },
+
+                toggleDarkMode() {
+                    this.darkMode = !this.darkMode;
+                    document.body.classList.toggle('light-mode', !this.darkMode);
+                    this.network.setOptions(this.getOptions());
+                    this.network.redraw();
+                },
+
+                processNodes() {
+                    return RAW_NODES.map(n => ({ ...n }));
+                },
+
+                drawTagAnnotation(ctx, text, x, y) {
+                    ctx.font = "600 11px Inter";
+                    const w = ctx.measureText(text).width + 20;
+                    ctx.fillStyle = this.darkMode ? "rgba(79, 70, 229, 0.9)" : "rgba(99, 102, 241, 0.9)";
+                    ctx.beginPath();
+                    if (ctx.roundRect) ctx.roundRect(x - w / 2, y - 10, w, 20, 10);
+                    else ctx.rect(x - w / 2, y - 10, w, 20);
+                    ctx.fill();
+                    
+                    ctx.fillStyle = "#ffffff";
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText(text, x, y);
+                },
+
+                drawMainTitle(ctx, text, x, y) {
+                    ctx.font = "900 72px Inter";
+                    ctx.fillStyle = this.darkMode ? "rgba(255, 255, 255, 0.05)" : "rgba(0,0,0,0.03)";
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText(text.toUpperCase(), x, y);
+                },
+
+                drawHeaderAnnotation(ctx, text, x, y, style = 'h2') {
+                    const size = (style === 'h1') ? 32 : (style === 'h2' ? 24 : 18);
+                    ctx.font = `bold ${size}px Inter`;
+                    ctx.fillStyle = this.darkMode ? "rgba(255, 255, 255, 0.9)" : "#1e293b";
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.shadowColor = this.darkMode ? "rgba(0,0,0,0.5)" : "rgba(0,0,0,0.1)";
+                    ctx.shadowBlur = 10;
+                    ctx.fillText(text, x, y);
+                    ctx.shadowBlur = 0;
+                },
+
+                drawNoteAnnotation(ctx, text, x, y) {
+                    const lines = text.split('\n');
+                    ctx.font = "12px 'Space Mono'";
+                    const lineHeight = 16;
+                    const w = Math.max(...lines.map(l => ctx.measureText(l).width)) + 20;
+                    const h = lines.length * lineHeight + 20;
+                    
+                    // Draw Post-it style box
+                    ctx.fillStyle = this.darkMode ? "rgba(30, 41, 59, 0.8)" : "rgba(254, 252, 232, 0.9)";
+                    ctx.strokeStyle = this.darkMode ? "rgba(148, 163, 184, 0.2)" : "rgba(234, 179, 8, 0.4)";
+                    ctx.lineWidth = 1;
+                    
+                    ctx.beginPath();
+                    if (ctx.roundRect) ctx.roundRect(x, y, w, h, 6);
+                    else ctx.rect(x, y, w, h);
+                    ctx.fill();
+                    ctx.stroke();
+                    
+                    // Text
+                    ctx.fillStyle = this.darkMode ? "#cbd5e1" : "#854d0e";
+                    ctx.textAlign = "left";
+                    ctx.textBaseline = "top";
+                    lines.forEach((line, i) => {
+                        ctx.fillText(line, x + 10, y + 10 + (i * lineHeight));
+                    });
+                },
+
+                drawPortLabel(ctx, text, x, y) {
+                    ctx.font = "600 9px 'Space Mono'";
+                    const pad = 5;
+                    const w = ctx.measureText(text).width + pad * 2;
+                    ctx.fillStyle = this.darkMode ? "rgba(9, 9, 11, 0.9)" : "rgba(255, 255, 255, 0.95)";
+                    ctx.strokeStyle = this.darkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.05)";
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.roundRect(x - w / 2, y - 8, w, 16, 4);
+                    ctx.fill();
+                    ctx.stroke();
+                    ctx.fillStyle = this.darkMode ? "#a1a1aa" : "#4b5563";
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText(text, x, y);
+                },
+
+                getOptions() {
+                    const isPhysics = false;
+                    const isBlueprint = this.visualMode === 'blueprint';
+
+                    return {
+                        nodes: {
+                            font: {
+                                color: this.showLabels ? (this.darkMode ? '#fafafa' : '#111827') : 'transparent',
+                                size: 13,
+                                face: 'Inter',
+                                strokeWidth: this.showLabels ? 3 : 0,
+                                strokeColor: this.showLabels ? (this.darkMode ? 'rgba(9, 9, 11, 0.8)' : 'rgba(255, 255, 255, 0.8)') : 'transparent'
+                            },
+                            borderWidth: 0,
+                            shadow: !isBlueprint && {
+                                enabled: true,
+                                color: this.darkMode ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.1)',
+                                size: 12,
+                                x: 0, y: 4
+                            }
+                        },
+                        edges: {
+                            color: {
+                                color: (this.darkMode ? '#3f3f46' : '#d1d5db'),
+                                highlight: '#6366f1',
+                                opacity: 0.7
+                            },
+                            smooth: { 
+                                enabled: false
+                            },
+                            width: 1.5
+                        },
+                        interaction: { hover: true, dragNodes: !this.isLocked, tooltipDelay: 300 },
+                        physics: {
+                            // ALL LAYOUTS NOW USE PRE-CALCULATED POSITIONS FROM PYTHON
+                            // No physics simulation needed - clean, instant, professional diagrams
+                            enabled: false
+                        },
+                        layout: {
+                            // Disable vis.js hierarchical layout - we use Python-calculated positions
+                            hierarchical: { enabled: false }
+                        }
+                    };
+                },
+
+                updateLayout(mode) {
+                    this.viewMode = mode;
+                    
+                    // ═══════════════════════════════════════════════════════════════════
+                    // STAGE 1: PREPARE - Stop all physics and hierarchical layout
+                    // ═══════════════════════════════════════════════════════════════════
+                    // CRITICAL: When switching FROM hierarchical/flow TO static layouts,
+                    // we must explicitly disable BOTH physics AND hierarchical layout,
+                    // otherwise Vis.js continues animating nodes.
+                    this.network.setOptions({ 
+                        physics: { enabled: false },
+                        layout: { hierarchical: { enabled: false } }
+                    });
+                    
+                    // Force stop any running physics simulation
+                    try { this.network.stopSimulation(); } catch(e) {}
+
+                    // Calculate Start and Target positions
+                    const startPositions = this.network.getPositions(); // Current canvas coords
+                    const targets = {};
+                    
+                    RAW_NODES.forEach(n => {
+                        let tx, ty;
+                        if (mode === 'city') { tx = n.x; ty = n.y; }
+                        else if (mode === 'radial') { tx = n.radial_x || n.x; ty = n.radial_y || n.y; }
+                        else if (mode === 'campus') { tx = n.campus_x || n.x; ty = n.campus_y || n.y; }
+                        else if (mode === 'hierarchical') { tx = n.hierarchical_x || n.x; ty = n.hierarchical_y || n.y; }
+                        else if (mode === 'flow') { tx = n.flow_x || n.hierarchical_x || n.x; ty = n.flow_y || n.hierarchical_y || n.y; }
+                        else { tx = n.x; ty = n.y; } // Fallback
+                        targets[n.id] = { x: tx, y: ty };
+                    });
+
+                    // ═══════════════════════════════════════════════════════════════════
+                    // STAGE 2: GUIDED FLIGHT (Manual Animation)
+                    // ═══════════════════════════════════════════════════════════════════
+                    const startTime = performance.now();
+                    const duration = 1000; // 1s flight time
+                    
+                    const animate = (time) => {
+                        const elapsed = time - startTime;
+                        const progress = Math.min(elapsed / duration, 1);
+                        
+                        // Easing: easeOutCubic (starts fast, slows down)
+                        const ease = 1 - Math.pow(1 - progress, 3);
+                        
+                        const currentUpdates = [];
+                        
+                        RAW_NODES.forEach(n => {
+                            const start = startPositions[n.id];
+                            const target = targets[n.id];
+                            
+                            if (start && target) {
+                                currentUpdates.push({
+                                    id: n.id,
+                                    x: start.x + (target.x - start.x) * ease,
+                                    y: start.y + (target.y - start.y) * ease
+                                });
+                            }
+                        });
+                        
+                        this.nodes.update(currentUpdates);
+                        
+                        if (progress < 1) {
+                            requestAnimationFrame(animate);
+                        } else {
+                            // ═══════════════════════════════════════════════════════════════════
+                            // STAGE 3: FINALIZE - Lock positions for static layouts
+                            // ═══════════════════════════════════════════════════════════════════
+                            // For static layouts (city/campus/radial), ensure physics stays OFF
+                            // and hierarchical layout is disabled
+                            this.network.setOptions({
+                                physics: { enabled: false },
+                                layout: { hierarchical: { enabled: false } }
+                            });
+                        }
+                    };
+                    
+                    requestAnimationFrame(animate);
+                },
+
+                updateVisual(mode) {
+                    this.visualMode = mode;
+                    const updates = this.nodes.get().map(n => {
+                        const orig = RAW_NODES.find(o => o.id === n.id);
+                        if (mode === 'realistic') {
+                            return {
+                                id: n.id,
+                                shape: orig.image ? 'image' : 'dot',
+                                size: orig.size || 30,
+                                image: orig.image,
+                                color: this.getNodeColor(orig.type)
+                            };
+                        } else {
+                            return {
+                                id: n.id,
+                                shape: 'dot',
+                                size: 8,
+                                image: undefined,
+                                color: '#6366f1'
+                            };
+                        }
+                    });
+                    this.nodes.update(updates);
+                    this.refresh();
+                },
+
+                toggleLock() {
+                    this.isLocked = !this.isLocked;
+                    this.network.setOptions({ interaction: { dragNodes: !this.isLocked } });
+                },
+
+                getNodeColor(type) {
+                    const colors = {
+                        firewall: '#ef4444',
+                        router: '#3b82f6',
+                        switch: '#10b981',
+                        server: '#a855f7',
+                        host: '#64748b',
+                        cloud: '#06b6d4'
+                    };
+                    return colors[type?.toLowerCase()] || '#6366f1';
+                },
+
+                refresh() {
+                    this.network.setOptions(this.getOptions());
+
+                    const scale = this.network.getScale();
+                    const pos = this.network.getViewPosition();
+                    this.network.setOptions(this.getOptions());
+
+                    this.network.moveTo({ position: pos, scale, animation: false });
+                },
+
+                deselectNode() {
+                    // Simulate clicking on empty canvas to trigger natural deselect
+                    const canvas = document.querySelector('#network-canvas canvas');
+                    if (canvas) {
+                        const rect = canvas.getBoundingClientRect();
+                        // Click on a corner (likely empty space)
+                        const event = new MouseEvent('click', {
+                            bubbles: true,
+                            clientX: rect.left + 10,
+                            clientY: rect.top + 10
+                        });
+                        canvas.dispatchEvent(event);
+                    }
+                    // Also force clear selection state
+                    this.selectedNode = null;
+                },
+
+                zoomIn() {
+                    this.network.moveTo({ scale: this.network.getScale() * 1.3, animation: { duration: 300 } });
+                },
+
+                zoomOut() {
+                    this.network.moveTo({ scale: this.network.getScale() / 1.3, animation: { duration: 300 } });
+                },
+
+                resetView() {
+                    this.network.fit({ animation: { duration: 500 } });
+                },
+
+                focusNode(node) {
+                    this.showPalette = false;
+                    this.searchQuery = '';
+                    this.network.focus(node.id, { scale: 1.2, animation: true });
+                    this.network.selectNodes([node.id]);
+                    this.selectedNode = this.nodes.get(node.id);
+                },
+
+                executeSearch() {
+                    if (this.filteredNodes.length > 0) {
+                        this.focusNode(this.filteredNodes[0]);
+                    }
+                },
+
+                generateConfig(node) {
+                    if (!node) return '';
+                    if (node.running_config) return node.running_config;
+
+                    const type = node.type || 'generic';
+                    let config = `! Auto-generated configuration\n! Device: ${node.id}\n! Type: ${type}\n\n`;
+
+                    if (type === 'server' || type === 'host') {
+                        config += `# Netplan Configuration\nnetwork:\n  version: 2\n  ethernets:\n    eth0:\n      dhcp4: true\n`;
+                    } else {
+                        config += `hostname ${node.id}\n!\n`;
+                        const links = RAW_EDGES.filter(e => e.from === node.id || e.to === node.id);
+                        links.forEach((link, idx) => {
+                            const isSource = link.from === node.id;
+                            const iface = (isSource ? link.from_port : link.to_port) || `GigabitEthernet0/${idx}`;
+                            const neighbor = isSource ? link.to : link.from;
+                            config += `interface ${iface}\n description Link to ${neighbor}\n no shutdown\n!\n`;
+                        });
+                    }
+                    return config;
+                },
+
+                copyConfig() {
+                    navigator.clipboard.writeText(this.generateConfig(this.selectedNode));
+                    this.copying = true;
+                    setTimeout(() => this.copying = false, 2000);
+                },
+
+                // ═══════════════════════════════════════════════════════════════════════
+                // TRAFFIC ANIMATION SYSTEM - Particles follow edge paths with cable-specific styling
+                // ═══════════════════════════════════════════════════════════════════════
+
+                toggleTraffic() {
+                    this.showTraffic = !this.showTraffic;
+                    if (this.showTraffic) {
+                        this.initTrafficParticles();
+                        this.animateTraffic();
+                    } else {
+                        if (this.trafficAnimationId) {
+                            cancelAnimationFrame(this.trafficAnimationId);
+                            this.trafficAnimationId = null;
+                        }
+                        this.trafficParticles = [];
+                        this.network.redraw(); // Clear particles from canvas
+                    }
+                },
+
+                initTrafficParticles() {
+                    this.trafficParticles = [];
+                    
+                    RAW_EDGES.forEach((edge, edgeIndex) => {
+                        const cableType = (edge.cable_type || 'ethernet').toLowerCase();
+                        const config = TRAFFIC_CONFIG[cableType] || TRAFFIC_CONFIG.ethernet;
+                        const color = edge.color || '#94a3b8';
+                        
+                        // Create multiple particles per edge based on cable type
+                        for (let i = 0; i < config.count; i++) {
+                            this.trafficParticles.push({
+                                edgeIndex: edgeIndex,
+                                edge: edge,
+                                progress: i / config.count, // Stagger start positions
+                                speed: config.speed * (0.8 + Math.random() * 0.4), // Slight variation
+                                size: config.size,
+                                color: color,
+                                glow: config.glow,
+                                fade: config.fade || false,
+                                direction: Math.random() > 0.5 ? 1 : -1 // Bidirectional traffic
+                            });
+                        }
+                    });
+                },
+
+                animateTraffic() {
+                    if (!this.showTraffic) return;
+                    
+                    // Update particle positions
+                    this.trafficParticles.forEach(particle => {
+                        particle.progress += particle.speed * particle.direction;
+                        
+                        // Wrap around when reaching endpoints
+                        if (particle.progress > 1) particle.progress = 0;
+                        if (particle.progress < 0) particle.progress = 1;
+                    });
+                    
+                    // Trigger redraw
+                    this.network.redraw();
+                    
+                    // Continue animation loop
+                    this.trafficAnimationId = requestAnimationFrame(() => this.animateTraffic());
+                },
+
+                // Called from afterDrawing event to render traffic particles
+                drawTrafficParticles(ctx) {
+                    if (!this.showTraffic || this.trafficParticles.length === 0) return;
+                    
+                    // Cache vis.js edges for performance
+                    const visEdges = this.network.body.edges;
+                    
+                    this.trafficParticles.forEach(particle => {
+                        try {
+                            // Find the corresponding vis.js edge
+                            let visEdge = null;
+                            for (const key in visEdges) {
+                                const e = visEdges[key];
+                                if (e.fromId === particle.edge.from && e.toId === particle.edge.to) {
+                                    visEdge = e;
+                                    break;
+                                }
+                            }
+                            
+                            if (!visEdge || !visEdge.edgeType) return;
+                            
+                            // Use vis.js internal method to get point on the actual rendered edge
+                            // The getPoint method returns {x, y} at position t (0 to 1) along the edge
+                            let point;
+                            if (typeof visEdge.edgeType.getPoint === 'function') {
+                                point = visEdge.edgeType.getPoint(particle.progress);
+                            } else {
+                                // Fallback: linear interpolation between nodes
+                                const fromPos = this.network.getPositions([particle.edge.from])[particle.edge.from];
+                                const toPos = this.network.getPositions([particle.edge.to])[particle.edge.to];
+                                if (!fromPos || !toPos) return;
+                                point = {
+                                    x: fromPos.x + (toPos.x - fromPos.x) * particle.progress,
+                                    y: fromPos.y + (toPos.y - fromPos.y) * particle.progress
+                                };
+                            }
+                            
+                            if (!point || isNaN(point.x) || isNaN(point.y)) return;
+                            
+                            ctx.save();
+                            
+                            // Apply glow effect for fiber/smf/tunnel cables
+                            if (particle.glow) {
+                                ctx.shadowColor = particle.color;
+                                ctx.shadowBlur = 15;
+                            }
+                            
+                            // Apply fade effect for wireless
+                            const alpha = particle.fade ? (0.4 + Math.sin(particle.progress * Math.PI) * 0.6) : 1;
+                            
+                            // Draw the particle dot
+                            ctx.beginPath();
+                            ctx.arc(point.x, point.y, particle.size, 0, Math.PI * 2);
+                            
+                            // Convert color to rgba with alpha
+                            let fillColor = particle.color;
+                            if (fillColor.startsWith('#')) {
+                                const r = parseInt(fillColor.slice(1, 3), 16);
+                                const g = parseInt(fillColor.slice(3, 5), 16);
+                                const b = parseInt(fillColor.slice(5, 7), 16);
+                                fillColor = `rgba(${r}, ${g}, ${b}, ${alpha})`;
+                            } else if (fillColor.startsWith('rgba')) {
+                                fillColor = fillColor.replace(/[\d.]+\)$/, `${alpha})`);
+                            }
+                            
+                            ctx.fillStyle = fillColor;
+                            ctx.fill();
+                            
+                            // Add bright core for glow effect (fiber optic look)
+                            if (particle.glow) {
+                                ctx.beginPath();
+                                ctx.arc(point.x, point.y, particle.size * 0.4, 0, Math.PI * 2);
+                                ctx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.8})`;
+                                ctx.fill();
+                            }
+                            
+                            ctx.restore();
+                        } catch (e) {
+                            // Skip this particle on error
+                        }
+                    });
+                },
+
+                // ═══════════════════════════════════════════════════════════════════════
+                // MINI-MAP IMPLEMENTATION
+                // ═══════════════════════════════════════════════════════════════════════
+                 
+                // ═══════════════════════════════════════════════════════════════════════
+                // MINI-MAP IMPLEMENTATION (Advanced RTS Style)
+                // ═══════════════════════════════════════════════════════════════════════
+                 
+                initMinimap() {
+                    this.minimapCanvas = document.getElementById('minimap-canvas');
+                    if (this.minimapCanvas) {
+                         this.minimapCtx = this.minimapCanvas.getContext('2d');
+                         // Initial Draw
+                         setTimeout(() => this.drawMinimap(), 500);
+                    }
+
+                    // Hook into redraw (pan/zoom/drag)
+                    if (this.network) {
+                         this.network.on('afterDrawing', () => {
+                             // Use rAF to avoid blocking the main render loop
+                             requestAnimationFrame(() => this.drawMinimap());
+                         });
+                    }
+                },
+
+                drawMinimap() {
+                    if (!this.minimapCtx || !this.network) return;
+                    
+                    const ctx = this.minimapCtx;
+                    const w = this.minimapCanvas.width;
+                    const h = this.minimapCanvas.height;
+                    
+                    // 1. Get positions (Snapshot of current layout)
+                    const positions = this.network.getPositions();
+                    const ids = Object.keys(positions);
+                    if (ids.length === 0) return;
+                    
+                    // 2. Calculate World Bounds dynamically
+                    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+                    
+                    for (let id of ids) {
+                        const p = positions[id];
+                        if (p.x < minX) minX = p.x;
+                        if (p.x > maxX) maxX = p.x;
+                        if (p.y < minY) minY = p.y;
+                        if (p.y > maxY) maxY = p.y;
+                    }
+                    
+                    // Padding (maintain context)
+                    const pad = 400; 
+                    minX -= pad; maxX += pad;
+                    minY -= pad; maxY += pad;
+                    
+                    const worldW = maxX - minX;
+                    const worldH = maxY - minY;
+                    
+                    if (worldW <= 0 || worldH <= 0) return;
+                    
+                    // 3. Scale and Center
+                    const scaleX = w / worldW;
+                    const scaleY = h / worldH;
+                    const scale = Math.min(scaleX, scaleY);
+                    
+                    const contentW = worldW * scale;
+                    const contentH = worldH * scale;
+                    const offX = (w - contentW) / 2;
+                    const offY = (h - contentH) / 2;
+                    
+                    const toMini = (x, y) => ({
+                        x: offX + (x - minX) * scale,
+                        y: offY + (y - minY) * scale
+                    });
+                    
+                    // Save for interaction
+                    this.mmBounds = { minX, minY, scale, offX, offY };
+                    
+                    // 4. DRAW
+                    ctx.clearRect(0, 0, w, h);
+                    
+                    // A. Draw Groups (Background Sectors)
+                    if (RAW_GROUPS) {
+                        const activeGroups = (this.viewMode === 'hierarchical' || this.viewMode === 'flow') 
+                                            ? (RAW_GROUPS['campus'] || []) : (RAW_GROUPS[this.viewMode] || []);
+                        
+                        activeGroups.forEach(g => {
+                            if (!g.nodes || g.nodes.length === 0) return;
+                            
+                            // Find group bounds from its nodes
+                            let gMinX = Infinity, gMaxX = -Infinity, gMinY = Infinity, gMaxY = -Infinity;
+                            let hasNodes = false;
+                            
+                            g.nodes.forEach(nid => {
+                                const p = positions[nid];
+                                if (p) {
+                                    if (p.x < gMinX) gMinX = p.x;
+                                    if (p.x > gMaxX) gMaxX = p.x;
+                                    if (p.y < gMinY) gMinY = p.y;
+                                    if (p.y > gMaxY) gMaxY = p.y;
+                                    hasNodes = true;
+                                }
+                            });
+                            
+                            if (hasNodes) {
+                                // Add visible padding to group
+                                const gPad = 100;
+                                const p1 = toMini(gMinX - gPad, gMinY - gPad);
+                                const p2 = toMini(gMaxX + gPad, gMaxY + gPad);
+                                
+                                ctx.fillStyle = g.color ? g.color.replace(/[\d.]+\)$/,"0.15)") : 'rgba(255,255,255,0.05)';
+                                ctx.strokeStyle = g.color ? g.color.replace(/[\d.]+\)$/,"0.3)") : 'rgba(255,255,255,0.1)';
+                                ctx.lineWidth = 1;
+                                
+                                ctx.beginPath();
+                                ctx.rect(p1.x, p1.y, p2.x - p1.x, p2.y - p1.y);
+                                ctx.fill();
+                                ctx.stroke();
+                            }
+                        });
+                    }
+
+                    // B. Draw Nodes (Color-Coded)
+                    for (let id of ids) {
+                         const pos = positions[id];
+                         const nodeData = RAW_NODES.find(n => n.id === id);
+                         const m = toMini(pos.x, pos.y);
+                         
+                         ctx.fillStyle = this.getNodeColor(nodeData?.type);
+                         ctx.beginPath();
+                         ctx.arc(m.x, m.y, 1.8, 0, Math.PI * 2);
+                         ctx.fill();
+                    }
+                    
+                    // C. Draw Viewport Rect (Camera)
+                    const viewPos = this.network.getViewPosition();
+                    const viewScale = this.network.getScale();
+                    const container = document.getElementById('network-canvas');
+                    
+                    if (container) {
+                        const viewW = container.clientWidth / viewScale;
+                        const viewH = container.clientHeight / viewScale;
+                        
+                        const viewLeft = viewPos.x - viewW / 2;
+                        const viewTop = viewPos.y - viewH / 2;
+                        
+                        const p1 = toMini(viewLeft, viewTop); 
+                        const p2 = toMini(viewLeft + viewW, viewTop + viewH);
+                        
+                        ctx.strokeStyle = this.darkMode ? '#fafafa' : 'rgba(15, 23, 42, 0.6)'; 
+                        ctx.lineWidth = 1;
+                        ctx.setLineDash([]);
+                        
+                        const rectW = p2.x - p1.x;
+                        const rectH = p2.y - p1.y;
+                        
+                        // Rounded Rect
+                        ctx.beginPath();
+                        if (ctx.roundRect) {
+                            ctx.roundRect(p1.x, p1.y, rectW, rectH, 6);
+                        } else {
+                            ctx.rect(p1.x, p1.y, rectW, rectH);
+                        }
+                        ctx.stroke();
+                        
+                        // Fill with faint white/slate
+                        ctx.fillStyle = this.darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(15, 23, 42, 0.05)';
+                        ctx.fill();
+                    }
+                },
+                
+                startMinimapDrag(e) {
+                    this.isDraggingMini = true;
+                    // Treat start as a click-to-jump too
+                    this.dragMinimap(e);
+                },
+
+                stopMinimapDrag() {
+                    this.isDraggingMini = false;
+                },
+                
+                dragMinimap(e) {
+                    if (!this.isDraggingMini || !this.mmBounds || !this.network) return;
+                    if (e.type === 'touchmove') e.preventDefault(); // Prevent scroll on mobile
+                    
+                    // Get pointer pos
+                    const clientX = e.type.startsWith('touch') ? e.touches[0].clientX : e.clientX;
+                    const clientY = e.type.startsWith('touch') ? e.touches[0].clientY : e.clientY;
+                    
+                    const rect = this.minimapCanvas.getBoundingClientRect();
+                    const cx = clientX - rect.left;
+                    const cy = clientY - rect.top;
+                    
+                    const { minX, minY, scale, offX, offY } = this.mmBounds;
+                    
+                    // Transform Click -> World
+                    const worldX = ((cx - offX) / scale) + minX;
+                    const worldY = ((cy - offY) / scale) + minY;
+                    
+                    // RTS Style: Move camera center to this world position
+                    // Use moveTo without animation for instant snap during drag
+                    this.network.moveTo({
+                        position: { x: worldX, y: worldY },
+                        animation: false
+                    });
+                }
+            };
+        }
+    </script>
+</body>

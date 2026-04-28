@@ -1,0 +1,62 @@
+<div class="inspector glass" :class="{ 'active': selectedNode }">
+    <div class="inspector-header">
+        <div>
+            <div class="inspector-title" x-text="selectedNode ? (selectedNode.label || selectedNode.id) : 'Node Info'"></div>
+            <div class="inspector-subtitle">
+                <div class="status-dot"></div>
+                <span x-text="selectedNode ? selectedNode.id : 'No Selection'"></span>
+            </div>
+        </div>
+        <button class="inspector-close" @click="selectedNode = null; deselectNode()">&times;</button>
+    </div>
+
+    <!-- Tabs -->
+    <div class="inspector-tabs">
+        <button class="tab-btn" :class="{ 'active': hudTab === 'overview' }" @click="hudTab = 'overview'">Overview</button>
+        <button class="tab-btn" :class="{ 'active': hudTab === 'config' }" @click="hudTab = 'config'">Config</button>
+    </div>
+
+    <div class="inspector-content">
+        <!-- Overview Tab -->
+        <div x-show="hudTab === 'overview'" x-transition>
+            <div class="info-block">
+                <div class="info-grid">
+                    <div>
+                        <div class="info-label">Type</div>
+                        <div class="info-value highlight" x-text="selectedNode && selectedNode.type ? selectedNode.type.toUpperCase() : 'GENERIC'"></div>
+                    </div>
+                    <div>
+                        <div class="info-label">Level</div>
+                        <div class="info-value" x-text="selectedNode ? (selectedNode.level || '3') : 'N/A'"></div>
+                    </div>
+                </div>
+            </div>
+
+
+
+            <!-- Design Notes Section -->
+            <template x-if="selectedNode && selectedNode.design_notes">
+                <div class="info-block">
+                    <div class="info-label">Design Notes</div>
+                    <div class="design-notes" x-text="selectedNode.design_notes"></div>
+                </div>
+            </template>
+        </div>
+
+        <!-- Config Tab -->
+        <div x-show="hudTab === 'config'" x-transition>
+            <div class="config-warning">
+                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                Based on inferred topology
+            </div>
+            <div class="config-block" x-text="generateConfig(selectedNode)"></div>
+            <button class="copy-btn" @click="copyConfig()">
+                <span x-text="copying ? 'Copied!' : 'Copy to Clipboard'"></span>
+            </button>
+        </div>
+    </div>
+</div>

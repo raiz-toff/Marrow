@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Monitor Stand -->
+  <path d="M24 54L28 44H36L40 54H24Z" fill="#64748b"/>
+  <rect x="20" y="54" width="24" height="4" rx="1" fill="#475569"/>
+  
+  <!-- Monitor Bezel -->
+  <rect x="8" y="10" width="48" height="34" rx="2" fill="#1e293b" stroke="#94a3b8" stroke-width="2"/>
+  
+  <!-- Screen -->
+  <rect x="12" y="14" width="40" height="26" fill="#0f172a"/>
+  
+  <!-- Screen Content (Terminal/Code lines) -->
+  <rect x="15" y="18" width="20" height="2" fill="#22c55e" opacity="0.8"/>
+  <rect x="15" y="24" width="28" height="2" fill="#38bdf8" opacity="0.6"/>
+  <rect x="15" y="30" width="14" height="2" fill="#94a3b8" opacity="0.5"/>
+</svg>
