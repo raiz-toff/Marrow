@@ -458,8 +458,10 @@ function fillInspector(maps: DeviceMaps, d: DataDevice, onGoto: (id: string) => 
             const mine = l.from.device === d.id ? l.from : l.to;
             const other = l.from.device === d.id ? l.to : l.from;
             const otherName = maps.deviceById.get(other.device)?.name ?? other.device;
-            const meta = [l.speed, l.kind, l.lag].filter(Boolean).join(' · ');
-            return `<li><button data-goto="${h(other.device)}"><span class="m-link-other">${h(otherName)}</span><span class="m-link-ports">${h(mine.port ?? '—')} → ${h(other.port ?? '—')}</span>${meta ? `<span class="m-link-meta">${h(meta)}</span>` : ''}</button></li>`;
+            // the line itself, drawn as the canvas draws it, then the words
+            const words = [l.kind, l.speed, l.lag].filter(Boolean).join(' · ');
+            const meta = `<span class="m-link-meta">${linkSwatch(l)}${words ? `<span>${h(words)}</span>` : ''}</span>`;
+            return `<li><button data-goto="${h(other.device)}"><span class="m-link-other">${h(otherName)}</span><span class="m-link-ports">${h(mine.port ?? '—')} → ${h(other.port ?? '—')}</span>${meta}</button></li>`;
           })
           .join('')}</ul>`
       : '',
@@ -1895,6 +1897,28 @@ function syncHash(ctx: Ctx): void {
 
 function html(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+/**
+ * A miniature of the link exactly as the canvas draws it.
+ *
+ * It reuses the real edge classes (`m-edge`, `m-speed-*`, `m-status-*`,
+ * `m-flow`) rather than restating them, so the swatch inherits stroke width
+ * from speed, colour/dash from status, and the flowing-dash animation — and
+ * can never drift out of sync with the diagram.
+ */
+function linkSwatch(l: DataLink): string {
+  const cls =
+    'm-edge' +
+    ` m-status-${cssSafe(l.status)}` +
+    (l.speed ? ` m-speed-${cssSafe(l.speed)}` : '') +
+    (l.animated ? ' m-flow' : '');
+  return (
+    // no pathLength here: the swatch is a real 56px line, so the px dash
+    // patterns render as drawn (a normalised path would swallow them whole)
+    `<svg class="m-swatch" viewBox="0 0 56 10" aria-hidden="true">` +
+    `<path class="${cls}" d="M1 5H55"/></svg>`
+  );
 }
 
 function cssSafe(s: string): string {

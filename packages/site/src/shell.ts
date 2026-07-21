@@ -1,3 +1,4 @@
+import type { Brand } from './brand.js';
 import { SITE_CSS } from './styles.js';
 
 /** Breadcrumb segment; no href = current page. */
@@ -28,8 +29,8 @@ export interface ShellOptions {
   body?: string;
   /** Watermark sub-line (topology description). */
   subtitle?: string;
-  /** Author branding shown in the page margin around the boxed viewport. */
-  backdrop?: { text?: string; note?: string };
+  /** Global branding from brand/brand.html — the single source for the mark. */
+  brand?: Brand;
   /** JSON payload for the runtime (already serialized + escaped). */
   dataJson: string;
   /** inline: single-file export. external: shared assets/ (site mode). */
@@ -71,6 +72,10 @@ const I = {
   ),
   list: ic('<path d="M3 12h.01"/><path d="M3 18h.01"/><path d="M3 6h.01"/><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/>'),
   logo: ic('<path d="M12 2.5 20.5 7v10L12 21.5 3.5 17V7Z"/><circle cx="12" cy="12" r="2.5" fill="currentColor" stroke="none"/>', 18),
+  github: ic(
+    '<path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.4 5.4 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/>',
+    14,
+  ),
   pin: ic(
     '<path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/>',
   ),
@@ -112,12 +117,12 @@ export function renderShell(o: ShellOptions): string {
   const watermark = o.stage
     ? `<div class="m-watermark" aria-hidden="true"><span>${esc(o.title)}</span>${o.subtitle ? `<small>${esc(o.subtitle)}</small>` : ''}</div>`
     : '';
-  /* the top-right strip always carries a mark: the author's brand line when
-     declared, the Marrow product mark otherwise */
-  const brandLine =
-    o.backdrop?.text !== undefined ? esc(o.backdrop.text) : `${I.logo}<span>Marrow</span>`;
+  /* the top strip always carries a mark: the company logo + brand name when
+     configured, the Marrow product mark otherwise */
+  const brandLine = `${brandLogo(o)}<span>${brandName(o)}</span>`;
+  const note = brandNote(o);
   const backdrop = o.stage
-    ? `<div class="m-backdrop" aria-hidden="true"><span class="m-backdrop-text">${brandLine}</span>${o.backdrop?.note !== undefined ? `<span class="m-backdrop-note">${esc(o.backdrop.note)}</span>` : ''}</div>`
+    ? `<div class="m-backdrop" aria-hidden="true"><span class="m-backdrop-text">${brandLine}</span>${note !== undefined ? `<span class="m-backdrop-note">${esc(note)}</span>` : ''}</div>`
     : '';
   /* one chrome for every page: floating SidebarTrigger chip, fixed
      breadcrumb bar, hover search dock (view settings live in ⌘K) */
@@ -253,14 +258,46 @@ function groupedNav(links: NavLink[], o: ShellOptions): string {
   return out;
 }
 
-/** Company-customizable brand line (backdrop.text in the YAML); Marrow by default. */
+/* ── brand resolution ──────────────────────────────────────────────────────────
+   Branding is GLOBAL and comes from brand/brand.html only. Topology YAML
+   deliberately has no say: a diagram describes a network, not who owns it. */
+
+/** The logo mark: the company logo when configured, the Marrow mark otherwise. */
+function brandLogo(o: ShellOptions): string {
+  return o.brand?.logo !== undefined ? `<span class="m-brand-logo">${o.brand.logo}</span>` : I.logo;
+}
+
+/** The brand name shown next to the logo. */
+function brandName(o: ShellOptions): string {
+  return esc(o.brand?.name ?? 'Marrow');
+}
+
+/** The footer note (confidentiality line), if any. */
+function brandNote(o: ShellOptions): string | undefined {
+  return o.brand?.note;
+}
+
+/** Company-customizable brand mark used in the sidebar and drawer footers.
+ *  With brand.link set it becomes a hyperlink — navigation only, never a
+ *  resource load, so the page still renders fully offline. */
 function brandFoot(o: ShellOptions): string {
-  return `${I.logo}<span>${o.backdrop?.text !== undefined ? esc(o.backdrop.text) : 'Marrow'}</span>`;
+  const mark = `${brandLogo(o)}<span>${brandName(o)}</span>`;
+  const linked =
+    o.brand?.link !== undefined
+      ? `<a class="m-brand-link" href="${esc(o.brand.link)}" target="_blank" rel="noopener noreferrer">${mark}</a>`
+      : mark;
+  const source =
+    o.brand?.github !== undefined
+      ? `<a class="m-brand-gh" href="${esc(o.brand.github)}" target="_blank" rel="noopener noreferrer"` +
+        ` aria-label="Source repository" title="Source repository">${I.github}</a>`
+      : '';
+  return `${linked}${source}`;
 }
 
 function sidebar(o: ShellOptions): string {
+  /* no brand mark here on purpose: the sidebar footer already carries one, and
+     two logos in one panel reads as clutter */
   const header = `<div class="m-side-header">
-  <span class="m-side-logo">${I.logo}</span>
   <div class="m-side-id"><strong>${esc(o.title)}</strong><small>${esc(o.stats)}</small></div>
 </div>`;
   const pages =

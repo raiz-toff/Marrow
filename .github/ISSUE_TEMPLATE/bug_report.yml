@@ -1,0 +1,45 @@
+name: Bug report
+description: Something Marrow does wrong when validating, building, or rendering.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for the report! A minimal topology YAML that reproduces the issue is the most helpful thing you can include.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you expect, and what did you get instead?
+    validations:
+      required: true
+  - type: textarea
+    id: repro-yaml
+    attributes:
+      label: Minimal topology YAML
+      description: The smallest input that reproduces it.
+      render: yaml
+    validations:
+      required: false
+  - type: input
+    id: command
+    attributes:
+      label: Command
+      description: The exact `marrow` command you ran.
+      placeholder: npm run marrow -- build input/example.yaml
+    validations:
+      required: false
+  - type: textarea
+    id: output
+    attributes:
+      label: Output / error
+      description: Console output, diagnostics, or a description of the wrong rendering.
+      render: shell
+    validations:
+      required: false
+  - type: input
+    id: version
+    attributes:
+      label: Node version and commit
+      placeholder: node 24.x, commit abc1234
+    validations:
+      required: false

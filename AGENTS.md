@@ -49,10 +49,6 @@ name: Acme HQ                  # required
 description: One-line summary  # optional; becomes the diagram watermark subtitle
 theme: dark                    # dark | light   (default dark)
 hero: core-sw-01               # optional; device the camera features on open
-backdrop:                      # optional; branding in the page margin around the diagram
-  text: Acme Networks          # brand line, top strip
-  note: Proprietary & Confidential  # footer line, bottom strip
-
 zones:                         # optional; group devices into sites/areas/VLANs
   - id: campus                 # required, kebab-case: [a-z0-9._-], starts alnum
     name: Campus               # optional (defaults to id)
@@ -100,6 +96,27 @@ advisory — usually worth fixing, never blocking.
 
 **Private annotations:** any key you prefix with `x-` is preserved but ignored
 (e.g. `x-owner: netops`). Unknown keys **without** that prefix are errors.
+
+## Global config (`marrow.config.yaml`)
+
+Everything static across *every* diagram lives in one file at the repo root:
+
+```yaml
+brand:
+  name: Acme Networks
+  note: Proprietary & Confidential
+  logo: brand/logo.svg                      # path, relative to this file
+  link: https://acme.example.com            # optional http(s)
+  github: https://github.com/acme/net       # optional http(s)
+```
+
+This is the **only** source of the brand mark, applied to the sidebar footer,
+the inspector drawer, and the top brand strip. Topology YAML has no branding
+keys at all — a diagram describes a network, not who owns it — so never try to
+set a company name or logo from a topology, and never re-add a `backdrop:` key.
+Unknown keys warn (prefix with `x-` to keep private ones). SVG logos are
+inlined, raster logos become `data:` URIs; external URLs are stripped so output
+stays offline. `--config <file>` points elsewhere.
 
 ## How structure drives layout (you don't pick a layout — you declare structure)
 

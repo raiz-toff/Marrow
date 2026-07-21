@@ -1,17 +1,41 @@
 {
-  "name": "marrow-v2",
+  "name": "marrow",
   "private": true,
   "version": "0.0.1",
   "type": "module",
-  "description": "Marrow v2 — agent-driven network topology studio (ground-up rewrite)",
+  "description": "Agent-driven network topology studio — compile YAML into self-contained, interactive, offline HTML network diagrams.",
+  "keywords": [
+    "network",
+    "topology",
+    "diagram",
+    "network-diagram",
+    "visualization",
+    "yaml",
+    "interactive",
+    "svg",
+    "devops",
+    "infrastructure"
+  ],
+  "homepage": "https://github.com/raiz-toff/Marrow#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/raiz-toff/Marrow.git"
+  },
+  "bugs": {
+    "url": "https://github.com/raiz-toff/Marrow/issues"
+  },
+  "license": "MIT",
+  "author": "rajkumar",
   "workspaces": [
     "packages/*"
   ],
   "scripts": {
+    "setup": "node scripts/setup.mjs",
     "build": "tsc -b && npm run bundle -w @marrow/runtime",
     "clean": "tsc -b --clean",
     "test": "vitest run",
     "gen:icons": "node packages/icons/dist/generate-cli.js icon-packs/cisco cisco Cisco && node packages/icons/dist/generate-cli.js icon-packs/generic generic Generic && node packages/icons/dist/generate-cli.js icon-packs/k8s k8s Kubernetes && node packages/icons/dist/generate-cli.js icon-packs/affinity affinity Affinity",
+    "icons:pack": "node packages/icons/dist/generate-cli.js",
     "marrow": "node packages/cli/dist/index.js"
   },
   "devDependencies": {

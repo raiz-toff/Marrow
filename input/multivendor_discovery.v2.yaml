@@ -1,9 +1,6 @@
 marrow: 2
 name: Multi-Vendor Network Discovery Lab
 description: Cisco CDP zone meshed with a multi-vendor LLDP zone
-backdrop:
-  text: Rajkumar Neupane
-  note: Proprietary & Confidential
 zones:
   - id: cisco-cdp-zone
     name: Cisco CDP Zone

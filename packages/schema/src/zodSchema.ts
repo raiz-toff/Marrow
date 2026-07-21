@@ -64,18 +64,12 @@ export const linkSchema = z.strictObject({
   note: z.string().optional(),
 });
 
-export const backdropSchema = z.strictObject({
-  text: z.string().optional(),
-  note: z.string().optional(),
-});
-
 export const topologySchema = z.strictObject({
   marrow: z.number(),
   name: z.string().min(1),
   description: z.string().optional(),
   theme: asEnum(THEMES).default('dark'),
   hero: z.string().optional(),
-  backdrop: backdropSchema.optional(),
   zones: z.array(zoneSchema).default([]),
   devices: z.array(deviceSchema).default([]),
   links: z.array(linkSchema).default([]),

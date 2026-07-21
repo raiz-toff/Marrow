@@ -1,0 +1,30 @@
+# Marrow — global configuration.
+#
+# Everything here is static across EVERY diagram you build. Topology files in
+# input/ describe a network; this file describes who it belongs to. One edit
+# here rebrands everything, and nothing in this file can be overridden by a
+# topology — that separation is deliberate.
+#
+# Delete a key, or leave it blank, to fall back to Marrow's own mark.
+# Point at a different file with:  marrow build <file> --config other.yaml
+
+brand:
+  # Shown beside the logo in the sidebar footer, the inspector drawer, and the
+  # brand strip along the top of every page.
+  name: Marrow
+
+  # Footer line — e.g. a classification banner.
+  note: ""
+
+  # Path to your logo, relative to this file.
+  #   .svg              inlined as markup — use fill="currentColor" so it
+  #                     follows the light and dark themes automatically
+  #   .png .jpg .webp .gif   embedded as a data: URI
+  # Either way the bytes travel inside the diagram, so it still works offline.
+  # Height is clamped in the chrome (14-20px), so any size works.
+  # logo: brand/logo.svg
+
+  # Optional http(s) links. These are hyperlinks, not resource loads — diagrams
+  # still render fully offline and nothing is fetched unless someone clicks.
+  # link: https://your-company.example.com     # the logo + name link here
+  github: https://github.com/raiz-toff/Marrow  # small source mark beside the brand

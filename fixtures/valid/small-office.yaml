@@ -13,20 +13,20 @@ zones:
 devices:
   - id: edge-rt-01
     name: Edge Router
-    icon: cisco/routers/router
+    icon: affinity/tile/router
     tier: edge
     zone: edge
     role: WAN edge
     mgmt_ip: 192.0.2.1
   - id: fw-01
     name: Perimeter Firewall
-    icon: cisco/security/firewall
+    icon: affinity/tile/firewall
     tier: edge
     zone: edge
     mgmt_ip: 192.0.2.2
   - id: core-sw-01
     name: Core Switch
-    icon: cisco/switches/layer-3-switch
+    icon: affinity/tile/switch-multilayer
     tier: core
     zone: office
     mgmt_ip: 10.0.0.10
@@ -38,38 +38,38 @@ devices:
         description: downlink to access 1
   - id: acc-sw-01
     name: Access Switch 1
-    icon: cisco/switches/workgroup-switch
+    icon: affinity/tile/switch
     tier: access
     zone: office
   - id: acc-sw-02
     name: Access Switch 2
-    icon: cisco/switches/workgroup-switch
+    icon: affinity/tile/switch
     tier: access
     zone: office
   - id: ap-01
     name: Office AP
-    icon: cisco/routers/wireless-router
+    icon: affinity/tile/wifi
     tier: access
     zone: office
   - id: srv-file-01
     name: File Server
-    icon: cisco/servers/file-server
+    icon: affinity/tile/storage
     tier: endpoint
     zone: office
     mgmt_ip: 10.0.20.5
   - id: srv-backup-01
     name: Backup Server
-    icon: cisco/servers/host
+    icon: affinity/tile/server
     tier: endpoint
     zone: office
   - id: pc-01
     name: Front Desk Laptop
-    icon: cisco/computer-and-peripherals/laptop
+    icon: affinity/tile/laptop
     tier: endpoint
     zone: office
   - id: pc-02
     name: Design Workstation
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: affinity/tile/user
     tier: endpoint
     zone: office
 

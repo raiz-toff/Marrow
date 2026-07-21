@@ -75,12 +75,6 @@ export function rawToTopology(raw: RawTopology): Topology {
   };
   if (raw.description !== undefined) topology.description = raw.description;
   if (raw.hero !== undefined) topology.hero = raw.hero;
-  if (raw.backdrop !== undefined) {
-    const backdrop: Topology['backdrop'] = {};
-    if (raw.backdrop.text !== undefined) backdrop.text = raw.backdrop.text;
-    if (raw.backdrop.note !== undefined) backdrop.note = raw.backdrop.note;
-    topology.backdrop = backdrop;
-  }
   return topology;
 }
 

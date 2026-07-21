@@ -119,9 +119,11 @@ kbd {
 .m-edge.m-speed-40g, .m-edge.m-speed-100g, .m-edge.m-speed-400g { stroke-width: 4.5; }
 /* traffic reads as accent; status colors below still win */
 .m-edge.m-flow { stroke: var(--m-accent); }
+/* dash vocabulary — one source of truth, reused by the inspector swatch */
+:root { --dash-degraded: 14 7; --dash-planned: 2 7; }
 .m-edge.m-status-down { stroke: var(--down); }
-.m-edge.m-status-degraded { stroke: var(--degraded); stroke-dasharray: 14 7; }
-.m-edge.m-status-planned { stroke: var(--planned); stroke-dasharray: 2 7; stroke-linecap: round; }
+.m-edge.m-status-degraded { stroke: var(--degraded); stroke-dasharray: var(--dash-degraded); }
+.m-edge.m-status-planned { stroke: var(--planned); stroke-dasharray: var(--dash-planned); stroke-linecap: round; }
 .m-edge.is-path { stroke: var(--m-accent); opacity: 1; }
 
 /* ── nodes ── */
@@ -190,6 +192,8 @@ kbd {
   position: fixed; top: 12px; left: 12px; z-index: 31;
   display: flex; flex-direction: column; align-items: flex-start; gap: 8px;
   pointer-events: none;
+  /* travels with the panel when it opens/closes — same curve as the sidebar */
+  transition: left .3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .m-chip-btn {
   width: 32px; height: 32px; flex: none; border: 0; border-radius: var(--radius);
@@ -369,6 +373,30 @@ body:has(.m-rail-wrap) .m-sidebar:not(.open) .m-sidebar-inner { padding-top: 52p
 }
 .m-side-foot svg { flex: none; width: 14px; height: 14px; }
 .m-sidebar:not(.open) .m-side-foot { display: none; }
+/* ── global company logo (brand/brand.html) ──────────────────────────────────
+   Author-supplied markup of unknown size: clamp it everywhere it appears so a
+   large SVG/bitmap can never blow out the chrome. */
+/* the brand mark as a hyperlink (brand.link): inherits the footer's type, only
+   the hover underline marks it as clickable */
+.m-brand-link {
+  display: inline-flex; align-items: center; gap: 8px; min-width: 0;
+  color: inherit; text-decoration: none; font: inherit; letter-spacing: inherit;
+}
+.m-brand-link:hover { text-decoration: underline; text-underline-offset: 2px; }
+/* the source/repo mark sits at the far end of the footer row */
+.m-brand-gh {
+  margin-left: auto; flex: none; display: inline-flex; color: inherit; opacity: .65;
+  transition: opacity .15s;
+}
+.m-brand-gh:hover { opacity: 1; }
+.m-brand-gh svg { width: 14px; height: 14px; }
+.m-brand-logo { display: inline-flex; align-items: center; flex: none; }
+.m-brand-logo svg, .m-brand-logo img { display: block; width: auto; object-fit: contain; }
+.m-side-foot .m-brand-logo svg, .m-side-foot .m-brand-logo img,
+.m-drawer-foot .m-brand-logo svg, .m-drawer-foot .m-brand-logo img {
+  height: 14px; max-width: 80px;
+}
+.m-backdrop-text .m-brand-logo svg, .m-backdrop-text .m-brand-logo img { height: 16px; max-width: 140px; }
 /* shadcn Menubar: a compact trigger row under the sidebar header; its
    popovers reuse the DropdownMenu/ContextMenu content style */
 .m-menubar { display: flex; gap: 2px; padding: 0 8px 6px; border-bottom: 1px solid var(--sidebar-border); margin-bottom: 4px; }
@@ -418,16 +446,16 @@ body:has(.m-rail-wrap) .m-sidebar:not(.open) .m-sidebar-inner { padding-top: 52p
   display: flex; align-items: center; gap: 8px;
   padding: 8px; border-radius: var(--radius-sm);
 }
-/* stage pages: the trigger chip and the header logo share one 32px grid —
-   chip at (8,10), logo right beside it with an 8px gap, same baseline */
+/* stage pages: reserve the 48px strip so the floating trigger chip at (8,10)
+   never overlaps the sidebar title */
 body:has(.m-rail-wrap) .m-side-header { padding: 10px 8px 8px 48px; }
 /* with a nav sidebar, the trigger chip tucks inside the 48px strip column */
 body:has(.m-sidebar.m-nav) .m-rail-wrap { left: 8px; top: 10px; }
-.m-side-logo {
-  width: 32px; height: 32px; flex: none; display: grid; place-items: center;
-  border-radius: var(--radius); color: var(--sidebar);
-  background: var(--sidebar-fg);
-}
+/* open: the trigger rides along to the panel's top-right corner, clear of the
+   title. 216px = SIDEBAR_WIDTH(256) - chip(32) - gutter(8). */
+body:has(.m-sidebar.open) .m-rail-wrap { left: 216px; top: 10px; }
+/* …so the title reclaims the left gutter and instead keeps clear on the right */
+body:has(.m-sidebar.open) .m-side-header { padding: 10px 44px 8px 8px; }
 .m-side-id { min-width: 0; }
 .m-side-id strong { display: block; font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .m-side-id small { display: block; font-size: 11px; color: color-mix(in srgb, var(--sidebar-fg) 60%, transparent); margin-top: 1px; }
@@ -615,6 +643,24 @@ a.m-side-row.active i, a.m-side-row.active em { color: var(--sidebar-fg); }
 .m-links button:hover { border-color: var(--line-strong); }
 .m-link-other { font-weight: 600; }
 .m-link-ports, .m-link-meta { color: var(--ink-dim); font-size: 12px; }
+/* a miniature of the link drawn with the SAME edge classes as the canvas, so
+   speed (width), status (colour/dash) and flow (animation) all carry over */
+.m-link-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.m-swatch { width: 56px; height: 10px; flex: none; overflow: visible; }
+/* the swatch is a fixed 56px line, NOT a pathLength-normalised graph edge, so
+   it opts out of the intro draw-on and restates the dash patterns in px from
+   the same variables the edges use */
+.m-swatch .m-edge {
+  cursor: default; opacity: .95;
+  animation: none; stroke-dasharray: none; stroke-dashoffset: 0;
+}
+.m-swatch .m-edge.m-status-degraded { stroke-dasharray: var(--dash-degraded); }
+.m-swatch .m-edge.m-status-planned { stroke-dasharray: var(--dash-planned); }
+/* mFlow's dashes are fractions of pathLength=1; in px terms that is 6/4.5 */
+@keyframes mSwatchFlow { to { stroke-dashoffset: -21px; } }
+.m-swatch .m-edge.m-flow { stroke-dasharray: 6 4.5; animation: mSwatchFlow 1.1s linear infinite; }
+/* the swatch is a legend, not part of the graph — path focus must not dim it */
+.focus-mode .m-swatch .m-edge:not(.is-path) { opacity: .95; }
 .m-table { width: 100%; border-collapse: collapse; font-size: 12px; }
 .m-table th { text-align: left; color: var(--ink-dim); font-weight: 500; padding: 3px 6px; border-bottom: 1px solid var(--line); }
 .m-table td { padding: 4px 6px; border-bottom: 1px solid color-mix(in srgb, var(--line) 45%, transparent); }

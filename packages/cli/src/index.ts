@@ -1,11 +1,12 @@
 #!/usr/bin/env node
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import { parseArgs } from 'node:util';
 import { formatPretty, toJsonReport, type JsonReport } from '@marrow/diagnostics';
 import { topologyJsonSchema, validateSource } from '@marrow/schema';
-import { buildSingleFile, buildSite, planSite } from '@marrow/site';
+import { buildSingleFile, buildSite, planSite, type Brand } from '@marrow/site';
+import { loadConfig } from './config.js';
 import { importV1 } from './import-v1.js';
 import { loadIconCatalog } from './packs.js';
 
@@ -23,6 +24,13 @@ usage:
   marrow schema
 
 exit codes: 0 valid · 1 validation errors · 2 usage or I/O error`;
+
+/** Global settings from marrow.config.yaml; --config points elsewhere. */
+function globalBrand(explicit?: string): { brand?: Brand } {
+  const { brand, problems } = loadConfig(explicit);
+  for (const problem of problems) console.error(`warning: ${problem}`);
+  return brand !== undefined ? { brand } : {};
+}
 
 function main(argv: string[]): number | Promise<number> {
   const [command, ...rest] = argv;
@@ -137,12 +145,15 @@ async function cmdBuild(rest: string[]): Promise<number> {
         out: { type: 'string', short: 'o' },
         packs: { type: 'string' },
         single: { type: 'boolean', default: false },
+        config: { type: 'string' },
       },
       allowPositionals: true,
     }),
   );
   if (!parsed.ok) {
-    console.error(`${parsed.message}\n\nusage: marrow build <file> [-o <out>] [--single] [--packs <dir>]`);
+    console.error(
+      `${parsed.message}\n\nusage: marrow build <file> [-o <out>] [--single] [--packs <dir>] [--config <file.yaml>]`,
+    );
     return 2;
   }
   const { values, positionals } = parsed.args;
@@ -179,11 +190,12 @@ async function cmdBuild(rest: string[]): Promise<number> {
   }
 
   const baseName = basename(file).replace(/\.ya?ml$/i, '');
+  const brand = globalBrand(values.config);
   const plan = planSite(result.topology);
   try {
     if (plan.mode === 'site' && !values.single) {
       const outDir = values.out ?? join('output', `${baseName}-site`);
-      const site = await buildSite(result.topology, { icons: packs.catalog });
+      const site = await buildSite(result.topology, { icons: packs.catalog, ...brand });
       let bytes = 0;
       for (const [rel, content] of site.files) {
         const full = join(outDir, rel);
@@ -200,7 +212,7 @@ async function cmdBuild(rest: string[]): Promise<number> {
       return 0;
     }
     const outPath = values.out ?? join('output', `${baseName}.html`);
-    const built = await buildSingleFile(result.topology, { icons: packs.catalog });
+    const built = await buildSingleFile(result.topology, { icons: packs.catalog, ...brand });
     mkdirSync(dirname(outPath), { recursive: true });
     writeFileSync(outPath, built.html);
     const kb = Math.round(Buffer.byteLength(built.html) / 1024);
@@ -223,6 +235,7 @@ async function cmdServe(rest: string[]): Promise<number> {
         port: { type: 'string', default: '5200' },
         host: { type: 'string', default: '127.0.0.1' },
         packs: { type: 'string' },
+        config: { type: 'string' },
       },
       allowPositionals: true,
     }),
@@ -248,6 +261,7 @@ async function cmdServe(rest: string[]): Promise<number> {
     const running = await serve({
       input,
       icons: packs.catalog,
+      ...globalBrand(values.config),
       port: Number(values.port) || 5200,
       host: values.host ?? '127.0.0.1',
     });
@@ -324,6 +338,7 @@ async function cmdSnapshot(rest: string[]): Promise<number> {
         height: { type: 'string', default: '900' },
         json: { type: 'boolean', default: false },
         packs: { type: 'string' },
+        config: { type: 'string' },
       },
       allowPositionals: true,
     }),
@@ -366,7 +381,7 @@ async function cmdSnapshot(rest: string[]): Promise<number> {
   }
 
   try {
-    const built = await buildSingleFile(result.topology, { icons: packs.catalog });
+    const built = await buildSingleFile(result.topology, { icons: packs.catalog, ...globalBrand(values.config) });
     const tmpHtml = join(tmpdir(), `marrow-snapshot-${process.pid}.html`);
     writeFileSync(tmpHtml, built.html);
     const outPath = values.out ?? join('output', basename(file).replace(/\.ya?ml$/i, '') + '.png');

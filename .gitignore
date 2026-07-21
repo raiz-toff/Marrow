@@ -7,11 +7,14 @@ coverage/
 # generated diagram output (never committed)
 output/
 
-# vendor icon packs fetched per-user from official sources — never committed
-# (vendor terms allow diagram use, not redistribution): `marrow icons fetch`
+# vendor icon packs provided per-user — never committed (vendor terms allow
+# diagram use, not redistribution). aws/azure/gcp are fetched whole (manifest
+# generated on fetch): `marrow icons fetch`. cisco ships its manifest but not
+# its SVGs (user-provided). See icon-packs/LICENSES.md.
 icon-packs/aws/
 icon-packs/azure/
 icon-packs/gcp/
+icon-packs/cisco/svg/
 
 # archived v1 (kept locally for reference, not tracked)
 legacy-v1/

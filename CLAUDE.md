@@ -18,7 +18,7 @@ npm run marrow -- snapshot input/<name>.yaml -o /tmp/x.png   # your eyes on the 
 npm run marrow -- icons search <keyword>         # find real icon IDs (never guess) — packs: cisco, aws, azure, gcp, k8s, affinity, generic
 npm run marrow -- icons fetch --yes              # install aws/azure/gcp from the vendors (not committed; needed once per clone)
 npm run marrow -- import <legacy-v1.yaml>         # bring old v1 YAML forward
-npm test                                         # 209 tests
+npm test                                         # 244 tests
 ```
 
 ## Non-negotiables

@@ -99,7 +99,7 @@ describe('marrow serve', () => {
   test('an invalid edit keeps the last good diagram and reports diagnostics', async () => {
     const file = join(dir, 'a-office.yaml');
     const good = readFileSync(file, 'utf8');
-    writeFileSync(file, good.replace('icon: cisco/routers/router', 'icon: cisco/routers/rooter'));
+    writeFileSync(file, good.replace('icon: affinity/tile/router', 'icon: affinity/tile/rooter'));
 
     const status = await until(
       () => api('/api/status'),

@@ -32,6 +32,8 @@ export interface DataLink {
   speed?: string;
   lag?: string;
   status: string;
+  /** flowing-dash effect — mirrored in the inspector's link swatch */
+  animated?: boolean;
   label?: string;
 }
 

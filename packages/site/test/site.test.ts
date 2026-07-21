@@ -33,9 +33,17 @@ describe('buildSingleFile', () => {
 
   test('OFFLINE GATE: no external URLs anywhere in the output', async () => {
     const { html } = await build('valid/campus-three-tier.yaml');
-    // no http(s) resource references — svg xmlns namespaces are not fetches
-    const external = html.match(/(?:src|href)\s*=\s*"https?:\/\/[^"]*"/gi) ?? [];
+    // No external RESOURCE loads: anything the page would fetch to render.
+    // (svg xmlns namespaces are not fetches; an <a href> is navigation the user
+    // opts into by clicking — neither stops the page rendering offline.)
+    const external = html.match(/\bsrc\s*=\s*"https?:\/\/[^"]*"/gi) ?? [];
     expect(external).toEqual([]);
+    const linkTags = html.match(/<link\b[^>]*href\s*=\s*"https?:\/\/[^"]*"/gi) ?? [];
+    expect(linkTags).toEqual([]);
+    // every remaining external href must belong to an anchor, nothing else
+    for (const tag of html.match(/<[a-z-]+\b[^>]*href\s*=\s*"https?:\/\/[^"]*"[^>]*>/gi) ?? []) {
+      expect(tag.toLowerCase().startsWith('<a ')).toBe(true);
+    }
     expect(html).not.toContain('@import');
     expect(html).not.toMatch(/url\(\s*['"]?https?:/i);
     expect(html).not.toContain('fonts.googleapis');

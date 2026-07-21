@@ -7,8 +7,7 @@
 
 export type DataPath = ReadonlyArray<string | number>;
 
-export const ROOT_KEYS = ['marrow', 'name', 'description', 'theme', 'hero', 'backdrop', 'zones', 'devices', 'links'] as const;
-export const BACKDROP_KEYS = ['text', 'note'] as const;
+export const ROOT_KEYS = ['marrow', 'name', 'description', 'theme', 'hero', 'zones', 'devices', 'links'] as const;
 export const ZONE_KEYS = ['id', 'name', 'parent', 'collapse', 'accent', 'note'] as const;
 export const DEVICE_KEYS = [
   'id',
@@ -36,7 +35,6 @@ export const ENDPOINT_KEYS = ['device', 'port'] as const;
 export function knownKeysAt(path: DataPath): readonly string[] {
   const [a, b, c, d] = [path[0], path[1], path[2], path[3]];
   if (path.length === 0) return ROOT_KEYS;
-  if (a === 'backdrop' && path.length === 1) return BACKDROP_KEYS;
   if (a === 'zones' && typeof b === 'number' && path.length === 2) return ZONE_KEYS;
   if (a === 'devices' && typeof b === 'number') {
     if (path.length === 2) return DEVICE_KEYS;

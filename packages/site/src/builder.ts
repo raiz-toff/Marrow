@@ -8,6 +8,7 @@ import type { Topology } from '@marrow/model';
 import { renderCanvasHost, renderScene, type IconSource } from '@marrow/render-svg';
 import { getRuntimeSource } from '@marrow/runtime';
 import type { Scene } from '@marrow/scene';
+import type { Brand } from './brand.js';
 import { collapseEndpoints } from './collapse.js';
 import { indexZones, inventoryBody, overviewTopology, pageOf, zoneTopology, deviceTopology, type PageTopo, type ZoneIndex } from './pages.js';
 import { planSite, type SitePlan } from './planner.js';
@@ -24,6 +25,8 @@ export interface BuildOptions {
   layout?: LayoutOptions;
   /** Override tier selection (tests, comparisons). */
   forceRenderer?: 'svg' | 'canvas';
+  /** Global branding from brand/brand.html — the single source for the mark. */
+  brand?: Brand;
 }
 
 export interface BuildResult {
@@ -120,7 +123,6 @@ export function createSiteBuilder(
     name: topology.name,
     theme: topology.theme,
     description: topology.description ?? null,
-    backdrop: topology.backdrop ?? null,
     navLinks,
     devicePages: plan.devicePages,
     forceRenderer: options.forceRenderer ?? null,
@@ -199,7 +201,7 @@ export function createSiteBuilder(
       theme: topology.theme,
       stage: svg,
       ...(topology.description !== undefined ? { subtitle: topology.description } : {}),
-      ...(topology.backdrop !== undefined ? { backdrop: topology.backdrop } : {}),
+      ...(options.brand !== undefined ? { brand: options.brand } : {}),
       dataJson: embeddedData(collapsed, {
         page: path,
         devicePages: plan.devicePages,
@@ -222,6 +224,7 @@ export function createSiteBuilder(
       page: 'inventory.html',
       theme: topology.theme,
       body: inventoryBody(topology, plan, zi, (id) => iconSource(options.icons).svg(id)),
+      ...(options.brand !== undefined ? { brand: options.brand } : {}),
       // full device+link payload: the inventory drawer shows device details in place
       dataJson: embeddedData(topology, { page: 'inventory.html', devicePages: plan.devicePages }),
       assets: { mode: 'external' },
@@ -391,6 +394,7 @@ export function embeddedData(
       ...(l.speed !== undefined ? { speed: l.speed } : {}),
       ...(l.lag !== undefined ? { lag: l.lag } : {}),
       status: l.status,
+      ...(l.animated ? { animated: true } : {}),
       ...(l.label !== undefined ? { label: l.label } : {}),
     })),
     zones: t.zones.map((z) => ({ id: z.id, name: z.name })),

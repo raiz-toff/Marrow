@@ -87,21 +87,12 @@ export interface Device {
   stack?: { members: string[]; worstStatus: DeviceStatus };
 }
 
-/** Author-branded page margin around the diagram viewport. */
-export interface Backdrop {
-  /** Brand line shown in the top strip (e.g. company name). */
-  text?: string;
-  /** Footer line shown in the bottom strip (e.g. "Proprietary & Confidential"). */
-  note?: string;
-}
-
 export interface Topology {
   version: 2;
   name: string;
   description?: string;
   theme: Theme;
   hero?: string;
-  backdrop?: Backdrop;
   zones: Zone[];
   devices: Device[];
   links: Link[];

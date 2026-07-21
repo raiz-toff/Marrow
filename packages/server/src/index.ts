@@ -8,6 +8,7 @@ import {
   buildSingleFile,
   createSiteBuilder,
   planSite,
+  type Brand,
   type BuildResult,
   type SiteBuilder,
   type SiteCache,
@@ -36,6 +37,8 @@ export interface ServeOptions {
   icons: IconCatalog;
   port?: number;
   host?: string;
+  /** Global branding from brand/brand.html, applied to every previewed page. */
+  brand?: Brand;
 }
 
 export interface RunningServer {
@@ -136,14 +139,21 @@ export async function serve(options: ServeOptions): Promise<RunningServer> {
       const plan = planSite(result.topology);
       try {
         if (plan.mode === 'single') {
-          const built = await buildSingleFile(result.topology, { icons: options.icons });
+          const built = await buildSingleFile(result.topology, {
+            icons: options.icons,
+            ...(options.brand !== undefined ? { brand: options.brand } : {}),
+          });
           state.mode = 'single';
           state.build = built;
           state.builder = undefined;
           state.lastGoodHtml = injectLive(built.html);
           state.lastChanged = 1;
         } else {
-          const builder = createSiteBuilder(result.topology, { icons: options.icons }, state.cache);
+          const builder = createSiteBuilder(
+            result.topology,
+            { icons: options.icons, ...(options.brand !== undefined ? { brand: options.brand } : {}) },
+            state.cache,
+          );
           const changed = builder.changedPages();
           for (const key of state.cache.keys()) if (!builder.has(key)) state.cache.delete(key);
           state.mode = 'site';
