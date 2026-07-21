@@ -1,0 +1,140 @@
+marrow: 2
+name: Datacenter Leaf Fan-Out
+description: Extreme leaf fan-out — a single access switch serving nine endpoints under a core/distribution stack
+hero: acc-sw1
+zones:
+  - id: wan
+    name: WAN
+  - id: core
+    name: Core
+  - id: leaf
+    name: Leaf
+
+devices:
+  - id: edge-rtr1
+    name: Edge Router
+    icon: cisco/routers/router
+    tier: edge
+    zone: wan
+    mgmt_ip: 203.0.113.60
+  - id: fw1
+    name: Perimeter Firewall
+    icon: cisco/security/pix-firewall
+    tier: edge
+    zone: wan
+  - id: core-sw1
+    name: Core Switch
+    icon: cisco/switches/layer-3-switch
+    tier: core
+    zone: core
+    mgmt_ip: 10.50.1.1
+  - id: dist-sw1
+    name: Distribution Switch
+    icon: cisco/switches/multilayer-remote-switch
+    tier: distribution
+    zone: core
+  - id: acc-sw1
+    name: Leaf Access Switch
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: leaf
+    hero: true
+  - id: ws-01
+    name: Workstation 01
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: leaf
+  - id: ws-02
+    name: Laptop 02
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: leaf
+  - id: ws-03
+    name: iMac 03
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: leaf
+  - id: ws-04
+    name: Workstation 04
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: leaf
+  - id: printer-01
+    name: Leaf Printer
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: leaf
+  - id: voip-01
+    name: Leaf IP Phone
+    icon: cisco/datacenter/ip-phone
+    tier: endpoint
+    zone: leaf
+  - id: ap-01
+    name: Leaf Wi-Fi AP
+    icon: cisco/datacenter/wireless-access-point
+    tier: access
+    zone: leaf
+  - id: srv-file1
+    name: File Server
+    icon: cisco/servers/file-server
+    tier: endpoint
+    zone: leaf
+  - id: srv-host1
+    name: Compute Host
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: leaf
+
+links:
+  - from: edge-rtr1:Gi0/0
+    to: fw1:Gi0/0
+    kind: copper
+    speed: 1G
+  - from: fw1:Gi0/1
+    to: core-sw1:Te1/0/1
+    kind: fiber
+    speed: 10G
+  - from: core-sw1:Te1/0/2
+    to: dist-sw1:Te1/1/1
+    kind: fiber
+    speed: 10G
+  - from: dist-sw1:Gi1/0/1
+    to: acc-sw1:Gi0/48
+    kind: fiber
+    speed: 10G
+  - from: acc-sw1:Gi0/1
+    to: ws-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-sw1:Gi0/2
+    to: ws-02:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-sw1:Gi0/3
+    to: ws-03:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-sw1:Gi0/4
+    to: ws-04:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-sw1:Gi0/5
+    to: printer-01:eth0
+    kind: copper
+    speed: 100M
+  - from: acc-sw1:Gi0/6
+    to: voip-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-sw1:Gi0/7
+    to: ap-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-sw1:Gi0/8
+    to: srv-file1:eno1
+    kind: copper
+    speed: 1G
+  - from: acc-sw1:Gi0/9
+    to: srv-host1:eno1
+    kind: copper
+    speed: 1G

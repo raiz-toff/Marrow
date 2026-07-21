@@ -1,0 +1,251 @@
+marrow: 2
+name: Retail Chain PCI Segmentation
+description: Retail HQ with a nested PCI security zone, three flat store sites, and a cloud payment gateway
+theme: light
+hero: hq-core-01
+
+zones:
+  - id: hq
+    name: Retail HQ
+    accent: "#0ea5e9"
+  - id: hq-security
+    name: PCI Segment
+    parent: hq
+    accent: "#dc2626"
+    collapse: closed
+    note: Card-data environment, isolated from general HQ LAN
+  - id: store-north
+    name: Store - North Loop
+    accent: "#16a34a"
+  - id: store-south
+    name: Store - South Plaza
+    accent: "#ca8a04"
+  - id: store-east
+    name: Store - East Market
+    accent: "#7c3aed"
+  - id: cloud-pos
+    name: Cloud Payment Gateway
+    accent: "#334155"
+    note: Third-party processor reached over the internet breakout
+
+devices:
+  - id: hq-rt-01
+    name: HQ Router
+    icon: cisco/routers/router
+    tier: edge
+    zone: hq
+    role: Internet and MPLS edge
+    mgmt_ip: 10.10.0.1
+    note: Fans out MPLS to all three stores plus internet breakout
+  - id: hq-core-01
+    name: HQ Core Switch
+    icon: cisco/switches/layer-3-switch
+    tier: core
+    zone: hq
+    hero: true
+    mgmt_ip: 10.10.0.10
+    note: Hero device - retail HQ core
+  - id: hq-acc-01
+    name: HQ Access Switch
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: hq
+  - id: hq-srv-erp-01
+    name: ERP Inventory Server
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: hq
+    role: ERP / inventory
+  - id: hq-pc-01
+    name: HQ Merchandising Laptop
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: hq
+  - id: sec-fw-01
+    name: PCI Segmentation Firewall
+    icon: cisco/security/firewall
+    tier: edge
+    zone: hq-security
+    note: Only path between general LAN and the card-data environment
+  - id: sec-ids-01
+    name: PCI IDS Sensor
+    icon: cisco/cisco-safe-security-icons/ids
+    tier: edge
+    zone: hq-security
+  - id: sec-log-01
+    name: SIEM Log Collector
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: hq-security
+    role: SIEM log collector
+  - id: sn-rt-01
+    name: Store North Router
+    icon: cisco/routers/router
+    tier: edge
+    zone: store-north
+    mgmt_ip: 10.11.0.1
+  - id: sn-sw-01
+    name: Store North Switch
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: store-north
+  - id: sn-pos-01
+    name: Store North POS 1
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: store-north
+    role: POS terminal
+  - id: sn-pos-02
+    name: Store North POS 2
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: store-north
+    role: POS terminal
+  - id: ss-rt-01
+    name: Store South Router
+    icon: cisco/routers/router
+    tier: edge
+    zone: store-south
+    mgmt_ip: 10.12.0.1
+  - id: ss-sw-01
+    name: Store South Switch
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: store-south
+  - id: ss-pos-01
+    name: Store South POS 1
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: store-south
+    role: POS terminal
+  - id: se-rt-01
+    name: Store East Router
+    icon: cisco/routers/router
+    tier: edge
+    zone: store-east
+    mgmt_ip: 10.13.0.1
+  - id: se-sw-01
+    name: Store East Switch
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: store-east
+  - id: se-pos-01
+    name: Store East POS 1
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: store-east
+    role: POS terminal
+  - id: se-ap-01
+    name: Store East Guest AP
+    icon: cisco/misc/access-point
+    tier: access
+    zone: store-east
+    role: guest wifi
+  - id: cloud-gw-01
+    name: Cloud SD-WAN Gateway
+    icon: cisco/design/sd-wan
+    tier: edge
+    zone: cloud-pos
+    role: SD-WAN cloud gateway
+  - id: cloud-pay-01
+    name: Payment Gateway 1
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: cloud-pos
+    role: Payment gateway
+    ha_pair_with: cloud-pay-02
+    note: PCI-DSS scope - processes card authorizations
+  - id: cloud-pay-02
+    name: Payment Gateway 2
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: cloud-pos
+    role: Payment gateway standby
+    ha_pair_with: cloud-pay-01
+
+links:
+  - from: hq-rt-01:Gi0/0/1
+    to: hq-core-01:Gi1/0/1
+    kind: copper
+    speed: 1G
+  - from: hq-core-01:Gi1/0/2
+    to: hq-acc-01:Gi0/48
+    kind: fiber
+    speed: 10G
+  - from: hq-core-01:Gi1/0/3
+    to: hq-srv-erp-01:eno1
+    kind: copper
+    speed: 10G
+  - from: hq-acc-01:Gi0/1
+    to: hq-pc-01:eth0
+  - from: hq-core-01:Gi1/0/4
+    to: sec-fw-01:outside
+    kind: fiber
+    speed: 10G
+    note: HQ core to PCI segment
+  - from: sec-fw-01:inside
+    to: sec-ids-01:mon0
+    kind: copper
+    speed: 1G
+  - from: sec-fw-01:inside2
+    to: sec-log-01:eno1
+    kind: copper
+    speed: 1G
+  - from: hq-rt-01:Se0/0/0
+    to: sn-rt-01:Se0/0/0
+    kind: wan
+    speed: 10M
+    note: MPLS to Store North
+  - from: sn-rt-01:Gi0/1
+    to: sn-sw-01:Gi0/24
+    kind: copper
+    speed: 1G
+  - from: sn-sw-01:Gi0/1
+    to: sn-pos-01:eth0
+  - from: sn-sw-01:Gi0/2
+    to: sn-pos-02:eth0
+  - from: hq-rt-01:Se0/0/1
+    to: ss-rt-01:Se0/0/0
+    kind: wan
+    speed: 10M
+    note: MPLS to Store South
+  - from: ss-rt-01:Gi0/1
+    to: ss-sw-01:Gi0/24
+    kind: copper
+    speed: 1G
+  - from: ss-sw-01:Gi0/1
+    to: ss-pos-01:eth0
+  - from: hq-rt-01:Se0/0/2
+    to: se-rt-01:Se0/0/0
+    kind: wan
+    speed: 10M
+    note: MPLS to Store East
+  - from: se-rt-01:Gi0/1
+    to: se-sw-01:Gi0/24
+    kind: copper
+    speed: 1G
+  - from: se-sw-01:Gi0/1
+    to: se-pos-01:eth0
+  - from: se-sw-01:Gi0/2
+    to: se-ap-01:eth0
+    kind: wireless
+    speed: 1G
+  - from: hq-rt-01:Gi0/0/2
+    to: cloud-gw-01:wan0
+    kind: wan
+    speed: 1G
+    animated: true
+    note: Internet breakout to cloud payment gateway
+  - from: cloud-gw-01:lan0
+    to: cloud-pay-01:eno1
+    kind: copper
+    speed: 1G
+  - from: cloud-gw-01:lan1
+    to: cloud-pay-02:eno1
+    kind: copper
+    speed: 1G
+  - from: cloud-pay-01:sync
+    to: cloud-pay-02:sync
+    kind: copper
+    speed: 1G
+    note: HA sync

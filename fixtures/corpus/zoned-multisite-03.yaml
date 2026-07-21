@@ -1,0 +1,264 @@
+marrow: 2
+name: Global Backbone Mesh - Three Regions
+description: Full-mesh backbone linking Americas, EMEA, and APAC datacenters, a nested APAC DMZ, and a global NOC
+theme: dark
+hero: amer-core-01
+
+zones:
+  - id: backbone
+    name: Global Backbone
+    accent: "#111827"
+    note: Full-mesh 400G backbone routers, one per region PoP
+  - id: americas
+    name: Americas DC
+    accent: "#2563eb"
+  - id: emea
+    name: EMEA DC
+    accent: "#059669"
+  - id: apac
+    name: APAC DC
+    accent: "#d97706"
+  - id: apac-dmz
+    name: APAC Regional DMZ
+    parent: apac
+    accent: "#dc2626"
+    collapse: closed
+    note: Public CDN origin for APAC customers, isolated from the regional core
+  - id: noc
+    name: Global NOC
+    accent: "#6b7280"
+
+devices:
+  - id: bb-core-amer-01
+    name: Backbone Router - Americas PoP
+    icon: cisco/routers/router
+    tier: core
+    zone: backbone
+    role: Backbone PoP router
+    mgmt_ip: 100.64.0.1
+  - id: bb-core-emea-01
+    name: Backbone Router - EMEA PoP
+    icon: cisco/routers/router
+    tier: core
+    zone: backbone
+    role: Backbone PoP router
+    mgmt_ip: 100.64.0.2
+  - id: bb-core-apac-01
+    name: Backbone Router - APAC PoP
+    icon: cisco/routers/router
+    tier: core
+    zone: backbone
+    role: Backbone PoP router
+    mgmt_ip: 100.64.0.3
+  - id: amer-fw-01
+    name: Americas Boundary Firewall
+    icon: cisco/security/firewall
+    tier: edge
+    zone: americas
+  - id: amer-core-01
+    name: Americas DC Core
+    icon: cisco/switches/layer-3-switch
+    tier: core
+    zone: americas
+    hero: true
+    mgmt_ip: 10.20.0.10
+    note: Hero device - global network anchor, Americas DC core
+  - id: amer-dist-01
+    name: Americas Distribution
+    icon: cisco/switches/multilayer-remote-switch
+    tier: distribution
+    zone: americas
+  - id: amer-acc-01
+    name: Americas Access
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: americas
+  - id: amer-srv-01
+    name: Americas App Server
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: americas
+    role: Primary app tier
+  - id: amer-srv-02
+    name: Americas Shared Storage
+    icon: cisco/servers/file-server
+    tier: endpoint
+    zone: americas
+    role: Shared storage
+  - id: emea-fw-01
+    name: EMEA Boundary Firewall
+    icon: cisco/security/firewall
+    tier: edge
+    zone: emea
+  - id: emea-core-01
+    name: EMEA DC Core
+    icon: cisco/switches/layer-3-switch
+    tier: core
+    zone: emea
+    mgmt_ip: 10.30.0.10
+  - id: emea-dist-01
+    name: EMEA Distribution
+    icon: cisco/switches/multilayer-remote-switch
+    tier: distribution
+    zone: emea
+  - id: emea-acc-01
+    name: EMEA Access
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: emea
+  - id: emea-srv-01
+    name: EMEA App Server
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: emea
+    role: Regional app tier
+  - id: apac-fw-01
+    name: APAC Boundary Firewall
+    icon: cisco/security/firewall
+    tier: edge
+    zone: apac
+  - id: apac-core-01
+    name: APAC DC Core
+    icon: cisco/switches/layer-3-switch
+    tier: core
+    zone: apac
+    mgmt_ip: 10.40.0.10
+  - id: apac-dist-01
+    name: APAC Distribution
+    icon: cisco/switches/multilayer-remote-switch
+    tier: distribution
+    zone: apac
+  - id: apac-acc-01
+    name: APAC Access
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: apac
+  - id: apac-srv-01
+    name: APAC App Server
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: apac
+    role: Regional app tier
+  - id: apac-dmz-fw-01
+    name: APAC DMZ Firewall
+    icon: cisco/security/pix-firewall
+    tier: edge
+    zone: apac-dmz
+    note: Regional DMZ boundary for APAC public services
+  - id: apac-dmz-web-01
+    name: APAC CDN Origin
+    icon: cisco/servers/file-server
+    tier: endpoint
+    zone: apac-dmz
+    role: regional CDN origin
+  - id: noc-mgmt-01
+    name: Global NOC Monitoring
+    icon: cisco/misc/network-management
+    tier: management
+    zone: noc
+    role: Global NOC monitoring
+    note: Polls all three regional cores over the backbone
+  - id: noc-srv-01
+    name: NOC Syslog Backend
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: noc
+    role: Syslog / NMS backend
+
+links:
+  - from: bb-core-amer-01:Hu0/0/0
+    to: bb-core-emea-01:Hu0/0/0
+    kind: fiber
+    speed: 400G
+    animated: true
+  - from: bb-core-emea-01:Hu0/0/1
+    to: bb-core-apac-01:Hu0/0/0
+    kind: fiber
+    speed: 400G
+  - from: bb-core-amer-01:Hu0/0/1
+    to: bb-core-apac-01:Hu0/0/1
+    kind: fiber
+    speed: 400G
+  - from: bb-core-amer-01:Hu0/1/0
+    to: amer-fw-01:outside
+    kind: fiber
+    speed: 100G
+  - from: bb-core-emea-01:Hu0/1/0
+    to: emea-fw-01:outside
+    kind: fiber
+    speed: 100G
+  - from: bb-core-apac-01:Hu0/1/0
+    to: apac-fw-01:outside
+    kind: fiber
+    speed: 100G
+  - from: amer-fw-01:inside
+    to: amer-core-01:Te1/0/1
+    kind: fiber
+    speed: 10G
+    animated: true
+  - from: amer-core-01:Te1/0/2
+    to: amer-dist-01:Te1/1/1
+    kind: fiber
+    speed: 10G
+  - from: amer-dist-01:Gi1/0/1
+    to: amer-acc-01:Gi0/48
+    kind: fiber
+    speed: 10G
+  - from: amer-dist-01:Gi1/0/10
+    to: amer-srv-01:eno1
+    kind: copper
+    speed: 10G
+  - from: amer-dist-01:Gi1/0/11
+    to: amer-srv-02:eno1
+    kind: copper
+    speed: 10G
+  - from: emea-fw-01:inside
+    to: emea-core-01:Te1/0/1
+    kind: fiber
+    speed: 10G
+  - from: emea-core-01:Te1/0/2
+    to: emea-dist-01:Te1/1/1
+    kind: fiber
+    speed: 10G
+  - from: emea-dist-01:Gi1/0/1
+    to: emea-acc-01:Gi0/48
+    kind: fiber
+    speed: 10G
+  - from: emea-dist-01:Gi1/0/10
+    to: emea-srv-01:eno1
+    kind: copper
+    speed: 10G
+  - from: apac-fw-01:inside
+    to: apac-core-01:Te1/0/1
+    kind: fiber
+    speed: 10G
+  - from: apac-core-01:Te1/0/2
+    to: apac-dist-01:Te1/1/1
+    kind: fiber
+    speed: 10G
+  - from: apac-dist-01:Gi1/0/1
+    to: apac-acc-01:Gi0/48
+    kind: fiber
+    speed: 10G
+  - from: apac-dist-01:Gi1/0/10
+    to: apac-srv-01:eno1
+    kind: copper
+    speed: 10G
+  - from: apac-core-01:Te1/0/3
+    to: apac-dmz-fw-01:outside
+    kind: fiber
+    speed: 10G
+    note: APAC core to regional DMZ
+  - from: apac-dmz-fw-01:inside
+    to: apac-dmz-web-01:eno1
+    kind: copper
+    speed: 1G
+  - from: bb-core-amer-01:Gi0/2/0
+    to: noc-mgmt-01:mgmt0
+    kind: copper
+    speed: 1G
+    note: Out-of-band management uplink to the global NOC
+  - from: noc-mgmt-01:eth1
+    to: noc-srv-01:eno1
+    kind: copper
+    speed: 1G

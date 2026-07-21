@@ -1,0 +1,63 @@
+marrow: 2
+name: Multi-Vendor Network Discovery Lab
+description: Cisco CDP zone meshed with a multi-vendor LLDP zone
+backdrop:
+  text: Rajkumar Neupane
+  note: Proprietary & Confidential
+zones:
+  - id: cisco-cdp-zone
+    name: Cisco CDP Zone
+    accent: "#3b82f6"
+  - id: multi-vendor-lldp-zone
+    name: Multi-Vendor LLDP Zone
+    accent: "#22c55e"
+devices:
+  - id: mv-sw2
+    name: Multivendor Switch 2
+    icon: cisco/switches/workgroup-switch
+    tier: distribution
+    zone: multi-vendor-lldp-zone
+    role: switch
+  - id: cisco-r1
+    name: Cisco Router 1
+    icon: cisco/routers/router
+    tier: core
+    zone: cisco-cdp-zone
+    role: router
+  - id: cisco-r2
+    name: Cisco Router 2
+    icon: cisco/routers/router
+    tier: core
+    zone: cisco-cdp-zone
+    role: router
+  - id: cisco-sw1
+    name: Cisco Switch 1
+    icon: cisco/switches/workgroup-switch
+    tier: distribution
+    zone: cisco-cdp-zone
+    role: switch
+  - id: mv-r3
+    name: MultiVendor Router 3
+    icon: cisco/routers/router
+    tier: distribution
+    zone: multi-vendor-lldp-zone
+    role: router
+links:
+  - from: cisco-r1:Et0/2
+    to: cisco-r2:Et0/2
+  - from: cisco-r1:Et0/1
+    to: cisco-sw1:Et0/1
+  - from: cisco-r2:Et0/0
+    to: cisco-sw1:Et0/0
+  - from: cisco-r2:Et0/1
+    to: mv-sw2:Et0/0
+  - from: cisco-r2:Et0/3
+    to: mv-r3:Et0/3
+  - from: cisco-r1:Et0/3
+    to: mv-sw2:Et0/3
+    kind: serial
+    label: Discovered via LLDP
+  - from: cisco-sw1:Et0/2
+    to: mv-r3:Et0/2
+    kind: serial
+    label: Discovered via LLDP

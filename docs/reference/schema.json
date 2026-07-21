@@ -1,0 +1,290 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "marrow": {
+      "type": "number"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "description": {
+      "type": "string"
+    },
+    "theme": {
+      "default": "dark",
+      "type": "string",
+      "enum": [
+        "dark",
+        "light"
+      ]
+    },
+    "hero": {
+      "type": "string"
+    },
+    "zones": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "parent": {
+            "type": "string"
+          },
+          "collapse": {
+            "default": "auto",
+            "type": "string",
+            "enum": [
+              "auto",
+              "open",
+              "closed"
+            ]
+          },
+          "accent": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "devices": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "icon": {
+            "type": "string"
+          },
+          "tier": {
+            "type": "string",
+            "enum": [
+              "core",
+              "distribution",
+              "access",
+              "edge",
+              "endpoint",
+              "management"
+            ]
+          },
+          "zone": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          },
+          "status": {
+            "default": "up",
+            "type": "string",
+            "enum": [
+              "up",
+              "down",
+              "degraded",
+              "planned",
+              "unknown"
+            ]
+          },
+          "mgmt_ip": {
+            "type": "string"
+          },
+          "ha_pair_with": {
+            "type": "string"
+          },
+          "hero": {
+            "default": false,
+            "type": "boolean"
+          },
+          "pin": {
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "number"
+              },
+              "y": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "x",
+              "y"
+            ],
+            "additionalProperties": false
+          },
+          "accent": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          },
+          "config": {
+            "type": "string"
+          },
+          "interfaces": {
+            "default": [],
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "vlan": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 4094
+                },
+                "ip": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "name"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "id",
+          "icon"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "links": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "device": {
+                    "type": "string"
+                  },
+                  "port": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "device"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "to": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "device": {
+                    "type": "string"
+                  },
+                  "port": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "device"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "copper",
+              "fiber",
+              "dac",
+              "wireless",
+              "virtual",
+              "wan",
+              "serial"
+            ]
+          },
+          "speed": {
+            "type": "string",
+            "enum": [
+              "10M",
+              "100M",
+              "1G",
+              "2.5G",
+              "5G",
+              "10G",
+              "25G",
+              "40G",
+              "100G",
+              "400G"
+            ]
+          },
+          "lag": {
+            "type": "string"
+          },
+          "status": {
+            "default": "up",
+            "type": "string",
+            "enum": [
+              "up",
+              "down",
+              "degraded",
+              "planned"
+            ]
+          },
+          "animated": {
+            "default": false,
+            "type": "boolean"
+          },
+          "label": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "from",
+          "to"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "marrow",
+    "name"
+  ],
+  "additionalProperties": false
+}

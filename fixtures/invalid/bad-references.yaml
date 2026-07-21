@@ -1,0 +1,18 @@
+marrow: 2
+name: Bad References
+zones:
+  - id: office
+    name: Office
+devices:
+  - id: core-sw-01
+    name: Core Switch
+    icon: cisco/switches/layer-3-switch
+    zone: ofice
+    ha_pair_with: core-sw-99
+  - id: dist-sw-01
+    name: Distribution Switch
+    icon: cisco/switches/multilayer-remote-switch
+    zone: office
+links:
+  - from: core-sw-01:Te1/0/1
+    to: dist-sw-99:Te1/1/1

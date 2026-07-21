@@ -1,0 +1,6 @@
+marrow: 2
+name: Broken Indentation
+devices:
+  - id: core-sw-01
+     name: Core Switch
+    icon: cisco/switches/layer-3-switch

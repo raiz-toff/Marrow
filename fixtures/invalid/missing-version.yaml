@@ -1,0 +1,5 @@
+name: No Version Here
+devices:
+  - id: core-sw-01
+    name: Core Switch
+    icon: cisco/switches/layer-3-switch

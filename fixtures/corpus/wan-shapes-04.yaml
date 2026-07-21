@@ -1,0 +1,121 @@
+marrow: 2
+name: "WAN Dual-Hub Hub-and-Spoke - East/West Canada"
+description: "Dual-hub variant: Toronto and Calgary regional hubs each serve their own set of sites, with two cross-connected sites for redundancy"
+theme: dark
+
+devices:
+  - id: hub-east-toronto
+    name: Toronto East Hub
+    icon: cisco/routers/wireless-router
+    role: east regional hub
+    mgmt_ip: 10.40.1.1
+    hero: true
+  - id: hub-west-calgary
+    name: Calgary West Hub
+    icon: cisco/routers/wireless-router
+    role: west regional hub
+    mgmt_ip: 10.40.2.1
+  - id: site-montreal
+    name: Montreal Site Router
+    icon: cisco/routers/router
+    role: branch spoke
+  - id: site-toronto
+    name: Toronto Site Router
+    icon: cisco/routers/wireless-router
+    role: branch spoke
+  - id: site-ottawa
+    name: Ottawa Site Router
+    icon: cisco/routers/service-router
+    role: branch spoke
+  - id: site-quebec
+    name: Quebec Site Router
+    icon: cisco/routers/mobile-access-router
+    role: branch spoke
+  - id: site-halifax
+    name: Halifax Site Router
+    icon: cisco/routers/broadcast-router
+    role: branch spoke
+  - id: site-vancouver
+    name: Vancouver Site Router
+    icon: cisco/routers/netflow-router
+    role: branch spoke
+  - id: site-calgary
+    name: Calgary Site Router
+    icon: cisco/routers/iad-router
+    role: branch spoke
+  - id: site-edmonton
+    name: Edmonton Site Router
+    icon: cisco/routers/ip-telephony-router
+    role: branch spoke
+  - id: site-winnipeg
+    name: Winnipeg Site Router
+    icon: cisco/routers/isci-router
+    role: branch spoke
+  - id: site-victoria
+    name: Victoria Site Router
+    icon: cisco/routers/storage-router
+    role: branch spoke
+
+links:
+  - from: "hub-east-toronto:Se0/0/0"
+    to: "site-montreal:Se0/0"
+    kind: wan
+    speed: 100M
+    status: up
+  - from: "hub-east-toronto:Se0/0/1"
+    to: "site-toronto:Se0/0"
+    kind: wan
+    speed: 1G
+    status: up
+    animated: true
+  - from: "hub-east-toronto:Se0/0/2"
+    to: "site-ottawa:Se0/0"
+    kind: wan
+    speed: 10M
+    status: down
+  - from: "hub-west-calgary:Se0/2/2"
+    to: "site-ottawa:Se0/1"
+    kind: wan
+    speed: 10M
+    status: up
+  - from: "hub-east-toronto:Se0/0/3"
+    to: "site-quebec:Se0/0"
+    kind: wan
+    speed: 100M
+    status: up
+  - from: "hub-east-toronto:Se0/0/4"
+    to: "site-halifax:Se0/0"
+    kind: wan
+    speed: 1G
+    status: planned
+  - from: "hub-west-calgary:Se0/1/0"
+    to: "site-vancouver:Se0/0"
+    kind: wan
+    speed: 100M
+    status: up
+  - from: "hub-west-calgary:Se0/1/1"
+    to: "site-calgary:Se0/0"
+    kind: wan
+    speed: 1G
+    status: degraded
+  - from: "hub-west-calgary:Se0/1/2"
+    to: "site-edmonton:Se0/0"
+    kind: wan
+    speed: 10M
+    status: up
+    animated: true
+  - from: "hub-west-calgary:Se0/1/3"
+    to: "site-winnipeg:Se0/0"
+    kind: wan
+    speed: 100M
+    status: up
+  - from: "hub-east-toronto:Se0/3/3"
+    to: "site-winnipeg:Se0/1"
+    kind: wan
+    speed: 10M
+    status: up
+  - from: "hub-west-calgary:Se0/1/4"
+    to: "site-victoria:Se0/0"
+    kind: wan
+    speed: 1G
+    status: up

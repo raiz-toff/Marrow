@@ -1,0 +1,69 @@
+marrow: 2
+name: Edge Case 07 - Four-Level Zone Nesting
+description: >
+  Layout stress case: zones nested 4 levels deep (campus -> building ->
+  floor -> rack) to exercise recursive zone-collapse rendering and
+  nested-container layout math.
+
+zones:
+  - id: campus-hq
+    name: HQ Campus
+    collapse: auto
+  - id: building-north
+    name: North Building
+    parent: campus-hq
+    collapse: auto
+  - id: floor-3
+    name: Floor 3
+    parent: building-north
+    collapse: auto
+  - id: rack-3b
+    name: Rack 3B
+    parent: floor-3
+    collapse: open
+
+devices:
+  - id: campus-edge-rt-01
+    name: Campus Edge Router
+    icon: cisco/routers/router
+    tier: edge
+    zone: campus-hq
+    mgmt_ip: 10.1.0.1
+  - id: bldg-north-dist-01
+    name: North Building Distribution Switch
+    icon: cisco/switches/multilayer-remote-switch
+    tier: distribution
+    zone: building-north
+  - id: floor3-acc-sw-01
+    name: Floor 3 Access Switch
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: floor-3
+  - id: rack3b-srv-01
+    name: Rack 3B App Server
+    icon: cisco/servers/file-server
+    tier: endpoint
+    zone: rack-3b
+  - id: rack3b-srv-02
+    name: Rack 3B DB Server
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: rack-3b
+
+links:
+  - from: campus-edge-rt-01:Gi0/0/1
+    to: bldg-north-dist-01:Te1/1/1
+    kind: fiber
+    speed: 10G
+  - from: bldg-north-dist-01:Gi1/0/1
+    to: floor3-acc-sw-01:Gi0/48
+    kind: fiber
+    speed: 1G
+  - from: floor3-acc-sw-01:Gi0/1
+    to: rack3b-srv-01:eno1
+    kind: copper
+    speed: 1G
+  - from: floor3-acc-sw-01:Gi0/2
+    to: rack3b-srv-02:eno1
+    kind: copper
+    speed: 1G

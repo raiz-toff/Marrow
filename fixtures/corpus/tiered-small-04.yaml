@@ -1,0 +1,103 @@
+marrow: 2
+name: Retail Store 12
+description: Flat small-office topology — no distribution or core tier, wide fan-out off one access switch, one wireless hop
+zones:
+  - id: wan
+    name: WAN
+  - id: store
+    name: Store Floor
+
+devices:
+  - id: edge-rtr1
+    name: Store Router
+    icon: cisco/routers/wireless-router
+    tier: edge
+    zone: wan
+    mgmt_ip: 203.0.113.50
+  - id: fw1
+    name: Store Firewall
+    icon: cisco/security/firewall
+    tier: edge
+    zone: wan
+  - id: acc-sw1
+    name: Store Access Switch
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: store
+  - id: pos-01
+    name: POS Terminal 1
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: store
+    role: Point of Sale Terminal
+  - id: pos-02
+    name: POS Terminal 2
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: store
+    role: Point of Sale Terminal
+  - id: pos-03
+    name: POS Terminal 3
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: store
+    role: Point of Sale Terminal
+  - id: printer-01
+    name: Receipt Printer
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: store
+  - id: ap-01
+    name: Store Wi-Fi AP
+    icon: cisco/datacenter/wireless-access-point
+    tier: access
+    zone: store
+  - id: voip-01
+    name: Front Desk Phone
+    icon: cisco/datacenter/ip-phone
+    tier: endpoint
+    zone: store
+  - id: laptop-mgr
+    name: Store Manager Laptop
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: store
+    role: Store Manager Laptop
+
+links:
+  - from: edge-rtr1:Gi0/0
+    to: fw1:Gi0/0
+    kind: copper
+    speed: 1G
+  - from: fw1:Gi0/1
+    to: acc-sw1:Gi0/24
+    kind: copper
+    speed: 1G
+  - from: acc-sw1:Gi0/1
+    to: pos-01:eth0
+    kind: copper
+    speed: 100M
+  - from: acc-sw1:Gi0/2
+    to: pos-02:eth0
+    kind: copper
+    speed: 100M
+  - from: acc-sw1:Gi0/3
+    to: pos-03:eth0
+    kind: copper
+    speed: 100M
+  - from: acc-sw1:Gi0/4
+    to: printer-01:eth0
+    kind: copper
+    speed: 100M
+  - from: acc-sw1:Gi0/5
+    to: ap-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-sw1:Gi0/6
+    to: voip-01:eth0
+    kind: copper
+    speed: 1G
+  - from: ap-01:wlan0
+    to: laptop-mgr:wlan0
+    kind: wireless
+    speed: 100M

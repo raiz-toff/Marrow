@@ -1,0 +1,26 @@
+{
+  "name": "@marrow/cli",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "marrow": "./dist/index.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "dependencies": {
+    "@marrow/diagnostics": "0.0.1",
+    "@marrow/icons": "0.0.1",
+    "@marrow/model": "0.0.1",
+    "@marrow/schema": "0.0.1",
+    "@marrow/server": "0.0.1",
+    "@marrow/site": "0.0.1",
+    "yaml": "^2.5.0"
+  }
+}

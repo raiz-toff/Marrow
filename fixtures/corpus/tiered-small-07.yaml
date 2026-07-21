@@ -1,0 +1,137 @@
+marrow: 2
+name: Ops Overlay with OOB Mgmt
+description: >
+  Standard branch stack plus a management-tier monitoring server, a staged
+  (not-yet-cabled) spare OOB switch, and a reserved-but-empty OOB zone —
+  these three deliberately produce the corpus's only intentional warnings
+  (one unlinked device, one empty zone).
+theme: dark
+zones:
+  - id: wan
+    name: WAN
+  - id: core
+    name: Core
+  - id: access
+    name: Access
+  - id: oob
+    name: Out-of-Band Mgmt
+    note: Reserved for a future OOB management switch — intentionally empty (expect W102)
+
+devices:
+  - id: edge-rtr1
+    name: Edge Router
+    icon: cisco/routers/router
+    tier: edge
+    zone: wan
+    mgmt_ip: 203.0.113.40
+  - id: fw1
+    name: Perimeter Firewall
+    icon: cisco/security/firewall
+    tier: edge
+    zone: wan
+  - id: core-sw1
+    name: Core Switch
+    icon: cisco/switches/layer-3-switch
+    tier: core
+    zone: core
+    mgmt_ip: 10.30.1.1
+  - id: acc-sw1
+    name: Access Switch 1
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: access
+  - id: acc-sw2
+    name: Access Switch 2
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: access
+  - id: ws-01
+    name: Workstation 01
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: access
+  - id: ws-02
+    name: Laptop 02
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: access
+  - id: ws-03
+    name: iMac 03
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: access
+  - id: printer-01
+    name: Office Printer
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: access
+  - id: voip-01
+    name: Reception IP Phone
+    icon: cisco/datacenter/ip-phone
+    tier: endpoint
+    zone: access
+  - id: srv-mon1
+    name: Monitoring Server
+    icon: cisco/servers/host
+    tier: management
+    zone: core
+    role: Monitoring Server
+    mgmt_ip: 10.30.9.5
+  - id: srv-file1
+    name: File Server
+    icon: cisco/servers/file-server
+    tier: endpoint
+    zone: core
+  - id: spare-sw1
+    name: Spare OOB Switch
+    icon: cisco/switches/workgroup-switch
+    tier: management
+    zone: core
+    status: planned
+    note: Staged spare switch, not yet cabled — intentionally isolated (expect W103)
+
+links:
+  - from: edge-rtr1:Gi0/0
+    to: fw1:Gi0/0
+    kind: copper
+    speed: 1G
+  - from: fw1:Gi0/1
+    to: core-sw1:Gi1/0/1
+    kind: fiber
+    speed: 1G
+  - from: core-sw1:Gi1/0/2
+    to: acc-sw1:Gi0/24
+    kind: fiber
+    speed: 10G
+  - from: core-sw1:Gi1/0/3
+    to: acc-sw2:Gi0/24
+    kind: fiber
+    speed: 10G
+  - from: core-sw1:Gi1/0/4
+    to: srv-mon1:eno1
+    kind: copper
+    speed: 1G
+  - from: core-sw1:Gi1/0/5
+    to: srv-file1:eno1
+    kind: copper
+    speed: 10G
+  - from: acc-sw1:Gi0/1
+    to: ws-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-sw1:Gi0/2
+    to: ws-02:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-sw2:Gi0/1
+    to: ws-03:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-sw2:Gi0/2
+    to: printer-01:eth0
+    kind: copper
+    speed: 100M
+  - from: acc-sw2:Gi0/3
+    to: voip-01:eth0
+    kind: copper
+    speed: 1G

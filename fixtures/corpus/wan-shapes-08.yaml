@@ -1,0 +1,91 @@
+marrow: 2
+name: "WAN Ring - 8 European Sites"
+description: "Ring topology of 8 European routers, each connected to its two neighbors forming a closed loop for path redundancy"
+theme: dark
+
+devices:
+  - id: rtr-berlin
+    name: Berlin Ring Router
+    icon: cisco/routers/router
+    role: ring node
+    mgmt_ip: 10.80.0.1
+  - id: rtr-warsaw
+    name: Warsaw Ring Router
+    icon: cisco/routers/wireless-router
+    role: ring node
+    mgmt_ip: 10.80.0.2
+  - id: rtr-prague
+    name: Prague Ring Router
+    icon: cisco/routers/service-router
+    role: ring node
+    mgmt_ip: 10.80.0.3
+  - id: rtr-vienna
+    name: Vienna Ring Router
+    icon: cisco/routers/mobile-access-router
+    role: ring node
+    mgmt_ip: 10.80.0.4
+  - id: rtr-budapest
+    name: Budapest Ring Router
+    icon: cisco/routers/broadcast-router
+    role: ring node
+    mgmt_ip: 10.80.0.5
+  - id: rtr-zagreb
+    name: Zagreb Ring Router
+    icon: cisco/routers/netflow-router
+    role: ring node
+    mgmt_ip: 10.80.0.6
+  - id: rtr-munich
+    name: Munich Ring Router
+    icon: cisco/routers/iad-router
+    role: ring node
+    mgmt_ip: 10.80.0.7
+  - id: rtr-krakow
+    name: Krakow Ring Router
+    icon: cisco/routers/ip-telephony-router
+    role: ring node
+    mgmt_ip: 10.80.0.8
+
+links:
+  - from: "rtr-berlin:Gi0/0"
+    to: "rtr-warsaw:Gi0/1"
+    kind: wan
+    speed: 1G
+    status: up
+  - from: "rtr-warsaw:Gi0/0"
+    to: "rtr-prague:Gi0/1"
+    kind: wan
+    speed: 10G
+    status: up
+    animated: true
+  - from: "rtr-prague:Gi0/0"
+    to: "rtr-vienna:Gi0/1"
+    kind: wan
+    speed: 1G
+    status: up
+  - from: "rtr-vienna:Gi0/0"
+    to: "rtr-budapest:Gi0/1"
+    kind: wan
+    speed: 1G
+    status: down
+  - from: "rtr-budapest:Gi0/0"
+    to: "rtr-zagreb:Gi0/1"
+    kind: wan
+    speed: 10G
+    status: up
+    animated: true
+  - from: "rtr-zagreb:Gi0/0"
+    to: "rtr-munich:Gi0/1"
+    kind: wan
+    speed: 1G
+    status: planned
+  - from: "rtr-munich:Gi0/0"
+    to: "rtr-krakow:Gi0/1"
+    kind: wan
+    speed: 1G
+    status: up
+    animated: true
+  - from: "rtr-krakow:Gi0/0"
+    to: "rtr-berlin:Gi0/1"
+    kind: wan
+    speed: 10G
+    status: degraded

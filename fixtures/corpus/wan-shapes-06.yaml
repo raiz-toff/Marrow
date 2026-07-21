@@ -1,0 +1,160 @@
+marrow: 2
+name: "WAN Partial Mesh - 12 Backbone PoPs"
+description: "Denser partial mesh of 12 Canadian backbone PoP routers with redundant regional peering"
+theme: dark
+
+devices:
+  - id: pop-yyz
+    name: Toronto PoP Router
+    icon: cisco/routers/router
+    role: backbone PoP
+    mgmt_ip: 10.60.0.1
+  - id: pop-yvr
+    name: Vancouver PoP Router
+    icon: cisco/routers/wireless-router
+    role: backbone PoP
+    mgmt_ip: 10.60.0.2
+  - id: pop-yyc
+    name: Calgary PoP Router
+    icon: cisco/routers/service-router
+    role: backbone PoP
+    mgmt_ip: 10.60.0.3
+  - id: pop-yul
+    name: Montreal PoP Router
+    icon: cisco/routers/mobile-access-router
+    role: backbone PoP
+    mgmt_ip: 10.60.0.4
+  - id: pop-yow
+    name: Ottawa PoP Router
+    icon: cisco/routers/broadcast-router
+    role: backbone PoP
+    mgmt_ip: 10.60.0.5
+  - id: pop-yeg
+    name: Edmonton PoP Router
+    icon: cisco/routers/netflow-router
+    role: backbone PoP
+    mgmt_ip: 10.60.0.6
+  - id: pop-yhz
+    name: Halifax PoP Router
+    icon: cisco/routers/iad-router
+    role: backbone PoP
+    mgmt_ip: 10.60.0.7
+  - id: pop-ywg
+    name: Winnipeg PoP Router
+    icon: cisco/routers/ip-telephony-router
+    role: backbone PoP
+    mgmt_ip: 10.60.0.8
+  - id: pop-yqb
+    name: Quebec City PoP Router
+    icon: cisco/routers/isci-router
+    role: backbone PoP
+    mgmt_ip: 10.60.0.9
+  - id: pop-yxe
+    name: Saskatoon PoP Router
+    icon: cisco/routers/storage-router
+    role: backbone PoP
+    mgmt_ip: 10.60.0.10
+  - id: pop-yqr
+    name: Regina PoP Router
+    icon: cisco/routers/nce-router
+    role: backbone PoP
+    mgmt_ip: 10.60.0.11
+  - id: pop-yqm
+    name: Moncton PoP Router
+    icon: cisco/routers/optical-services-router
+    role: backbone PoP
+    mgmt_ip: 10.60.0.12
+
+links:
+  - from: "pop-yyz:Te0/0"
+    to: "pop-yow:Te0/0"
+    kind: fiber
+    speed: 10G
+    status: up
+  - from: "pop-yyz:Te0/1"
+    to: "pop-yul:Te0/0"
+    kind: fiber
+    speed: 10G
+    status: up
+  - from: "pop-yyz:Te0/2"
+    to: "pop-ywg:Te0/0"
+    kind: fiber
+    speed: 1G
+    status: up
+  - from: "pop-yyz:Te0/3"
+    to: "pop-yvr:Te0/0"
+    kind: fiber
+    speed: 10G
+    status: up
+    animated: true
+  - from: "pop-yvr:Te0/1"
+    to: "pop-yyc:Te0/0"
+    kind: fiber
+    speed: 10G
+    status: up
+  - from: "pop-yvr:Te0/2"
+    to: "pop-yeg:Te0/0"
+    kind: fiber
+    speed: 1G
+    status: degraded
+  - from: "pop-yyc:Te0/1"
+    to: "pop-yeg:Te0/1"
+    kind: fiber
+    speed: 1G
+    status: up
+  - from: "pop-yyc:Te0/2"
+    to: "pop-ywg:Te0/1"
+    kind: fiber
+    speed: 1G
+    status: up
+  - from: "pop-yul:Te0/1"
+    to: "pop-yow:Te0/1"
+    kind: fiber
+    speed: 10G
+    status: up
+  - from: "pop-yul:Te0/2"
+    to: "pop-yqb:Te0/0"
+    kind: fiber
+    speed: 1G
+    status: up
+  - from: "pop-yul:Te0/3"
+    to: "pop-yhz:Te0/0"
+    kind: fiber
+    speed: 1G
+    status: down
+  - from: "pop-yow:Te0/2"
+    to: "pop-ywg:Te0/2"
+    kind: fiber
+    speed: 1G
+    status: planned
+  - from: "pop-yhz:Te0/1"
+    to: "pop-yqm:Te0/0"
+    kind: fiber
+    speed: 1G
+    status: up
+  - from: "pop-ywg:Te0/3"
+    to: "pop-yqr:Te0/0"
+    kind: fiber
+    speed: 1G
+    status: up
+    animated: true
+  - from: "pop-yqr:Te0/1"
+    to: "pop-yxe:Te0/0"
+    kind: fiber
+    speed: 1G
+    status: up
+  - from: "pop-yeg:Te0/2"
+    to: "pop-yxe:Te0/1"
+    kind: fiber
+    speed: 1G
+    status: up
+  - from: "pop-yqb:Te0/1"
+    to: "pop-yhz:Te0/2"
+    kind: fiber
+    speed: 1G
+    status: down
+  - from: "pop-yyz:Te0/4"
+    to: "pop-yyc:Te0/3"
+    kind: fiber
+    speed: 10G
+    status: up

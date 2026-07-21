@@ -1,0 +1,17 @@
+marrow: 2
+name: Edge Case 01 - Single Isolated Device
+description: >
+  Layout stress case: exactly one device, zero links. The layout engine must
+  place a single unconnected node without crashing or degenerate math (no
+  neighbors to derive a position from). W103 (unlinked device) is expected
+  and intentional here.
+
+devices:
+  - id: standalone-sensor-01
+    name: Standalone Sensor
+    icon: cisco/servers/host
+    tier: endpoint
+    status: unknown
+    note: Deliberately unlinked device to exercise isolated-node layout handling.
+
+links: []

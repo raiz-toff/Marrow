@@ -1,0 +1,30 @@
+{
+  "$comment": "Official vendor sources for icon packs that are NOT redistributed with this repo. `marrow icons fetch` downloads them from the vendor's own servers onto YOUR machine, under the vendor's terms — the repo ships only these pointers and the extraction code. URLs that rotate (aws, azure) are discovered by scraping the vendor's official page for the current package link.",
+  "aws": {
+    "title": "AWS",
+    "license": "AWS Architecture Icons, provided by Amazon for use in architecture diagrams (AWS Site Terms). Downloaded from AWS directly — not redistributed with this repo.",
+    "licenseUrl": "https://aws.amazon.com/architecture/icons/",
+    "discover": {
+      "page": "https://aws.amazon.com/architecture/icons/",
+      "pattern": "https://d1\\.awsstatic\\.com/[^\"']*Icon-package[^\"']*\\.zip"
+    }
+  },
+  "azure": {
+    "title": "Azure",
+    "license": "Azure architecture icons, provided by Microsoft for use in architecture diagrams. Downloaded from Microsoft directly — not redistributed with this repo.",
+    "licenseUrl": "https://learn.microsoft.com/en-us/azure/architecture/icons/",
+    "discover": {
+      "page": "https://learn.microsoft.com/en-us/azure/architecture/icons/",
+      "pattern": "https://arch-center\\.azureedge\\.net/icons/Azure_Public_Service_Icons[^\"']*\\.zip"
+    }
+  },
+  "gcp": {
+    "title": "Google Cloud",
+    "license": "Google Cloud product icons, provided by Google for use in architecture diagrams. Downloaded from Google directly — not redistributed with this repo.",
+    "licenseUrl": "https://cloud.google.com/icons",
+    "urls": [
+      "https://services.google.com/fh/files/misc/google-cloud-legacy-icons.zip",
+      "https://services.google.com/fh/files/misc/core-products-icons.zip"
+    ]
+  }
+}

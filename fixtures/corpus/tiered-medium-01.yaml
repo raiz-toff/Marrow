@@ -1,0 +1,323 @@
+marrow: 2
+name: Riverside Campus Core
+description: Single-building 3-tier campus with an HA core pair and LAG uplinks
+theme: dark
+hero: core-sw-01
+zones:
+- id: core
+  name: Core
+- id: distribution
+  name: Distribution
+- id: access
+  name: Access
+devices:
+- id: core-sw-01
+  icon: cisco/switches/layer-3-switch
+  tier: core
+  zone: core
+  name: Core Switch 1
+  mgmt_ip: 10.10.0.1
+  ha_pair_with: core-sw-02
+  hero: true
+  interfaces:
+  - name: Vlan10
+    description: campus mgmt
+    vlan: 10
+    ip: 10.10.0.1/24
+  - name: Vlan99
+    description: native/transit
+    vlan: 99
+- id: core-sw-02
+  icon: cisco/switches/layer-3-switch
+  tier: core
+  zone: core
+  name: Core Switch 2
+  mgmt_ip: 10.10.0.2
+  ha_pair_with: core-sw-01
+- id: dist-sw-01
+  icon: cisco/switches/multilayer-remote-switch
+  tier: distribution
+  zone: distribution
+  name: Distribution Switch 1
+  mgmt_ip: 10.10.1.1
+  status: up
+  interfaces:
+  - name: Vlan10
+    description: campus mgmt
+    vlan: 10
+- id: dist-sw-02
+  icon: cisco/switches/multilayer-remote-switch
+  tier: distribution
+  zone: distribution
+  name: Distribution Switch 2
+  mgmt_ip: 10.10.1.2
+  status: up
+- id: dist-sw-03
+  icon: cisco/switches/multilayer-remote-switch
+  tier: distribution
+  zone: distribution
+  name: Distribution Switch 3
+  mgmt_ip: 10.10.1.3
+  status: up
+- id: dist-sw-04
+  icon: cisco/switches/multilayer-remote-switch
+  tier: distribution
+  zone: distribution
+  name: Distribution Switch 4
+  mgmt_ip: 10.10.1.4
+  status: degraded
+- id: acc-sw-01
+  icon: cisco/switches/workgroup-switch
+  tier: access
+  zone: access
+  name: Access Switch 1
+  status: up
+- id: acc-sw-02
+  icon: cisco/switches/workgroup-switch
+  tier: access
+  zone: access
+  name: Access Switch 2
+  status: up
+- id: acc-sw-03
+  icon: cisco/switches/workgroup-switch
+  tier: access
+  zone: access
+  name: Access Switch 3
+  status: up
+- id: acc-sw-04
+  icon: cisco/switches/workgroup-switch
+  tier: access
+  zone: access
+  name: Access Switch 4
+  status: up
+- id: acc-sw-05
+  icon: cisco/switches/workgroup-switch
+  tier: access
+  zone: access
+  name: Access Switch 5
+  status: degraded
+- id: acc-sw-06
+  icon: cisco/switches/workgroup-switch
+  tier: access
+  zone: access
+  name: Access Switch 6
+  status: up
+- id: acc-sw-07
+  icon: cisco/switches/workgroup-switch
+  tier: access
+  zone: access
+  name: Access Switch 7
+  status: up
+- id: acc-sw-08
+  icon: cisco/switches/workgroup-switch
+  tier: access
+  zone: access
+  name: Access Switch 8
+  status: up
+- id: acc-sw-09
+  icon: cisco/switches/workgroup-switch
+  tier: access
+  zone: access
+  name: Access Switch 9
+  status: planned
+- id: acc-sw-10
+  icon: cisco/switches/workgroup-switch
+  tier: access
+  zone: access
+  name: Access Switch 10
+  status: up
+- id: acc-sw-11
+  icon: cisco/switches/workgroup-switch
+  tier: access
+  zone: access
+  name: Access Switch 11
+  status: up
+- id: acc-sw-12
+  icon: cisco/switches/workgroup-switch
+  tier: access
+  zone: access
+  name: Access Switch 12
+  status: up
+- id: srv-app-01
+  icon: cisco/servers/file-server
+  tier: endpoint
+  zone: access
+  name: App Server
+  status: up
+- id: srv-db-01
+  icon: cisco/servers/host
+  tier: endpoint
+  zone: access
+  name: DB Server
+  status: up
+- id: srv-file-01
+  icon: cisco/servers/file-server
+  tier: endpoint
+  zone: access
+  name: File Server
+  status: planned
+- id: pc-01
+  icon: cisco/computer-and-peripherals/laptop
+  tier: endpoint
+  zone: access
+  name: Sales Laptop 1
+  status: up
+- id: pc-02
+  icon: cisco/computer-and-peripherals/macintosh
+  tier: endpoint
+  zone: access
+  name: Design Workstation 1
+  status: up
+- id: pc-03
+  icon: cisco/computer-and-peripherals/laptop
+  tier: endpoint
+  zone: access
+  name: Sales Laptop 2
+  status: up
+- id: pc-04
+  icon: cisco/computer-and-peripherals/macintosh
+  tier: endpoint
+  zone: access
+  name: Design Workstation 2
+  status: up
+- id: pc-05
+  icon: cisco/computer-and-peripherals/laptop
+  tier: endpoint
+  zone: access
+  name: Front Desk Laptop
+  status: degraded
+links:
+- from: core-sw-01:Te1/0/1
+  to: core-sw-02:Te1/0/1
+  kind: dac
+  speed: 40G
+  lag: po1
+- from: core-sw-01:Te1/0/2
+  to: core-sw-02:Te1/0/2
+  kind: dac
+  speed: 40G
+  lag: po1
+- from: dist-sw-01:Te1/1/1
+  to: core-sw-01:Te1/0/3
+  kind: fiber
+  speed: 40G
+  animated: true
+- from: dist-sw-01:Te1/1/2
+  to: core-sw-02:Te1/0/3
+  kind: fiber
+  speed: 40G
+- from: dist-sw-02:Te1/1/1
+  to: core-sw-01:Te1/0/4
+  kind: fiber
+  speed: 40G
+  animated: false
+- from: dist-sw-02:Te1/1/2
+  to: core-sw-02:Te1/0/4
+  kind: fiber
+  speed: 40G
+- from: dist-sw-03:Te1/1/1
+  to: core-sw-01:Te1/0/5
+  kind: fiber
+  speed: 40G
+  animated: false
+- from: dist-sw-03:Te1/1/2
+  to: core-sw-02:Te1/0/5
+  kind: fiber
+  speed: 40G
+- from: dist-sw-04:Te1/1/1
+  to: core-sw-01:Te1/0/6
+  kind: fiber
+  speed: 40G
+  animated: false
+- from: dist-sw-04:Te1/1/2
+  to: core-sw-02:Te1/0/6
+  kind: fiber
+  speed: 40G
+- from: dist-sw-01:Te1/1/3
+  to: dist-sw-02:Te1/1/3
+  kind: dac
+  speed: 40G
+- from: dist-sw-03:Te1/1/3
+  to: dist-sw-04:Te1/1/3
+  kind: dac
+  speed: 40G
+- from: dist-sw-01:Te1/1/4
+  to: acc-sw-01:Gi0/1
+  kind: fiber
+  speed: 10G
+- from: dist-sw-01:Te1/1/5
+  to: acc-sw-02:Gi0/1
+  kind: fiber
+  speed: 10G
+- from: dist-sw-01:Te1/1/6
+  to: acc-sw-03:Gi0/1
+  kind: fiber
+  speed: 10G
+- from: dist-sw-02:Te1/1/4
+  to: acc-sw-04:Gi0/1
+  kind: fiber
+  speed: 10G
+- from: dist-sw-02:Te1/1/5
+  to: acc-sw-05:Gi0/1
+  kind: fiber
+  speed: 10G
+- from: dist-sw-02:Te1/1/6
+  to: acc-sw-06:Gi0/1
+  kind: fiber
+  speed: 10G
+- from: dist-sw-03:Te1/1/4
+  to: acc-sw-07:Gi0/1
+  kind: fiber
+  speed: 10G
+- from: dist-sw-03:Te1/1/5
+  to: acc-sw-08:Gi0/1
+  kind: fiber
+  speed: 10G
+- from: dist-sw-03:Te1/1/6
+  to: acc-sw-09:Gi0/1
+  kind: fiber
+  speed: 10G
+- from: dist-sw-04:Te1/1/4
+  to: acc-sw-10:Gi0/1
+  kind: fiber
+  speed: 10G
+- from: dist-sw-04:Te1/1/5
+  to: acc-sw-11:Gi0/1
+  kind: fiber
+  speed: 10G
+- from: dist-sw-04:Te1/1/6
+  to: acc-sw-12:Gi0/1
+  kind: fiber
+  speed: 10G
+- from: acc-sw-01:Gi0/2
+  to: srv-app-01:eno1
+  kind: copper
+  speed: 10G
+- from: acc-sw-02:Gi0/2
+  to: srv-db-01:eno1
+  kind: copper
+  speed: 10G
+- from: acc-sw-03:Gi0/2
+  to: srv-file-01:eno1
+  kind: copper
+  speed: 10G
+- from: acc-sw-04:Gi0/2
+  to: pc-01:eth1
+  kind: copper
+  speed: 1G
+- from: acc-sw-05:Gi0/2
+  to: pc-02:eth1
+  kind: copper
+  speed: 1G
+- from: acc-sw-06:Gi0/2
+  to: pc-03:eth1
+  kind: copper
+  speed: 1G
+- from: acc-sw-07:Gi0/2
+  to: pc-04:eth1
+  kind: copper
+  speed: 1G
+- from: acc-sw-08:Gi0/2
+  to: pc-05:eth1
+  kind: copper
+  speed: 1G

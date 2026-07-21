@@ -1,0 +1,23 @@
+{
+  "name": "@marrow/site",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "dependencies": {
+    "@marrow/icons": "0.0.1",
+    "@marrow/layout": "0.0.1",
+    "@marrow/lint": "0.0.1",
+    "@marrow/model": "0.0.1",
+    "@marrow/render-svg": "0.0.1",
+    "@marrow/runtime": "0.0.1",
+    "@marrow/scene": "0.0.1"
+  }
+}

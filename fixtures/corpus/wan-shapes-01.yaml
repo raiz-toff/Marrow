@@ -1,0 +1,126 @@
+marrow: 2
+name: "WAN Hub and Spoke - Chicago HQ"
+description: "Single-hub hub-and-spoke: Chicago HQ router fans out to 12 US branch offices over WAN circuits"
+theme: dark
+
+devices:
+  - id: hub-chicago
+    name: Chicago HQ Router
+    icon: cisco/routers/router
+    role: regional hub
+    mgmt_ip: 10.10.0.1
+    hero: true
+    note: "Primary WAN aggregation router"
+  - id: branch-atlanta
+    name: Atlanta Branch Router
+    icon: cisco/routers/router
+    role: branch spoke
+  - id: branch-boston
+    name: Boston Branch Router
+    icon: cisco/routers/wireless-router
+    role: branch spoke
+  - id: branch-charlotte
+    name: Charlotte Branch Router
+    icon: cisco/routers/service-router
+    role: branch spoke
+  - id: branch-dallas
+    name: Dallas Branch Router
+    icon: cisco/routers/mobile-access-router
+    role: branch spoke
+  - id: branch-denver
+    name: Denver Branch Router
+    icon: cisco/routers/broadcast-router
+    role: branch spoke
+  - id: branch-detroit
+    name: Detroit Branch Router
+    icon: cisco/routers/netflow-router
+    role: branch spoke
+  - id: branch-houston
+    name: Houston Branch Router
+    icon: cisco/routers/iad-router
+    role: branch spoke
+  - id: branch-miami
+    name: Miami Branch Router
+    icon: cisco/routers/ip-telephony-router
+    role: branch spoke
+  - id: branch-nashville
+    name: Nashville Branch Router
+    icon: cisco/routers/isci-router
+    role: branch spoke
+  - id: branch-orlando
+    name: Orlando Branch Router
+    icon: cisco/routers/storage-router
+    role: branch spoke
+  - id: branch-phoenix
+    name: Phoenix Branch Router
+    icon: cisco/routers/nce-router
+    role: branch spoke
+  - id: branch-portland
+    name: Portland Branch Router
+    icon: cisco/routers/optical-services-router
+    role: branch spoke
+
+links:
+  - from: "hub-chicago:Se0/0/0"
+    to: "branch-atlanta:Se0/0"
+    kind: wan
+    speed: 10M
+    status: up
+  - from: "hub-chicago:Se0/0/1"
+    to: "branch-boston:Se0/0"
+    kind: wan
+    speed: 100M
+    status: up
+  - from: "hub-chicago:Se0/0/2"
+    to: "branch-charlotte:Se0/0"
+    kind: wan
+    speed: 100M
+    status: up
+    animated: true
+  - from: "hub-chicago:Se0/0/3"
+    to: "branch-dallas:Se0/0"
+    kind: wan
+    speed: 1G
+    status: up
+  - from: "hub-chicago:Se0/0/4"
+    to: "branch-denver:Se0/0"
+    kind: wan
+    speed: 10M
+    status: down
+  - from: "hub-chicago:Se0/0/5"
+    to: "branch-detroit:Se0/0"
+    kind: wan
+    speed: 100M
+    status: up
+  - from: "hub-chicago:Se0/0/6"
+    to: "branch-houston:Se0/0"
+    kind: wan
+    speed: 1G
+    status: up
+    animated: true
+  - from: "hub-chicago:Se0/0/7"
+    to: "branch-miami:Se0/0"
+    kind: wan
+    speed: 10M
+    status: planned
+  - from: "hub-chicago:Se0/0/8"
+    to: "branch-nashville:Se0/0"
+    kind: wan
+    speed: 100M
+    status: up
+  - from: "hub-chicago:Se0/0/9"
+    to: "branch-orlando:Se0/0"
+    kind: wan
+    speed: 100M
+    status: up
+  - from: "hub-chicago:Se0/0/10"
+    to: "branch-phoenix:Se0/0"
+    kind: wan
+    speed: 1G
+    status: degraded
+    animated: true
+  - from: "hub-chicago:Se0/0/11"
+    to: "branch-portland:Se0/0"
+    kind: wan
+    speed: 10M
+    status: up

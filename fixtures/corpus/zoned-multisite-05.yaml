@@ -1,0 +1,235 @@
+marrow: 2
+name: MSP Core POP with Four Customer Tenants
+description: Managed service provider core POP fanning out VPN tunnels to four differently-sized customer sites nested under a shared customers zone
+theme: dark
+hero: pop-core-01
+
+zones:
+  - id: pop
+    name: MSP Core POP
+    accent: "#1e293b"
+    note: Shared infrastructure serving every tenant
+  - id: customers
+    name: Customer Shared Services
+    accent: "#0891b2"
+    note: Portal and billing systems shared across all tenants
+  - id: customer-a
+    name: Customer A - Acme Logistics
+    parent: customers
+    accent: "#2563eb"
+  - id: customer-b
+    name: Customer B - Bramble Retail
+    parent: customers
+    accent: "#16a34a"
+  - id: customer-c
+    name: Customer C - Cobalt Legal
+    parent: customers
+    accent: "#ca8a04"
+    note: Smallest tenant, single router and one laptop
+  - id: customer-d
+    name: Customer D - Delta Studio
+    parent: customers
+    accent: "#7c3aed"
+    note: Wireless-first small office
+
+devices:
+  - id: pop-core-01
+    name: MSP Core Switch
+    icon: cisco/switches/layer-3-switch
+    tier: core
+    zone: pop
+    hero: true
+    mgmt_ip: 172.20.0.10
+    note: Hero device - MSP core POP, hub for every customer VPN tunnel
+  - id: pop-fw-01
+    name: MSP Perimeter Firewall
+    icon: cisco/security/firewall
+    tier: edge
+    zone: pop
+  - id: pop-vpn-01
+    name: Customer VPN Concentrator
+    icon: cisco/design/vpn-concentrator
+    tier: edge
+    zone: pop
+    role: Customer VPN concentrator
+    note: Terminates one site-to-site tunnel per customer
+  - id: pop-mgmt-01
+    name: NOC Monitoring
+    icon: cisco/misc/network-management
+    tier: management
+    zone: pop
+    role: RMM / NOC monitoring
+  - id: cust-portal-01
+    name: Customer Self-Service Portal
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: customers
+    role: Customer self-service portal
+  - id: cust-billing-01
+    name: Billing and Ticketing System
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: customers
+    role: Billing / ticketing system
+  - id: ca-rt-01
+    name: Customer A Router
+    icon: cisco/routers/router
+    tier: edge
+    zone: customer-a
+    mgmt_ip: 10.100.0.1
+  - id: ca-fw-01
+    name: Customer A Firewall
+    icon: cisco/security/firewall
+    tier: edge
+    zone: customer-a
+    note: Customer A perimeter firewall
+  - id: ca-sw-01
+    name: Customer A Switch
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: customer-a
+  - id: ca-srv-01
+    name: Customer A App Server
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: customer-a
+    role: Customer A app server
+  - id: ca-pc-01
+    name: Customer A Laptop 1
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: customer-a
+  - id: ca-pc-02
+    name: Customer A Laptop 2
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: customer-a
+  - id: cb-rt-01
+    name: Customer B Router
+    icon: cisco/routers/router
+    tier: edge
+    zone: customer-b
+    mgmt_ip: 10.101.0.1
+  - id: cb-sw-01
+    name: Customer B Switch
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: customer-b
+  - id: cb-pc-01
+    name: Customer B Workstation
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: customer-b
+  - id: cc-rt-01
+    name: Customer C Router
+    icon: cisco/routers/router
+    tier: edge
+    zone: customer-c
+    mgmt_ip: 10.102.0.1
+  - id: cc-pc-01
+    name: Customer C Laptop
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: customer-c
+  - id: cd-rt-01
+    name: Customer D Router
+    icon: cisco/routers/router
+    tier: edge
+    zone: customer-d
+    mgmt_ip: 10.103.0.1
+  - id: cd-ap-01
+    name: Customer D Access Point
+    icon: cisco/misc/access-point
+    tier: access
+    zone: customer-d
+  - id: cd-pc-01
+    name: Customer D Laptop
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: customer-d
+  - id: cd-pc-02
+    name: Customer D Workstation
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: customer-d
+
+links:
+  - from: pop-fw-01:inside
+    to: pop-core-01:Te1/0/1
+    kind: fiber
+    speed: 10G
+    animated: true
+  - from: pop-core-01:Te1/0/2
+    to: pop-vpn-01:Gi0/0
+    kind: fiber
+    speed: 10G
+  - from: pop-core-01:Te1/0/3
+    to: pop-mgmt-01:eth0
+    kind: copper
+    speed: 1G
+  - from: pop-core-01:Te1/0/4
+    to: cust-portal-01:eno1
+    kind: copper
+    speed: 10G
+  - from: pop-core-01:Te1/0/5
+    to: cust-billing-01:eno1
+    kind: copper
+    speed: 10G
+  - from: pop-vpn-01:tun1
+    to: ca-rt-01:Tu0
+    kind: wan
+    speed: 1G
+    note: Customer A site-to-site VPN
+  - from: ca-rt-01:Gi0/1
+    to: ca-fw-01:outside
+    kind: copper
+    speed: 1G
+  - from: ca-fw-01:inside
+    to: ca-sw-01:Gi0/24
+    kind: copper
+    speed: 1G
+  - from: ca-sw-01:Gi0/1
+    to: ca-srv-01:eno1
+    kind: copper
+    speed: 10G
+  - from: ca-sw-01:Gi0/2
+    to: ca-pc-01:eth0
+  - from: ca-sw-01:Gi0/3
+    to: ca-pc-02:eth0
+  - from: pop-vpn-01:tun2
+    to: cb-rt-01:Tu0
+    kind: wan
+    speed: 100M
+    note: Customer B site-to-site VPN
+  - from: cb-rt-01:Gi0/1
+    to: cb-sw-01:Gi0/24
+    kind: copper
+    speed: 1G
+  - from: cb-sw-01:Gi0/1
+    to: cb-pc-01:en0
+  - from: pop-vpn-01:tun3
+    to: cc-rt-01:Tu0
+    kind: wan
+    speed: 100M
+    note: Customer C site-to-site VPN
+  - from: cc-rt-01:Gi0/1
+    to: cc-pc-01:eth0
+    kind: copper
+    speed: 1G
+  - from: pop-vpn-01:tun4
+    to: cd-rt-01:Tu0
+    kind: wan
+    speed: 100M
+    note: Customer D site-to-site VPN
+  - from: cd-rt-01:Gi0/1
+    to: cd-ap-01:eth0
+    kind: copper
+    speed: 1G
+  - from: cd-ap-01:wlan1
+    to: cd-pc-01:wifi0
+    kind: wireless
+    speed: 100M
+  - from: cd-ap-01:wlan2
+    to: cd-pc-02:wifi0
+    kind: wireless
+    speed: 100M

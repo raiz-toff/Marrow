@@ -1,0 +1,14 @@
+marrow: 2
+name: Unknown Keys
+devices:
+  - id: core-sw-01
+    name: Core Switch
+    icon: cisco/switches/layer-3-switch
+    tier: core
+  - id: acc-sw-01
+    name: Access Switch
+    icon: cisco/switches/workgroup-switch
+    tier: access
+links:
+  - from: core-sw-01:Gi1/0/1
+    to: acc-sw-01:Gi0/48

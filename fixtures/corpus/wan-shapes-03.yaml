@@ -1,0 +1,188 @@
+marrow: 2
+name: "WAN Dual-Hub Hub-and-Spoke - Northeast"
+description: "Dual-hub hub-and-spoke: NY primary and Boston secondary hub serve 16 Northeast branches, 4 dual-homed for redundancy"
+theme: dark
+
+devices:
+  - id: hub-newyork
+    name: New York Primary Hub
+    icon: cisco/routers/router
+    role: primary hub
+    mgmt_ip: 10.30.0.1
+    hero: true
+    note: "Primary WAN hub for Northeast region"
+  - id: hub-boston
+    name: Boston Secondary Hub
+    icon: cisco/routers/router
+    role: secondary hub
+    mgmt_ip: 10.30.0.2
+    note: "Secondary/backup WAN hub for Northeast region"
+  - id: branch-albany
+    name: Albany Branch Router
+    icon: cisco/routers/router
+    role: branch spoke
+  - id: branch-augusta
+    name: Augusta Branch Router
+    icon: cisco/routers/wireless-router
+    role: branch spoke
+  - id: branch-bangor
+    name: Bangor Branch Router
+    icon: cisco/routers/service-router
+    role: branch spoke
+  - id: branch-burlington
+    name: Burlington Branch Router
+    icon: cisco/routers/mobile-access-router
+    role: branch spoke
+  - id: branch-concord
+    name: Concord Branch Router
+    icon: cisco/routers/broadcast-router
+    role: branch spoke
+  - id: branch-hartford
+    name: Hartford Branch Router
+    icon: cisco/routers/netflow-router
+    role: branch spoke
+  - id: branch-manchester
+    name: Manchester Branch Router
+    icon: cisco/routers/iad-router
+    role: branch spoke
+  - id: branch-newark
+    name: Newark Branch Router
+    icon: cisco/routers/ip-telephony-router
+    role: branch spoke
+  - id: branch-providence
+    name: Providence Branch Router
+    icon: cisco/routers/isci-router
+    role: branch spoke
+  - id: branch-rochester
+    name: Rochester Branch Router
+    icon: cisco/routers/storage-router
+    role: branch spoke
+  - id: branch-syracuse
+    name: Syracuse Branch Router
+    icon: cisco/routers/nce-router
+    role: branch spoke
+  - id: branch-trenton
+    name: Trenton Branch Router
+    icon: cisco/routers/optical-services-router
+    role: branch spoke
+  - id: branch-buffalo
+    name: Buffalo Branch Router
+    icon: cisco/routers/content-service-router
+    role: branch spoke
+  - id: branch-worcester
+    name: Worcester Branch Router
+    icon: cisco/routers/space-router
+    role: branch spoke
+  - id: branch-scranton
+    name: Scranton Branch Router
+    icon: cisco/routers/atm-router
+    role: branch spoke
+  - id: branch-stamford
+    name: Stamford Branch Router
+    icon: cisco/routers/atm-tag-switch-router
+    role: branch spoke
+
+links:
+  - from: "hub-newyork:Se0/0/0"
+    to: "branch-albany:Se0/0"
+    kind: wan
+    speed: 10M
+    status: up
+    animated: true
+  - from: "hub-boston:Se0/1/0"
+    to: "branch-albany:Se0/1"
+    kind: wan
+    speed: 10M
+    status: up
+  - from: "hub-newyork:Se0/0/1"
+    to: "branch-augusta:Se0/0"
+    kind: wan
+    speed: 100M
+    status: up
+  - from: "hub-boston:Se0/1/1"
+    to: "branch-augusta:Se0/1"
+    kind: wan
+    speed: 10M
+    status: up
+  - from: "hub-newyork:Se0/0/2"
+    to: "branch-bangor:Se0/0"
+    kind: wan
+    speed: 1G
+    status: up
+  - from: "hub-boston:Se0/1/2"
+    to: "branch-bangor:Se0/1"
+    kind: wan
+    speed: 10M
+    status: up
+  - from: "hub-newyork:Se0/0/3"
+    to: "branch-burlington:Se0/0"
+    kind: wan
+    speed: 100M
+    status: down
+  - from: "hub-boston:Se0/1/3"
+    to: "branch-burlington:Se0/1"
+    kind: wan
+    speed: 10M
+    status: up
+  - from: "hub-newyork:Se0/0/4"
+    to: "branch-concord:Se0/0"
+    kind: wan
+    speed: 10M
+    status: up
+  - from: "hub-newyork:Se0/0/5"
+    to: "branch-hartford:Se0/0"
+    kind: wan
+    speed: 100M
+    status: up
+  - from: "hub-newyork:Se0/0/6"
+    to: "branch-manchester:Se0/0"
+    kind: wan
+    speed: 1G
+    status: planned
+  - from: "hub-newyork:Se0/0/7"
+    to: "branch-newark:Se0/0"
+    kind: wan
+    speed: 100M
+    status: up
+    animated: true
+  - from: "hub-newyork:Se0/0/8"
+    to: "branch-providence:Se0/0"
+    kind: wan
+    speed: 10M
+    status: up
+  - from: "hub-newyork:Se0/0/9"
+    to: "branch-rochester:Se0/0"
+    kind: wan
+    speed: 100M
+    status: up
+  - from: "hub-newyork:Se0/0/10"
+    to: "branch-syracuse:Se0/0"
+    kind: wan
+    speed: 1G
+    status: up
+  - from: "hub-newyork:Se0/0/11"
+    to: "branch-trenton:Se0/0"
+    kind: wan
+    speed: 100M
+    status: down
+  - from: "hub-newyork:Se0/0/12"
+    to: "branch-buffalo:Se0/0"
+    kind: wan
+    speed: 10M
+    status: up
+    animated: true
+  - from: "hub-newyork:Se0/0/13"
+    to: "branch-worcester:Se0/0"
+    kind: wan
+    speed: 100M
+    status: up
+  - from: "hub-newyork:Se0/0/14"
+    to: "branch-scranton:Se0/0"
+    kind: wan
+    speed: 1G
+    status: planned
+  - from: "hub-newyork:Se0/0/15"
+    to: "branch-stamford:Se0/0"
+    kind: wan
+    speed: 100M
+    status: up

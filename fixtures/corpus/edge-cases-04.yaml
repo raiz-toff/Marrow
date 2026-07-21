@@ -1,0 +1,120 @@
+marrow: 2
+name: Edge Case 04 - Dense Interface List
+description: >
+  Layout stress case: a single access switch declaring 24 interface
+  entries, to exercise info-panel/tooltip rendering for devices with a
+  long interface table.
+
+zones:
+  - id: wiring-closet
+    name: Wiring Closet A
+
+devices:
+  - id: dist-sw-uplink-01
+    name: Distribution Uplink Switch
+    icon: cisco/switches/multilayer-remote-switch
+    tier: distribution
+    zone: wiring-closet
+  - id: acc-sw-mega-01
+    name: Mega Access Switch (24-port)
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: wiring-closet
+    mgmt_ip: 10.10.5.20
+    interfaces:
+      - name: Gi1/0/1
+        description: access port 1
+        vlan: 1
+      - name: Gi1/0/2
+        description: access port 2
+        vlan: 2
+      - name: Gi1/0/3
+        description: access port 3
+        vlan: 3
+      - name: Gi1/0/4
+        description: access port 4
+        vlan: 4
+      - name: Gi1/0/5
+        description: access port 5
+        vlan: 5
+      - name: Gi1/0/6
+        description: access port 6
+        vlan: 6
+      - name: Gi1/0/7
+        description: access port 7
+        vlan: 7
+      - name: Gi1/0/8
+        description: access port 8
+        vlan: 8
+      - name: Gi1/0/9
+        description: access port 9
+        vlan: 9
+      - name: Gi1/0/10
+        description: access port 10
+        vlan: 10
+      - name: Gi1/0/11
+        description: access port 11
+        vlan: 1
+      - name: Gi1/0/12
+        description: access port 12
+        vlan: 2
+      - name: Gi1/0/13
+        description: access port 13
+        vlan: 3
+      - name: Gi1/0/14
+        description: access port 14
+        vlan: 4
+      - name: Gi1/0/15
+        description: access port 15
+        vlan: 5
+      - name: Gi1/0/16
+        description: access port 16
+        vlan: 6
+      - name: Gi1/0/17
+        description: access port 17
+        vlan: 7
+      - name: Gi1/0/18
+        description: access port 18
+        vlan: 8
+      - name: Gi1/0/19
+        description: access port 19
+        vlan: 9
+      - name: Gi1/0/20
+        description: access port 20
+        vlan: 10
+      - name: Gi1/0/21
+        description: access port 21
+        vlan: 1
+      - name: Gi1/0/22
+        description: access port 22
+        vlan: 2
+      - name: Gi1/0/23
+        description: uplink to distribution
+        vlan: 3
+      - name: Gi1/0/24
+        description: uplink spare
+        vlan: 4
+  - id: pc-closet-01
+    name: Closet Test Laptop
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: wiring-closet
+  - id: srv-closet-01
+    name: Closet Print Server
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: wiring-closet
+
+links:
+  - from: dist-sw-uplink-01:Gi1/1/1
+    to: acc-sw-mega-01:Gi1/0/23
+    kind: fiber
+    speed: 10G
+  - from: acc-sw-mega-01:Gi1/0/1
+    to: pc-closet-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-sw-mega-01:Gi1/0/2
+    to: srv-closet-01:eno1
+    kind: copper
+    speed: 1G

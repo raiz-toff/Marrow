@@ -1,0 +1,116 @@
+marrow: 2
+name: "WAN Full Mesh - 6 APAC Sites"
+description: "Full mesh of 6 APAC regional routers, every site directly peered with every other site"
+theme: dark
+
+devices:
+  - id: rtr-tokyo
+    name: Tokyo Regional Router
+    icon: cisco/routers/router
+    role: APAC full-mesh node
+    mgmt_ip: 10.70.0.1
+  - id: rtr-singapore
+    name: Singapore Regional Router
+    icon: cisco/routers/wireless-router
+    role: APAC full-mesh node
+    mgmt_ip: 10.70.0.2
+  - id: rtr-sydney
+    name: Sydney Regional Router
+    icon: cisco/routers/service-router
+    role: APAC full-mesh node
+    mgmt_ip: 10.70.0.3
+  - id: rtr-mumbai
+    name: Mumbai Regional Router
+    icon: cisco/routers/mobile-access-router
+    role: APAC full-mesh node
+    mgmt_ip: 10.70.0.4
+  - id: rtr-seoul
+    name: Seoul Regional Router
+    icon: cisco/routers/broadcast-router
+    role: APAC full-mesh node
+    mgmt_ip: 10.70.0.5
+  - id: rtr-hongkong
+    name: Hong Kong Regional Router
+    icon: cisco/routers/netflow-router
+    role: APAC full-mesh node
+    mgmt_ip: 10.70.0.6
+
+links:
+  - from: "rtr-tokyo:Gi0/0"
+    to: "rtr-singapore:Gi0/0"
+    kind: wan
+    speed: 1G
+    status: up
+    animated: true
+  - from: "rtr-tokyo:Gi0/1"
+    to: "rtr-sydney:Gi0/0"
+    kind: wan
+    speed: 10G
+    status: up
+  - from: "rtr-tokyo:Gi0/2"
+    to: "rtr-mumbai:Gi0/0"
+    kind: wan
+    speed: 1G
+    status: up
+  - from: "rtr-tokyo:Gi0/3"
+    to: "rtr-seoul:Gi0/0"
+    kind: wan
+    speed: 100M
+    status: down
+  - from: "rtr-tokyo:Gi0/4"
+    to: "rtr-hongkong:Gi0/0"
+    kind: wan
+    speed: 1G
+    status: up
+  - from: "rtr-singapore:Gi0/1"
+    to: "rtr-sydney:Gi0/1"
+    kind: wan
+    speed: 10G
+    status: up
+  - from: "rtr-singapore:Gi0/2"
+    to: "rtr-mumbai:Gi0/1"
+    kind: wan
+    speed: 1G
+    status: planned
+  - from: "rtr-singapore:Gi0/3"
+    to: "rtr-seoul:Gi0/1"
+    kind: wan
+    speed: 100M
+    status: up
+  - from: "rtr-singapore:Gi0/4"
+    to: "rtr-hongkong:Gi0/1"
+    kind: wan
+    speed: 1G
+    status: up
+  - from: "rtr-sydney:Gi0/2"
+    to: "rtr-mumbai:Gi0/2"
+    kind: wan
+    speed: 1G
+    status: degraded
+  - from: "rtr-sydney:Gi0/3"
+    to: "rtr-seoul:Gi0/2"
+    kind: wan
+    speed: 100M
+    status: up
+  - from: "rtr-sydney:Gi0/4"
+    to: "rtr-hongkong:Gi0/2"
+    kind: wan
+    speed: 1G
+    status: up
+    animated: true
+  - from: "rtr-mumbai:Gi0/3"
+    to: "rtr-seoul:Gi0/3"
+    kind: wan
+    speed: 10G
+    status: up
+    animated: true
+  - from: "rtr-mumbai:Gi0/4"
+    to: "rtr-hongkong:Gi0/3"
+    kind: wan
+    speed: 1G
+    status: up
+  - from: "rtr-seoul:Gi0/4"
+    to: "rtr-hongkong:Gi0/4"
+    kind: wan
+    speed: 1G
+    status: up

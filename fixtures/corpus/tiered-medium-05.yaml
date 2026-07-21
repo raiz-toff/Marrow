@@ -1,0 +1,290 @@
+marrow: 2
+name: Secure Edge Fortress
+description: Security-focused edge with HA firewalls, IDS, VPN concentrator and an out-of-band mgmt plane
+theme: dark
+hero: fw-01
+zones:
+- id: dmz
+  name: DMZ
+  accent: '#c0392b'
+- id: core
+  name: Core Network
+- id: access
+  name: Access
+- id: mgmt
+  name: Management
+devices:
+- id: fw-01
+  icon: cisco/security/pix-firewall
+  tier: edge
+  zone: dmz
+  name: Perimeter Firewall 1
+  mgmt_ip: 203.0.113.1
+  ha_pair_with: fw-02
+  hero: true
+- id: fw-02
+  icon: cisco/security/pix-firewall
+  tier: edge
+  zone: dmz
+  name: Perimeter Firewall 2
+  mgmt_ip: 203.0.113.2
+  ha_pair_with: fw-01
+  status: degraded
+  note: secondary undergoing patch cycle
+- id: ids-01
+  icon: cisco/cisco-safe-security-icons/ids
+  tier: edge
+  zone: dmz
+  name: Intrusion Detection Sensor
+  status: degraded
+- id: vpn-01
+  icon: cisco/misc/vpn-concentrator
+  tier: edge
+  zone: dmz
+  name: Remote Access VPN
+  status: planned
+- id: core-sw-01
+  icon: cisco/switches/layer-3-switch
+  tier: core
+  zone: core
+  name: Core Switch 1
+  mgmt_ip: 10.50.0.1
+  ha_pair_with: core-sw-02
+  interfaces:
+  - name: Vlan1
+    description: core mgmt
+    vlan: 1
+    ip: 10.50.0.1/24
+- id: core-sw-02
+  icon: cisco/switches/layer-3-switch
+  tier: core
+  zone: core
+  name: Core Switch 2
+  mgmt_ip: 10.50.0.2
+  ha_pair_with: core-sw-01
+- id: dist-01
+  icon: cisco/switches/multilayer-remote-switch
+  tier: distribution
+  zone: core
+  name: Distribution 1
+  mgmt_ip: 10.50.1.1
+- id: dist-02
+  icon: cisco/switches/multilayer-remote-switch
+  tier: distribution
+  zone: core
+  name: Distribution 2
+  mgmt_ip: 10.50.1.2
+- id: acc-01
+  icon: cisco/switches/workgroup-switch
+  tier: access
+  zone: access
+  name: Access Switch 1
+  status: up
+- id: acc-02
+  icon: cisco/switches/workgroup-switch
+  tier: access
+  zone: access
+  name: Access Switch 2
+  status: up
+- id: acc-03
+  icon: cisco/switches/workgroup-switch
+  tier: access
+  zone: access
+  name: Access Switch 3
+  status: up
+- id: acc-04
+  icon: cisco/switches/workgroup-switch
+  tier: access
+  zone: access
+  name: Access Switch 4
+  status: degraded
+- id: acc-05
+  icon: cisco/switches/workgroup-switch
+  tier: access
+  zone: access
+  name: Access Switch 5
+  status: up
+- id: acc-06
+  icon: cisco/switches/workgroup-switch
+  tier: access
+  zone: access
+  name: Access Switch 6
+  status: up
+- id: ap-01
+  icon: cisco/routers/wireless-router
+  tier: access
+  zone: access
+  name: Office AP 1
+- id: ap-02
+  icon: cisco/routers/wireless-router
+  tier: access
+  zone: access
+  name: Office AP 2
+  status: planned
+- id: pc-01
+  icon: cisco/computer-and-peripherals/laptop
+  tier: endpoint
+  zone: access
+  name: Workstation 01
+- id: pc-02
+  icon: cisco/computer-and-peripherals/macintosh
+  tier: endpoint
+  zone: access
+  name: Workstation 02
+- id: pc-03
+  icon: cisco/computer-and-peripherals/laptop
+  tier: endpoint
+  zone: access
+  name: Workstation 03
+- id: pc-04
+  icon: cisco/computer-and-peripherals/macintosh
+  tier: endpoint
+  zone: access
+  name: Workstation 04
+- id: pc-05
+  icon: cisco/computer-and-peripherals/laptop
+  tier: endpoint
+  zone: access
+  name: Workstation 05
+- id: pc-06
+  icon: cisco/computer-and-peripherals/macintosh
+  tier: endpoint
+  zone: access
+  name: Workstation 06
+- id: mgmt-sw-01
+  icon: cisco/switches/workgroup-switch
+  tier: management
+  zone: mgmt
+  name: OOB Management Switch
+- id: jump-host-01
+  icon: cisco/servers/host
+  tier: management
+  zone: mgmt
+  name: Jump Host
+  mgmt_ip: 10.50.99.5
+links:
+- from: fw-01:Gi0/1
+  to: fw-02:Gi0/1
+  kind: dac
+  speed: 10G
+  lag: po-fw
+- from: fw-01:Gi0/2
+  to: fw-02:Gi0/2
+  kind: dac
+  speed: 10G
+  lag: po-fw
+- from: fw-01:Gi0/3
+  to: vpn-01:eth1
+  kind: copper
+  speed: 1G
+- from: fw-01:Gi0/4
+  to: ids-01:eth1
+  kind: copper
+  speed: 1G
+  label: inline tap
+- from: fw-01:Gi0/5
+  to: core-sw-01:Te1/0/1
+  kind: fiber
+  speed: 10G
+- from: fw-01:Gi0/6
+  to: core-sw-02:Te1/0/1
+  kind: fiber
+  speed: 10G
+- from: fw-02:Gi0/3
+  to: core-sw-01:Te1/0/2
+  kind: fiber
+  speed: 10G
+- from: fw-02:Gi0/4
+  to: core-sw-02:Te1/0/2
+  kind: fiber
+  speed: 10G
+- from: core-sw-01:Te1/0/3
+  to: core-sw-02:Te1/0/3
+  kind: dac
+  speed: 40G
+  lag: po-core
+- from: core-sw-01:Te1/0/4
+  to: core-sw-02:Te1/0/4
+  kind: dac
+  speed: 40G
+  lag: po-core
+- from: dist-01:Te1/1/1
+  to: core-sw-01:Te1/0/5
+  kind: fiber
+  speed: 40G
+- from: dist-01:Te1/1/2
+  to: core-sw-02:Te1/0/5
+  kind: fiber
+  speed: 40G
+- from: dist-02:Te1/1/1
+  to: core-sw-01:Te1/0/6
+  kind: fiber
+  speed: 40G
+- from: dist-02:Te1/1/2
+  to: core-sw-02:Te1/0/6
+  kind: fiber
+  speed: 40G
+- from: dist-01:Te1/1/3
+  to: acc-01:Gi0/1
+  kind: fiber
+  speed: 10G
+- from: dist-01:Te1/1/4
+  to: acc-02:Gi0/1
+  kind: fiber
+  speed: 10G
+- from: dist-01:Te1/1/5
+  to: acc-03:Gi0/1
+  kind: fiber
+  speed: 10G
+- from: dist-02:Te1/1/3
+  to: acc-04:Gi0/1
+  kind: fiber
+  speed: 10G
+- from: dist-02:Te1/1/4
+  to: acc-05:Gi0/1
+  kind: fiber
+  speed: 10G
+- from: dist-02:Te1/1/5
+  to: acc-06:Gi0/1
+  kind: fiber
+  speed: 10G
+- from: acc-01:Gi0/2
+  to: ap-01:eth1
+  kind: copper
+  speed: 1G
+- from: acc-02:Gi0/2
+  to: ap-02:eth1
+  kind: copper
+  speed: 1G
+- from: acc-01:Gi0/3
+  to: pc-01:eth1
+  kind: copper
+  speed: 1G
+- from: acc-02:Gi0/3
+  to: pc-02:eth1
+  kind: copper
+  speed: 1G
+- from: acc-03:Gi0/2
+  to: pc-03:eth1
+  kind: copper
+  speed: 1G
+- from: acc-04:Gi0/2
+  to: pc-04:eth1
+  kind: copper
+  speed: 1G
+- from: acc-05:Gi0/2
+  to: pc-05:eth1
+  kind: copper
+  speed: 1G
+- from: acc-06:Gi0/2
+  to: pc-06:eth1
+  kind: copper
+  speed: 1G
+- from: core-sw-01:Te1/0/7
+  to: mgmt-sw-01:Gi0/1
+  kind: copper
+  speed: 1G
+- from: mgmt-sw-01:Gi0/2
+  to: jump-host-01:eno1
+  kind: copper
+  speed: 1G

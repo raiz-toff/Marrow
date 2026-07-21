@@ -1,0 +1,135 @@
+marrow: 2
+name: Edge Case 09 - Port Label Fan-In
+description: >
+  Declutter stress case: one distribution switch with 20 ported uplinks to
+  access switches, plus a ported server dual-homed pair. Historically every
+  port chip landed 26px from the node and stacked into an unreadable pile;
+  the placement solver must produce zero chip overlaps (L1 port-chip-overlap).
+
+devices:
+  - id: dist-01
+    name: Bldg A Dist 1 (Catalyst 9500-40X)
+    icon: cisco/switches/layer-3-switch
+    tier: distribution
+
+  - id: acc-01
+    name: Access 01
+    icon: cisco/switches/workgroup-switch
+    tier: access
+
+  - id: acc-02
+    name: Access 02
+    icon: cisco/switches/workgroup-switch
+    tier: access
+
+  - id: acc-03
+    name: Access 03
+    icon: cisco/switches/workgroup-switch
+    tier: access
+
+  - id: acc-04
+    name: Access 04
+    icon: cisco/switches/workgroup-switch
+    tier: access
+
+  - id: acc-05
+    name: Access 05
+    icon: cisco/switches/workgroup-switch
+    tier: access
+
+  - id: acc-06
+    name: Access 06
+    icon: cisco/switches/workgroup-switch
+    tier: access
+
+  - id: acc-07
+    name: Access 07
+    icon: cisco/switches/workgroup-switch
+    tier: access
+
+  - id: acc-08
+    name: Access 08
+    icon: cisco/switches/workgroup-switch
+    tier: access
+
+  - id: acc-09
+    name: Access 09
+    icon: cisco/switches/workgroup-switch
+    tier: access
+
+  - id: acc-10
+    name: Access 10
+    icon: cisco/switches/workgroup-switch
+    tier: access
+
+  - id: acc-11
+    name: Access 11
+    icon: cisco/switches/workgroup-switch
+    tier: access
+
+  - id: acc-12
+    name: Access 12
+    icon: cisco/switches/workgroup-switch
+    tier: access
+
+  - id: acc-13
+    name: Access 13
+    icon: cisco/switches/workgroup-switch
+    tier: access
+
+  - id: acc-14
+    name: Access 14
+    icon: cisco/switches/workgroup-switch
+    tier: access
+
+  - id: acc-15
+    name: Access 15
+    icon: cisco/switches/workgroup-switch
+    tier: access
+
+  - id: acc-16
+    name: Access 16
+    icon: cisco/switches/workgroup-switch
+    tier: access
+
+  - id: acc-17
+    name: Access 17
+    icon: cisco/switches/workgroup-switch
+    tier: access
+
+  - id: acc-18
+    name: Access 18
+    icon: cisco/switches/workgroup-switch
+    tier: access
+
+  - id: acc-19
+    name: Access 19
+    icon: cisco/switches/workgroup-switch
+    tier: access
+
+  - id: acc-20
+    name: Access 20
+    icon: cisco/switches/workgroup-switch
+    tier: access
+
+links:
+  - { from: "dist-01:Te1/1/1", to: "acc-01:Te1/1/1", speed: 10G }
+  - { from: "dist-01:Te1/1/2", to: "acc-02:Te1/1/1", speed: 10G }
+  - { from: "dist-01:Te1/1/3", to: "acc-03:Te1/1/1", speed: 10G }
+  - { from: "dist-01:Te1/1/4", to: "acc-04:Te1/1/1", speed: 10G }
+  - { from: "dist-01:Te1/1/5", to: "acc-05:Te1/1/1", speed: 10G }
+  - { from: "dist-01:Te1/1/6", to: "acc-06:Te1/1/1", speed: 10G }
+  - { from: "dist-01:Te1/1/7", to: "acc-07:Te1/1/1", speed: 10G }
+  - { from: "dist-01:Te1/1/8", to: "acc-08:Te1/1/1", speed: 10G }
+  - { from: "dist-01:Te1/1/9", to: "acc-09:Te1/1/1", speed: 10G }
+  - { from: "dist-01:Te1/2/1", to: "acc-10:Te1/1/1", speed: 10G }
+  - { from: "dist-01:Te1/2/2", to: "acc-11:Te1/1/1", speed: 10G }
+  - { from: "dist-01:Te1/2/3", to: "acc-12:Te1/1/1", speed: 10G }
+  - { from: "dist-01:Te1/2/4", to: "acc-13:Te1/1/1", speed: 10G }
+  - { from: "dist-01:Te1/2/5", to: "acc-14:Te1/1/1", speed: 10G }
+  - { from: "dist-01:Te1/2/6", to: "acc-15:Te1/1/1", speed: 10G }
+  - { from: "dist-01:Te1/2/7", to: "acc-16:Te1/1/1", speed: 10G }
+  - { from: "dist-01:Te1/2/8", to: "acc-17:Te1/1/1", speed: 10G }
+  - { from: "dist-01:Te1/2/9", to: "acc-18:Te1/1/1", speed: 10G }
+  - { from: "dist-01:Te1/3/1", to: "acc-19:Te1/1/1", speed: 10G }
+  - { from: "dist-01:Te1/3/2", to: "acc-20:Te1/1/1", speed: 10G }

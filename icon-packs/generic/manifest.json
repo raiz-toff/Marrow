@@ -1,0 +1,57 @@
+{
+  "pack": "generic",
+  "title": "Generic",
+  "version": "1.0.0",
+  "icons": [
+    {
+      "id": "generic/misc/cloud",
+      "title": "Cloud",
+      "category": "misc",
+      "keywords": [
+        "cloud",
+        "misc"
+      ],
+      "file": "svg/cloud.svg"
+    },
+    {
+      "id": "generic/misc/firewall",
+      "title": "Firewall",
+      "category": "misc",
+      "keywords": [
+        "firewall",
+        "misc"
+      ],
+      "file": "svg/firewall.svg"
+    },
+    {
+      "id": "generic/misc/host",
+      "title": "Host",
+      "category": "misc",
+      "keywords": [
+        "host",
+        "misc"
+      ],
+      "file": "svg/host.svg"
+    },
+    {
+      "id": "generic/misc/router",
+      "title": "Router",
+      "category": "misc",
+      "keywords": [
+        "router",
+        "misc"
+      ],
+      "file": "svg/router.svg"
+    },
+    {
+      "id": "generic/misc/server",
+      "title": "Server",
+      "category": "misc",
+      "keywords": [
+        "server",
+        "misc"
+      ],
+      "file": "svg/server.svg"
+    }
+  ]
+}

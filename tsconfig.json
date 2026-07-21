@@ -1,0 +1,18 @@
+{
+  "files": [],
+  "references": [
+    { "path": "packages/diagnostics" },
+    { "path": "packages/model" },
+    { "path": "packages/scene" },
+    { "path": "packages/metrics" },
+    { "path": "packages/icons" },
+    { "path": "packages/schema" },
+    { "path": "packages/layout" },
+    { "path": "packages/lint" },
+    { "path": "packages/render-svg" },
+    { "path": "packages/runtime" },
+    { "path": "packages/site" },
+    { "path": "packages/server" },
+    { "path": "packages/cli" }
+  ]
+}

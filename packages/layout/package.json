@@ -1,0 +1,21 @@
+{
+  "name": "@marrow/layout",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "dependencies": {
+    "@marrow/metrics": "0.0.1",
+    "@marrow/model": "0.0.1",
+    "@marrow/scene": "0.0.1",
+    "elkjs": "^0.12.0",
+    "libavoid-js": "0.5.0-beta.5"
+  }
+}

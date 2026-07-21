@@ -1,0 +1,67 @@
+marrow: 2
+name: Edge Case 05 - Eight-Way Parallel LAG Bundle
+description: >
+  Layout stress case: a single device pair connected by 8 parallel links
+  spread across 4 distinct port-channel (LAG) groups, each on its own
+  pair of physical ports, to exercise multi-edge bundling/fanning in the
+  renderer.
+
+devices:
+  - id: core-spine-01
+    name: Core Spine 1
+    icon: cisco/switches/layer-3-switch
+    tier: core
+    ha_pair_with: core-spine-02
+    mgmt_ip: 10.255.1.1
+  - id: core-spine-02
+    name: Core Spine 2
+    icon: cisco/switches/layer-3-switch
+    tier: core
+    ha_pair_with: core-spine-01
+    mgmt_ip: 10.255.1.2
+
+links:
+  # lag po1 - primary uplink bundle
+  - from: core-spine-01:Te1/1/1
+    to: core-spine-02:Te1/1/1
+    kind: dac
+    speed: 40G
+    lag: po1
+  - from: core-spine-01:Te1/1/2
+    to: core-spine-02:Te1/1/2
+    kind: dac
+    speed: 40G
+    lag: po1
+  # lag po2 - secondary uplink bundle
+  - from: core-spine-01:Te1/1/3
+    to: core-spine-02:Te1/1/3
+    kind: dac
+    speed: 40G
+    lag: po2
+  - from: core-spine-01:Te1/1/4
+    to: core-spine-02:Te1/1/4
+    kind: dac
+    speed: 40G
+    lag: po2
+  # lag po3 - storage replication bundle
+  - from: core-spine-01:Te1/2/1
+    to: core-spine-02:Te1/2/1
+    kind: fiber
+    speed: 25G
+    lag: po3
+  - from: core-spine-01:Te1/2/2
+    to: core-spine-02:Te1/2/2
+    kind: fiber
+    speed: 25G
+    lag: po3
+  # lag po4 - management overlay bundle
+  - from: core-spine-01:Te1/2/3
+    to: core-spine-02:Te1/2/3
+    kind: fiber
+    speed: 25G
+    lag: po4
+  - from: core-spine-01:Te1/2/4
+    to: core-spine-02:Te1/2/4
+    kind: fiber
+    speed: 25G
+    lag: po4

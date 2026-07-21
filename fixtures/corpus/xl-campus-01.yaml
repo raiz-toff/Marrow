@@ -1,0 +1,3498 @@
+marrow: 2
+name: XL Campus 01
+description: "Large multi-building campus: WAN edge, primary datacenter, and four buildings (A-D) each with nested floor zones, heavy on access-layer endpoints"
+theme: dark
+hero: dc-core-sw-01
+zones:
+  - id: wan-edge
+    name: WAN Edge
+    accent: "#f59e0b"
+  - id: datacenter
+    name: Primary Datacenter
+    accent: "#10b981"
+  - id: building-a
+    name: Building A - HQ Tower
+    accent: "#2563eb"
+  - id: building-a-floor-1
+    name: Building A - HQ Tower - Floor 1
+    parent: building-a
+    accent: "#2563eb"
+  - id: building-a-floor-2
+    name: Building A - HQ Tower - Floor 2
+    parent: building-a
+    accent: "#2563eb"
+  - id: building-a-floor-3
+    name: Building A - HQ Tower - Floor 3
+    parent: building-a
+    accent: "#2563eb"
+  - id: building-b
+    name: Building B - Innovation Center
+    accent: "#0ea5e9"
+  - id: building-b-floor-1
+    name: Building B - Innovation Center - Floor 1
+    parent: building-b
+    accent: "#0ea5e9"
+  - id: building-b-floor-2
+    name: Building B - Innovation Center - Floor 2
+    parent: building-b
+    accent: "#0ea5e9"
+  - id: building-b-floor-3
+    name: Building B - Innovation Center - Floor 3
+    parent: building-b
+    accent: "#0ea5e9"
+  - id: building-c
+    name: Building C - Operations
+    accent: "#8b5cf6"
+  - id: building-c-floor-1
+    name: Building C - Operations - Floor 1
+    parent: building-c
+    accent: "#8b5cf6"
+  - id: building-c-floor-2
+    name: Building C - Operations - Floor 2
+    parent: building-c
+    accent: "#8b5cf6"
+  - id: building-c-floor-3
+    name: Building C - Operations - Floor 3
+    parent: building-c
+    accent: "#8b5cf6"
+  - id: building-c-floor-4
+    name: Building C - Operations - Floor 4
+    parent: building-c
+    accent: "#8b5cf6"
+  - id: building-d
+    name: Building D - Support Annex
+    accent: "#f97316"
+  - id: building-d-floor-1
+    name: Building D - Support Annex - Floor 1
+    parent: building-d
+    accent: "#f97316"
+  - id: building-d-floor-2
+    name: Building D - Support Annex - Floor 2
+    parent: building-d
+    accent: "#f97316"
+devices:
+  - id: wan-rt-01
+    name: Campus WAN Router 1
+    icon: cisco/routers/router
+    tier: edge
+    zone: wan-edge
+    ha_pair_with: wan-rt-02
+    mgmt_ip: 10.0.1.1
+    hero: true
+  - id: wan-rt-02
+    name: Campus WAN Router 2
+    icon: cisco/routers/router
+    tier: edge
+    zone: wan-edge
+    ha_pair_with: wan-rt-01
+    mgmt_ip: 10.0.1.2
+  - id: edge-fw-01
+    name: Edge Firewall 1
+    icon: cisco/security/firewall
+    tier: edge
+    zone: wan-edge
+    ha_pair_with: edge-fw-02
+    mgmt_ip: 10.0.1.10
+  - id: edge-fw-02
+    name: Edge Firewall 2
+    icon: cisco/security/firewall
+    tier: edge
+    zone: wan-edge
+    ha_pair_with: edge-fw-01
+    mgmt_ip: 10.0.1.11
+  - id: dc-core-sw-01
+    name: Campus Core Switch 1
+    icon: cisco/switches/layer-3-switch
+    tier: core
+    zone: datacenter
+    ha_pair_with: dc-core-sw-02
+    mgmt_ip: 10.0.10.1
+  - id: dc-core-sw-02
+    name: Campus Core Switch 2
+    icon: cisco/switches/layer-3-switch
+    tier: core
+    zone: datacenter
+    ha_pair_with: dc-core-sw-01
+    mgmt_ip: 10.0.10.2
+  - id: dc-fw-01
+    name: DC Internal Firewall 1
+    icon: cisco/security/firewall
+    tier: edge
+    zone: datacenter
+    ha_pair_with: dc-fw-02
+    mgmt_ip: 10.0.10.5
+  - id: dc-fw-02
+    name: DC Internal Firewall 2
+    icon: cisco/security/firewall
+    tier: edge
+    zone: datacenter
+    ha_pair_with: dc-fw-01
+    mgmt_ip: 10.0.10.6
+  - id: dc-dist-01
+    name: DC Distribution 1
+    icon: cisco/switches/multilayer-remote-switch
+    tier: distribution
+    zone: datacenter
+    ha_pair_with: dc-dist-02
+    mgmt_ip: 10.0.10.11
+  - id: dc-dist-02
+    name: DC Distribution 2
+    icon: cisco/switches/multilayer-remote-switch
+    tier: distribution
+    zone: datacenter
+    ha_pair_with: dc-dist-01
+    mgmt_ip: 10.0.10.12
+  - id: dc-acc-01
+    name: DC Access Switch 1
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: datacenter
+    mgmt_ip: 10.0.10.21
+  - id: dc-acc-02
+    name: DC Access Switch 2
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: datacenter
+    mgmt_ip: 10.0.10.22
+  - id: dc-acc-03
+    name: DC Access Switch 3
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: datacenter
+    mgmt_ip: 10.0.10.23
+  - id: dc-lb-01
+    name: DC Load Balancer
+    icon: cisco/capability/load-balancer
+    tier: distribution
+    zone: datacenter
+    mgmt_ip: 10.0.10.30
+  - id: mgmt-nms-01
+    name: Network Monitoring Server
+    icon: cisco/servers/directory-server
+    tier: management
+    zone: datacenter
+    mgmt_ip: 10.0.10.40
+  - id: dc-srv-app-01
+    name: App Server 1
+    icon: cisco/servers/file-server
+    tier: endpoint
+    zone: datacenter
+    mgmt_ip: 10.0.10.100
+  - id: dc-srv-app-02
+    name: App Server 2
+    icon: cisco/servers/file-server
+    tier: endpoint
+    zone: datacenter
+    mgmt_ip: 10.0.10.101
+  - id: dc-srv-app-03
+    name: App Server 3
+    icon: cisco/servers/file-server
+    tier: endpoint
+    zone: datacenter
+    mgmt_ip: 10.0.10.102
+  - id: dc-srv-app-04
+    name: App Server 4
+    icon: cisco/servers/file-server
+    tier: endpoint
+    zone: datacenter
+    mgmt_ip: 10.0.10.103
+  - id: dc-srv-app-05
+    name: App Server 5
+    icon: cisco/servers/file-server
+    tier: endpoint
+    zone: datacenter
+    mgmt_ip: 10.0.10.104
+  - id: dc-srv-app-06
+    name: App Server 6
+    icon: cisco/servers/file-server
+    tier: endpoint
+    zone: datacenter
+    mgmt_ip: 10.0.10.105
+  - id: dc-srv-db-01
+    name: Database Server 1
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: datacenter
+    mgmt_ip: 10.0.10.106
+  - id: dc-srv-db-02
+    name: Database Server 2
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: datacenter
+    mgmt_ip: 10.0.10.107
+  - id: dc-srv-db-03
+    name: Database Server 3
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: datacenter
+    mgmt_ip: 10.0.10.108
+  - id: dc-srv-db-04
+    name: Database Server 4
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: datacenter
+    mgmt_ip: 10.0.10.109
+  - id: dc-srv-virt-01
+    name: Virtualization Host 1
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: datacenter
+    mgmt_ip: 10.0.10.110
+  - id: dc-srv-virt-02
+    name: Virtualization Host 2
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: datacenter
+    mgmt_ip: 10.0.10.111
+  - id: dc-srv-virt-03
+    name: Virtualization Host 3
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: datacenter
+    mgmt_ip: 10.0.10.112
+  - id: dc-srv-virt-04
+    name: Virtualization Host 4
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: datacenter
+    mgmt_ip: 10.0.10.113
+  - id: dc-srv-virt-05
+    name: Virtualization Host 5
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: datacenter
+    mgmt_ip: 10.0.10.114
+  - id: dc-srv-backup-01
+    name: Backup Server 1
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: datacenter
+    mgmt_ip: 10.0.10.115
+  - id: dc-srv-backup-02
+    name: Backup Server 2
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: datacenter
+    mgmt_ip: 10.0.10.116
+  - id: dist-building-a-01
+    name: Building A - HQ Tower Distribution 1
+    icon: cisco/switches/multilayer-remote-switch
+    tier: distribution
+    zone: building-a
+    ha_pair_with: dist-building-a-02
+    mgmt_ip: 10.0.20.1
+  - id: dist-building-a-02
+    name: Building A - HQ Tower Distribution 2
+    icon: cisco/switches/multilayer-remote-switch
+    tier: distribution
+    zone: building-a
+    ha_pair_with: dist-building-a-01
+    mgmt_ip: 10.0.20.2
+  - id: ap-building-a-f1-01
+    name: Building A - HQ Tower Floor 1 Wireless AP
+    icon: cisco/routers/wireless-router
+    tier: access
+    zone: building-a-floor-1
+    mgmt_ip: 10.0.20.91
+  - id: acc-building-a-f1-01
+    name: Building A - HQ Tower Floor 1 Access Switch 1
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: building-a-floor-1
+    mgmt_ip: 10.0.20.11
+    status: degraded
+  - id: ep-building-a-f1-01-01
+    name: Building A - HQ Tower F1 Desktop PC 1-1
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: building-a-floor-1
+  - id: ep-building-a-f1-01-02
+    name: Building A - HQ Tower F1 Laptop 1-2
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: building-a-floor-1
+  - id: ep-building-a-f1-01-03
+    name: Building A - HQ Tower F1 Mac Workstation 1-3
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: building-a-floor-1
+  - id: ep-building-a-f1-01-04
+    name: Building A - HQ Tower F1 Tablet 1-4
+    icon: cisco/computer-and-peripherals/tablet
+    tier: endpoint
+    zone: building-a-floor-1
+  - id: ep-building-a-f1-01-05
+    name: Building A - HQ Tower F1 Printer 1-5
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: building-a-floor-1
+  - id: ep-building-a-f1-01-06
+    name: Building A - HQ Tower F1 IP Phone 1-6
+    icon: cisco/modemand-phones/ip-phone
+    tier: endpoint
+    zone: building-a-floor-1
+  - id: ep-building-a-f1-01-07
+    name: Building A - HQ Tower F1 Desktop PC 1-7
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: building-a-floor-1
+  - id: acc-building-a-f1-02
+    name: Building A - HQ Tower Floor 1 Access Switch 2
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: building-a-floor-1
+    mgmt_ip: 10.0.20.12
+  - id: ep-building-a-f1-02-01
+    name: Building A - HQ Tower F1 Laptop 2-1
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: building-a-floor-1
+  - id: ep-building-a-f1-02-02
+    name: Building A - HQ Tower F1 Mac Workstation 2-2
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: building-a-floor-1
+  - id: ep-building-a-f1-02-03
+    name: Building A - HQ Tower F1 Tablet 2-3
+    icon: cisco/computer-and-peripherals/tablet
+    tier: endpoint
+    zone: building-a-floor-1
+  - id: ep-building-a-f1-02-04
+    name: Building A - HQ Tower F1 Printer 2-4
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: building-a-floor-1
+  - id: ep-building-a-f1-02-05
+    name: Building A - HQ Tower F1 IP Phone 2-5
+    icon: cisco/modemand-phones/ip-phone
+    tier: endpoint
+    zone: building-a-floor-1
+  - id: ep-building-a-f1-02-06
+    name: Building A - HQ Tower F1 Desktop PC 2-6
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: building-a-floor-1
+  - id: ep-building-a-f1-02-07
+    name: Building A - HQ Tower F1 Laptop 2-7
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: building-a-floor-1
+  - id: acc-building-a-f1-03
+    name: Building A - HQ Tower Floor 1 Access Switch 3
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: building-a-floor-1
+    mgmt_ip: 10.0.20.13
+  - id: ep-building-a-f1-03-01
+    name: Building A - HQ Tower F1 Mac Workstation 3-1
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: building-a-floor-1
+  - id: ep-building-a-f1-03-02
+    name: Building A - HQ Tower F1 Tablet 3-2
+    icon: cisco/computer-and-peripherals/tablet
+    tier: endpoint
+    zone: building-a-floor-1
+    status: down
+  - id: ep-building-a-f1-03-03
+    name: Building A - HQ Tower F1 Printer 3-3
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: building-a-floor-1
+    status: degraded
+  - id: ep-building-a-f1-03-04
+    name: Building A - HQ Tower F1 IP Phone 3-4
+    icon: cisco/modemand-phones/ip-phone
+    tier: endpoint
+    zone: building-a-floor-1
+  - id: ep-building-a-f1-03-05
+    name: Building A - HQ Tower F1 Desktop PC 3-5
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: building-a-floor-1
+  - id: ep-building-a-f1-03-06
+    name: Building A - HQ Tower F1 Laptop 3-6
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: building-a-floor-1
+  - id: ep-building-a-f1-03-07
+    name: Building A - HQ Tower F1 Mac Workstation 3-7
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: building-a-floor-1
+  - id: ap-building-a-f2-01
+    name: Building A - HQ Tower Floor 2 Wireless AP
+    icon: cisco/routers/wireless-router
+    tier: access
+    zone: building-a-floor-2
+    mgmt_ip: 10.0.20.92
+  - id: acc-building-a-f2-01
+    name: Building A - HQ Tower Floor 2 Access Switch 1
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: building-a-floor-2
+    mgmt_ip: 10.0.20.21
+  - id: ep-building-a-f2-01-01
+    name: Building A - HQ Tower F2 Desktop PC 1-1
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: building-a-floor-2
+  - id: ep-building-a-f2-01-02
+    name: Building A - HQ Tower F2 Laptop 1-2
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: building-a-floor-2
+  - id: ep-building-a-f2-01-03
+    name: Building A - HQ Tower F2 Mac Workstation 1-3
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: building-a-floor-2
+  - id: ep-building-a-f2-01-04
+    name: Building A - HQ Tower F2 Tablet 1-4
+    icon: cisco/computer-and-peripherals/tablet
+    tier: endpoint
+    zone: building-a-floor-2
+  - id: ep-building-a-f2-01-05
+    name: Building A - HQ Tower F2 Printer 1-5
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: building-a-floor-2
+  - id: ep-building-a-f2-01-06
+    name: Building A - HQ Tower F2 IP Phone 1-6
+    icon: cisco/modemand-phones/ip-phone
+    tier: endpoint
+    zone: building-a-floor-2
+  - id: ep-building-a-f2-01-07
+    name: Building A - HQ Tower F2 Desktop PC 1-7
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: building-a-floor-2
+  - id: ep-building-a-f2-01-08
+    name: Building A - HQ Tower F2 Laptop 1-8
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: building-a-floor-2
+  - id: acc-building-a-f2-02
+    name: Building A - HQ Tower Floor 2 Access Switch 2
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: building-a-floor-2
+    mgmt_ip: 10.0.20.22
+    status: planned
+  - id: ep-building-a-f2-02-01
+    name: Building A - HQ Tower F2 Mac Workstation 2-1
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: building-a-floor-2
+  - id: ep-building-a-f2-02-02
+    name: Building A - HQ Tower F2 Tablet 2-2
+    icon: cisco/computer-and-peripherals/tablet
+    tier: endpoint
+    zone: building-a-floor-2
+  - id: ep-building-a-f2-02-03
+    name: Building A - HQ Tower F2 Printer 2-3
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: building-a-floor-2
+  - id: ep-building-a-f2-02-04
+    name: Building A - HQ Tower F2 IP Phone 2-4
+    icon: cisco/modemand-phones/ip-phone
+    tier: endpoint
+    zone: building-a-floor-2
+    status: degraded
+  - id: ep-building-a-f2-02-05
+    name: Building A - HQ Tower F2 Desktop PC 2-5
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: building-a-floor-2
+  - id: ep-building-a-f2-02-06
+    name: Building A - HQ Tower F2 Laptop 2-6
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: building-a-floor-2
+  - id: ep-building-a-f2-02-07
+    name: Building A - HQ Tower F2 Mac Workstation 2-7
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: building-a-floor-2
+  - id: ep-building-a-f2-02-08
+    name: Building A - HQ Tower F2 Tablet 2-8
+    icon: cisco/computer-and-peripherals/tablet
+    tier: endpoint
+    zone: building-a-floor-2
+  - id: acc-building-a-f2-03
+    name: Building A - HQ Tower Floor 2 Access Switch 3
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: building-a-floor-2
+    mgmt_ip: 10.0.20.23
+  - id: ep-building-a-f2-03-01
+    name: Building A - HQ Tower F2 Printer 3-1
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: building-a-floor-2
+  - id: ep-building-a-f2-03-02
+    name: Building A - HQ Tower F2 IP Phone 3-2
+    icon: cisco/modemand-phones/ip-phone
+    tier: endpoint
+    zone: building-a-floor-2
+  - id: ep-building-a-f2-03-03
+    name: Building A - HQ Tower F2 Desktop PC 3-3
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: building-a-floor-2
+  - id: ep-building-a-f2-03-04
+    name: Building A - HQ Tower F2 Laptop 3-4
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: building-a-floor-2
+  - id: ep-building-a-f2-03-05
+    name: Building A - HQ Tower F2 Mac Workstation 3-5
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: building-a-floor-2
+  - id: ep-building-a-f2-03-06
+    name: Building A - HQ Tower F2 Tablet 3-6
+    icon: cisco/computer-and-peripherals/tablet
+    tier: endpoint
+    zone: building-a-floor-2
+  - id: ep-building-a-f2-03-07
+    name: Building A - HQ Tower F2 Printer 3-7
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: building-a-floor-2
+  - id: ep-building-a-f2-03-08
+    name: Building A - HQ Tower F2 IP Phone 3-8
+    icon: cisco/modemand-phones/ip-phone
+    tier: endpoint
+    zone: building-a-floor-2
+  - id: acc-building-a-f2-04
+    name: Building A - HQ Tower Floor 2 Access Switch 4
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: building-a-floor-2
+    mgmt_ip: 10.0.20.24
+  - id: ep-building-a-f2-04-01
+    name: Building A - HQ Tower F2 Desktop PC 4-1
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: building-a-floor-2
+  - id: ep-building-a-f2-04-02
+    name: Building A - HQ Tower F2 Laptop 4-2
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: building-a-floor-2
+  - id: ep-building-a-f2-04-03
+    name: Building A - HQ Tower F2 Mac Workstation 4-3
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: building-a-floor-2
+    status: down
+  - id: ep-building-a-f2-04-04
+    name: Building A - HQ Tower F2 Tablet 4-4
+    icon: cisco/computer-and-peripherals/tablet
+    tier: endpoint
+    zone: building-a-floor-2
+  - id: ep-building-a-f2-04-05
+    name: Building A - HQ Tower F2 Printer 4-5
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: building-a-floor-2
+    status: degraded
+  - id: ep-building-a-f2-04-06
+    name: Building A - HQ Tower F2 IP Phone 4-6
+    icon: cisco/modemand-phones/ip-phone
+    tier: endpoint
+    zone: building-a-floor-2
+  - id: ep-building-a-f2-04-07
+    name: Building A - HQ Tower F2 Desktop PC 4-7
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: building-a-floor-2
+  - id: ep-building-a-f2-04-08
+    name: Building A - HQ Tower F2 Laptop 4-8
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: building-a-floor-2
+  - id: ap-building-a-f3-01
+    name: Building A - HQ Tower Floor 3 Wireless AP
+    icon: cisco/routers/wireless-router
+    tier: access
+    zone: building-a-floor-3
+    mgmt_ip: 10.0.20.93
+  - id: acc-building-a-f3-01
+    name: Building A - HQ Tower Floor 3 Access Switch 1
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: building-a-floor-3
+    mgmt_ip: 10.0.20.31
+  - id: ep-building-a-f3-01-01
+    name: Building A - HQ Tower F3 Desktop PC 1-1
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: building-a-floor-3
+  - id: ep-building-a-f3-01-02
+    name: Building A - HQ Tower F3 Laptop 1-2
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: building-a-floor-3
+  - id: ep-building-a-f3-01-03
+    name: Building A - HQ Tower F3 Mac Workstation 1-3
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: building-a-floor-3
+  - id: ep-building-a-f3-01-04
+    name: Building A - HQ Tower F3 Tablet 1-4
+    icon: cisco/computer-and-peripherals/tablet
+    tier: endpoint
+    zone: building-a-floor-3
+  - id: ep-building-a-f3-01-05
+    name: Building A - HQ Tower F3 Printer 1-5
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: building-a-floor-3
+  - id: ep-building-a-f3-01-06
+    name: Building A - HQ Tower F3 IP Phone 1-6
+    icon: cisco/modemand-phones/ip-phone
+    tier: endpoint
+    zone: building-a-floor-3
+  - id: ep-building-a-f3-01-07
+    name: Building A - HQ Tower F3 Desktop PC 1-7
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: building-a-floor-3
+  - id: ep-building-a-f3-01-08
+    name: Building A - HQ Tower F3 Laptop 1-8
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: building-a-floor-3
+  - id: ep-building-a-f3-01-09
+    name: Building A - HQ Tower F3 Mac Workstation 1-9
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: building-a-floor-3
+  - id: acc-building-a-f3-02
+    name: Building A - HQ Tower Floor 3 Access Switch 2
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: building-a-floor-3
+    mgmt_ip: 10.0.20.32
+  - id: ep-building-a-f3-02-01
+    name: Building A - HQ Tower F3 Tablet 2-1
+    icon: cisco/computer-and-peripherals/tablet
+    tier: endpoint
+    zone: building-a-floor-3
+  - id: ep-building-a-f3-02-02
+    name: Building A - HQ Tower F3 Printer 2-2
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: building-a-floor-3
+  - id: ep-building-a-f3-02-03
+    name: Building A - HQ Tower F3 IP Phone 2-3
+    icon: cisco/modemand-phones/ip-phone
+    tier: endpoint
+    zone: building-a-floor-3
+  - id: ep-building-a-f3-02-04
+    name: Building A - HQ Tower F3 Desktop PC 2-4
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: building-a-floor-3
+    status: degraded
+  - id: ep-building-a-f3-02-05
+    name: Building A - HQ Tower F3 Laptop 2-5
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: building-a-floor-3
+  - id: ep-building-a-f3-02-06
+    name: Building A - HQ Tower F3 Mac Workstation 2-6
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: building-a-floor-3
+  - id: ep-building-a-f3-02-07
+    name: Building A - HQ Tower F3 Tablet 2-7
+    icon: cisco/computer-and-peripherals/tablet
+    tier: endpoint
+    zone: building-a-floor-3
+  - id: ep-building-a-f3-02-08
+    name: Building A - HQ Tower F3 Printer 2-8
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: building-a-floor-3
+  - id: ep-building-a-f3-02-09
+    name: Building A - HQ Tower F3 IP Phone 2-9
+    icon: cisco/modemand-phones/ip-phone
+    tier: endpoint
+    zone: building-a-floor-3
+  - id: dist-building-b-01
+    name: Building B - Innovation Center Distribution 1
+    icon: cisco/switches/multilayer-remote-switch
+    tier: distribution
+    zone: building-b
+    ha_pair_with: dist-building-b-02
+    mgmt_ip: 10.0.21.1
+  - id: dist-building-b-02
+    name: Building B - Innovation Center Distribution 2
+    icon: cisco/switches/multilayer-remote-switch
+    tier: distribution
+    zone: building-b
+    ha_pair_with: dist-building-b-01
+    mgmt_ip: 10.0.21.2
+  - id: ap-building-b-f1-01
+    name: Building B - Innovation Center Floor 1 Wireless AP
+    icon: cisco/routers/wireless-router
+    tier: access
+    zone: building-b-floor-1
+    mgmt_ip: 10.0.21.91
+  - id: acc-building-b-f1-01
+    name: Building B - Innovation Center Floor 1 Access Switch 1
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: building-b-floor-1
+    mgmt_ip: 10.0.21.11
+  - id: ep-building-b-f1-01-01
+    name: Building B - Innovation Center F1 Desktop PC 1-1
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: building-b-floor-1
+  - id: ep-building-b-f1-01-02
+    name: Building B - Innovation Center F1 Laptop 1-2
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: building-b-floor-1
+  - id: ep-building-b-f1-01-03
+    name: Building B - Innovation Center F1 Mac Workstation 1-3
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: building-b-floor-1
+  - id: ep-building-b-f1-01-04
+    name: Building B - Innovation Center F1 Tablet 1-4
+    icon: cisco/computer-and-peripherals/tablet
+    tier: endpoint
+    zone: building-b-floor-1
+    status: planned
+  - id: ep-building-b-f1-01-05
+    name: Building B - Innovation Center F1 Printer 1-5
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: building-b-floor-1
+  - id: ep-building-b-f1-01-06
+    name: Building B - Innovation Center F1 IP Phone 1-6
+    icon: cisco/modemand-phones/ip-phone
+    tier: endpoint
+    zone: building-b-floor-1
+  - id: acc-building-b-f1-02
+    name: Building B - Innovation Center Floor 1 Access Switch 2
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: building-b-floor-1
+    mgmt_ip: 10.0.21.12
+  - id: ep-building-b-f1-02-01
+    name: Building B - Innovation Center F1 Desktop PC 2-1
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: building-b-floor-1
+  - id: ep-building-b-f1-02-02
+    name: Building B - Innovation Center F1 Laptop 2-2
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: building-b-floor-1
+    status: down
+  - id: ep-building-b-f1-02-03
+    name: Building B - Innovation Center F1 Mac Workstation 2-3
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: building-b-floor-1
+  - id: ep-building-b-f1-02-04
+    name: Building B - Innovation Center F1 Tablet 2-4
+    icon: cisco/computer-and-peripherals/tablet
+    tier: endpoint
+    zone: building-b-floor-1
+  - id: ep-building-b-f1-02-05
+    name: Building B - Innovation Center F1 Printer 2-5
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: building-b-floor-1
+    status: degraded
+  - id: ep-building-b-f1-02-06
+    name: Building B - Innovation Center F1 IP Phone 2-6
+    icon: cisco/modemand-phones/ip-phone
+    tier: endpoint
+    zone: building-b-floor-1
+  - id: acc-building-b-f1-03
+    name: Building B - Innovation Center Floor 1 Access Switch 3
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: building-b-floor-1
+    mgmt_ip: 10.0.21.13
+  - id: ep-building-b-f1-03-01
+    name: Building B - Innovation Center F1 Desktop PC 3-1
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: building-b-floor-1
+  - id: ep-building-b-f1-03-02
+    name: Building B - Innovation Center F1 Laptop 3-2
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: building-b-floor-1
+  - id: ep-building-b-f1-03-03
+    name: Building B - Innovation Center F1 Mac Workstation 3-3
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: building-b-floor-1
+  - id: ep-building-b-f1-03-04
+    name: Building B - Innovation Center F1 Tablet 3-4
+    icon: cisco/computer-and-peripherals/tablet
+    tier: endpoint
+    zone: building-b-floor-1
+  - id: ep-building-b-f1-03-05
+    name: Building B - Innovation Center F1 Printer 3-5
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: building-b-floor-1
+  - id: ep-building-b-f1-03-06
+    name: Building B - Innovation Center F1 IP Phone 3-6
+    icon: cisco/modemand-phones/ip-phone
+    tier: endpoint
+    zone: building-b-floor-1
+  - id: ap-building-b-f2-01
+    name: Building B - Innovation Center Floor 2 Wireless AP
+    icon: cisco/routers/wireless-router
+    tier: access
+    zone: building-b-floor-2
+    mgmt_ip: 10.0.21.92
+  - id: acc-building-b-f2-01
+    name: Building B - Innovation Center Floor 2 Access Switch 1
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: building-b-floor-2
+    mgmt_ip: 10.0.21.21
+  - id: ep-building-b-f2-01-01
+    name: Building B - Innovation Center F2 Desktop PC 1-1
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: building-b-floor-2
+  - id: ep-building-b-f2-01-02
+    name: Building B - Innovation Center F2 Laptop 1-2
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: building-b-floor-2
+  - id: ep-building-b-f2-01-03
+    name: Building B - Innovation Center F2 Mac Workstation 1-3
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: building-b-floor-2
+  - id: ep-building-b-f2-01-04
+    name: Building B - Innovation Center F2 Tablet 1-4
+    icon: cisco/computer-and-peripherals/tablet
+    tier: endpoint
+    zone: building-b-floor-2
+  - id: ep-building-b-f2-01-05
+    name: Building B - Innovation Center F2 Printer 1-5
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: building-b-floor-2
+  - id: ep-building-b-f2-01-06
+    name: Building B - Innovation Center F2 IP Phone 1-6
+    icon: cisco/modemand-phones/ip-phone
+    tier: endpoint
+    zone: building-b-floor-2
+  - id: ep-building-b-f2-01-07
+    name: Building B - Innovation Center F2 Desktop PC 1-7
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: building-b-floor-2
+  - id: acc-building-b-f2-02
+    name: Building B - Innovation Center Floor 2 Access Switch 2
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: building-b-floor-2
+    mgmt_ip: 10.0.21.22
+  - id: ep-building-b-f2-02-01
+    name: Building B - Innovation Center F2 Laptop 2-1
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: building-b-floor-2
+    status: degraded
+  - id: ep-building-b-f2-02-02
+    name: Building B - Innovation Center F2 Mac Workstation 2-2
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: building-b-floor-2
+  - id: ep-building-b-f2-02-03
+    name: Building B - Innovation Center F2 Tablet 2-3
+    icon: cisco/computer-and-peripherals/tablet
+    tier: endpoint
+    zone: building-b-floor-2
+  - id: ep-building-b-f2-02-04
+    name: Building B - Innovation Center F2 Printer 2-4
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: building-b-floor-2
+  - id: ep-building-b-f2-02-05
+    name: Building B - Innovation Center F2 IP Phone 2-5
+    icon: cisco/modemand-phones/ip-phone
+    tier: endpoint
+    zone: building-b-floor-2
+  - id: ep-building-b-f2-02-06
+    name: Building B - Innovation Center F2 Desktop PC 2-6
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: building-b-floor-2
+  - id: ep-building-b-f2-02-07
+    name: Building B - Innovation Center F2 Laptop 2-7
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: building-b-floor-2
+  - id: acc-building-b-f2-03
+    name: Building B - Innovation Center Floor 2 Access Switch 3
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: building-b-floor-2
+    mgmt_ip: 10.0.21.23
+  - id: ep-building-b-f2-03-01
+    name: Building B - Innovation Center F2 Mac Workstation 3-1
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: building-b-floor-2
+  - id: ep-building-b-f2-03-02
+    name: Building B - Innovation Center F2 Tablet 3-2
+    icon: cisco/computer-and-peripherals/tablet
+    tier: endpoint
+    zone: building-b-floor-2
+  - id: ep-building-b-f2-03-03
+    name: Building B - Innovation Center F2 Printer 3-3
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: building-b-floor-2
+  - id: ep-building-b-f2-03-04
+    name: Building B - Innovation Center F2 IP Phone 3-4
+    icon: cisco/modemand-phones/ip-phone
+    tier: endpoint
+    zone: building-b-floor-2
+  - id: ep-building-b-f2-03-05
+    name: Building B - Innovation Center F2 Desktop PC 3-5
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: building-b-floor-2
+  - id: ep-building-b-f2-03-06
+    name: Building B - Innovation Center F2 Laptop 3-6
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: building-b-floor-2
+  - id: ep-building-b-f2-03-07
+    name: Building B - Innovation Center F2 Mac Workstation 3-7
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: building-b-floor-2
+  - id: acc-building-b-f2-04
+    name: Building B - Innovation Center Floor 2 Access Switch 4
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: building-b-floor-2
+    mgmt_ip: 10.0.21.24
+    status: down
+  - id: ep-building-b-f2-04-01
+    name: Building B - Innovation Center F2 Tablet 4-1
+    icon: cisco/computer-and-peripherals/tablet
+    tier: endpoint
+    zone: building-b-floor-2
+  - id: ep-building-b-f2-04-02
+    name: Building B - Innovation Center F2 Printer 4-2
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: building-b-floor-2
+  - id: ep-building-b-f2-04-03
+    name: Building B - Innovation Center F2 IP Phone 4-3
+    icon: cisco/modemand-phones/ip-phone
+    tier: endpoint
+    zone: building-b-floor-2
+  - id: ep-building-b-f2-04-04
+    name: Building B - Innovation Center F2 Desktop PC 4-4
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: building-b-floor-2
+    status: degraded
+  - id: ep-building-b-f2-04-05
+    name: Building B - Innovation Center F2 Laptop 4-5
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: building-b-floor-2
+  - id: ep-building-b-f2-04-06
+    name: Building B - Innovation Center F2 Mac Workstation 4-6
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: building-b-floor-2
+  - id: ep-building-b-f2-04-07
+    name: Building B - Innovation Center F2 Tablet 4-7
+    icon: cisco/computer-and-peripherals/tablet
+    tier: endpoint
+    zone: building-b-floor-2
+  - id: ap-building-b-f3-01
+    name: Building B - Innovation Center Floor 3 Wireless AP
+    icon: cisco/routers/wireless-router
+    tier: access
+    zone: building-b-floor-3
+    mgmt_ip: 10.0.21.93
+  - id: acc-building-b-f3-01
+    name: Building B - Innovation Center Floor 3 Access Switch 1
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: building-b-floor-3
+    mgmt_ip: 10.0.21.31
+  - id: ep-building-b-f3-01-01
+    name: Building B - Innovation Center F3 Desktop PC 1-1
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: building-b-floor-3
+  - id: ep-building-b-f3-01-02
+    name: Building B - Innovation Center F3 Laptop 1-2
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: building-b-floor-3
+    status: planned
+  - id: ep-building-b-f3-01-03
+    name: Building B - Innovation Center F3 Mac Workstation 1-3
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: building-b-floor-3
+  - id: ep-building-b-f3-01-04
+    name: Building B - Innovation Center F3 Tablet 1-4
+    icon: cisco/computer-and-peripherals/tablet
+    tier: endpoint
+    zone: building-b-floor-3
+  - id: ep-building-b-f3-01-05
+    name: Building B - Innovation Center F3 Printer 1-5
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: building-b-floor-3
+  - id: ep-building-b-f3-01-06
+    name: Building B - Innovation Center F3 IP Phone 1-6
+    icon: cisco/modemand-phones/ip-phone
+    tier: endpoint
+    zone: building-b-floor-3
+  - id: ep-building-b-f3-01-07
+    name: Building B - Innovation Center F3 Desktop PC 1-7
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: building-b-floor-3
+  - id: ep-building-b-f3-01-08
+    name: Building B - Innovation Center F3 Laptop 1-8
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: building-b-floor-3
+  - id: acc-building-b-f3-02
+    name: Building B - Innovation Center Floor 3 Access Switch 2
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: building-b-floor-3
+    mgmt_ip: 10.0.21.32
+  - id: ep-building-b-f3-02-01
+    name: Building B - Innovation Center F3 Mac Workstation 2-1
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: building-b-floor-3
+  - id: ep-building-b-f3-02-02
+    name: Building B - Innovation Center F3 Tablet 2-2
+    icon: cisco/computer-and-peripherals/tablet
+    tier: endpoint
+    zone: building-b-floor-3
+  - id: ep-building-b-f3-02-03
+    name: Building B - Innovation Center F3 Printer 2-3
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: building-b-floor-3
+  - id: ep-building-b-f3-02-04
+    name: Building B - Innovation Center F3 IP Phone 2-4
+    icon: cisco/modemand-phones/ip-phone
+    tier: endpoint
+    zone: building-b-floor-3
+  - id: ep-building-b-f3-02-05
+    name: Building B - Innovation Center F3 Desktop PC 2-5
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: building-b-floor-3
+    status: degraded
+  - id: ep-building-b-f3-02-06
+    name: Building B - Innovation Center F3 Laptop 2-6
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: building-b-floor-3
+  - id: ep-building-b-f3-02-07
+    name: Building B - Innovation Center F3 Mac Workstation 2-7
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: building-b-floor-3
+  - id: ep-building-b-f3-02-08
+    name: Building B - Innovation Center F3 Tablet 2-8
+    icon: cisco/computer-and-peripherals/tablet
+    tier: endpoint
+    zone: building-b-floor-3
+  - id: dist-building-c-01
+    name: Building C - Operations Distribution 1
+    icon: cisco/switches/multilayer-remote-switch
+    tier: distribution
+    zone: building-c
+    ha_pair_with: dist-building-c-02
+    mgmt_ip: 10.0.22.1
+  - id: dist-building-c-02
+    name: Building C - Operations Distribution 2
+    icon: cisco/switches/multilayer-remote-switch
+    tier: distribution
+    zone: building-c
+    ha_pair_with: dist-building-c-01
+    mgmt_ip: 10.0.22.2
+  - id: ap-building-c-f1-01
+    name: Building C - Operations Floor 1 Wireless AP
+    icon: cisco/routers/wireless-router
+    tier: access
+    zone: building-c-floor-1
+    mgmt_ip: 10.0.22.91
+  - id: acc-building-c-f1-01
+    name: Building C - Operations Floor 1 Access Switch 1
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: building-c-floor-1
+    mgmt_ip: 10.0.22.11
+  - id: ep-building-c-f1-01-01
+    name: Building C - Operations F1 Desktop PC 1-1
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: building-c-floor-1
+  - id: ep-building-c-f1-01-02
+    name: Building C - Operations F1 Laptop 1-2
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: building-c-floor-1
+  - id: ep-building-c-f1-01-03
+    name: Building C - Operations F1 Mac Workstation 1-3
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: building-c-floor-1
+  - id: ep-building-c-f1-01-04
+    name: Building C - Operations F1 Tablet 1-4
+    icon: cisco/computer-and-peripherals/tablet
+    tier: endpoint
+    zone: building-c-floor-1
+  - id: ep-building-c-f1-01-05
+    name: Building C - Operations F1 Printer 1-5
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: building-c-floor-1
+  - id: ep-building-c-f1-01-06
+    name: Building C - Operations F1 IP Phone 1-6
+    icon: cisco/modemand-phones/ip-phone
+    tier: endpoint
+    zone: building-c-floor-1
+  - id: ep-building-c-f1-01-07
+    name: Building C - Operations F1 Desktop PC 1-7
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: building-c-floor-1
+  - id: ep-building-c-f1-01-08
+    name: Building C - Operations F1 Laptop 1-8
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: building-c-floor-1
+  - id: ep-building-c-f1-01-09
+    name: Building C - Operations F1 Mac Workstation 1-9
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: building-c-floor-1
+    status: down
+  - id: acc-building-c-f1-02
+    name: Building C - Operations Floor 1 Access Switch 2
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: building-c-floor-1
+    mgmt_ip: 10.0.22.12
+  - id: ep-building-c-f1-02-01
+    name: Building C - Operations F1 Tablet 2-1
+    icon: cisco/computer-and-peripherals/tablet
+    tier: endpoint
+    zone: building-c-floor-1
+  - id: ep-building-c-f1-02-02
+    name: Building C - Operations F1 Printer 2-2
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: building-c-floor-1
+  - id: ep-building-c-f1-02-03
+    name: Building C - Operations F1 IP Phone 2-3
+    icon: cisco/modemand-phones/ip-phone
+    tier: endpoint
+    zone: building-c-floor-1
+  - id: ep-building-c-f1-02-04
+    name: Building C - Operations F1 Desktop PC 2-4
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: building-c-floor-1
+    status: degraded
+  - id: ep-building-c-f1-02-05
+    name: Building C - Operations F1 Laptop 2-5
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: building-c-floor-1
+  - id: ep-building-c-f1-02-06
+    name: Building C - Operations F1 Mac Workstation 2-6
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: building-c-floor-1
+  - id: ep-building-c-f1-02-07
+    name: Building C - Operations F1 Tablet 2-7
+    icon: cisco/computer-and-peripherals/tablet
+    tier: endpoint
+    zone: building-c-floor-1
+  - id: ep-building-c-f1-02-08
+    name: Building C - Operations F1 Printer 2-8
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: building-c-floor-1
+  - id: ep-building-c-f1-02-09
+    name: Building C - Operations F1 IP Phone 2-9
+    icon: cisco/modemand-phones/ip-phone
+    tier: endpoint
+    zone: building-c-floor-1
+  - id: acc-building-c-f1-03
+    name: Building C - Operations Floor 1 Access Switch 3
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: building-c-floor-1
+    mgmt_ip: 10.0.22.13
+  - id: ep-building-c-f1-03-01
+    name: Building C - Operations F1 Desktop PC 3-1
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: building-c-floor-1
+  - id: ep-building-c-f1-03-02
+    name: Building C - Operations F1 Laptop 3-2
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: building-c-floor-1
+  - id: ep-building-c-f1-03-03
+    name: Building C - Operations F1 Mac Workstation 3-3
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: building-c-floor-1
+  - id: ep-building-c-f1-03-04
+    name: Building C - Operations F1 Tablet 3-4
+    icon: cisco/computer-and-peripherals/tablet
+    tier: endpoint
+    zone: building-c-floor-1
+  - id: ep-building-c-f1-03-05
+    name: Building C - Operations F1 Printer 3-5
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: building-c-floor-1
+  - id: ep-building-c-f1-03-06
+    name: Building C - Operations F1 IP Phone 3-6
+    icon: cisco/modemand-phones/ip-phone
+    tier: endpoint
+    zone: building-c-floor-1
+  - id: ep-building-c-f1-03-07
+    name: Building C - Operations F1 Desktop PC 3-7
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: building-c-floor-1
+  - id: ep-building-c-f1-03-08
+    name: Building C - Operations F1 Laptop 3-8
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: building-c-floor-1
+  - id: ep-building-c-f1-03-09
+    name: Building C - Operations F1 Mac Workstation 3-9
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: building-c-floor-1
+  - id: ap-building-c-f2-01
+    name: Building C - Operations Floor 2 Wireless AP
+    icon: cisco/routers/wireless-router
+    tier: access
+    zone: building-c-floor-2
+    mgmt_ip: 10.0.22.92
+  - id: acc-building-c-f2-01
+    name: Building C - Operations Floor 2 Access Switch 1
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: building-c-floor-2
+    mgmt_ip: 10.0.22.21
+  - id: ep-building-c-f2-01-01
+    name: Building C - Operations F2 Desktop PC 1-1
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: building-c-floor-2
+  - id: ep-building-c-f2-01-02
+    name: Building C - Operations F2 Laptop 1-2
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: building-c-floor-2
+    status: degraded
+  - id: ep-building-c-f2-01-03
+    name: Building C - Operations F2 Mac Workstation 1-3
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: building-c-floor-2
+  - id: ep-building-c-f2-01-04
+    name: Building C - Operations F2 Tablet 1-4
+    icon: cisco/computer-and-peripherals/tablet
+    tier: endpoint
+    zone: building-c-floor-2
+  - id: ep-building-c-f2-01-05
+    name: Building C - Operations F2 Printer 1-5
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: building-c-floor-2
+    status: planned
+  - id: ep-building-c-f2-01-06
+    name: Building C - Operations F2 IP Phone 1-6
+    icon: cisco/modemand-phones/ip-phone
+    tier: endpoint
+    zone: building-c-floor-2
+  - id: acc-building-c-f2-02
+    name: Building C - Operations Floor 2 Access Switch 2
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: building-c-floor-2
+    mgmt_ip: 10.0.22.22
+  - id: ep-building-c-f2-02-01
+    name: Building C - Operations F2 Desktop PC 2-1
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: building-c-floor-2
+  - id: ep-building-c-f2-02-02
+    name: Building C - Operations F2 Laptop 2-2
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: building-c-floor-2
+  - id: ep-building-c-f2-02-03
+    name: Building C - Operations F2 Mac Workstation 2-3
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: building-c-floor-2
+  - id: ep-building-c-f2-02-04
+    name: Building C - Operations F2 Tablet 2-4
+    icon: cisco/computer-and-peripherals/tablet
+    tier: endpoint
+    zone: building-c-floor-2
+  - id: ep-building-c-f2-02-05
+    name: Building C - Operations F2 Printer 2-5
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: building-c-floor-2
+  - id: ep-building-c-f2-02-06
+    name: Building C - Operations F2 IP Phone 2-6
+    icon: cisco/modemand-phones/ip-phone
+    tier: endpoint
+    zone: building-c-floor-2
+  - id: acc-building-c-f2-03
+    name: Building C - Operations Floor 2 Access Switch 3
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: building-c-floor-2
+    mgmt_ip: 10.0.22.23
+  - id: ep-building-c-f2-03-01
+    name: Building C - Operations F2 Desktop PC 3-1
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: building-c-floor-2
+    status: down
+  - id: ep-building-c-f2-03-02
+    name: Building C - Operations F2 Laptop 3-2
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: building-c-floor-2
+  - id: ep-building-c-f2-03-03
+    name: Building C - Operations F2 Mac Workstation 3-3
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: building-c-floor-2
+  - id: ep-building-c-f2-03-04
+    name: Building C - Operations F2 Tablet 3-4
+    icon: cisco/computer-and-peripherals/tablet
+    tier: endpoint
+    zone: building-c-floor-2
+  - id: ep-building-c-f2-03-05
+    name: Building C - Operations F2 Printer 3-5
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: building-c-floor-2
+  - id: ep-building-c-f2-03-06
+    name: Building C - Operations F2 IP Phone 3-6
+    icon: cisco/modemand-phones/ip-phone
+    tier: endpoint
+    zone: building-c-floor-2
+  - id: acc-building-c-f2-04
+    name: Building C - Operations Floor 2 Access Switch 4
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: building-c-floor-2
+    mgmt_ip: 10.0.22.24
+    status: degraded
+  - id: ep-building-c-f2-04-01
+    name: Building C - Operations F2 Desktop PC 4-1
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: building-c-floor-2
+  - id: ep-building-c-f2-04-02
+    name: Building C - Operations F2 Laptop 4-2
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: building-c-floor-2
+  - id: ep-building-c-f2-04-03
+    name: Building C - Operations F2 Mac Workstation 4-3
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: building-c-floor-2
+  - id: ep-building-c-f2-04-04
+    name: Building C - Operations F2 Tablet 4-4
+    icon: cisco/computer-and-peripherals/tablet
+    tier: endpoint
+    zone: building-c-floor-2
+  - id: ep-building-c-f2-04-05
+    name: Building C - Operations F2 Printer 4-5
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: building-c-floor-2
+  - id: ep-building-c-f2-04-06
+    name: Building C - Operations F2 IP Phone 4-6
+    icon: cisco/modemand-phones/ip-phone
+    tier: endpoint
+    zone: building-c-floor-2
+  - id: ap-building-c-f3-01
+    name: Building C - Operations Floor 3 Wireless AP
+    icon: cisco/routers/wireless-router
+    tier: access
+    zone: building-c-floor-3
+    mgmt_ip: 10.0.22.93
+  - id: acc-building-c-f3-01
+    name: Building C - Operations Floor 3 Access Switch 1
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: building-c-floor-3
+    mgmt_ip: 10.0.22.31
+  - id: ep-building-c-f3-01-01
+    name: Building C - Operations F3 Desktop PC 1-1
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: building-c-floor-3
+  - id: ep-building-c-f3-01-02
+    name: Building C - Operations F3 Laptop 1-2
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: building-c-floor-3
+  - id: ep-building-c-f3-01-03
+    name: Building C - Operations F3 Mac Workstation 1-3
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: building-c-floor-3
+  - id: ep-building-c-f3-01-04
+    name: Building C - Operations F3 Tablet 1-4
+    icon: cisco/computer-and-peripherals/tablet
+    tier: endpoint
+    zone: building-c-floor-3
+  - id: ep-building-c-f3-01-05
+    name: Building C - Operations F3 Printer 1-5
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: building-c-floor-3
+  - id: ep-building-c-f3-01-06
+    name: Building C - Operations F3 IP Phone 1-6
+    icon: cisco/modemand-phones/ip-phone
+    tier: endpoint
+    zone: building-c-floor-3
+  - id: ep-building-c-f3-01-07
+    name: Building C - Operations F3 Desktop PC 1-7
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: building-c-floor-3
+  - id: acc-building-c-f3-02
+    name: Building C - Operations Floor 3 Access Switch 2
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: building-c-floor-3
+    mgmt_ip: 10.0.22.32
+  - id: ep-building-c-f3-02-01
+    name: Building C - Operations F3 Laptop 2-1
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: building-c-floor-3
+  - id: ep-building-c-f3-02-02
+    name: Building C - Operations F3 Mac Workstation 2-2
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: building-c-floor-3
+  - id: ep-building-c-f3-02-03
+    name: Building C - Operations F3 Tablet 2-3
+    icon: cisco/computer-and-peripherals/tablet
+    tier: endpoint
+    zone: building-c-floor-3
+    status: degraded
+  - id: ep-building-c-f3-02-04
+    name: Building C - Operations F3 Printer 2-4
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: building-c-floor-3
+  - id: ep-building-c-f3-02-05
+    name: Building C - Operations F3 IP Phone 2-5
+    icon: cisco/modemand-phones/ip-phone
+    tier: endpoint
+    zone: building-c-floor-3
+  - id: ep-building-c-f3-02-06
+    name: Building C - Operations F3 Desktop PC 2-6
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: building-c-floor-3
+  - id: ep-building-c-f3-02-07
+    name: Building C - Operations F3 Laptop 2-7
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: building-c-floor-3
+  - id: ap-building-c-f4-01
+    name: Building C - Operations Floor 4 Wireless AP
+    icon: cisco/routers/wireless-router
+    tier: access
+    zone: building-c-floor-4
+    mgmt_ip: 10.0.22.94
+  - id: acc-building-c-f4-01
+    name: Building C - Operations Floor 4 Access Switch 1
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: building-c-floor-4
+    mgmt_ip: 10.0.22.41
+  - id: ep-building-c-f4-01-01
+    name: Building C - Operations F4 Desktop PC 1-1
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: building-c-floor-4
+  - id: ep-building-c-f4-01-02
+    name: Building C - Operations F4 Laptop 1-2
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: building-c-floor-4
+  - id: ep-building-c-f4-01-03
+    name: Building C - Operations F4 Mac Workstation 1-3
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: building-c-floor-4
+  - id: ep-building-c-f4-01-04
+    name: Building C - Operations F4 Tablet 1-4
+    icon: cisco/computer-and-peripherals/tablet
+    tier: endpoint
+    zone: building-c-floor-4
+  - id: ep-building-c-f4-01-05
+    name: Building C - Operations F4 Printer 1-5
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: building-c-floor-4
+  - id: ep-building-c-f4-01-06
+    name: Building C - Operations F4 IP Phone 1-6
+    icon: cisco/modemand-phones/ip-phone
+    tier: endpoint
+    zone: building-c-floor-4
+    status: down
+  - id: ep-building-c-f4-01-07
+    name: Building C - Operations F4 Desktop PC 1-7
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: building-c-floor-4
+  - id: ep-building-c-f4-01-08
+    name: Building C - Operations F4 Laptop 1-8
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: building-c-floor-4
+  - id: acc-building-c-f4-02
+    name: Building C - Operations Floor 4 Access Switch 2
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: building-c-floor-4
+    mgmt_ip: 10.0.22.42
+  - id: ep-building-c-f4-02-01
+    name: Building C - Operations F4 Mac Workstation 2-1
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: building-c-floor-4
+  - id: ep-building-c-f4-02-02
+    name: Building C - Operations F4 Tablet 2-2
+    icon: cisco/computer-and-peripherals/tablet
+    tier: endpoint
+    zone: building-c-floor-4
+  - id: ep-building-c-f4-02-03
+    name: Building C - Operations F4 Printer 2-3
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: building-c-floor-4
+    status: planned
+  - id: ep-building-c-f4-02-04
+    name: Building C - Operations F4 IP Phone 2-4
+    icon: cisco/modemand-phones/ip-phone
+    tier: endpoint
+    zone: building-c-floor-4
+    status: degraded
+  - id: ep-building-c-f4-02-05
+    name: Building C - Operations F4 Desktop PC 2-5
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: building-c-floor-4
+  - id: ep-building-c-f4-02-06
+    name: Building C - Operations F4 Laptop 2-6
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: building-c-floor-4
+  - id: ep-building-c-f4-02-07
+    name: Building C - Operations F4 Mac Workstation 2-7
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: building-c-floor-4
+  - id: ep-building-c-f4-02-08
+    name: Building C - Operations F4 Tablet 2-8
+    icon: cisco/computer-and-peripherals/tablet
+    tier: endpoint
+    zone: building-c-floor-4
+  - id: acc-building-c-f4-03
+    name: Building C - Operations Floor 4 Access Switch 3
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: building-c-floor-4
+    mgmt_ip: 10.0.22.43
+  - id: ep-building-c-f4-03-01
+    name: Building C - Operations F4 Printer 3-1
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: building-c-floor-4
+  - id: ep-building-c-f4-03-02
+    name: Building C - Operations F4 IP Phone 3-2
+    icon: cisco/modemand-phones/ip-phone
+    tier: endpoint
+    zone: building-c-floor-4
+  - id: ep-building-c-f4-03-03
+    name: Building C - Operations F4 Desktop PC 3-3
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: building-c-floor-4
+  - id: ep-building-c-f4-03-04
+    name: Building C - Operations F4 Laptop 3-4
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: building-c-floor-4
+  - id: ep-building-c-f4-03-05
+    name: Building C - Operations F4 Mac Workstation 3-5
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: building-c-floor-4
+  - id: ep-building-c-f4-03-06
+    name: Building C - Operations F4 Tablet 3-6
+    icon: cisco/computer-and-peripherals/tablet
+    tier: endpoint
+    zone: building-c-floor-4
+  - id: ep-building-c-f4-03-07
+    name: Building C - Operations F4 Printer 3-7
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: building-c-floor-4
+  - id: ep-building-c-f4-03-08
+    name: Building C - Operations F4 IP Phone 3-8
+    icon: cisco/modemand-phones/ip-phone
+    tier: endpoint
+    zone: building-c-floor-4
+  - id: dist-building-d-01
+    name: Building D - Support Annex Distribution 1
+    icon: cisco/switches/multilayer-remote-switch
+    tier: distribution
+    zone: building-d
+    ha_pair_with: dist-building-d-02
+    mgmt_ip: 10.0.23.1
+  - id: dist-building-d-02
+    name: Building D - Support Annex Distribution 2
+    icon: cisco/switches/multilayer-remote-switch
+    tier: distribution
+    zone: building-d
+    ha_pair_with: dist-building-d-01
+    mgmt_ip: 10.0.23.2
+  - id: ap-building-d-f1-01
+    name: Building D - Support Annex Floor 1 Wireless AP
+    icon: cisco/routers/wireless-router
+    tier: access
+    zone: building-d-floor-1
+    mgmt_ip: 10.0.23.91
+  - id: acc-building-d-f1-01
+    name: Building D - Support Annex Floor 1 Access Switch 1
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: building-d-floor-1
+    mgmt_ip: 10.0.23.11
+  - id: ep-building-d-f1-01-01
+    name: Building D - Support Annex F1 Desktop PC 1-1
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: building-d-floor-1
+  - id: ep-building-d-f1-01-02
+    name: Building D - Support Annex F1 Laptop 1-2
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: building-d-floor-1
+  - id: ep-building-d-f1-01-03
+    name: Building D - Support Annex F1 Mac Workstation 1-3
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: building-d-floor-1
+  - id: ep-building-d-f1-01-04
+    name: Building D - Support Annex F1 Tablet 1-4
+    icon: cisco/computer-and-peripherals/tablet
+    tier: endpoint
+    zone: building-d-floor-1
+    status: degraded
+  - id: ep-building-d-f1-01-05
+    name: Building D - Support Annex F1 Printer 1-5
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: building-d-floor-1
+  - id: ep-building-d-f1-01-06
+    name: Building D - Support Annex F1 IP Phone 1-6
+    icon: cisco/modemand-phones/ip-phone
+    tier: endpoint
+    zone: building-d-floor-1
+  - id: ep-building-d-f1-01-07
+    name: Building D - Support Annex F1 Desktop PC 1-7
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: building-d-floor-1
+  - id: ep-building-d-f1-01-08
+    name: Building D - Support Annex F1 Laptop 1-8
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: building-d-floor-1
+  - id: ep-building-d-f1-01-09
+    name: Building D - Support Annex F1 Mac Workstation 1-9
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: building-d-floor-1
+  - id: acc-building-d-f1-02
+    name: Building D - Support Annex Floor 1 Access Switch 2
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: building-d-floor-1
+    mgmt_ip: 10.0.23.12
+  - id: ep-building-d-f1-02-01
+    name: Building D - Support Annex F1 Tablet 2-1
+    icon: cisco/computer-and-peripherals/tablet
+    tier: endpoint
+    zone: building-d-floor-1
+  - id: ep-building-d-f1-02-02
+    name: Building D - Support Annex F1 Printer 2-2
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: building-d-floor-1
+  - id: ep-building-d-f1-02-03
+    name: Building D - Support Annex F1 IP Phone 2-3
+    icon: cisco/modemand-phones/ip-phone
+    tier: endpoint
+    zone: building-d-floor-1
+  - id: ep-building-d-f1-02-04
+    name: Building D - Support Annex F1 Desktop PC 2-4
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: building-d-floor-1
+  - id: ep-building-d-f1-02-05
+    name: Building D - Support Annex F1 Laptop 2-5
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: building-d-floor-1
+    status: down
+  - id: ep-building-d-f1-02-06
+    name: Building D - Support Annex F1 Mac Workstation 2-6
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: building-d-floor-1
+  - id: ep-building-d-f1-02-07
+    name: Building D - Support Annex F1 Tablet 2-7
+    icon: cisco/computer-and-peripherals/tablet
+    tier: endpoint
+    zone: building-d-floor-1
+  - id: ep-building-d-f1-02-08
+    name: Building D - Support Annex F1 Printer 2-8
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: building-d-floor-1
+  - id: ep-building-d-f1-02-09
+    name: Building D - Support Annex F1 IP Phone 2-9
+    icon: cisco/modemand-phones/ip-phone
+    tier: endpoint
+    zone: building-d-floor-1
+  - id: acc-building-d-f1-03
+    name: Building D - Support Annex Floor 1 Access Switch 3
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: building-d-floor-1
+    mgmt_ip: 10.0.23.13
+  - id: ep-building-d-f1-03-01
+    name: Building D - Support Annex F1 Desktop PC 3-1
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: building-d-floor-1
+  - id: ep-building-d-f1-03-02
+    name: Building D - Support Annex F1 Laptop 3-2
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: building-d-floor-1
+  - id: ep-building-d-f1-03-03
+    name: Building D - Support Annex F1 Mac Workstation 3-3
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: building-d-floor-1
+    status: degraded
+  - id: ep-building-d-f1-03-04
+    name: Building D - Support Annex F1 Tablet 3-4
+    icon: cisco/computer-and-peripherals/tablet
+    tier: endpoint
+    zone: building-d-floor-1
+  - id: ep-building-d-f1-03-05
+    name: Building D - Support Annex F1 Printer 3-5
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: building-d-floor-1
+  - id: ep-building-d-f1-03-06
+    name: Building D - Support Annex F1 IP Phone 3-6
+    icon: cisco/modemand-phones/ip-phone
+    tier: endpoint
+    zone: building-d-floor-1
+  - id: ep-building-d-f1-03-07
+    name: Building D - Support Annex F1 Desktop PC 3-7
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: building-d-floor-1
+  - id: ep-building-d-f1-03-08
+    name: Building D - Support Annex F1 Laptop 3-8
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: building-d-floor-1
+  - id: ep-building-d-f1-03-09
+    name: Building D - Support Annex F1 Mac Workstation 3-9
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: building-d-floor-1
+  - id: acc-building-d-f1-04
+    name: Building D - Support Annex Floor 1 Access Switch 4
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: building-d-floor-1
+    mgmt_ip: 10.0.23.14
+  - id: ep-building-d-f1-04-01
+    name: Building D - Support Annex F1 Tablet 4-1
+    icon: cisco/computer-and-peripherals/tablet
+    tier: endpoint
+    zone: building-d-floor-1
+  - id: ep-building-d-f1-04-02
+    name: Building D - Support Annex F1 Printer 4-2
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: building-d-floor-1
+  - id: ep-building-d-f1-04-03
+    name: Building D - Support Annex F1 IP Phone 4-3
+    icon: cisco/modemand-phones/ip-phone
+    tier: endpoint
+    zone: building-d-floor-1
+  - id: ep-building-d-f1-04-04
+    name: Building D - Support Annex F1 Desktop PC 4-4
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: building-d-floor-1
+  - id: ep-building-d-f1-04-05
+    name: Building D - Support Annex F1 Laptop 4-5
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: building-d-floor-1
+  - id: ep-building-d-f1-04-06
+    name: Building D - Support Annex F1 Mac Workstation 4-6
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: building-d-floor-1
+  - id: ep-building-d-f1-04-07
+    name: Building D - Support Annex F1 Tablet 4-7
+    icon: cisco/computer-and-peripherals/tablet
+    tier: endpoint
+    zone: building-d-floor-1
+    status: planned
+  - id: ep-building-d-f1-04-08
+    name: Building D - Support Annex F1 Printer 4-8
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: building-d-floor-1
+  - id: ep-building-d-f1-04-09
+    name: Building D - Support Annex F1 IP Phone 4-9
+    icon: cisco/modemand-phones/ip-phone
+    tier: endpoint
+    zone: building-d-floor-1
+  - id: ap-building-d-f2-01
+    name: Building D - Support Annex Floor 2 Wireless AP
+    icon: cisco/routers/wireless-router
+    tier: access
+    zone: building-d-floor-2
+    mgmt_ip: 10.0.23.92
+  - id: acc-building-d-f2-01
+    name: Building D - Support Annex Floor 2 Access Switch 1
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: building-d-floor-2
+    mgmt_ip: 10.0.23.21
+  - id: ep-building-d-f2-01-01
+    name: Building D - Support Annex F2 Desktop PC 1-1
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: building-d-floor-2
+    status: degraded
+  - id: ep-building-d-f2-01-02
+    name: Building D - Support Annex F2 Laptop 1-2
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: building-d-floor-2
+  - id: ep-building-d-f2-01-03
+    name: Building D - Support Annex F2 Mac Workstation 1-3
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: building-d-floor-2
+  - id: ep-building-d-f2-01-04
+    name: Building D - Support Annex F2 Tablet 1-4
+    icon: cisco/computer-and-peripherals/tablet
+    tier: endpoint
+    zone: building-d-floor-2
+  - id: ep-building-d-f2-01-05
+    name: Building D - Support Annex F2 Printer 1-5
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: building-d-floor-2
+  - id: ep-building-d-f2-01-06
+    name: Building D - Support Annex F2 IP Phone 1-6
+    icon: cisco/modemand-phones/ip-phone
+    tier: endpoint
+    zone: building-d-floor-2
+  - id: acc-building-d-f2-02
+    name: Building D - Support Annex Floor 2 Access Switch 2
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: building-d-floor-2
+    mgmt_ip: 10.0.23.22
+  - id: ep-building-d-f2-02-01
+    name: Building D - Support Annex F2 Desktop PC 2-1
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: building-d-floor-2
+  - id: ep-building-d-f2-02-02
+    name: Building D - Support Annex F2 Laptop 2-2
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: building-d-floor-2
+  - id: ep-building-d-f2-02-03
+    name: Building D - Support Annex F2 Mac Workstation 2-3
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: building-d-floor-2
+  - id: ep-building-d-f2-02-04
+    name: Building D - Support Annex F2 Tablet 2-4
+    icon: cisco/computer-and-peripherals/tablet
+    tier: endpoint
+    zone: building-d-floor-2
+    status: down
+  - id: ep-building-d-f2-02-05
+    name: Building D - Support Annex F2 Printer 2-5
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: building-d-floor-2
+  - id: ep-building-d-f2-02-06
+    name: Building D - Support Annex F2 IP Phone 2-6
+    icon: cisco/modemand-phones/ip-phone
+    tier: endpoint
+    zone: building-d-floor-2
+links:
+  - from: wan-rt-01:Gi0/0/1
+    to: edge-fw-01:outside
+    kind: copper
+    speed: 10G
+  - from: wan-rt-02:Gi0/0/1
+    to: edge-fw-02:outside
+    kind: copper
+    speed: 10G
+  - from: edge-fw-01:inside
+    to: edge-fw-02:inside
+    kind: copper
+    speed: 1G
+    label: HA sync
+  - from: wan-rt-01:Gi0/0/2
+    to: wan-rt-02:Gi0/0/2
+    kind: dac
+    speed: 10G
+    lag: po1
+  - from: edge-fw-01:ha-link
+    to: dc-core-sw-01:Te1/0/1
+    kind: fiber
+    speed: 10G
+    animated: true
+  - from: edge-fw-02:ha-link
+    to: dc-core-sw-02:Te1/0/1
+    kind: fiber
+    speed: 10G
+  - from: dc-core-sw-01:Te1/0/2
+    to: dc-core-sw-02:Te1/0/2
+    kind: dac
+    speed: 100G
+    lag: po1
+  - from: dc-core-sw-01:Te1/0/3
+    to: dc-core-sw-02:Te1/0/3
+    kind: dac
+    speed: 100G
+    lag: po1
+  - from: dc-core-sw-01:Te1/0/4
+    to: dc-fw-01:inside
+    kind: copper
+    speed: 10G
+  - from: dc-core-sw-02:Te1/0/4
+    to: dc-fw-02:inside
+    kind: copper
+    speed: 10G
+  - from: dc-fw-01:dc-link
+    to: dc-dist-01:Te1/0/1
+    kind: copper
+    speed: 10G
+  - from: dc-fw-02:dc-link
+    to: dc-dist-02:Te1/0/1
+    kind: copper
+    speed: 10G
+  - from: dc-dist-01:Te1/0/2
+    to: dc-dist-02:Te1/0/2
+    kind: dac
+    speed: 40G
+    lag: po10
+  - from: dc-dist-01:Te1/0/3
+    to: dc-dist-02:Te1/0/3
+    kind: dac
+    speed: 40G
+    lag: po10
+  - from: dc-dist-01:Gi1/0/4
+    to: dc-acc-01:Gi0/1
+    kind: fiber
+    speed: 10G
+  - from: dc-dist-01:Gi1/0/5
+    to: dc-acc-02:Gi0/1
+    kind: fiber
+    speed: 10G
+  - from: dc-dist-02:Gi1/0/4
+    to: dc-acc-03:Gi0/1
+    kind: fiber
+    speed: 10G
+  - from: dc-dist-01:Gi1/0/6
+    to: dc-lb-01:eno1
+    kind: copper
+    speed: 10G
+  - from: dc-dist-02:Gi1/0/5
+    to: mgmt-nms-01:eno1
+    kind: copper
+    speed: 1G
+  - from: dc-acc-01:Gi0/2
+    to: dc-srv-app-01:eno1
+    kind: copper
+    speed: 10G
+  - from: dc-acc-02:Gi0/2
+    to: dc-srv-app-02:eno1
+    kind: copper
+    speed: 10G
+  - from: dc-acc-03:Gi0/2
+    to: dc-srv-app-03:eno1
+    kind: copper
+    speed: 10G
+  - from: dc-acc-01:Gi0/3
+    to: dc-srv-app-04:eno1
+    kind: copper
+    speed: 10G
+  - from: dc-acc-02:Gi0/3
+    to: dc-srv-app-05:eno1
+    kind: copper
+    speed: 10G
+  - from: dc-acc-03:Gi0/3
+    to: dc-srv-app-06:eno1
+    kind: copper
+    speed: 10G
+  - from: dc-acc-01:Gi0/4
+    to: dc-srv-db-01:eno1
+    kind: copper
+    speed: 10G
+  - from: dc-acc-02:Gi0/4
+    to: dc-srv-db-02:eno1
+    kind: copper
+    speed: 10G
+  - from: dc-acc-03:Gi0/4
+    to: dc-srv-db-03:eno1
+    kind: copper
+    speed: 10G
+  - from: dc-acc-01:Gi0/5
+    to: dc-srv-db-04:eno1
+    kind: copper
+    speed: 10G
+  - from: dc-acc-02:Gi0/5
+    to: dc-srv-virt-01:eno1
+    kind: copper
+    speed: 10G
+  - from: dc-acc-03:Gi0/5
+    to: dc-srv-virt-02:eno1
+    kind: copper
+    speed: 10G
+  - from: dc-acc-01:Gi0/6
+    to: dc-srv-virt-03:eno1
+    kind: copper
+    speed: 10G
+  - from: dc-acc-02:Gi0/6
+    to: dc-srv-virt-04:eno1
+    kind: copper
+    speed: 10G
+  - from: dc-acc-03:Gi0/6
+    to: dc-srv-virt-05:eno1
+    kind: copper
+    speed: 10G
+  - from: dc-acc-01:Gi0/7
+    to: dc-srv-backup-01:eno1
+    kind: copper
+    speed: 10G
+  - from: dc-acc-02:Gi0/7
+    to: dc-srv-backup-02:eno1
+    kind: copper
+    speed: 10G
+  - from: dist-building-a-01:Te1/0/1
+    to: dc-core-sw-01:Te1/0/5
+    kind: fiber
+    speed: 10G
+  - from: dist-building-a-02:Te1/0/1
+    to: dc-core-sw-02:Te1/0/5
+    kind: fiber
+    speed: 10G
+  - from: dist-building-a-01:Te1/0/2
+    to: dist-building-a-02:Te1/0/2
+    kind: dac
+    speed: 40G
+    lag: po30
+  - from: dist-building-a-01:Te1/0/3
+    to: dist-building-a-02:Te1/0/3
+    kind: dac
+    speed: 40G
+    lag: po30
+  - from: dist-building-a-01:Gi1/0/4
+    to: ap-building-a-f1-01:eth0
+    kind: wireless
+    speed: 1G
+  - from: dist-building-a-01:Gi1/0/5
+    to: acc-building-a-f1-01:Gi0/1
+    kind: fiber
+    speed: 1G
+  - from: acc-building-a-f1-01:Gi0/2
+    to: ep-building-a-f1-01-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f1-01:Gi0/3
+    to: ep-building-a-f1-01-02:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f1-01:Gi0/4
+    to: ep-building-a-f1-01-03:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f1-01:Gi0/5
+    to: ep-building-a-f1-01-04:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f1-01:Gi0/6
+    to: ep-building-a-f1-01-05:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f1-01:Gi0/7
+    to: ep-building-a-f1-01-06:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f1-01:Gi0/8
+    to: ep-building-a-f1-01-07:eth0
+    kind: copper
+    speed: 1G
+  - from: dist-building-a-02:Gi1/0/4
+    to: acc-building-a-f1-02:Gi0/1
+    kind: fiber
+    speed: 1G
+  - from: acc-building-a-f1-02:Gi0/2
+    to: ep-building-a-f1-02-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f1-02:Gi0/3
+    to: ep-building-a-f1-02-02:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f1-02:Gi0/4
+    to: ep-building-a-f1-02-03:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f1-02:Gi0/5
+    to: ep-building-a-f1-02-04:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f1-02:Gi0/6
+    to: ep-building-a-f1-02-05:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f1-02:Gi0/7
+    to: ep-building-a-f1-02-06:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f1-02:Gi0/8
+    to: ep-building-a-f1-02-07:eth0
+    kind: copper
+    speed: 1G
+  - from: dist-building-a-01:Gi1/0/6
+    to: acc-building-a-f1-03:Gi0/1
+    kind: fiber
+    speed: 1G
+  - from: acc-building-a-f1-03:Gi0/2
+    to: ep-building-a-f1-03-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f1-03:Gi0/3
+    to: ep-building-a-f1-03-02:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f1-03:Gi0/4
+    to: ep-building-a-f1-03-03:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f1-03:Gi0/5
+    to: ep-building-a-f1-03-04:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f1-03:Gi0/6
+    to: ep-building-a-f1-03-05:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f1-03:Gi0/7
+    to: ep-building-a-f1-03-06:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f1-03:Gi0/8
+    to: ep-building-a-f1-03-07:eth0
+    kind: copper
+    speed: 1G
+  - from: dist-building-a-02:Gi1/0/5
+    to: ap-building-a-f2-01:eth0
+    kind: wireless
+    speed: 1G
+  - from: dist-building-a-01:Gi1/0/7
+    to: acc-building-a-f2-01:Gi0/1
+    kind: fiber
+    speed: 1G
+  - from: acc-building-a-f2-01:Gi0/2
+    to: ep-building-a-f2-01-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f2-01:Gi0/3
+    to: ep-building-a-f2-01-02:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f2-01:Gi0/4
+    to: ep-building-a-f2-01-03:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f2-01:Gi0/5
+    to: ep-building-a-f2-01-04:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f2-01:Gi0/6
+    to: ep-building-a-f2-01-05:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f2-01:Gi0/7
+    to: ep-building-a-f2-01-06:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f2-01:Gi0/8
+    to: ep-building-a-f2-01-07:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f2-01:Gi0/9
+    to: ep-building-a-f2-01-08:eth0
+    kind: copper
+    speed: 1G
+  - from: dist-building-a-02:Gi1/0/6
+    to: acc-building-a-f2-02:Gi0/1
+    kind: fiber
+    speed: 1G
+  - from: acc-building-a-f2-02:Gi0/2
+    to: ep-building-a-f2-02-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f2-02:Gi0/3
+    to: ep-building-a-f2-02-02:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f2-02:Gi0/4
+    to: ep-building-a-f2-02-03:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f2-02:Gi0/5
+    to: ep-building-a-f2-02-04:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f2-02:Gi0/6
+    to: ep-building-a-f2-02-05:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f2-02:Gi0/7
+    to: ep-building-a-f2-02-06:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f2-02:Gi0/8
+    to: ep-building-a-f2-02-07:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f2-02:Gi0/9
+    to: ep-building-a-f2-02-08:eth0
+    kind: copper
+    speed: 1G
+  - from: dist-building-a-01:Gi1/0/8
+    to: acc-building-a-f2-03:Gi0/1
+    kind: fiber
+    speed: 1G
+  - from: acc-building-a-f2-03:Gi0/2
+    to: ep-building-a-f2-03-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f2-03:Gi0/3
+    to: ep-building-a-f2-03-02:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f2-03:Gi0/4
+    to: ep-building-a-f2-03-03:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f2-03:Gi0/5
+    to: ep-building-a-f2-03-04:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f2-03:Gi0/6
+    to: ep-building-a-f2-03-05:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f2-03:Gi0/7
+    to: ep-building-a-f2-03-06:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f2-03:Gi0/8
+    to: ep-building-a-f2-03-07:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f2-03:Gi0/9
+    to: ep-building-a-f2-03-08:eth0
+    kind: copper
+    speed: 1G
+  - from: dist-building-a-02:Gi1/0/7
+    to: acc-building-a-f2-04:Gi0/1
+    kind: fiber
+    speed: 1G
+  - from: acc-building-a-f2-04:Gi0/2
+    to: ep-building-a-f2-04-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f2-04:Gi0/3
+    to: ep-building-a-f2-04-02:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f2-04:Gi0/4
+    to: ep-building-a-f2-04-03:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f2-04:Gi0/5
+    to: ep-building-a-f2-04-04:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f2-04:Gi0/6
+    to: ep-building-a-f2-04-05:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f2-04:Gi0/7
+    to: ep-building-a-f2-04-06:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f2-04:Gi0/8
+    to: ep-building-a-f2-04-07:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f2-04:Gi0/9
+    to: ep-building-a-f2-04-08:eth0
+    kind: copper
+    speed: 1G
+  - from: dist-building-a-01:Gi1/0/9
+    to: ap-building-a-f3-01:eth0
+    kind: wireless
+    speed: 1G
+  - from: dist-building-a-01:Gi1/0/10
+    to: acc-building-a-f3-01:Gi0/1
+    kind: fiber
+    speed: 1G
+  - from: acc-building-a-f3-01:Gi0/2
+    to: ep-building-a-f3-01-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f3-01:Gi0/3
+    to: ep-building-a-f3-01-02:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f3-01:Gi0/4
+    to: ep-building-a-f3-01-03:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f3-01:Gi0/5
+    to: ep-building-a-f3-01-04:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f3-01:Gi0/6
+    to: ep-building-a-f3-01-05:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f3-01:Gi0/7
+    to: ep-building-a-f3-01-06:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f3-01:Gi0/8
+    to: ep-building-a-f3-01-07:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f3-01:Gi0/9
+    to: ep-building-a-f3-01-08:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f3-01:Gi0/10
+    to: ep-building-a-f3-01-09:eth0
+    kind: copper
+    speed: 1G
+  - from: dist-building-a-02:Gi1/0/8
+    to: acc-building-a-f3-02:Gi0/1
+    kind: fiber
+    speed: 1G
+  - from: acc-building-a-f3-02:Gi0/2
+    to: ep-building-a-f3-02-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f3-02:Gi0/3
+    to: ep-building-a-f3-02-02:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f3-02:Gi0/4
+    to: ep-building-a-f3-02-03:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f3-02:Gi0/5
+    to: ep-building-a-f3-02-04:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f3-02:Gi0/6
+    to: ep-building-a-f3-02-05:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f3-02:Gi0/7
+    to: ep-building-a-f3-02-06:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f3-02:Gi0/8
+    to: ep-building-a-f3-02-07:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f3-02:Gi0/9
+    to: ep-building-a-f3-02-08:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-a-f3-02:Gi0/10
+    to: ep-building-a-f3-02-09:eth0
+    kind: copper
+    speed: 1G
+  - from: dist-building-b-01:Te1/0/1
+    to: dc-core-sw-01:Te1/0/6
+    kind: fiber
+    speed: 10G
+  - from: dist-building-b-02:Te1/0/1
+    to: dc-core-sw-02:Te1/0/6
+    kind: fiber
+    speed: 10G
+  - from: dist-building-b-01:Te1/0/2
+    to: dist-building-b-02:Te1/0/2
+    kind: dac
+    speed: 40G
+    lag: po31
+  - from: dist-building-b-01:Te1/0/3
+    to: dist-building-b-02:Te1/0/3
+    kind: dac
+    speed: 40G
+    lag: po31
+  - from: dist-building-b-01:Gi1/0/4
+    to: ap-building-b-f1-01:eth0
+    kind: wireless
+    speed: 1G
+  - from: dist-building-b-01:Gi1/0/5
+    to: acc-building-b-f1-01:Gi0/1
+    kind: fiber
+    speed: 1G
+  - from: acc-building-b-f1-01:Gi0/2
+    to: ep-building-b-f1-01-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-b-f1-01:Gi0/3
+    to: ep-building-b-f1-01-02:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-b-f1-01:Gi0/4
+    to: ep-building-b-f1-01-03:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-b-f1-01:Gi0/5
+    to: ep-building-b-f1-01-04:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-b-f1-01:Gi0/6
+    to: ep-building-b-f1-01-05:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-b-f1-01:Gi0/7
+    to: ep-building-b-f1-01-06:eth0
+    kind: copper
+    speed: 1G
+  - from: dist-building-b-02:Gi1/0/4
+    to: acc-building-b-f1-02:Gi0/1
+    kind: fiber
+    speed: 1G
+  - from: acc-building-b-f1-02:Gi0/2
+    to: ep-building-b-f1-02-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-b-f1-02:Gi0/3
+    to: ep-building-b-f1-02-02:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-b-f1-02:Gi0/4
+    to: ep-building-b-f1-02-03:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-b-f1-02:Gi0/5
+    to: ep-building-b-f1-02-04:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-b-f1-02:Gi0/6
+    to: ep-building-b-f1-02-05:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-b-f1-02:Gi0/7
+    to: ep-building-b-f1-02-06:eth0
+    kind: copper
+    speed: 1G
+  - from: dist-building-b-01:Gi1/0/6
+    to: acc-building-b-f1-03:Gi0/1
+    kind: fiber
+    speed: 1G
+  - from: acc-building-b-f1-03:Gi0/2
+    to: ep-building-b-f1-03-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-b-f1-03:Gi0/3
+    to: ep-building-b-f1-03-02:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-b-f1-03:Gi0/4
+    to: ep-building-b-f1-03-03:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-b-f1-03:Gi0/5
+    to: ep-building-b-f1-03-04:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-b-f1-03:Gi0/6
+    to: ep-building-b-f1-03-05:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-b-f1-03:Gi0/7
+    to: ep-building-b-f1-03-06:eth0
+    kind: copper
+    speed: 1G
+  - from: dist-building-b-02:Gi1/0/5
+    to: ap-building-b-f2-01:eth0
+    kind: wireless
+    speed: 1G
+  - from: dist-building-b-01:Gi1/0/7
+    to: acc-building-b-f2-01:Gi0/1
+    kind: fiber
+    speed: 1G
+  - from: acc-building-b-f2-01:Gi0/2
+    to: ep-building-b-f2-01-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-b-f2-01:Gi0/3
+    to: ep-building-b-f2-01-02:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-b-f2-01:Gi0/4
+    to: ep-building-b-f2-01-03:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-b-f2-01:Gi0/5
+    to: ep-building-b-f2-01-04:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-b-f2-01:Gi0/6
+    to: ep-building-b-f2-01-05:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-b-f2-01:Gi0/7
+    to: ep-building-b-f2-01-06:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-b-f2-01:Gi0/8
+    to: ep-building-b-f2-01-07:eth0
+    kind: copper
+    speed: 1G
+  - from: dist-building-b-02:Gi1/0/6
+    to: acc-building-b-f2-02:Gi0/1
+    kind: fiber
+    speed: 1G
+  - from: acc-building-b-f2-02:Gi0/2
+    to: ep-building-b-f2-02-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-b-f2-02:Gi0/3
+    to: ep-building-b-f2-02-02:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-b-f2-02:Gi0/4
+    to: ep-building-b-f2-02-03:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-b-f2-02:Gi0/5
+    to: ep-building-b-f2-02-04:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-b-f2-02:Gi0/6
+    to: ep-building-b-f2-02-05:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-b-f2-02:Gi0/7
+    to: ep-building-b-f2-02-06:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-b-f2-02:Gi0/8
+    to: ep-building-b-f2-02-07:eth0
+    kind: copper
+    speed: 1G
+  - from: dist-building-b-01:Gi1/0/8
+    to: acc-building-b-f2-03:Gi0/1
+    kind: fiber
+    speed: 1G
+  - from: acc-building-b-f2-03:Gi0/2
+    to: ep-building-b-f2-03-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-b-f2-03:Gi0/3
+    to: ep-building-b-f2-03-02:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-b-f2-03:Gi0/4
+    to: ep-building-b-f2-03-03:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-b-f2-03:Gi0/5
+    to: ep-building-b-f2-03-04:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-b-f2-03:Gi0/6
+    to: ep-building-b-f2-03-05:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-b-f2-03:Gi0/7
+    to: ep-building-b-f2-03-06:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-b-f2-03:Gi0/8
+    to: ep-building-b-f2-03-07:eth0
+    kind: copper
+    speed: 1G
+  - from: dist-building-b-02:Gi1/0/7
+    to: acc-building-b-f2-04:Gi0/1
+    kind: fiber
+    speed: 1G
+  - from: acc-building-b-f2-04:Gi0/2
+    to: ep-building-b-f2-04-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-b-f2-04:Gi0/3
+    to: ep-building-b-f2-04-02:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-b-f2-04:Gi0/4
+    to: ep-building-b-f2-04-03:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-b-f2-04:Gi0/5
+    to: ep-building-b-f2-04-04:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-b-f2-04:Gi0/6
+    to: ep-building-b-f2-04-05:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-b-f2-04:Gi0/7
+    to: ep-building-b-f2-04-06:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-b-f2-04:Gi0/8
+    to: ep-building-b-f2-04-07:eth0
+    kind: copper
+    speed: 1G
+  - from: dist-building-b-01:Gi1/0/9
+    to: ap-building-b-f3-01:eth0
+    kind: wireless
+    speed: 1G
+  - from: dist-building-b-01:Gi1/0/10
+    to: acc-building-b-f3-01:Gi0/1
+    kind: fiber
+    speed: 1G
+  - from: acc-building-b-f3-01:Gi0/2
+    to: ep-building-b-f3-01-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-b-f3-01:Gi0/3
+    to: ep-building-b-f3-01-02:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-b-f3-01:Gi0/4
+    to: ep-building-b-f3-01-03:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-b-f3-01:Gi0/5
+    to: ep-building-b-f3-01-04:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-b-f3-01:Gi0/6
+    to: ep-building-b-f3-01-05:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-b-f3-01:Gi0/7
+    to: ep-building-b-f3-01-06:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-b-f3-01:Gi0/8
+    to: ep-building-b-f3-01-07:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-b-f3-01:Gi0/9
+    to: ep-building-b-f3-01-08:eth0
+    kind: copper
+    speed: 1G
+  - from: dist-building-b-02:Gi1/0/8
+    to: acc-building-b-f3-02:Gi0/1
+    kind: fiber
+    speed: 1G
+  - from: acc-building-b-f3-02:Gi0/2
+    to: ep-building-b-f3-02-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-b-f3-02:Gi0/3
+    to: ep-building-b-f3-02-02:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-b-f3-02:Gi0/4
+    to: ep-building-b-f3-02-03:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-b-f3-02:Gi0/5
+    to: ep-building-b-f3-02-04:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-b-f3-02:Gi0/6
+    to: ep-building-b-f3-02-05:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-b-f3-02:Gi0/7
+    to: ep-building-b-f3-02-06:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-b-f3-02:Gi0/8
+    to: ep-building-b-f3-02-07:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-b-f3-02:Gi0/9
+    to: ep-building-b-f3-02-08:eth0
+    kind: copper
+    speed: 1G
+  - from: dist-building-c-01:Te1/0/1
+    to: dc-core-sw-01:Te1/0/7
+    kind: fiber
+    speed: 10G
+  - from: dist-building-c-02:Te1/0/1
+    to: dc-core-sw-02:Te1/0/7
+    kind: fiber
+    speed: 10G
+  - from: dist-building-c-01:Te1/0/2
+    to: dist-building-c-02:Te1/0/2
+    kind: dac
+    speed: 40G
+    lag: po32
+  - from: dist-building-c-01:Te1/0/3
+    to: dist-building-c-02:Te1/0/3
+    kind: dac
+    speed: 40G
+    lag: po32
+  - from: dist-building-c-01:Gi1/0/4
+    to: ap-building-c-f1-01:eth0
+    kind: wireless
+    speed: 1G
+  - from: dist-building-c-01:Gi1/0/5
+    to: acc-building-c-f1-01:Gi0/1
+    kind: fiber
+    speed: 1G
+  - from: acc-building-c-f1-01:Gi0/2
+    to: ep-building-c-f1-01-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f1-01:Gi0/3
+    to: ep-building-c-f1-01-02:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f1-01:Gi0/4
+    to: ep-building-c-f1-01-03:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f1-01:Gi0/5
+    to: ep-building-c-f1-01-04:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f1-01:Gi0/6
+    to: ep-building-c-f1-01-05:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f1-01:Gi0/7
+    to: ep-building-c-f1-01-06:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f1-01:Gi0/8
+    to: ep-building-c-f1-01-07:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f1-01:Gi0/9
+    to: ep-building-c-f1-01-08:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f1-01:Gi0/10
+    to: ep-building-c-f1-01-09:eth0
+    kind: copper
+    speed: 1G
+  - from: dist-building-c-02:Gi1/0/4
+    to: acc-building-c-f1-02:Gi0/1
+    kind: fiber
+    speed: 1G
+  - from: acc-building-c-f1-02:Gi0/2
+    to: ep-building-c-f1-02-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f1-02:Gi0/3
+    to: ep-building-c-f1-02-02:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f1-02:Gi0/4
+    to: ep-building-c-f1-02-03:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f1-02:Gi0/5
+    to: ep-building-c-f1-02-04:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f1-02:Gi0/6
+    to: ep-building-c-f1-02-05:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f1-02:Gi0/7
+    to: ep-building-c-f1-02-06:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f1-02:Gi0/8
+    to: ep-building-c-f1-02-07:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f1-02:Gi0/9
+    to: ep-building-c-f1-02-08:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f1-02:Gi0/10
+    to: ep-building-c-f1-02-09:eth0
+    kind: copper
+    speed: 1G
+  - from: dist-building-c-01:Gi1/0/6
+    to: acc-building-c-f1-03:Gi0/1
+    kind: fiber
+    speed: 1G
+  - from: acc-building-c-f1-03:Gi0/2
+    to: ep-building-c-f1-03-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f1-03:Gi0/3
+    to: ep-building-c-f1-03-02:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f1-03:Gi0/4
+    to: ep-building-c-f1-03-03:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f1-03:Gi0/5
+    to: ep-building-c-f1-03-04:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f1-03:Gi0/6
+    to: ep-building-c-f1-03-05:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f1-03:Gi0/7
+    to: ep-building-c-f1-03-06:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f1-03:Gi0/8
+    to: ep-building-c-f1-03-07:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f1-03:Gi0/9
+    to: ep-building-c-f1-03-08:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f1-03:Gi0/10
+    to: ep-building-c-f1-03-09:eth0
+    kind: copper
+    speed: 1G
+  - from: dist-building-c-02:Gi1/0/5
+    to: ap-building-c-f2-01:eth0
+    kind: wireless
+    speed: 1G
+  - from: dist-building-c-01:Gi1/0/7
+    to: acc-building-c-f2-01:Gi0/1
+    kind: fiber
+    speed: 1G
+  - from: acc-building-c-f2-01:Gi0/2
+    to: ep-building-c-f2-01-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f2-01:Gi0/3
+    to: ep-building-c-f2-01-02:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f2-01:Gi0/4
+    to: ep-building-c-f2-01-03:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f2-01:Gi0/5
+    to: ep-building-c-f2-01-04:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f2-01:Gi0/6
+    to: ep-building-c-f2-01-05:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f2-01:Gi0/7
+    to: ep-building-c-f2-01-06:eth0
+    kind: copper
+    speed: 1G
+  - from: dist-building-c-02:Gi1/0/6
+    to: acc-building-c-f2-02:Gi0/1
+    kind: fiber
+    speed: 1G
+  - from: acc-building-c-f2-02:Gi0/2
+    to: ep-building-c-f2-02-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f2-02:Gi0/3
+    to: ep-building-c-f2-02-02:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f2-02:Gi0/4
+    to: ep-building-c-f2-02-03:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f2-02:Gi0/5
+    to: ep-building-c-f2-02-04:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f2-02:Gi0/6
+    to: ep-building-c-f2-02-05:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f2-02:Gi0/7
+    to: ep-building-c-f2-02-06:eth0
+    kind: copper
+    speed: 1G
+  - from: dist-building-c-01:Gi1/0/8
+    to: acc-building-c-f2-03:Gi0/1
+    kind: fiber
+    speed: 1G
+  - from: acc-building-c-f2-03:Gi0/2
+    to: ep-building-c-f2-03-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f2-03:Gi0/3
+    to: ep-building-c-f2-03-02:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f2-03:Gi0/4
+    to: ep-building-c-f2-03-03:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f2-03:Gi0/5
+    to: ep-building-c-f2-03-04:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f2-03:Gi0/6
+    to: ep-building-c-f2-03-05:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f2-03:Gi0/7
+    to: ep-building-c-f2-03-06:eth0
+    kind: copper
+    speed: 1G
+  - from: dist-building-c-02:Gi1/0/7
+    to: acc-building-c-f2-04:Gi0/1
+    kind: fiber
+    speed: 1G
+  - from: acc-building-c-f2-04:Gi0/2
+    to: ep-building-c-f2-04-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f2-04:Gi0/3
+    to: ep-building-c-f2-04-02:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f2-04:Gi0/4
+    to: ep-building-c-f2-04-03:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f2-04:Gi0/5
+    to: ep-building-c-f2-04-04:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f2-04:Gi0/6
+    to: ep-building-c-f2-04-05:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f2-04:Gi0/7
+    to: ep-building-c-f2-04-06:eth0
+    kind: copper
+    speed: 1G
+  - from: dist-building-c-01:Gi1/0/9
+    to: ap-building-c-f3-01:eth0
+    kind: wireless
+    speed: 1G
+  - from: dist-building-c-01:Gi1/0/10
+    to: acc-building-c-f3-01:Gi0/1
+    kind: fiber
+    speed: 1G
+  - from: acc-building-c-f3-01:Gi0/2
+    to: ep-building-c-f3-01-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f3-01:Gi0/3
+    to: ep-building-c-f3-01-02:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f3-01:Gi0/4
+    to: ep-building-c-f3-01-03:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f3-01:Gi0/5
+    to: ep-building-c-f3-01-04:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f3-01:Gi0/6
+    to: ep-building-c-f3-01-05:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f3-01:Gi0/7
+    to: ep-building-c-f3-01-06:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f3-01:Gi0/8
+    to: ep-building-c-f3-01-07:eth0
+    kind: copper
+    speed: 1G
+  - from: dist-building-c-02:Gi1/0/8
+    to: acc-building-c-f3-02:Gi0/1
+    kind: fiber
+    speed: 1G
+  - from: acc-building-c-f3-02:Gi0/2
+    to: ep-building-c-f3-02-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f3-02:Gi0/3
+    to: ep-building-c-f3-02-02:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f3-02:Gi0/4
+    to: ep-building-c-f3-02-03:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f3-02:Gi0/5
+    to: ep-building-c-f3-02-04:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f3-02:Gi0/6
+    to: ep-building-c-f3-02-05:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f3-02:Gi0/7
+    to: ep-building-c-f3-02-06:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f3-02:Gi0/8
+    to: ep-building-c-f3-02-07:eth0
+    kind: copper
+    speed: 1G
+  - from: dist-building-c-02:Gi1/0/9
+    to: ap-building-c-f4-01:eth0
+    kind: wireless
+    speed: 1G
+  - from: dist-building-c-01:Gi1/0/11
+    to: acc-building-c-f4-01:Gi0/1
+    kind: fiber
+    speed: 1G
+  - from: acc-building-c-f4-01:Gi0/2
+    to: ep-building-c-f4-01-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f4-01:Gi0/3
+    to: ep-building-c-f4-01-02:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f4-01:Gi0/4
+    to: ep-building-c-f4-01-03:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f4-01:Gi0/5
+    to: ep-building-c-f4-01-04:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f4-01:Gi0/6
+    to: ep-building-c-f4-01-05:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f4-01:Gi0/7
+    to: ep-building-c-f4-01-06:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f4-01:Gi0/8
+    to: ep-building-c-f4-01-07:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f4-01:Gi0/9
+    to: ep-building-c-f4-01-08:eth0
+    kind: copper
+    speed: 1G
+  - from: dist-building-c-02:Gi1/0/10
+    to: acc-building-c-f4-02:Gi0/1
+    kind: fiber
+    speed: 1G
+  - from: acc-building-c-f4-02:Gi0/2
+    to: ep-building-c-f4-02-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f4-02:Gi0/3
+    to: ep-building-c-f4-02-02:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f4-02:Gi0/4
+    to: ep-building-c-f4-02-03:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f4-02:Gi0/5
+    to: ep-building-c-f4-02-04:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f4-02:Gi0/6
+    to: ep-building-c-f4-02-05:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f4-02:Gi0/7
+    to: ep-building-c-f4-02-06:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f4-02:Gi0/8
+    to: ep-building-c-f4-02-07:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f4-02:Gi0/9
+    to: ep-building-c-f4-02-08:eth0
+    kind: copper
+    speed: 1G
+  - from: dist-building-c-01:Gi1/0/12
+    to: acc-building-c-f4-03:Gi0/1
+    kind: fiber
+    speed: 1G
+  - from: acc-building-c-f4-03:Gi0/2
+    to: ep-building-c-f4-03-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f4-03:Gi0/3
+    to: ep-building-c-f4-03-02:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f4-03:Gi0/4
+    to: ep-building-c-f4-03-03:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f4-03:Gi0/5
+    to: ep-building-c-f4-03-04:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f4-03:Gi0/6
+    to: ep-building-c-f4-03-05:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f4-03:Gi0/7
+    to: ep-building-c-f4-03-06:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f4-03:Gi0/8
+    to: ep-building-c-f4-03-07:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-c-f4-03:Gi0/9
+    to: ep-building-c-f4-03-08:eth0
+    kind: copper
+    speed: 1G
+  - from: dist-building-d-01:Te1/0/1
+    to: dc-core-sw-01:Te1/0/8
+    kind: fiber
+    speed: 10G
+  - from: dist-building-d-02:Te1/0/1
+    to: dc-core-sw-02:Te1/0/8
+    kind: fiber
+    speed: 10G
+  - from: dist-building-d-01:Te1/0/2
+    to: dist-building-d-02:Te1/0/2
+    kind: dac
+    speed: 40G
+    lag: po33
+  - from: dist-building-d-01:Te1/0/3
+    to: dist-building-d-02:Te1/0/3
+    kind: dac
+    speed: 40G
+    lag: po33
+  - from: dist-building-d-01:Gi1/0/4
+    to: ap-building-d-f1-01:eth0
+    kind: wireless
+    speed: 1G
+  - from: dist-building-d-01:Gi1/0/5
+    to: acc-building-d-f1-01:Gi0/1
+    kind: fiber
+    speed: 1G
+  - from: acc-building-d-f1-01:Gi0/2
+    to: ep-building-d-f1-01-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-d-f1-01:Gi0/3
+    to: ep-building-d-f1-01-02:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-d-f1-01:Gi0/4
+    to: ep-building-d-f1-01-03:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-d-f1-01:Gi0/5
+    to: ep-building-d-f1-01-04:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-d-f1-01:Gi0/6
+    to: ep-building-d-f1-01-05:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-d-f1-01:Gi0/7
+    to: ep-building-d-f1-01-06:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-d-f1-01:Gi0/8
+    to: ep-building-d-f1-01-07:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-d-f1-01:Gi0/9
+    to: ep-building-d-f1-01-08:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-d-f1-01:Gi0/10
+    to: ep-building-d-f1-01-09:eth0
+    kind: copper
+    speed: 1G
+  - from: dist-building-d-02:Gi1/0/4
+    to: acc-building-d-f1-02:Gi0/1
+    kind: fiber
+    speed: 1G
+  - from: acc-building-d-f1-02:Gi0/2
+    to: ep-building-d-f1-02-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-d-f1-02:Gi0/3
+    to: ep-building-d-f1-02-02:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-d-f1-02:Gi0/4
+    to: ep-building-d-f1-02-03:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-d-f1-02:Gi0/5
+    to: ep-building-d-f1-02-04:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-d-f1-02:Gi0/6
+    to: ep-building-d-f1-02-05:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-d-f1-02:Gi0/7
+    to: ep-building-d-f1-02-06:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-d-f1-02:Gi0/8
+    to: ep-building-d-f1-02-07:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-d-f1-02:Gi0/9
+    to: ep-building-d-f1-02-08:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-d-f1-02:Gi0/10
+    to: ep-building-d-f1-02-09:eth0
+    kind: copper
+    speed: 1G
+  - from: dist-building-d-01:Gi1/0/6
+    to: acc-building-d-f1-03:Gi0/1
+    kind: fiber
+    speed: 1G
+  - from: acc-building-d-f1-03:Gi0/2
+    to: ep-building-d-f1-03-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-d-f1-03:Gi0/3
+    to: ep-building-d-f1-03-02:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-d-f1-03:Gi0/4
+    to: ep-building-d-f1-03-03:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-d-f1-03:Gi0/5
+    to: ep-building-d-f1-03-04:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-d-f1-03:Gi0/6
+    to: ep-building-d-f1-03-05:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-d-f1-03:Gi0/7
+    to: ep-building-d-f1-03-06:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-d-f1-03:Gi0/8
+    to: ep-building-d-f1-03-07:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-d-f1-03:Gi0/9
+    to: ep-building-d-f1-03-08:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-d-f1-03:Gi0/10
+    to: ep-building-d-f1-03-09:eth0
+    kind: copper
+    speed: 1G
+  - from: dist-building-d-02:Gi1/0/5
+    to: acc-building-d-f1-04:Gi0/1
+    kind: fiber
+    speed: 1G
+  - from: acc-building-d-f1-04:Gi0/2
+    to: ep-building-d-f1-04-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-d-f1-04:Gi0/3
+    to: ep-building-d-f1-04-02:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-d-f1-04:Gi0/4
+    to: ep-building-d-f1-04-03:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-d-f1-04:Gi0/5
+    to: ep-building-d-f1-04-04:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-d-f1-04:Gi0/6
+    to: ep-building-d-f1-04-05:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-d-f1-04:Gi0/7
+    to: ep-building-d-f1-04-06:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-d-f1-04:Gi0/8
+    to: ep-building-d-f1-04-07:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-d-f1-04:Gi0/9
+    to: ep-building-d-f1-04-08:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-d-f1-04:Gi0/10
+    to: ep-building-d-f1-04-09:eth0
+    kind: copper
+    speed: 1G
+  - from: dist-building-d-02:Gi1/0/6
+    to: ap-building-d-f2-01:eth0
+    kind: wireless
+    speed: 1G
+  - from: dist-building-d-01:Gi1/0/7
+    to: acc-building-d-f2-01:Gi0/1
+    kind: fiber
+    speed: 1G
+  - from: acc-building-d-f2-01:Gi0/2
+    to: ep-building-d-f2-01-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-d-f2-01:Gi0/3
+    to: ep-building-d-f2-01-02:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-d-f2-01:Gi0/4
+    to: ep-building-d-f2-01-03:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-d-f2-01:Gi0/5
+    to: ep-building-d-f2-01-04:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-d-f2-01:Gi0/6
+    to: ep-building-d-f2-01-05:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-d-f2-01:Gi0/7
+    to: ep-building-d-f2-01-06:eth0
+    kind: copper
+    speed: 1G
+  - from: dist-building-d-02:Gi1/0/7
+    to: acc-building-d-f2-02:Gi0/1
+    kind: fiber
+    speed: 1G
+  - from: acc-building-d-f2-02:Gi0/2
+    to: ep-building-d-f2-02-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-d-f2-02:Gi0/3
+    to: ep-building-d-f2-02-02:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-d-f2-02:Gi0/4
+    to: ep-building-d-f2-02-03:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-d-f2-02:Gi0/5
+    to: ep-building-d-f2-02-04:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-d-f2-02:Gi0/6
+    to: ep-building-d-f2-02-05:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-building-d-f2-02:Gi0/7
+    to: ep-building-d-f2-02-06:eth0
+    kind: copper
+    speed: 1G

@@ -1,0 +1,149 @@
+/**
+ * @marrow/model — the normalized in-memory network. This is what the schema
+ * package produces and what layout, lint, and the site compiler consume.
+ * Semantics here are always DECLARED by the author (agent); nothing in the
+ * model is inferred from names.
+ */
+
+export type Tier = 'core' | 'distribution' | 'access' | 'edge' | 'endpoint' | 'management';
+export type DeviceStatus = 'up' | 'down' | 'degraded' | 'planned' | 'unknown';
+export type LinkStatus = 'up' | 'down' | 'degraded' | 'planned';
+export type LinkKind = 'copper' | 'fiber' | 'dac' | 'wireless' | 'virtual' | 'wan' | 'serial';
+export type LinkSpeed =
+  | '10M'
+  | '100M'
+  | '1G'
+  | '2.5G'
+  | '5G'
+  | '10G'
+  | '25G'
+  | '40G'
+  | '100G'
+  | '400G';
+export type CollapseMode = 'auto' | 'open' | 'closed';
+export type Theme = 'dark' | 'light';
+
+export const TIERS: readonly Tier[] = ['core', 'distribution', 'access', 'edge', 'endpoint', 'management'];
+export const DEVICE_STATUSES: readonly DeviceStatus[] = ['up', 'down', 'degraded', 'planned', 'unknown'];
+export const LINK_STATUSES: readonly LinkStatus[] = ['up', 'down', 'degraded', 'planned'];
+export const LINK_KINDS: readonly LinkKind[] = ['copper', 'fiber', 'dac', 'wireless', 'virtual', 'wan', 'serial'];
+export const LINK_SPEEDS: readonly LinkSpeed[] = ['10M', '100M', '1G', '2.5G', '5G', '10G', '25G', '40G', '100G', '400G'];
+export const COLLAPSE_MODES: readonly CollapseMode[] = ['auto', 'open', 'closed'];
+export const THEMES: readonly Theme[] = ['dark', 'light'];
+
+export interface Zone {
+  id: string;
+  name: string;
+  parent?: string;
+  collapse: CollapseMode;
+  accent?: string;
+  note?: string;
+}
+
+export interface Endpoint {
+  device: string;
+  port?: string;
+}
+
+export interface Link {
+  /** Stable synthetic id: `<from>--<to>#<n>` in declaration order. */
+  id: string;
+  from: Endpoint;
+  to: Endpoint;
+  kind?: LinkKind;
+  speed?: LinkSpeed;
+  /** Links sharing a lag id between the same device pair render bundled. */
+  lag?: string;
+  status: LinkStatus;
+  animated: boolean;
+  label?: string;
+  note?: string;
+}
+
+export interface DeviceInterface {
+  name: string;
+  description?: string;
+  vlan?: number;
+  ip?: string;
+}
+
+export interface Device {
+  id: string;
+  name: string;
+  icon: string;
+  tier?: Tier;
+  zone?: string;
+  role?: string;
+  status: DeviceStatus;
+  mgmtIp?: string;
+  haPairWith?: string;
+  hero: boolean;
+  pin?: { x: number; y: number };
+  accent?: string;
+  note?: string;
+  config?: string;
+  interfaces: DeviceInterface[];
+  /** Synthetic collapse artifacts (never authored): the members this node stands in for. */
+  stack?: { members: string[]; worstStatus: DeviceStatus };
+}
+
+/** Author-branded page margin around the diagram viewport. */
+export interface Backdrop {
+  /** Brand line shown in the top strip (e.g. company name). */
+  text?: string;
+  /** Footer line shown in the bottom strip (e.g. "Proprietary & Confidential"). */
+  note?: string;
+}
+
+export interface Topology {
+  version: 2;
+  name: string;
+  description?: string;
+  theme: Theme;
+  hero?: string;
+  backdrop?: Backdrop;
+  zones: Zone[];
+  devices: Device[];
+  links: Link[];
+}
+
+export interface TopologyIndex {
+  deviceById: ReadonlyMap<string, Device>;
+  zoneById: ReadonlyMap<string, Zone>;
+  linksByDevice: ReadonlyMap<string, readonly Link[]>;
+  devicesByZone: ReadonlyMap<string, readonly Device[]>;
+}
+
+export function indexTopology(t: Topology): TopologyIndex {
+  const deviceById = new Map<string, Device>();
+  for (const d of t.devices) deviceById.set(d.id, d);
+  const zoneById = new Map<string, Zone>();
+  for (const z of t.zones) zoneById.set(z.id, z);
+  const linksByDevice = new Map<string, Link[]>();
+  for (const l of t.links) {
+    for (const id of [l.from.device, l.to.device]) {
+      const arr = linksByDevice.get(id);
+      if (arr) arr.push(l);
+      else linksByDevice.set(id, [l]);
+    }
+  }
+  const devicesByZone = new Map<string, Device[]>();
+  for (const d of t.devices) {
+    if (!d.zone) continue;
+    const arr = devicesByZone.get(d.zone);
+    if (arr) arr.push(d);
+    else devicesByZone.set(d.zone, [d]);
+  }
+  return { deviceById, zoneById, linksByDevice, devicesByZone };
+}
+
+/** Distinct neighbor device ids, in first-link order. */
+export function neighborsOf(idx: TopologyIndex, deviceId: string): string[] {
+  const links = idx.linksByDevice.get(deviceId) ?? [];
+  const seen = new Set<string>();
+  for (const l of links) {
+    const other = l.from.device === deviceId ? l.to.device : l.from.device;
+    if (other !== deviceId) seen.add(other);
+  }
+  return [...seen];
+}

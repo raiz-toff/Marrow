@@ -1,0 +1,322 @@
+marrow: 2
+name: HQ Hub with DMZ and DR Site
+description: Headquarters hub-and-spoke to two branch offices and a cloud DR site, with a nested DMZ inside HQ
+theme: dark
+hero: hq-core-01
+
+zones:
+  - id: hq
+    name: Headquarters
+    accent: "#2563eb"
+    note: Primary campus, five-tier hierarchy
+  - id: hq-dmz
+    name: HQ DMZ
+    parent: hq
+    accent: "#f59e0b"
+    collapse: closed
+    note: Public-facing services, isolated behind boundary firewall
+  - id: branch-east
+    name: Branch Office - East
+    accent: "#10b981"
+  - id: branch-west
+    name: Branch Office - West
+    accent: "#8b5cf6"
+  - id: cloud-dr
+    name: Cloud DR Site
+    accent: "#ef4444"
+    collapse: open
+    note: Warm standby replica, IPsec tunnel back to HQ
+
+devices:
+  - id: hq-edge-rt-01
+    name: HQ Edge Router
+    icon: cisco/routers/router
+    tier: edge
+    zone: hq
+    role: WAN edge
+    mgmt_ip: 10.1.0.1
+    note: Terminates MPLS to both branches plus the DR tunnel
+  - id: hq-fw-01
+    name: HQ Firewall 1
+    icon: cisco/security/firewall
+    tier: edge
+    zone: hq
+    ha_pair_with: hq-fw-02
+    mgmt_ip: 10.1.0.2
+  - id: hq-fw-02
+    name: HQ Firewall 2
+    icon: cisco/security/firewall
+    tier: edge
+    zone: hq
+    ha_pair_with: hq-fw-01
+    mgmt_ip: 10.1.0.3
+  - id: hq-core-01
+    name: HQ Core Switch 1
+    icon: cisco/switches/layer-3-switch
+    tier: core
+    zone: hq
+    ha_pair_with: hq-core-02
+    hero: true
+    mgmt_ip: 10.1.0.10
+    note: Hero device - HQ core, dual-homed to DMZ and distribution
+  - id: hq-core-02
+    name: HQ Core Switch 2
+    icon: cisco/switches/layer-3-switch
+    tier: core
+    zone: hq
+    ha_pair_with: hq-core-01
+    mgmt_ip: 10.1.0.11
+  - id: hq-dist-01
+    name: HQ Distribution 1
+    icon: cisco/switches/multilayer-remote-switch
+    tier: distribution
+    zone: hq
+  - id: hq-dist-02
+    name: HQ Distribution 2
+    icon: cisco/switches/multilayer-remote-switch
+    tier: distribution
+    zone: hq
+  - id: hq-acc-01
+    name: HQ Access 1
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: hq
+  - id: hq-acc-02
+    name: HQ Access 2
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: hq
+  - id: hq-wlc-01
+    name: HQ Wireless Controller
+    icon: cisco/routers/wireless-router
+    tier: access
+    zone: hq
+    role: WLAN controller
+  - id: hq-ap-01
+    name: HQ Access Point
+    icon: cisco/misc/access-point
+    tier: access
+    zone: hq
+  - id: hq-srv-file-01
+    name: HQ File Server
+    icon: cisco/servers/file-server
+    tier: endpoint
+    zone: hq
+  - id: hq-srv-db-01
+    name: HQ Database Server
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: hq
+    note: Primary financial database, replicated to cloud-dr
+  - id: hq-pc-01
+    name: HQ Reception Laptop
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: hq
+  - id: hq-pc-02
+    name: HQ Design Workstation
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: hq
+  - id: dmz-fw-01
+    name: DMZ Boundary Firewall
+    icon: cisco/security/pix-firewall
+    tier: edge
+    zone: hq-dmz
+    note: Only path in/out of the DMZ segment
+  - id: dmz-web-01
+    name: DMZ Web Server
+    icon: cisco/servers/file-server
+    tier: endpoint
+    zone: hq-dmz
+    role: public web
+  - id: dmz-mail-01
+    name: DMZ Mail Relay
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: hq-dmz
+    role: SMTP relay
+  - id: dmz-ids-01
+    name: DMZ IDS Sensor
+    icon: cisco/cisco-safe-security-icons/ids
+    tier: edge
+    zone: hq-dmz
+    note: Passive tap off the firewall span port
+  - id: be-rt-01
+    name: Branch East Router
+    icon: cisco/routers/router
+    tier: edge
+    zone: branch-east
+    mgmt_ip: 10.2.0.1
+  - id: be-sw-01
+    name: Branch East Switch
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: branch-east
+  - id: be-ap-01
+    name: Branch East AP
+    icon: cisco/misc/access-point
+    tier: access
+    zone: branch-east
+  - id: be-pc-01
+    name: Branch East Laptop
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: branch-east
+  - id: bw-rt-01
+    name: Branch West Router
+    icon: cisco/routers/router
+    tier: edge
+    zone: branch-west
+    mgmt_ip: 10.3.0.1
+  - id: bw-sw-01
+    name: Branch West Switch
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: branch-west
+  - id: bw-pc-01
+    name: Branch West Laptop
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: branch-west
+  - id: dr-vpn-01
+    name: DR VPN Concentrator
+    icon: cisco/design/vpn-concentrator
+    tier: edge
+    zone: cloud-dr
+    note: Site-to-site IPsec tunnel to hq-edge-rt-01
+  - id: dr-srv-01
+    name: DR Database Replica
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: cloud-dr
+    note: Warm standby of hq-srv-db-01
+  - id: dr-bak-01
+    name: DR Backup Store
+    icon: cisco/servers/file-server
+    tier: endpoint
+    zone: cloud-dr
+
+links:
+  - from: hq-edge-rt-01:Gi0/0/1
+    to: hq-fw-01:outside
+    kind: copper
+    speed: 1G
+  - from: hq-fw-01:sync
+    to: hq-fw-02:sync
+    kind: copper
+    speed: 1G
+    note: HA state sync
+  - from: hq-fw-01:inside
+    to: hq-core-01:Te1/0/1
+    kind: fiber
+    speed: 10G
+    animated: true
+  - from: hq-fw-02:inside
+    to: hq-core-02:Te1/0/1
+    kind: fiber
+    speed: 10G
+  - from: hq-core-01:Te1/0/2
+    to: hq-core-02:Te1/0/2
+    kind: dac
+    speed: 40G
+    lag: po1
+  - from: hq-core-01:Te1/0/3
+    to: hq-core-02:Te1/0/3
+    kind: dac
+    speed: 40G
+    lag: po1
+  - from: hq-core-01:Te1/0/10
+    to: hq-dist-01:Te1/1/1
+    kind: fiber
+    speed: 10G
+  - from: hq-core-02:Te1/0/10
+    to: hq-dist-02:Te1/1/1
+    kind: fiber
+    speed: 10G
+  - from: hq-dist-01:Gi1/0/1
+    to: hq-acc-01:Gi0/48
+    kind: fiber
+    speed: 10G
+  - from: hq-dist-02:Gi1/0/1
+    to: hq-acc-02:Gi0/48
+    kind: fiber
+    speed: 10G
+  - from: hq-dist-01:Gi1/0/2
+    to: hq-wlc-01:Gi0/0
+    kind: copper
+    speed: 1G
+  - from: hq-wlc-01:Gi0/1
+    to: hq-ap-01:eth0
+    kind: wireless
+    speed: 1G
+  - from: hq-dist-01:Gi1/0/10
+    to: hq-srv-file-01:eno1
+    kind: copper
+    speed: 10G
+  - from: hq-dist-02:Gi1/0/10
+    to: hq-srv-db-01:eno1
+    kind: copper
+    speed: 10G
+  - from: hq-acc-01:Gi0/1
+    to: hq-pc-01:eth0
+  - from: hq-acc-02:Gi0/1
+    to: hq-pc-02:en0
+  - from: hq-core-01:Te1/0/20
+    to: dmz-fw-01:outside
+    kind: fiber
+    speed: 10G
+    note: Only route into the DMZ
+  - from: dmz-fw-01:inside
+    to: dmz-web-01:eno1
+    kind: copper
+    speed: 1G
+  - from: dmz-fw-01:inside2
+    to: dmz-mail-01:eno1
+    kind: copper
+    speed: 1G
+  - from: dmz-fw-01:span
+    to: dmz-ids-01:mon0
+    kind: copper
+    speed: 1G
+    note: Mirrored traffic for inspection
+  - from: hq-edge-rt-01:Se0/0/0
+    to: be-rt-01:Se0/0/0
+    kind: wan
+    speed: 100M
+    note: MPLS to Branch East
+  - from: be-rt-01:Gi0/1
+    to: be-sw-01:Gi0/24
+    kind: copper
+    speed: 1G
+  - from: be-sw-01:Gi0/1
+    to: be-ap-01:eth0
+    kind: copper
+    speed: 1G
+  - from: be-sw-01:Gi0/2
+    to: be-pc-01:eth0
+  - from: hq-edge-rt-01:Se0/0/1
+    to: bw-rt-01:Se0/0/0
+    kind: wan
+    speed: 100M
+    note: MPLS to Branch West
+  - from: bw-rt-01:Gi0/1
+    to: bw-sw-01:Gi0/24
+    kind: copper
+    speed: 1G
+  - from: bw-sw-01:Gi0/1
+    to: bw-pc-01:eth0
+  - from: hq-edge-rt-01:Tu0
+    to: dr-vpn-01:tunnel0
+    kind: wan
+    speed: 1G
+    animated: true
+    note: IPsec tunnel to DR site
+  - from: dr-vpn-01:inside
+    to: dr-srv-01:eno1
+    kind: copper
+    speed: 10G
+  - from: dr-vpn-01:inside2
+    to: dr-bak-01:eno1
+    kind: copper
+    speed: 1G

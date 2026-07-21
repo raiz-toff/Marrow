@@ -1,0 +1,25 @@
+marrow: 2
+name: Warnings Only
+zones:
+  - id: office
+    name: Office
+  - id: storage-room
+    name: Storage Room
+devices:
+  - id: core-sw-01
+    name: Core Switch
+    icon: cisco/switches/layer-3-switch
+    zone: office
+  - id: acc-sw-01
+    name: Access Switch
+    icon: cisco/switches/workgroup-switch
+    zone: office
+  - id: spare-sw-01
+    name: Spare Switch
+    icon: cisco/switches/workgroup-switch
+    zone: office
+links:
+  - from: core-sw-01:Gi1/0/1
+    to: acc-sw-01:Gi0/48
+  - from: core-sw-01:Gi1/0/1
+    to: acc-sw-01:Gi0/47

@@ -1,0 +1,215 @@
+marrow: 2
+name: Manufacturing Plant - IT/OT Segmentation
+description: Corporate IT fanning into a sparse plant-floor tree with two nested production cell zones, a reserved expansion zone, and a cloud analytics link
+theme: light
+hero: corp-core-01
+
+zones:
+  - id: corporate
+    name: Corporate IT
+    accent: "#1e40af"
+  - id: plant-floor
+    name: Plant Floor
+    accent: "#78350f"
+    note: Purdue Model level 3 - aggregation for all production cells
+  - id: cell-line-1
+    name: Production Cell - Line 1
+    parent: plant-floor
+    accent: "#065f46"
+  - id: cell-line-2
+    name: Production Cell - Line 2
+    parent: plant-floor
+    accent: "#155e75"
+  - id: plant-floor-expansion
+    name: Plant Floor - Line 3 (Reserved)
+    parent: plant-floor
+    accent: "#94a3b8"
+    collapse: closed
+    note: Reserved for the Line 3 build-out - no equipment installed yet, intentionally empty
+  - id: cloud-analytics
+    name: Cloud Analytics
+    accent: "#4c1d95"
+
+devices:
+  - id: corp-rt-01
+    name: Corporate Router
+    icon: cisco/routers/router
+    tier: edge
+    zone: corporate
+    mgmt_ip: 10.80.0.1
+  - id: corp-fw-01
+    name: Corporate Firewall
+    icon: cisco/security/firewall
+    tier: edge
+    zone: corporate
+  - id: corp-core-01
+    name: Corporate Core Switch
+    icon: cisco/switches/layer-3-switch
+    tier: core
+    zone: corporate
+    hero: true
+    mgmt_ip: 10.80.0.10
+    note: Hero device - corporate/OT boundary core, sole path onto the plant floor
+  - id: corp-erp-01
+    name: MES / ERP Server
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: corporate
+    role: MES/ERP server
+  - id: corp-pc-01
+    name: Plant Manager Laptop
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: corporate
+  - id: pf-fw-01
+    name: IT/OT Segmentation Firewall
+    icon: cisco/security/firewall
+    tier: edge
+    zone: plant-floor
+    note: Purdue Model boundary between corporate IT and the plant floor
+  - id: pf-sw-01
+    name: Plant Floor Aggregation Switch
+    icon: cisco/switches/workgroup-switch
+    tier: distribution
+    zone: plant-floor
+    role: Plant floor aggregation switch
+  - id: pf-historian-01
+    name: Process Historian
+    icon: cisco/servers/file-server
+    tier: endpoint
+    zone: plant-floor
+    role: Process historian
+  - id: cl1-sw-01
+    name: Line 1 Cell Switch
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: cell-line-1
+  - id: cl1-plc-01
+    name: Line 1 PLC 1
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: cell-line-1
+    role: PLC controller
+  - id: cl1-plc-02
+    name: Line 1 PLC 2
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: cell-line-1
+    role: PLC controller
+  - id: cl1-hmi-01
+    name: Line 1 HMI Panel
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: cell-line-1
+    role: HMI panel
+  - id: cl2-sw-01
+    name: Line 2 Cell Switch
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: cell-line-2
+  - id: cl2-plc-01
+    name: Line 2 PLC
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: cell-line-2
+    role: PLC controller
+  - id: cl2-hmi-01
+    name: Line 2 HMI Panel
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: cell-line-2
+    role: HMI panel
+  - id: cl2-cam-01
+    name: Line 2 Inspection Camera
+    icon: cisco/datacenter/surveillance-camera
+    tier: endpoint
+    zone: cell-line-2
+    role: Quality inspection camera
+    status: degraded
+    note: Intermittent connectivity, under investigation
+  - id: cloud-gw-01
+    name: Cloud Analytics Gateway
+    icon: cisco/design/sd-wan
+    tier: edge
+    zone: cloud-analytics
+    role: Cloud gateway
+  - id: cloud-an-01
+    name: Predictive Maintenance Analytics
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: cloud-analytics
+    role: Predictive maintenance analytics
+
+links:
+  - from: corp-rt-01:Gi0/0/1
+    to: corp-fw-01:outside
+    kind: copper
+    speed: 1G
+  - from: corp-fw-01:inside
+    to: corp-core-01:Te1/0/1
+    kind: fiber
+    speed: 10G
+  - from: corp-core-01:Te1/0/2
+    to: corp-erp-01:eno1
+    kind: copper
+    speed: 10G
+  - from: corp-core-01:Te1/0/3
+    to: corp-pc-01:eth0
+    kind: copper
+    speed: 1G
+  - from: corp-core-01:Te1/0/4
+    to: pf-fw-01:outside
+    kind: fiber
+    speed: 1G
+    note: Sole path from corporate IT into the plant floor
+  - from: pf-fw-01:inside
+    to: pf-sw-01:Gi0/1
+    kind: copper
+    speed: 1G
+  - from: pf-sw-01:Gi0/2
+    to: pf-historian-01:eno1
+    kind: copper
+    speed: 1G
+  - from: pf-sw-01:Gi0/10
+    to: cl1-sw-01:Gi0/24
+    kind: copper
+    speed: 1G
+  - from: cl1-sw-01:Gi0/1
+    to: cl1-plc-01:eth0
+    kind: copper
+    speed: 100M
+  - from: cl1-sw-01:Gi0/2
+    to: cl1-plc-02:eth0
+    kind: copper
+    speed: 100M
+  - from: cl1-sw-01:Gi0/3
+    to: cl1-hmi-01:eth0
+    kind: copper
+    speed: 100M
+  - from: pf-sw-01:Gi0/11
+    to: cl2-sw-01:Gi0/24
+    kind: copper
+    speed: 1G
+  - from: cl2-sw-01:Gi0/1
+    to: cl2-plc-01:eth0
+    kind: copper
+    speed: 100M
+  - from: cl2-sw-01:Gi0/2
+    to: cl2-hmi-01:eth0
+    kind: copper
+    speed: 100M
+  - from: cl2-sw-01:Gi0/3
+    to: cl2-cam-01:eth0
+    kind: copper
+    speed: 100M
+    status: degraded
+    note: Intermittent link, matches camera status
+  - from: corp-rt-01:Gi0/0/2
+    to: cloud-gw-01:wan0
+    kind: wan
+    speed: 1G
+    note: Internet breakout to cloud analytics
+  - from: cloud-gw-01:lan0
+    to: cloud-an-01:eno1
+    kind: copper
+    speed: 1G

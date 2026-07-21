@@ -1,0 +1,56 @@
+title: "V1 Import Sample"
+description: "Trimmed v1-format file exercising the importer"
+
+config:
+  engines: [city, hierarchical]
+  output_filename: "Sample"
+
+nodes:
+  - id: EDGE_FW
+    label: "Edge Firewall"
+    icon: Cisco/Security/firewall
+    role: firewall
+    level: 1
+    status: up
+    tags: [203.0.113.1, "asa-9.18"]
+    callout: "Internet edge.\nFailover pair."
+    ip: "203.0.113.1"
+    location: "DC-1 / Rack A1"
+    purpose: "Perimeter security + NAT"
+  - id: CORE_A
+    label: "Core A"
+    icon: Cisco/Switches/layer_3_switch
+    level: 1
+    status: up
+    ip: "10.0.0.1"
+  - id: CORE_B
+    label: "Core B"
+    icon: Cisco/Switches/layer_3_switch
+    level: 1
+    status: warn
+  - id: DIST_PROD
+    label: "Prod Distribution"
+    icon: Cisco/Switches/multilayer_remote_switch
+    level: 2
+  - id: SRV_APP
+    label: "App Server"
+    icon: Cisco/Servers/file_server
+    level: 3
+
+links:
+  - { from: EDGE_FW, to: CORE_A, cable: fiber, from_port: "Te0/0", to_port: "Te1/1/1" }
+  - { from: CORE_A, to: CORE_B, from_port: "Te1/0/1 (Po1)", to_port: "Te1/0/1 (Po1)" }
+  - { from: CORE_A, to: CORE_B, from_port: "Te1/0/2 (Po1)", to_port: "Te1/0/2 (Po1)" }
+  - { from: CORE_A, to: DIST_PROD, cable: fiber, from_port: "Gi1/0/10", to_port: "Gi0/1" }
+  - { from: CORE_B, to: DIST_PROD, cable: cat6, from_port: "Gi1/0/10", to_port: "Gi0/2" }
+  - { from: DIST_PROD, to: SRV_APP, label: "vlan 20" }
+  - { from: GHOST_NODE, to: SRV_APP }
+
+groups:
+  - name: "Production"
+    nodes: [CORE_A, DIST_PROD, SRV_APP]
+    color: "#10b981"
+    callout: "Change-freeze until Friday"
+  - name: "Edge"
+    nodes: [EDGE_FW, CORE_B]
+    color: "#8b5cf6"

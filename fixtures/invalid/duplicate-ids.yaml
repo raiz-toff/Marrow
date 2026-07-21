@@ -1,0 +1,19 @@
+marrow: 2
+name: Duplicate Ids
+zones:
+  - id: office
+    name: Office
+  - id: office
+    name: Office Again
+devices:
+  - id: core-sw-01
+    name: Core Switch
+    icon: cisco/switches/layer-3-switch
+    zone: office
+  - id: core-sw-01
+    name: Also Core Switch
+    icon: cisco/switches/layer-3-switch
+    zone: office
+links:
+  - from: core-sw-01:Gi1/0/1
+    to: core-sw-01:Gi1/0/2

@@ -1,0 +1,110 @@
+marrow: 2
+name: "WAN Partial Mesh - 8 MPLS Core PoPs"
+description: "Partial mesh of 8 regional MPLS core routers with selective direct peering (not fully meshed)"
+theme: dark
+
+devices:
+  - id: core-nyc
+    name: New York Core Router
+    icon: cisco/routers/router
+    role: MPLS core PoP
+    mgmt_ip: 10.50.0.1
+  - id: core-chi
+    name: Chicago Core Router
+    icon: cisco/routers/wireless-router
+    role: MPLS core PoP
+    mgmt_ip: 10.50.0.2
+  - id: core-dal
+    name: Dallas Core Router
+    icon: cisco/routers/service-router
+    role: MPLS core PoP
+    mgmt_ip: 10.50.0.3
+  - id: core-lax
+    name: Los Angeles Core Router
+    icon: cisco/routers/mobile-access-router
+    role: MPLS core PoP
+    mgmt_ip: 10.50.0.4
+  - id: core-atl
+    name: Atlanta Core Router
+    icon: cisco/routers/broadcast-router
+    role: MPLS core PoP
+    mgmt_ip: 10.50.0.5
+  - id: core-sea
+    name: Seattle Core Router
+    icon: cisco/routers/netflow-router
+    role: MPLS core PoP
+    mgmt_ip: 10.50.0.6
+  - id: core-den
+    name: Denver Core Router
+    icon: cisco/routers/iad-router
+    role: MPLS core PoP
+    mgmt_ip: 10.50.0.7
+  - id: core-mia
+    name: Miami Core Router
+    icon: cisco/routers/ip-telephony-router
+    role: MPLS core PoP
+    mgmt_ip: 10.50.0.8
+
+links:
+  - from: "core-nyc:Gi0/0"
+    to: "core-chi:Gi0/0"
+    kind: fiber
+    speed: 10G
+    status: up
+  - from: "core-nyc:Gi0/1"
+    to: "core-atl:Gi0/0"
+    kind: fiber
+    speed: 1G
+    status: up
+  - from: "core-nyc:Gi0/2"
+    to: "core-mia:Gi0/0"
+    kind: fiber
+    speed: 1G
+    status: up
+    animated: true
+  - from: "core-chi:Gi0/1"
+    to: "core-dal:Gi0/0"
+    kind: fiber
+    speed: 10G
+    status: up
+  - from: "core-chi:Gi0/2"
+    to: "core-den:Gi0/0"
+    kind: fiber
+    speed: 1G
+    status: degraded
+  - from: "core-chi:Gi0/3"
+    to: "core-sea:Gi0/0"
+    kind: fiber
+    speed: 1G
+    status: up
+  - from: "core-dal:Gi0/1"
+    to: "core-lax:Gi0/0"
+    kind: fiber
+    speed: 10G
+    status: up
+  - from: "core-dal:Gi0/2"
+    to: "core-atl:Gi0/1"
+    kind: fiber
+    speed: 1G
+    status: down
+  - from: "core-lax:Gi0/1"
+    to: "core-sea:Gi0/1"
+    kind: fiber
+    speed: 10G
+    status: up
+    animated: true
+  - from: "core-lax:Gi0/2"
+    to: "core-den:Gi0/1"
+    kind: fiber
+    speed: 1G
+    status: up
+  - from: "core-atl:Gi0/2"
+    to: "core-mia:Gi0/1"
+    kind: fiber
+    speed: 1G
+    status: up
+  - from: "core-den:Gi0/2"
+    to: "core-sea:Gi0/2"
+    kind: fiber
+    speed: 1G
+    status: planned

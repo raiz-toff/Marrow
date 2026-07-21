@@ -1,0 +1,117 @@
+marrow: 2
+name: Branch Office Alpha
+description: Small branch — single edge router, single firewall, one core switch, two access switches
+zones:
+  - id: wan
+    name: WAN Edge
+  - id: lan
+    name: Branch LAN
+  - id: servers
+    name: Server Nook
+    parent: lan
+
+devices:
+  - id: edge-rtr1
+    name: Edge Router 1
+    icon: cisco/routers/router
+    tier: edge
+    zone: wan
+    role: Internet Edge Router
+    mgmt_ip: 203.0.113.1
+    hero: true
+  - id: fw1
+    name: Perimeter Firewall
+    icon: cisco/security/firewall
+    tier: edge
+    zone: wan
+    role: Perimeter Firewall
+    mgmt_ip: 10.0.0.1
+  - id: core-sw1
+    name: Core Switch 1
+    icon: cisco/switches/layer-3-switch
+    tier: core
+    zone: lan
+    mgmt_ip: 10.0.1.1
+  - id: acc-sw1
+    name: Access Switch 1
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: lan
+  - id: acc-sw2
+    name: Access Switch 2
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: lan
+  - id: ws-01
+    name: Workstation 01
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: lan
+  - id: ws-02
+    name: Laptop 02
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: lan
+  - id: ws-03
+    name: iMac 03
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: lan
+  - id: printer-01
+    name: Office Printer
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: lan
+  - id: voip-01
+    name: Reception IP Phone
+    icon: cisco/datacenter/ip-phone
+    tier: endpoint
+    zone: lan
+  - id: srv-file1
+    name: File Server
+    icon: cisco/servers/file-server
+    tier: endpoint
+    zone: servers
+    mgmt_ip: 10.0.2.10
+
+links:
+  - from: edge-rtr1:Gi0/0
+    to: fw1:Gi0/0
+    kind: copper
+    speed: 1G
+  - from: fw1:Gi0/1
+    to: core-sw1:Gi1/0/1
+    kind: copper
+    speed: 1G
+  - from: core-sw1:Gi1/0/2
+    to: acc-sw1:Gi0/24
+    kind: fiber
+    speed: 10G
+  - from: core-sw1:Gi1/0/3
+    to: acc-sw2:Gi0/24
+    kind: fiber
+    speed: 10G
+  - from: core-sw1:Gi1/0/4
+    to: srv-file1:eno1
+    kind: copper
+    speed: 1G
+  - from: acc-sw1:Gi0/1
+    to: ws-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-sw1:Gi0/2
+    to: ws-02:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-sw1:Gi0/3
+    to: printer-01:eth0
+    kind: copper
+    speed: 100M
+  - from: acc-sw2:Gi0/1
+    to: ws-03:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-sw2:Gi0/2
+    to: voip-01:eth0
+    kind: copper
+    speed: 1G

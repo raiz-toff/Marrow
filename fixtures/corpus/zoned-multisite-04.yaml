@@ -1,0 +1,269 @@
+marrow: 2
+name: SD-WAN Overlay - Three Regions
+description: Cloud SD-WAN orchestrator managing dual-transport region sites, a single-homed branch, and a legacy serial backup
+theme: dark
+hero: sdwan-ctrl-01
+
+zones:
+  - id: sdwan-controller
+    name: SD-WAN Orchestrator
+    accent: "#0f172a"
+    note: Cloud-hosted control plane for the overlay fabric
+  - id: region-1
+    name: Region 1 Site
+    accent: "#2563eb"
+  - id: region-1-transport
+    name: Region 1 Transport
+    parent: region-1
+    accent: "#60a5fa"
+    note: Dual-homed MPLS + internet underlay, bonded via po1
+  - id: region-2
+    name: Region 2 Site
+    accent: "#059669"
+  - id: region-2-transport
+    name: Region 2 Transport
+    parent: region-2
+    accent: "#34d399"
+    note: Triple transport - MPLS, internet, and standby LTE
+  - id: region-3
+    name: Region 3 Branch
+    accent: "#b91c1c"
+    note: Single-homed legacy branch, candidate for SD-WAN dual-homing upgrade
+
+devices:
+  - id: sdwan-ctrl-01
+    name: SD-WAN Orchestrator
+    icon: cisco/design/sd-wan
+    tier: management
+    zone: sdwan-controller
+    role: SD-WAN orchestrator
+    hero: true
+    mgmt_ip: 172.16.0.1
+    note: Hero device - pushes overlay policy to every regional edge
+  - id: sdwan-analytics-01
+    name: SD-WAN Analytics
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: sdwan-controller
+    role: Telemetry / analytics
+  - id: r1-core-01
+    name: Region 1 Core
+    icon: cisco/switches/layer-3-switch
+    tier: core
+    zone: region-1
+    mgmt_ip: 10.50.0.10
+  - id: r1-dist-01
+    name: Region 1 Distribution
+    icon: cisco/switches/multilayer-remote-switch
+    tier: distribution
+    zone: region-1
+  - id: r1-acc-01
+    name: Region 1 Access
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: region-1
+  - id: r1-srv-01
+    name: Region 1 App Server
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: region-1
+    role: Regional app server
+  - id: r1-pc-01
+    name: Region 1 Laptop
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: region-1
+  - id: r1-edge-mpls-01
+    name: Region 1 MPLS Edge
+    icon: cisco/routers/router
+    tier: edge
+    zone: region-1-transport
+    role: MPLS transport
+    mgmt_ip: 10.50.1.1
+  - id: r1-edge-inet-01
+    name: Region 1 Internet Edge
+    icon: cisco/routers/router
+    tier: edge
+    zone: region-1-transport
+    role: Internet transport
+    mgmt_ip: 10.50.1.2
+  - id: r2-core-01
+    name: Region 2 Core
+    icon: cisco/switches/layer-3-switch
+    tier: core
+    zone: region-2
+    mgmt_ip: 10.60.0.10
+  - id: r2-dist-01
+    name: Region 2 Distribution
+    icon: cisco/switches/multilayer-remote-switch
+    tier: distribution
+    zone: region-2
+  - id: r2-acc-01
+    name: Region 2 Access
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: region-2
+  - id: r2-srv-01
+    name: Region 2 App Server
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: region-2
+    role: Regional app server
+  - id: r2-ap-01
+    name: Region 2 Access Point
+    icon: cisco/misc/access-point
+    tier: access
+    zone: region-2
+  - id: r2-pc-01
+    name: Region 2 Workstation
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: region-2
+  - id: r2-edge-mpls-01
+    name: Region 2 MPLS Edge
+    icon: cisco/routers/router
+    tier: edge
+    zone: region-2-transport
+    role: MPLS transport
+    mgmt_ip: 10.60.1.1
+  - id: r2-edge-inet-01
+    name: Region 2 Internet Edge
+    icon: cisco/routers/router
+    tier: edge
+    zone: region-2-transport
+    role: Internet transport
+    mgmt_ip: 10.60.1.2
+  - id: r2-edge-lte-01
+    name: Region 2 LTE Failover Edge
+    icon: cisco/routers/wireless-router
+    tier: edge
+    zone: region-2-transport
+    role: LTE backup transport
+    note: Cellular failover path, only active when both wired transports drop
+  - id: r3-rt-01
+    name: Region 3 Branch Router
+    icon: cisco/routers/router
+    tier: edge
+    zone: region-3
+    role: Single-homed branch router
+    mgmt_ip: 10.70.0.1
+    status: degraded
+    note: Single uplink - flagged for SD-WAN dual-homing upgrade
+  - id: r3-sw-01
+    name: Region 3 Switch
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: region-3
+  - id: r3-pc-01
+    name: Region 3 Laptop
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: region-3
+  - id: r3-legacy-modem-01
+    name: Region 3 Legacy Modem
+    icon: cisco/modemand-phones/modem
+    tier: edge
+    zone: region-3
+    role: Legacy serial backup link
+    status: degraded
+    note: Old serial WAN backup, rarely used
+
+links:
+  - from: sdwan-ctrl-01:tun0
+    to: r1-edge-mpls-01:tun0
+    kind: virtual
+    speed: 1G
+    note: SD-WAN overlay control channel
+  - from: sdwan-ctrl-01:tun1
+    to: r1-edge-inet-01:tun0
+    kind: virtual
+    speed: 1G
+  - from: sdwan-ctrl-01:tun2
+    to: r2-edge-mpls-01:tun0
+    kind: virtual
+    speed: 1G
+  - from: sdwan-ctrl-01:tun3
+    to: r2-edge-inet-01:tun0
+    kind: virtual
+    speed: 1G
+  - from: sdwan-ctrl-01:tun4
+    to: r2-edge-lte-01:tun0
+    kind: virtual
+    speed: 1G
+  - from: sdwan-ctrl-01:tun5
+    to: r3-rt-01:tun0
+    kind: virtual
+    speed: 1G
+  - from: sdwan-ctrl-01:eth0
+    to: sdwan-analytics-01:eno1
+    kind: copper
+    speed: 1G
+  - from: r1-edge-mpls-01:Gi0/1
+    to: r1-core-01:Te1/0/1
+    kind: fiber
+    speed: 10G
+    lag: po1
+  - from: r1-edge-inet-01:Gi0/1
+    to: r1-core-01:Te1/0/2
+    kind: fiber
+    speed: 10G
+    lag: po1
+  - from: r1-core-01:Te1/0/10
+    to: r1-dist-01:Te1/1/1
+    kind: fiber
+    speed: 10G
+  - from: r1-dist-01:Gi1/0/1
+    to: r1-acc-01:Gi0/48
+    kind: fiber
+    speed: 10G
+  - from: r1-dist-01:Gi1/0/10
+    to: r1-srv-01:eno1
+    kind: copper
+    speed: 10G
+  - from: r1-acc-01:Gi0/1
+    to: r1-pc-01:eth0
+  - from: r2-edge-mpls-01:Gi0/1
+    to: r2-core-01:Te1/0/1
+    kind: fiber
+    speed: 1G
+    lag: po2
+  - from: r2-edge-inet-01:Gi0/1
+    to: r2-core-01:Te1/0/2
+    kind: fiber
+    speed: 1G
+    lag: po2
+  - from: r2-edge-lte-01:Gi0/1
+    to: r2-core-01:Te1/0/3
+    kind: wireless
+    speed: 100M
+    note: Cellular failover path, standby
+  - from: r2-core-01:Te1/0/10
+    to: r2-dist-01:Te1/1/1
+    kind: fiber
+    speed: 10G
+  - from: r2-dist-01:Gi1/0/1
+    to: r2-acc-01:Gi0/48
+    kind: fiber
+    speed: 10G
+  - from: r2-dist-01:Gi1/0/2
+    to: r2-ap-01:eth0
+    kind: wireless
+    speed: 1G
+  - from: r2-dist-01:Gi1/0/10
+    to: r2-srv-01:eno1
+    kind: copper
+    speed: 10G
+  - from: r2-acc-01:Gi0/1
+    to: r2-pc-01:en0
+  - from: r3-rt-01:Gi0/1
+    to: r3-sw-01:Gi0/24
+    kind: copper
+    speed: 1G
+  - from: r3-sw-01:Gi0/1
+    to: r3-pc-01:eth0
+  - from: r3-rt-01:Se0/0/0
+    to: r3-legacy-modem-01:line0
+    kind: serial
+    speed: 100M
+    status: degraded
+    note: Legacy serial backup, rarely used

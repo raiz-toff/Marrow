@@ -1,0 +1,12 @@
+marrow: 2
+name: Missing Required
+devices:
+  - id: core-sw-01
+    name: Core Switch
+    icon: cisco/switches/layer-3-switch
+  - id: acc-sw-01
+    name: Access Switch
+    icon: cisco/switches/workgroup-switch
+links:
+  - from: core-sw-01:Gi1/0/1
+    to: acc-sw-01:Gi0/48

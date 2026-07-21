@@ -1,0 +1,9 @@
+marrow: 2
+devices:
+  - id: core-sw-01
+    name: Core Switch
+  - id: acc-sw-01
+    name: Access Switch
+    icon: cisco/switches/workgroup-switch
+links:
+  - from: core-sw-01:Gi1/0/1

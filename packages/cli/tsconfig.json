@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist"
+  },
+  "include": ["src"],
+  "references": [
+    { "path": "../diagnostics" },
+    { "path": "../model" },
+    { "path": "../icons" },
+    { "path": "../schema" },
+    { "path": "../server" },
+    { "path": "../site" }
+  ]
+}

@@ -1,0 +1,341 @@
+{
+  "pack": "k8s",
+  "title": "Kubernetes",
+  "version": "1.0.0",
+  "icons": [
+    {
+      "id": "k8s/infrastructure-components/control-plane",
+      "title": "Control Plane",
+      "category": "infrastructure-components",
+      "keywords": [
+        "control",
+        "plane",
+        "infrastructure",
+        "components"
+      ],
+      "file": "svg/infrastructure-components/control-plane.svg"
+    },
+    {
+      "id": "k8s/infrastructure-components/etcd",
+      "title": "Etcd",
+      "category": "infrastructure-components",
+      "keywords": [
+        "etcd",
+        "infrastructure",
+        "components"
+      ],
+      "file": "svg/infrastructure-components/etcd.svg"
+    },
+    {
+      "id": "k8s/infrastructure-components/node",
+      "title": "Node",
+      "category": "infrastructure-components",
+      "keywords": [
+        "node",
+        "infrastructure",
+        "components"
+      ],
+      "file": "svg/infrastructure-components/node.svg"
+    },
+    {
+      "id": "k8s/resources/c-role",
+      "title": "C Role",
+      "category": "resources",
+      "keywords": [
+        "role",
+        "resources"
+      ],
+      "file": "svg/resources/c-role.svg"
+    },
+    {
+      "id": "k8s/resources/cm",
+      "title": "Cm",
+      "category": "resources",
+      "keywords": [
+        "cm",
+        "resources"
+      ],
+      "file": "svg/resources/cm.svg"
+    },
+    {
+      "id": "k8s/resources/crb",
+      "title": "Crb",
+      "category": "resources",
+      "keywords": [
+        "crb",
+        "resources"
+      ],
+      "file": "svg/resources/crb.svg"
+    },
+    {
+      "id": "k8s/resources/crd",
+      "title": "Crd",
+      "category": "resources",
+      "keywords": [
+        "crd",
+        "resources"
+      ],
+      "file": "svg/resources/crd.svg"
+    },
+    {
+      "id": "k8s/resources/cronjob",
+      "title": "Cronjob",
+      "category": "resources",
+      "keywords": [
+        "cronjob",
+        "resources"
+      ],
+      "file": "svg/resources/cronjob.svg"
+    },
+    {
+      "id": "k8s/resources/deploy",
+      "title": "Deploy",
+      "category": "resources",
+      "keywords": [
+        "deploy",
+        "resources"
+      ],
+      "file": "svg/resources/deploy.svg"
+    },
+    {
+      "id": "k8s/resources/ds",
+      "title": "Ds",
+      "category": "resources",
+      "keywords": [
+        "ds",
+        "resources"
+      ],
+      "file": "svg/resources/ds.svg"
+    },
+    {
+      "id": "k8s/resources/ep",
+      "title": "Ep",
+      "category": "resources",
+      "keywords": [
+        "ep",
+        "resources"
+      ],
+      "file": "svg/resources/ep.svg"
+    },
+    {
+      "id": "k8s/resources/group",
+      "title": "Group",
+      "category": "resources",
+      "keywords": [
+        "group",
+        "resources"
+      ],
+      "file": "svg/resources/group.svg"
+    },
+    {
+      "id": "k8s/resources/hpa",
+      "title": "Hpa",
+      "category": "resources",
+      "keywords": [
+        "hpa",
+        "resources"
+      ],
+      "file": "svg/resources/hpa.svg"
+    },
+    {
+      "id": "k8s/resources/ing",
+      "title": "Ing",
+      "category": "resources",
+      "keywords": [
+        "ing",
+        "resources"
+      ],
+      "file": "svg/resources/ing.svg"
+    },
+    {
+      "id": "k8s/resources/job",
+      "title": "Job",
+      "category": "resources",
+      "keywords": [
+        "job",
+        "resources"
+      ],
+      "file": "svg/resources/job.svg"
+    },
+    {
+      "id": "k8s/resources/limits",
+      "title": "Limits",
+      "category": "resources",
+      "keywords": [
+        "limits",
+        "resources"
+      ],
+      "file": "svg/resources/limits.svg"
+    },
+    {
+      "id": "k8s/resources/netpol",
+      "title": "Netpol",
+      "category": "resources",
+      "keywords": [
+        "netpol",
+        "resources"
+      ],
+      "file": "svg/resources/netpol.svg"
+    },
+    {
+      "id": "k8s/resources/ns",
+      "title": "Ns",
+      "category": "resources",
+      "keywords": [
+        "ns",
+        "resources"
+      ],
+      "file": "svg/resources/ns.svg"
+    },
+    {
+      "id": "k8s/resources/pod",
+      "title": "Pod",
+      "category": "resources",
+      "keywords": [
+        "pod",
+        "resources"
+      ],
+      "file": "svg/resources/pod.svg"
+    },
+    {
+      "id": "k8s/resources/psp",
+      "title": "Psp",
+      "category": "resources",
+      "keywords": [
+        "psp",
+        "resources"
+      ],
+      "file": "svg/resources/psp.svg"
+    },
+    {
+      "id": "k8s/resources/pv",
+      "title": "Pv",
+      "category": "resources",
+      "keywords": [
+        "pv",
+        "resources"
+      ],
+      "file": "svg/resources/pv.svg"
+    },
+    {
+      "id": "k8s/resources/pvc",
+      "title": "Pvc",
+      "category": "resources",
+      "keywords": [
+        "pvc",
+        "resources"
+      ],
+      "file": "svg/resources/pvc.svg"
+    },
+    {
+      "id": "k8s/resources/quota",
+      "title": "Quota",
+      "category": "resources",
+      "keywords": [
+        "quota",
+        "resources"
+      ],
+      "file": "svg/resources/quota.svg"
+    },
+    {
+      "id": "k8s/resources/rb",
+      "title": "Rb",
+      "category": "resources",
+      "keywords": [
+        "rb",
+        "resources"
+      ],
+      "file": "svg/resources/rb.svg"
+    },
+    {
+      "id": "k8s/resources/role",
+      "title": "Role",
+      "category": "resources",
+      "keywords": [
+        "role",
+        "resources"
+      ],
+      "file": "svg/resources/role.svg"
+    },
+    {
+      "id": "k8s/resources/rs",
+      "title": "Rs",
+      "category": "resources",
+      "keywords": [
+        "rs",
+        "resources"
+      ],
+      "file": "svg/resources/rs.svg"
+    },
+    {
+      "id": "k8s/resources/sa",
+      "title": "Sa",
+      "category": "resources",
+      "keywords": [
+        "sa",
+        "resources"
+      ],
+      "file": "svg/resources/sa.svg"
+    },
+    {
+      "id": "k8s/resources/sc",
+      "title": "Sc",
+      "category": "resources",
+      "keywords": [
+        "sc",
+        "resources"
+      ],
+      "file": "svg/resources/sc.svg"
+    },
+    {
+      "id": "k8s/resources/secret",
+      "title": "Secret",
+      "category": "resources",
+      "keywords": [
+        "secret",
+        "resources"
+      ],
+      "file": "svg/resources/secret.svg"
+    },
+    {
+      "id": "k8s/resources/sts",
+      "title": "Sts",
+      "category": "resources",
+      "keywords": [
+        "sts",
+        "resources"
+      ],
+      "file": "svg/resources/sts.svg"
+    },
+    {
+      "id": "k8s/resources/svc",
+      "title": "Svc",
+      "category": "resources",
+      "keywords": [
+        "svc",
+        "resources"
+      ],
+      "file": "svg/resources/svc.svg"
+    },
+    {
+      "id": "k8s/resources/user",
+      "title": "User",
+      "category": "resources",
+      "keywords": [
+        "user",
+        "resources"
+      ],
+      "file": "svg/resources/user.svg"
+    },
+    {
+      "id": "k8s/resources/vol",
+      "title": "Vol",
+      "category": "resources",
+      "keywords": [
+        "vol",
+        "resources"
+      ],
+      "file": "svg/resources/vol.svg"
+    }
+  ]
+}

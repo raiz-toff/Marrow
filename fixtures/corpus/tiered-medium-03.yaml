@@ -1,0 +1,407 @@
+marrow: 2
+name: Datacenter Pod
+description: Dense leaf/aggregation/core datacenter pod with dual-LAG uplinks and paired load balancers
+theme: dark
+hero: core-sw-01
+zones:
+- id: dc-core
+  name: DC Core
+- id: dc-agg
+  name: DC Aggregation
+- id: dc-access
+  name: DC Access
+devices:
+- id: core-sw-01
+  icon: cisco/switches/layer-3-switch
+  tier: core
+  zone: dc-core
+  name: DC Core 1
+  mgmt_ip: 10.30.0.1
+  ha_pair_with: core-sw-02
+  hero: true
+- id: core-sw-02
+  icon: cisco/switches/layer-3-switch
+  tier: core
+  zone: dc-core
+  name: DC Core 2
+  mgmt_ip: 10.30.0.2
+  ha_pair_with: core-sw-01
+- id: agg-sw-01
+  icon: cisco/switches/multilayer-remote-switch
+  tier: distribution
+  zone: dc-agg
+  name: Aggregation Switch 1
+  mgmt_ip: 10.30.1.1
+  interfaces:
+  - name: Vlan100
+    description: server vlan
+    vlan: 100
+    ip: 10.30.100.1/24
+- id: agg-sw-02
+  icon: cisco/switches/multilayer-remote-switch
+  tier: distribution
+  zone: dc-agg
+  name: Aggregation Switch 2
+  mgmt_ip: 10.30.1.2
+- id: agg-sw-03
+  icon: cisco/switches/multilayer-remote-switch
+  tier: distribution
+  zone: dc-agg
+  name: Aggregation Switch 3
+  mgmt_ip: 10.30.1.3
+- id: agg-sw-04
+  icon: cisco/switches/multilayer-remote-switch
+  tier: distribution
+  zone: dc-agg
+  name: Aggregation Switch 4
+  mgmt_ip: 10.30.1.4
+- id: lb-01
+  icon: cisco/capability/load-balancer
+  tier: distribution
+  zone: dc-agg
+  name: Load Balancer 1
+- id: lb-02
+  icon: cisco/capability/load-balancer
+  tier: distribution
+  zone: dc-agg
+  name: Load Balancer 2
+  status: planned
+- id: leaf-sw-01
+  icon: cisco/switches/workgroup-switch
+  tier: access
+  zone: dc-access
+  name: Leaf Switch 1
+  status: up
+- id: leaf-sw-02
+  icon: cisco/switches/workgroup-switch
+  tier: access
+  zone: dc-access
+  name: Leaf Switch 2
+  status: up
+- id: leaf-sw-03
+  icon: cisco/switches/workgroup-switch
+  tier: access
+  zone: dc-access
+  name: Leaf Switch 3
+  status: up
+- id: leaf-sw-04
+  icon: cisco/switches/workgroup-switch
+  tier: access
+  zone: dc-access
+  name: Leaf Switch 4
+  status: up
+- id: leaf-sw-05
+  icon: cisco/switches/workgroup-switch
+  tier: access
+  zone: dc-access
+  name: Leaf Switch 5
+  status: up
+- id: leaf-sw-06
+  icon: cisco/switches/workgroup-switch
+  tier: access
+  zone: dc-access
+  name: Leaf Switch 6
+  status: degraded
+- id: leaf-sw-07
+  icon: cisco/switches/workgroup-switch
+  tier: access
+  zone: dc-access
+  name: Leaf Switch 7
+  status: up
+- id: leaf-sw-08
+  icon: cisco/switches/workgroup-switch
+  tier: access
+  zone: dc-access
+  name: Leaf Switch 8
+  status: up
+- id: srv-01
+  icon: cisco/servers/file-server
+  tier: endpoint
+  zone: dc-access
+  name: App Server 1
+  status: up
+- id: srv-02
+  icon: cisco/servers/host
+  tier: endpoint
+  zone: dc-access
+  name: App Server 2
+  status: up
+- id: srv-03
+  icon: cisco/servers/file-server
+  tier: endpoint
+  zone: dc-access
+  name: App Server 3
+  status: up
+- id: srv-04
+  icon: cisco/servers/host
+  tier: endpoint
+  zone: dc-access
+  name: App Server 4
+  status: up
+- id: srv-05
+  icon: cisco/servers/file-server
+  tier: endpoint
+  zone: dc-access
+  name: App Server 5
+  status: up
+- id: srv-06
+  icon: cisco/servers/host
+  tier: endpoint
+  zone: dc-access
+  name: App Server 6
+  status: up
+- id: srv-07
+  icon: cisco/servers/file-server
+  tier: endpoint
+  zone: dc-access
+  name: App Server 7
+  status: up
+- id: srv-08
+  icon: cisco/servers/host
+  tier: endpoint
+  zone: dc-access
+  name: App Server 8
+  status: up
+- id: srv-09
+  icon: cisco/servers/file-server
+  tier: endpoint
+  zone: dc-access
+  name: App Server 9
+  status: up
+- id: srv-10
+  icon: cisco/servers/host
+  tier: endpoint
+  zone: dc-access
+  name: App Server 10
+  status: up
+- id: srv-11
+  icon: cisco/servers/file-server
+  tier: endpoint
+  zone: dc-access
+  name: App Server 11
+  status: up
+- id: srv-12
+  icon: cisco/servers/host
+  tier: endpoint
+  zone: dc-access
+  name: App Server 12
+  status: planned
+links:
+- from: core-sw-01:Te1/0/1
+  to: core-sw-02:Te1/0/1
+  kind: dac
+  speed: 100G
+  lag: po-core
+- from: core-sw-01:Te1/0/2
+  to: core-sw-02:Te1/0/2
+  kind: dac
+  speed: 100G
+  lag: po-core
+- from: agg-sw-01:Te1/1/1
+  to: core-sw-01:Te1/0/3
+  kind: dac
+  speed: 40G
+  lag: po-agg-sw-01-c1
+- from: agg-sw-01:Te1/1/2
+  to: core-sw-01:Te1/0/4
+  kind: dac
+  speed: 40G
+  lag: po-agg-sw-01-c1
+- from: agg-sw-01:Te1/1/3
+  to: core-sw-02:Te1/0/3
+  kind: dac
+  speed: 40G
+  lag: po-agg-sw-01-c2
+- from: agg-sw-01:Te1/1/4
+  to: core-sw-02:Te1/0/4
+  kind: dac
+  speed: 40G
+  lag: po-agg-sw-01-c2
+- from: agg-sw-02:Te1/1/1
+  to: core-sw-01:Te1/0/5
+  kind: dac
+  speed: 40G
+  lag: po-agg-sw-02-c1
+- from: agg-sw-02:Te1/1/2
+  to: core-sw-01:Te1/0/6
+  kind: dac
+  speed: 40G
+  lag: po-agg-sw-02-c1
+- from: agg-sw-02:Te1/1/3
+  to: core-sw-02:Te1/0/5
+  kind: dac
+  speed: 40G
+  lag: po-agg-sw-02-c2
+- from: agg-sw-02:Te1/1/4
+  to: core-sw-02:Te1/0/6
+  kind: dac
+  speed: 40G
+  lag: po-agg-sw-02-c2
+- from: agg-sw-03:Te1/1/1
+  to: core-sw-01:Te1/0/7
+  kind: dac
+  speed: 40G
+  lag: po-agg-sw-03-c1
+- from: agg-sw-03:Te1/1/2
+  to: core-sw-01:Te1/0/8
+  kind: dac
+  speed: 40G
+  lag: po-agg-sw-03-c1
+- from: agg-sw-03:Te1/1/3
+  to: core-sw-02:Te1/0/7
+  kind: dac
+  speed: 40G
+  lag: po-agg-sw-03-c2
+- from: agg-sw-03:Te1/1/4
+  to: core-sw-02:Te1/0/8
+  kind: dac
+  speed: 40G
+  lag: po-agg-sw-03-c2
+- from: agg-sw-04:Te1/1/1
+  to: core-sw-01:Te1/0/9
+  kind: dac
+  speed: 40G
+  lag: po-agg-sw-04-c1
+- from: agg-sw-04:Te1/1/2
+  to: core-sw-01:Te1/0/10
+  kind: dac
+  speed: 40G
+  lag: po-agg-sw-04-c1
+- from: agg-sw-04:Te1/1/3
+  to: core-sw-02:Te1/0/9
+  kind: dac
+  speed: 40G
+  lag: po-agg-sw-04-c2
+- from: agg-sw-04:Te1/1/4
+  to: core-sw-02:Te1/0/10
+  kind: dac
+  speed: 40G
+  lag: po-agg-sw-04-c2
+- from: lb-01:eth1
+  to: agg-sw-01:Te1/1/5
+  kind: fiber
+  speed: 10G
+- from: lb-01:eth2
+  to: agg-sw-02:Te1/1/5
+  kind: fiber
+  speed: 10G
+- from: lb-02:eth1
+  to: agg-sw-03:Te1/1/5
+  kind: fiber
+  speed: 10G
+- from: lb-02:eth2
+  to: agg-sw-04:Te1/1/5
+  kind: fiber
+  speed: 10G
+- from: leaf-sw-01:Gi0/1
+  to: agg-sw-01:Te1/1/6
+  kind: fiber
+  speed: 10G
+- from: leaf-sw-01:Gi0/2
+  to: agg-sw-02:Te1/1/6
+  kind: fiber
+  speed: 10G
+- from: leaf-sw-02:Gi0/1
+  to: agg-sw-01:Te1/1/7
+  kind: fiber
+  speed: 10G
+- from: leaf-sw-02:Gi0/2
+  to: agg-sw-02:Te1/1/7
+  kind: fiber
+  speed: 10G
+- from: leaf-sw-03:Gi0/1
+  to: agg-sw-01:Te1/1/8
+  kind: fiber
+  speed: 10G
+- from: leaf-sw-03:Gi0/2
+  to: agg-sw-02:Te1/1/8
+  kind: fiber
+  speed: 10G
+- from: leaf-sw-04:Gi0/1
+  to: agg-sw-01:Te1/1/9
+  kind: fiber
+  speed: 10G
+- from: leaf-sw-04:Gi0/2
+  to: agg-sw-02:Te1/1/9
+  kind: fiber
+  speed: 10G
+- from: leaf-sw-05:Gi0/1
+  to: agg-sw-03:Te1/1/6
+  kind: fiber
+  speed: 10G
+- from: leaf-sw-05:Gi0/2
+  to: agg-sw-04:Te1/1/6
+  kind: fiber
+  speed: 10G
+- from: leaf-sw-06:Gi0/1
+  to: agg-sw-03:Te1/1/7
+  kind: fiber
+  speed: 10G
+- from: leaf-sw-06:Gi0/2
+  to: agg-sw-04:Te1/1/7
+  kind: fiber
+  speed: 10G
+- from: leaf-sw-07:Gi0/1
+  to: agg-sw-03:Te1/1/8
+  kind: fiber
+  speed: 10G
+- from: leaf-sw-07:Gi0/2
+  to: agg-sw-04:Te1/1/8
+  kind: fiber
+  speed: 10G
+- from: leaf-sw-08:Gi0/1
+  to: agg-sw-03:Te1/1/9
+  kind: fiber
+  speed: 10G
+- from: leaf-sw-08:Gi0/2
+  to: agg-sw-04:Te1/1/9
+  kind: fiber
+  speed: 10G
+- from: leaf-sw-01:Gi0/3
+  to: srv-01:eno1
+  kind: copper
+  speed: 10G
+- from: leaf-sw-01:Gi0/4
+  to: srv-02:eno1
+  kind: copper
+  speed: 10G
+- from: leaf-sw-02:Gi0/3
+  to: srv-03:eno1
+  kind: copper
+  speed: 10G
+- from: leaf-sw-02:Gi0/4
+  to: srv-04:eno1
+  kind: copper
+  speed: 10G
+- from: leaf-sw-03:Gi0/3
+  to: srv-05:eno1
+  kind: copper
+  speed: 10G
+- from: leaf-sw-03:Gi0/4
+  to: srv-06:eno1
+  kind: copper
+  speed: 10G
+- from: leaf-sw-04:Gi0/3
+  to: srv-07:eno1
+  kind: copper
+  speed: 10G
+- from: leaf-sw-04:Gi0/4
+  to: srv-08:eno1
+  kind: copper
+  speed: 10G
+- from: leaf-sw-05:Gi0/3
+  to: srv-09:eno1
+  kind: copper
+  speed: 10G
+- from: leaf-sw-06:Gi0/3
+  to: srv-10:eno1
+  kind: copper
+  speed: 10G
+- from: leaf-sw-07:Gi0/3
+  to: srv-11:eno1
+  kind: copper
+  speed: 10G
+- from: leaf-sw-08:Gi0/3
+  to: srv-12:eno1
+  kind: copper
+  speed: 10G

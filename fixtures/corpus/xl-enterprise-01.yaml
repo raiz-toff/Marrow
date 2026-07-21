@@ -1,0 +1,1317 @@
+marrow: 2
+name: XL Enterprise 01
+description: "~125-device single-HQ enterprise: HA core, WAN edge with dual firewalls, DMZ, datacenter, four office floors, and two branch offices"
+theme: dark
+hero: core-sw-01
+zones:
+  - id: hq-core
+    name: HQ Core
+    accent: "#2563eb"
+    note: HA core pair for global headquarters
+  - id: wan-edge
+    name: WAN Edge
+    parent: hq-core
+    accent: "#f59e0b"
+  - id: hq-dmz
+    name: HQ DMZ
+    parent: hq-core
+    accent: "#ef4444"
+    collapse: closed
+  - id: datacenter
+    name: Datacenter
+    parent: hq-core
+    accent: "#10b981"
+  - id: floor-1
+    name: HQ Floor 1
+    parent: hq-core
+    accent: "#8b5cf6"
+  - id: floor-2
+    name: HQ Floor 2
+    parent: hq-core
+    accent: "#8b5cf6"
+  - id: floor-3
+    name: HQ Floor 3
+    parent: hq-core
+    accent: "#8b5cf6"
+  - id: floor-4
+    name: HQ Floor 4
+    parent: hq-core
+    accent: "#8b5cf6"
+  - id: branch-1
+    name: Branch Office - Denver
+    accent: "#06b6d4"
+  - id: branch-2
+    name: Branch Office - Austin
+    accent: "#f97316"
+devices:
+  - id: core-sw-01
+    name: HQ Core Switch 1
+    icon: cisco/switches/layer-3-switch
+    tier: core
+    zone: hq-core
+    ha_pair_with: core-sw-02
+    mgmt_ip: 10.1.0.1
+    hero: true
+  - id: core-sw-02
+    name: HQ Core Switch 2
+    icon: cisco/switches/layer-3-switch
+    tier: core
+    zone: hq-core
+    ha_pair_with: core-sw-01
+    mgmt_ip: 10.1.0.2
+  - id: wan-rt-01
+    name: WAN Edge Router 1
+    icon: cisco/routers/router
+    tier: edge
+    zone: wan-edge
+    ha_pair_with: wan-rt-02
+    mgmt_ip: 10.1.1.1
+  - id: wan-rt-02
+    name: WAN Edge Router 2
+    icon: cisco/routers/router
+    tier: edge
+    zone: wan-edge
+    ha_pair_with: wan-rt-01
+    mgmt_ip: 10.1.1.2
+  - id: hq-fw-01
+    name: HQ Firewall 1
+    icon: cisco/security/firewall
+    tier: edge
+    zone: wan-edge
+    ha_pair_with: hq-fw-02
+    mgmt_ip: 10.1.1.10
+  - id: hq-fw-02
+    name: HQ Firewall 2
+    icon: cisco/security/firewall
+    tier: edge
+    zone: wan-edge
+    ha_pair_with: hq-fw-01
+    mgmt_ip: 10.1.1.11
+  - id: dmz-sw-01
+    name: DMZ Switch
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: hq-dmz
+    mgmt_ip: 10.1.2.1
+  - id: dmz-web-01
+    name: DMZ Web Server 1
+    icon: cisco/servers/file-server
+    tier: endpoint
+    zone: hq-dmz
+    mgmt_ip: 10.1.2.10
+  - id: dmz-web-02
+    name: DMZ Web Server 2
+    icon: cisco/servers/file-server
+    tier: endpoint
+    zone: hq-dmz
+    mgmt_ip: 10.1.2.11
+  - id: dmz-proxy-01
+    name: DMZ Reverse Proxy
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: hq-dmz
+    mgmt_ip: 10.1.2.12
+  - id: dc-dist-01
+    name: DC Distribution 1
+    icon: cisco/switches/multilayer-remote-switch
+    tier: distribution
+    zone: datacenter
+    ha_pair_with: dc-dist-02
+    mgmt_ip: 10.1.10.1
+  - id: dc-dist-02
+    name: DC Distribution 2
+    icon: cisco/switches/multilayer-remote-switch
+    tier: distribution
+    zone: datacenter
+    ha_pair_with: dc-dist-01
+    mgmt_ip: 10.1.10.2
+  - id: dc-acc-01
+    name: DC Access Switch 1
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: datacenter
+    mgmt_ip: 10.1.10.11
+  - id: dc-acc-02
+    name: DC Access Switch 2
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: datacenter
+    mgmt_ip: 10.1.10.12
+  - id: dc-lb-01
+    name: DC Load Balancer
+    icon: cisco/capability/load-balancer
+    tier: distribution
+    zone: datacenter
+    mgmt_ip: 10.1.10.20
+  - id: mgmt-nms-01
+    name: Network Monitoring Server
+    icon: cisco/servers/directory-server
+    tier: management
+    zone: datacenter
+    mgmt_ip: 10.1.10.30
+  - id: dc-srv-app-01
+    name: App Server 1
+    icon: cisco/servers/file-server
+    tier: endpoint
+    zone: datacenter
+    mgmt_ip: 10.1.10.41
+  - id: dc-srv-app-02
+    name: App Server 2
+    icon: cisco/servers/file-server
+    tier: endpoint
+    zone: datacenter
+    mgmt_ip: 10.1.10.42
+  - id: dc-srv-app-03
+    name: App Server 3
+    icon: cisco/servers/file-server
+    tier: endpoint
+    zone: datacenter
+    mgmt_ip: 10.1.10.43
+  - id: dc-srv-db-01
+    name: Database Server 1
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: datacenter
+    mgmt_ip: 10.1.10.51
+  - id: dc-srv-db-02
+    name: Database Server 2
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: datacenter
+    mgmt_ip: 10.1.10.52
+  - id: dc-srv-virt-01
+    name: Virtualization Host 1
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: datacenter
+    mgmt_ip: 10.1.10.61
+  - id: dc-srv-virt-02
+    name: Virtualization Host 2
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: datacenter
+    mgmt_ip: 10.1.10.62
+  - id: dc-srv-virt-03
+    name: Virtualization Host 3
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: datacenter
+    mgmt_ip: 10.1.10.63
+  - id: dc-srv-backup-01
+    name: Backup Server
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: datacenter
+    mgmt_ip: 10.1.10.70
+  - id: dist-f1-01
+    name: Floor 1 Distribution 1
+    icon: cisco/switches/multilayer-remote-switch
+    tier: distribution
+    zone: floor-1
+    ha_pair_with: dist-f1-02
+    mgmt_ip: 10.1.21.1
+  - id: dist-f1-02
+    name: Floor 1 Distribution 2
+    icon: cisco/switches/multilayer-remote-switch
+    tier: distribution
+    zone: floor-1
+    ha_pair_with: dist-f1-01
+    mgmt_ip: 10.1.21.2
+  - id: ap-f1-01
+    name: Floor 1 Wireless AP
+    icon: cisco/routers/wireless-router
+    tier: access
+    zone: floor-1
+    mgmt_ip: 10.1.21.9
+  - id: acc-f1-01
+    name: Floor 1 Access Switch 1
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: floor-1
+    mgmt_ip: 10.1.21.11
+  - id: f1-a1-ep-01
+    name: Floor 1 Desktop PC 1-1
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: floor-1
+  - id: f1-a1-ep-02
+    name: Floor 1 Laptop 1-2
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: floor-1
+  - id: f1-a1-ep-03
+    name: Floor 1 Mac Workstation 1-3
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: floor-1
+  - id: f1-a1-ep-04
+    name: Floor 1 Tablet 1-4
+    icon: cisco/computer-and-peripherals/tablet
+    tier: endpoint
+    zone: floor-1
+  - id: f1-a1-ep-05
+    name: Floor 1 Printer 1-5
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: floor-1
+  - id: acc-f1-02
+    name: Floor 1 Access Switch 2
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: floor-1
+    mgmt_ip: 10.1.21.12
+  - id: f1-a2-ep-01
+    name: Floor 1 IP Phone 2-1
+    icon: cisco/modemand-phones/ip-phone
+    tier: endpoint
+    zone: floor-1
+  - id: f1-a2-ep-02
+    name: Floor 1 Desktop PC 2-2
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: floor-1
+  - id: f1-a2-ep-03
+    name: Floor 1 Laptop 2-3
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: floor-1
+    status: degraded
+  - id: f1-a2-ep-04
+    name: Floor 1 Mac Workstation 2-4
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: floor-1
+  - id: f1-a2-ep-05
+    name: Floor 1 Tablet 2-5
+    icon: cisco/computer-and-peripherals/tablet
+    tier: endpoint
+    zone: floor-1
+  - id: acc-f1-03
+    name: Floor 1 Access Switch 3
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: floor-1
+    mgmt_ip: 10.1.21.13
+  - id: f1-a3-ep-01
+    name: Floor 1 Printer 3-1
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: floor-1
+  - id: f1-a3-ep-02
+    name: Floor 1 IP Phone 3-2
+    icon: cisco/modemand-phones/ip-phone
+    tier: endpoint
+    zone: floor-1
+  - id: f1-a3-ep-03
+    name: Floor 1 Desktop PC 3-3
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: floor-1
+  - id: f1-a3-ep-04
+    name: Floor 1 Laptop 3-4
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: floor-1
+  - id: f1-a3-ep-05
+    name: Floor 1 Mac Workstation 3-5
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: floor-1
+  - id: dist-f2-01
+    name: Floor 2 Distribution 1
+    icon: cisco/switches/multilayer-remote-switch
+    tier: distribution
+    zone: floor-2
+    ha_pair_with: dist-f2-02
+    mgmt_ip: 10.1.22.1
+  - id: dist-f2-02
+    name: Floor 2 Distribution 2
+    icon: cisco/switches/multilayer-remote-switch
+    tier: distribution
+    zone: floor-2
+    ha_pair_with: dist-f2-01
+    mgmt_ip: 10.1.22.2
+  - id: ap-f2-01
+    name: Floor 2 Wireless AP
+    icon: cisco/routers/wireless-router
+    tier: access
+    zone: floor-2
+    mgmt_ip: 10.1.22.9
+  - id: acc-f2-01
+    name: Floor 2 Access Switch 1
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: floor-2
+    mgmt_ip: 10.1.22.11
+  - id: f2-a1-ep-01
+    name: Floor 2 Desktop PC 1-1
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: floor-2
+  - id: f2-a1-ep-02
+    name: Floor 2 Laptop 1-2
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: floor-2
+  - id: f2-a1-ep-03
+    name: Floor 2 Mac Workstation 1-3
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: floor-2
+  - id: f2-a1-ep-04
+    name: Floor 2 Tablet 1-4
+    icon: cisco/computer-and-peripherals/tablet
+    tier: endpoint
+    zone: floor-2
+  - id: f2-a1-ep-05
+    name: Floor 2 Printer 1-5
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: floor-2
+  - id: acc-f2-02
+    name: Floor 2 Access Switch 2
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: floor-2
+    mgmt_ip: 10.1.22.12
+  - id: f2-a2-ep-01
+    name: Floor 2 IP Phone 2-1
+    icon: cisco/modemand-phones/ip-phone
+    tier: endpoint
+    zone: floor-2
+  - id: f2-a2-ep-02
+    name: Floor 2 Desktop PC 2-2
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: floor-2
+  - id: f2-a2-ep-03
+    name: Floor 2 Laptop 2-3
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: floor-2
+    status: down
+  - id: f2-a2-ep-04
+    name: Floor 2 Mac Workstation 2-4
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: floor-2
+    status: degraded
+  - id: f2-a2-ep-05
+    name: Floor 2 Tablet 2-5
+    icon: cisco/computer-and-peripherals/tablet
+    tier: endpoint
+    zone: floor-2
+  - id: acc-f2-03
+    name: Floor 2 Access Switch 3
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: floor-2
+    mgmt_ip: 10.1.22.13
+  - id: f2-a3-ep-01
+    name: Floor 2 Printer 3-1
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: floor-2
+  - id: f2-a3-ep-02
+    name: Floor 2 IP Phone 3-2
+    icon: cisco/modemand-phones/ip-phone
+    tier: endpoint
+    zone: floor-2
+  - id: f2-a3-ep-03
+    name: Floor 2 Desktop PC 3-3
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: floor-2
+  - id: f2-a3-ep-04
+    name: Floor 2 Laptop 3-4
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: floor-2
+  - id: f2-a3-ep-05
+    name: Floor 2 Mac Workstation 3-5
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: floor-2
+  - id: dist-f3-01
+    name: Floor 3 Distribution 1
+    icon: cisco/switches/multilayer-remote-switch
+    tier: distribution
+    zone: floor-3
+    ha_pair_with: dist-f3-02
+    mgmt_ip: 10.1.23.1
+  - id: dist-f3-02
+    name: Floor 3 Distribution 2
+    icon: cisco/switches/multilayer-remote-switch
+    tier: distribution
+    zone: floor-3
+    ha_pair_with: dist-f3-01
+    mgmt_ip: 10.1.23.2
+  - id: ap-f3-01
+    name: Floor 3 Wireless AP
+    icon: cisco/routers/wireless-router
+    tier: access
+    zone: floor-3
+    mgmt_ip: 10.1.23.9
+  - id: acc-f3-01
+    name: Floor 3 Access Switch 1
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: floor-3
+    mgmt_ip: 10.1.23.11
+  - id: f3-a1-ep-01
+    name: Floor 3 Desktop PC 1-1
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: floor-3
+  - id: f3-a1-ep-02
+    name: Floor 3 Laptop 1-2
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: floor-3
+  - id: f3-a1-ep-03
+    name: Floor 3 Mac Workstation 1-3
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: floor-3
+  - id: f3-a1-ep-04
+    name: Floor 3 Tablet 1-4
+    icon: cisco/computer-and-peripherals/tablet
+    tier: endpoint
+    zone: floor-3
+  - id: f3-a1-ep-05
+    name: Floor 3 Printer 1-5
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: floor-3
+  - id: acc-f3-02
+    name: Floor 3 Access Switch 2
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: floor-3
+    mgmt_ip: 10.1.23.12
+  - id: f3-a2-ep-01
+    name: Floor 3 IP Phone 2-1
+    icon: cisco/modemand-phones/ip-phone
+    tier: endpoint
+    zone: floor-3
+    status: planned
+  - id: f3-a2-ep-02
+    name: Floor 3 Desktop PC 2-2
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: floor-3
+  - id: f3-a2-ep-03
+    name: Floor 3 Laptop 2-3
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: floor-3
+  - id: f3-a2-ep-04
+    name: Floor 3 Mac Workstation 2-4
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: floor-3
+  - id: f3-a2-ep-05
+    name: Floor 3 Tablet 2-5
+    icon: cisco/computer-and-peripherals/tablet
+    tier: endpoint
+    zone: floor-3
+    status: degraded
+  - id: acc-f3-03
+    name: Floor 3 Access Switch 3
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: floor-3
+    mgmt_ip: 10.1.23.13
+  - id: f3-a3-ep-01
+    name: Floor 3 Printer 3-1
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: floor-3
+  - id: f3-a3-ep-02
+    name: Floor 3 IP Phone 3-2
+    icon: cisco/modemand-phones/ip-phone
+    tier: endpoint
+    zone: floor-3
+  - id: f3-a3-ep-03
+    name: Floor 3 Desktop PC 3-3
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: floor-3
+  - id: f3-a3-ep-04
+    name: Floor 3 Laptop 3-4
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: floor-3
+  - id: f3-a3-ep-05
+    name: Floor 3 Mac Workstation 3-5
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: floor-3
+  - id: dist-f4-01
+    name: Floor 4 Distribution 1
+    icon: cisco/switches/multilayer-remote-switch
+    tier: distribution
+    zone: floor-4
+    ha_pair_with: dist-f4-02
+    mgmt_ip: 10.1.24.1
+  - id: dist-f4-02
+    name: Floor 4 Distribution 2
+    icon: cisco/switches/multilayer-remote-switch
+    tier: distribution
+    zone: floor-4
+    ha_pair_with: dist-f4-01
+    mgmt_ip: 10.1.24.2
+  - id: ap-f4-01
+    name: Floor 4 Wireless AP
+    icon: cisco/routers/wireless-router
+    tier: access
+    zone: floor-4
+    mgmt_ip: 10.1.24.9
+  - id: acc-f4-01
+    name: Floor 4 Access Switch 1
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: floor-4
+    mgmt_ip: 10.1.24.11
+  - id: f4-a1-ep-01
+    name: Floor 4 Desktop PC 1-1
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: floor-4
+  - id: f4-a1-ep-02
+    name: Floor 4 Laptop 1-2
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: floor-4
+  - id: f4-a1-ep-03
+    name: Floor 4 Mac Workstation 1-3
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: floor-4
+  - id: f4-a1-ep-04
+    name: Floor 4 Tablet 1-4
+    icon: cisco/computer-and-peripherals/tablet
+    tier: endpoint
+    zone: floor-4
+  - id: f4-a1-ep-05
+    name: Floor 4 Printer 1-5
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: floor-4
+  - id: acc-f4-02
+    name: Floor 4 Access Switch 2
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: floor-4
+    mgmt_ip: 10.1.24.12
+  - id: f4-a2-ep-01
+    name: Floor 4 IP Phone 2-1
+    icon: cisco/modemand-phones/ip-phone
+    tier: endpoint
+    zone: floor-4
+  - id: f4-a2-ep-02
+    name: Floor 4 Desktop PC 2-2
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: floor-4
+  - id: f4-a2-ep-03
+    name: Floor 4 Laptop 2-3
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: floor-4
+  - id: f4-a2-ep-04
+    name: Floor 4 Mac Workstation 2-4
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: floor-4
+    status: down
+  - id: f4-a2-ep-05
+    name: Floor 4 Tablet 2-5
+    icon: cisco/computer-and-peripherals/tablet
+    tier: endpoint
+    zone: floor-4
+  - id: acc-f4-03
+    name: Floor 4 Access Switch 3
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: floor-4
+    mgmt_ip: 10.1.24.13
+    status: degraded
+  - id: f4-a3-ep-01
+    name: Floor 4 Printer 3-1
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: floor-4
+  - id: f4-a3-ep-02
+    name: Floor 4 IP Phone 3-2
+    icon: cisco/modemand-phones/ip-phone
+    tier: endpoint
+    zone: floor-4
+  - id: f4-a3-ep-03
+    name: Floor 4 Desktop PC 3-3
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: floor-4
+  - id: f4-a3-ep-04
+    name: Floor 4 Laptop 3-4
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: floor-4
+  - id: f4-a3-ep-05
+    name: Floor 4 Mac Workstation 3-5
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: floor-4
+  - id: branch-1-rt-01
+    name: Denver Branch Router
+    icon: cisco/routers/router
+    tier: edge
+    zone: branch-1
+    mgmt_ip: 10.2.1.1
+  - id: branch-1-fw-01
+    name: Denver Branch Firewall
+    icon: cisco/security/firewall
+    tier: edge
+    zone: branch-1
+    mgmt_ip: 10.2.1.2
+  - id: branch-1-sw-01
+    name: Denver Branch Switch
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: branch-1
+    mgmt_ip: 10.2.1.3
+  - id: branch-1-ap-01
+    name: Denver Branch AP
+    icon: cisco/routers/wireless-router
+    tier: access
+    zone: branch-1
+    mgmt_ip: 10.2.1.4
+  - id: branch-1-pc-01
+    name: Denver Front Desk PC
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: branch-1
+  - id: branch-1-pc-02
+    name: Denver Sales Rep 1 PC
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: branch-1
+  - id: branch-1-pc-03
+    name: Denver Sales Rep 2 PC
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: branch-1
+  - id: branch-1-printer-01
+    name: Denver Office Printer
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: branch-1
+  - id: branch-2-rt-01
+    name: Austin Branch Router
+    icon: cisco/routers/router
+    tier: edge
+    zone: branch-2
+    mgmt_ip: 10.3.1.1
+  - id: branch-2-fw-01
+    name: Austin Branch Firewall
+    icon: cisco/security/firewall
+    tier: edge
+    zone: branch-2
+    mgmt_ip: 10.3.1.2
+  - id: branch-2-sw-01
+    name: Austin Branch Switch
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: branch-2
+    mgmt_ip: 10.3.1.3
+  - id: branch-2-ap-01
+    name: Austin Branch AP
+    icon: cisco/routers/wireless-router
+    tier: access
+    zone: branch-2
+    mgmt_ip: 10.3.1.4
+  - id: branch-2-pc-01
+    name: Austin Front Desk PC
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: branch-2
+  - id: branch-2-pc-02
+    name: Austin Sales Rep 1 PC
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: branch-2
+  - id: branch-2-pc-03
+    name: Austin Sales Rep 2 PC
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: branch-2
+  - id: branch-2-printer-01
+    name: Austin Office Printer
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: branch-2
+links:
+  - from: core-sw-01:Te1/0/1
+    to: core-sw-02:Te1/0/1
+    kind: dac
+    speed: 40G
+    lag: po1
+  - from: core-sw-01:Te1/0/2
+    to: core-sw-02:Te1/0/2
+    kind: dac
+    speed: 40G
+    lag: po1
+  - from: wan-rt-01:Gi0/0/1
+    to: hq-fw-01:outside
+    kind: copper
+    speed: 10G
+  - from: wan-rt-02:Gi0/0/1
+    to: hq-fw-02:outside
+    kind: copper
+    speed: 10G
+  - from: hq-fw-01:inside
+    to: core-sw-01:Te1/0/3
+    kind: copper
+    speed: 10G
+    animated: true
+  - from: hq-fw-02:inside
+    to: core-sw-02:Te1/0/3
+    kind: copper
+    speed: 10G
+  - from: hq-fw-01:dmz
+    to: hq-fw-02:ha-link
+    kind: copper
+    speed: 1G
+    label: HA sync
+  - from: hq-fw-01:ha-link
+    to: dmz-sw-01:Gi0/1
+    kind: copper
+    speed: 1G
+  - from: hq-fw-02:eth4
+    to: dmz-sw-01:Gi0/2
+    kind: copper
+    speed: 1G
+    label: backup uplink
+  - from: dmz-sw-01:Gi0/3
+    to: dmz-web-01:eno1
+    kind: copper
+    speed: 1G
+  - from: dmz-sw-01:Gi0/4
+    to: dmz-web-02:eno1
+    kind: copper
+    speed: 1G
+  - from: dmz-sw-01:Gi0/5
+    to: dmz-proxy-01:eno1
+    kind: copper
+    speed: 1G
+  - from: dc-dist-01:Te1/0/1
+    to: core-sw-01:Te1/0/4
+    kind: fiber
+    speed: 40G
+    animated: true
+  - from: dc-dist-02:Te1/0/1
+    to: core-sw-02:Te1/0/4
+    kind: fiber
+    speed: 40G
+  - from: dc-dist-01:Te1/0/2
+    to: dc-dist-02:Te1/0/2
+    kind: dac
+    speed: 40G
+    lag: po10
+  - from: dc-dist-01:Te1/0/3
+    to: dc-dist-02:Te1/0/3
+    kind: dac
+    speed: 40G
+    lag: po10
+  - from: dc-dist-01:Gi1/0/4
+    to: dc-acc-01:Gi0/1
+    kind: fiber
+    speed: 10G
+  - from: dc-dist-02:Gi1/0/4
+    to: dc-acc-02:Gi0/1
+    kind: fiber
+    speed: 10G
+  - from: dc-acc-01:Gi0/2
+    to: dc-srv-app-01:eno1
+    kind: copper
+    speed: 10G
+  - from: dc-acc-01:Gi0/3
+    to: dc-srv-app-02:eno1
+    kind: copper
+    speed: 10G
+  - from: dc-acc-01:Gi0/4
+    to: dc-srv-db-01:eno1
+    kind: copper
+    speed: 10G
+  - from: dc-acc-01:Gi0/5
+    to: dc-srv-virt-01:eno1
+    kind: copper
+    speed: 10G
+  - from: dc-acc-01:Gi0/6
+    to: dc-srv-backup-01:eno1
+    kind: copper
+    speed: 10G
+  - from: dc-acc-02:Gi0/2
+    to: dc-srv-app-03:eno1
+    kind: copper
+    speed: 10G
+  - from: dc-acc-02:Gi0/3
+    to: dc-srv-db-02:eno1
+    kind: copper
+    speed: 10G
+  - from: dc-acc-02:Gi0/4
+    to: dc-srv-virt-02:eno1
+    kind: copper
+    speed: 10G
+  - from: dc-acc-02:Gi0/5
+    to: dc-srv-virt-03:eno1
+    kind: copper
+    speed: 10G
+  - from: dc-acc-02:Gi0/6
+    to: mgmt-nms-01:eno1
+    kind: copper
+    speed: 10G
+  - from: dc-acc-02:Gi0/7
+    to: dc-lb-01:eno1
+    kind: copper
+    speed: 10G
+  - from: dist-f1-01:Te1/0/1
+    to: core-sw-01:Te1/0/5
+    kind: fiber
+    speed: 10G
+  - from: dist-f1-02:Te1/0/1
+    to: core-sw-02:Te1/0/5
+    kind: fiber
+    speed: 10G
+  - from: dist-f1-01:Te1/0/2
+    to: dist-f1-02:Te1/0/2
+    kind: dac
+    speed: 40G
+    lag: po21
+  - from: dist-f1-01:Te1/0/3
+    to: dist-f1-02:Te1/0/3
+    kind: dac
+    speed: 40G
+    lag: po21
+  - from: dist-f1-02:Gi1/0/4
+    to: ap-f1-01:eth0
+    kind: copper
+    speed: 1G
+  - from: dist-f1-01:Gi1/0/4
+    to: acc-f1-01:Gi0/1
+    kind: fiber
+    speed: 1G
+  - from: acc-f1-01:Gi0/2
+    to: f1-a1-ep-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-f1-01:Gi0/3
+    to: f1-a1-ep-02:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-f1-01:Gi0/4
+    to: f1-a1-ep-03:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-f1-01:Gi0/5
+    to: f1-a1-ep-04:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-f1-01:Gi0/6
+    to: f1-a1-ep-05:eth0
+    kind: copper
+    speed: 1G
+  - from: dist-f1-01:Gi1/0/5
+    to: acc-f1-02:Gi0/1
+    kind: fiber
+    speed: 1G
+  - from: acc-f1-02:Gi0/2
+    to: f1-a2-ep-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-f1-02:Gi0/3
+    to: f1-a2-ep-02:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-f1-02:Gi0/4
+    to: f1-a2-ep-03:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-f1-02:Gi0/5
+    to: f1-a2-ep-04:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-f1-02:Gi0/6
+    to: f1-a2-ep-05:eth0
+    kind: copper
+    speed: 1G
+  - from: dist-f1-02:Gi1/0/5
+    to: acc-f1-03:Gi0/1
+    kind: fiber
+    speed: 1G
+  - from: acc-f1-03:Gi0/2
+    to: f1-a3-ep-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-f1-03:Gi0/3
+    to: f1-a3-ep-02:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-f1-03:Gi0/4
+    to: f1-a3-ep-03:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-f1-03:Gi0/5
+    to: f1-a3-ep-04:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-f1-03:Gi0/6
+    to: f1-a3-ep-05:eth0
+    kind: copper
+    speed: 1G
+  - from: dist-f2-01:Te1/0/1
+    to: core-sw-01:Te1/0/6
+    kind: fiber
+    speed: 10G
+  - from: dist-f2-02:Te1/0/1
+    to: core-sw-02:Te1/0/6
+    kind: fiber
+    speed: 10G
+  - from: dist-f2-01:Te1/0/2
+    to: dist-f2-02:Te1/0/2
+    kind: dac
+    speed: 40G
+    lag: po22
+  - from: dist-f2-01:Te1/0/3
+    to: dist-f2-02:Te1/0/3
+    kind: dac
+    speed: 40G
+    lag: po22
+  - from: dist-f2-02:Gi1/0/4
+    to: ap-f2-01:eth0
+    kind: copper
+    speed: 1G
+  - from: dist-f2-01:Gi1/0/4
+    to: acc-f2-01:Gi0/1
+    kind: fiber
+    speed: 1G
+  - from: acc-f2-01:Gi0/2
+    to: f2-a1-ep-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-f2-01:Gi0/3
+    to: f2-a1-ep-02:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-f2-01:Gi0/4
+    to: f2-a1-ep-03:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-f2-01:Gi0/5
+    to: f2-a1-ep-04:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-f2-01:Gi0/6
+    to: f2-a1-ep-05:eth0
+    kind: copper
+    speed: 1G
+  - from: dist-f2-01:Gi1/0/5
+    to: acc-f2-02:Gi0/1
+    kind: fiber
+    speed: 1G
+  - from: acc-f2-02:Gi0/2
+    to: f2-a2-ep-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-f2-02:Gi0/3
+    to: f2-a2-ep-02:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-f2-02:Gi0/4
+    to: f2-a2-ep-03:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-f2-02:Gi0/5
+    to: f2-a2-ep-04:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-f2-02:Gi0/6
+    to: f2-a2-ep-05:eth0
+    kind: copper
+    speed: 1G
+  - from: dist-f2-02:Gi1/0/5
+    to: acc-f2-03:Gi0/1
+    kind: fiber
+    speed: 1G
+  - from: acc-f2-03:Gi0/2
+    to: f2-a3-ep-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-f2-03:Gi0/3
+    to: f2-a3-ep-02:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-f2-03:Gi0/4
+    to: f2-a3-ep-03:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-f2-03:Gi0/5
+    to: f2-a3-ep-04:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-f2-03:Gi0/6
+    to: f2-a3-ep-05:eth0
+    kind: copper
+    speed: 1G
+  - from: dist-f3-01:Te1/0/1
+    to: core-sw-01:Te1/0/7
+    kind: fiber
+    speed: 10G
+  - from: dist-f3-02:Te1/0/1
+    to: core-sw-02:Te1/0/7
+    kind: fiber
+    speed: 10G
+  - from: dist-f3-01:Te1/0/2
+    to: dist-f3-02:Te1/0/2
+    kind: dac
+    speed: 40G
+    lag: po23
+  - from: dist-f3-01:Te1/0/3
+    to: dist-f3-02:Te1/0/3
+    kind: dac
+    speed: 40G
+    lag: po23
+  - from: dist-f3-02:Gi1/0/4
+    to: ap-f3-01:eth0
+    kind: copper
+    speed: 1G
+  - from: dist-f3-01:Gi1/0/4
+    to: acc-f3-01:Gi0/1
+    kind: fiber
+    speed: 1G
+  - from: acc-f3-01:Gi0/2
+    to: f3-a1-ep-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-f3-01:Gi0/3
+    to: f3-a1-ep-02:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-f3-01:Gi0/4
+    to: f3-a1-ep-03:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-f3-01:Gi0/5
+    to: f3-a1-ep-04:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-f3-01:Gi0/6
+    to: f3-a1-ep-05:eth0
+    kind: copper
+    speed: 1G
+  - from: dist-f3-01:Gi1/0/5
+    to: acc-f3-02:Gi0/1
+    kind: fiber
+    speed: 1G
+  - from: acc-f3-02:Gi0/2
+    to: f3-a2-ep-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-f3-02:Gi0/3
+    to: f3-a2-ep-02:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-f3-02:Gi0/4
+    to: f3-a2-ep-03:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-f3-02:Gi0/5
+    to: f3-a2-ep-04:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-f3-02:Gi0/6
+    to: f3-a2-ep-05:eth0
+    kind: copper
+    speed: 1G
+  - from: dist-f3-02:Gi1/0/5
+    to: acc-f3-03:Gi0/1
+    kind: fiber
+    speed: 1G
+  - from: acc-f3-03:Gi0/2
+    to: f3-a3-ep-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-f3-03:Gi0/3
+    to: f3-a3-ep-02:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-f3-03:Gi0/4
+    to: f3-a3-ep-03:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-f3-03:Gi0/5
+    to: f3-a3-ep-04:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-f3-03:Gi0/6
+    to: f3-a3-ep-05:eth0
+    kind: copper
+    speed: 1G
+  - from: dist-f4-01:Te1/0/1
+    to: core-sw-01:Te1/0/8
+    kind: fiber
+    speed: 10G
+  - from: dist-f4-02:Te1/0/1
+    to: core-sw-02:Te1/0/8
+    kind: fiber
+    speed: 10G
+  - from: dist-f4-01:Te1/0/2
+    to: dist-f4-02:Te1/0/2
+    kind: dac
+    speed: 40G
+    lag: po24
+  - from: dist-f4-01:Te1/0/3
+    to: dist-f4-02:Te1/0/3
+    kind: dac
+    speed: 40G
+    lag: po24
+  - from: dist-f4-02:Gi1/0/4
+    to: ap-f4-01:eth0
+    kind: copper
+    speed: 1G
+  - from: dist-f4-01:Gi1/0/4
+    to: acc-f4-01:Gi0/1
+    kind: fiber
+    speed: 1G
+  - from: acc-f4-01:Gi0/2
+    to: f4-a1-ep-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-f4-01:Gi0/3
+    to: f4-a1-ep-02:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-f4-01:Gi0/4
+    to: f4-a1-ep-03:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-f4-01:Gi0/5
+    to: f4-a1-ep-04:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-f4-01:Gi0/6
+    to: f4-a1-ep-05:eth0
+    kind: copper
+    speed: 1G
+  - from: dist-f4-01:Gi1/0/5
+    to: acc-f4-02:Gi0/1
+    kind: fiber
+    speed: 1G
+  - from: acc-f4-02:Gi0/2
+    to: f4-a2-ep-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-f4-02:Gi0/3
+    to: f4-a2-ep-02:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-f4-02:Gi0/4
+    to: f4-a2-ep-03:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-f4-02:Gi0/5
+    to: f4-a2-ep-04:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-f4-02:Gi0/6
+    to: f4-a2-ep-05:eth0
+    kind: copper
+    speed: 1G
+  - from: dist-f4-02:Gi1/0/5
+    to: acc-f4-03:Gi0/1
+    kind: fiber
+    speed: 1G
+  - from: acc-f4-03:Gi0/2
+    to: f4-a3-ep-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-f4-03:Gi0/3
+    to: f4-a3-ep-02:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-f4-03:Gi0/4
+    to: f4-a3-ep-03:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-f4-03:Gi0/5
+    to: f4-a3-ep-04:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-f4-03:Gi0/6
+    to: f4-a3-ep-05:eth0
+    kind: copper
+    speed: 1G
+  - from: wan-rt-01:Se0/0/2
+    to: branch-1-rt-01:Se0/0/1
+    kind: wan
+    speed: 100M
+  - from: branch-1-rt-01:Gi0/0/2
+    to: branch-1-fw-01:outside
+    kind: copper
+    speed: 1G
+  - from: branch-1-fw-01:inside
+    to: branch-1-sw-01:Gi0/1
+    kind: copper
+    speed: 1G
+  - from: branch-1-sw-01:Gi0/2
+    to: branch-1-ap-01:eth0
+    kind: copper
+    speed: 1G
+  - from: branch-1-sw-01:Gi0/3
+    to: branch-1-pc-01:eth0
+    kind: copper
+    speed: 1G
+  - from: branch-1-sw-01:Gi0/4
+    to: branch-1-pc-02:eth0
+    kind: copper
+    speed: 1G
+  - from: branch-1-sw-01:Gi0/5
+    to: branch-1-pc-03:eth0
+    kind: copper
+    speed: 1G
+  - from: branch-1-sw-01:Gi0/6
+    to: branch-1-printer-01:eth0
+    kind: copper
+    speed: 1G
+  - from: wan-rt-02:Se0/0/2
+    to: branch-2-rt-01:Se0/0/1
+    kind: wan
+    speed: 100M
+  - from: branch-2-rt-01:Gi0/0/2
+    to: branch-2-fw-01:outside
+    kind: copper
+    speed: 1G
+  - from: branch-2-fw-01:inside
+    to: branch-2-sw-01:Gi0/1
+    kind: copper
+    speed: 1G
+  - from: branch-2-sw-01:Gi0/2
+    to: branch-2-ap-01:eth0
+    kind: copper
+    speed: 1G
+  - from: branch-2-sw-01:Gi0/3
+    to: branch-2-pc-01:eth0
+    kind: copper
+    speed: 1G
+  - from: branch-2-sw-01:Gi0/4
+    to: branch-2-pc-02:eth0
+    kind: copper
+    speed: 1G
+  - from: branch-2-sw-01:Gi0/5
+    to: branch-2-pc-03:eth0
+    kind: copper
+    speed: 1G
+  - from: branch-2-sw-01:Gi0/6
+    to: branch-2-printer-01:eth0
+    kind: copper
+    speed: 1G

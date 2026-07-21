@@ -1,0 +1,165 @@
+marrow: 2
+name: Campus Deep Stack
+description: Six-tier-deep hierarchy — edge, firewall, HA core, two distribution legs, three access switches, six endpoints
+theme: dark
+zones:
+  - id: wan
+    name: WAN
+  - id: core
+    name: Core
+  - id: building-a
+    name: Building A
+  - id: building-b
+    name: Building B
+
+devices:
+  - id: edge-rtr1
+    name: Edge Router
+    icon: cisco/routers/router
+    tier: edge
+    zone: wan
+    mgmt_ip: 203.0.113.20
+  - id: fw1
+    name: Perimeter Firewall
+    icon: cisco/security/pix-firewall
+    tier: edge
+    zone: wan
+    mgmt_ip: 10.30.0.1
+  - id: core-sw1
+    name: Core Switch 1
+    icon: cisco/switches/layer-3-switch
+    tier: core
+    zone: core
+    ha_pair_with: core-sw2
+    mgmt_ip: 10.30.1.1
+    hero: true
+  - id: core-sw2
+    name: Core Switch 2
+    icon: cisco/switches/layer-3-switch
+    tier: core
+    zone: core
+    ha_pair_with: core-sw1
+    mgmt_ip: 10.30.1.2
+  - id: dist-a1
+    name: Distribution A1
+    icon: cisco/switches/multilayer-remote-switch
+    tier: distribution
+    zone: building-a
+  - id: dist-b1
+    name: Distribution B1
+    icon: cisco/switches/multilayer-remote-switch
+    tier: distribution
+    zone: building-b
+  - id: acc-a1
+    name: Access A1
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: building-a
+  - id: acc-a2
+    name: Access A2
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: building-a
+  - id: acc-b1
+    name: Access B1
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: building-b
+  - id: ws-a1-1
+    name: Building A Desktop 1
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: building-a
+  - id: ws-a1-2
+    name: Building A Laptop 1
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: building-a
+  - id: ws-a2-1
+    name: Building A iMac 1
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: building-a
+  - id: ws-a2-2
+    name: Building A Laptop 2
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: building-a
+  - id: ws-b1-1
+    name: Building B Desktop 1
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: building-b
+  - id: ws-b1-2
+    name: Building B IP Phone
+    icon: cisco/datacenter/ip-phone
+    tier: endpoint
+    zone: building-b
+
+links:
+  - from: edge-rtr1:Gi0/0
+    to: fw1:Gi0/0
+    kind: copper
+    speed: 1G
+  - from: fw1:Gi0/1
+    to: core-sw1:Te1/0/1
+    kind: fiber
+    speed: 10G
+  - from: fw1:Gi0/2
+    to: core-sw2:Te1/0/1
+    kind: fiber
+    speed: 10G
+  - from: core-sw1:Te1/0/2
+    to: core-sw2:Te1/0/2
+    kind: dac
+    speed: 40G
+    lag: po1
+  - from: core-sw1:Te1/0/3
+    to: core-sw2:Te1/0/3
+    kind: dac
+    speed: 40G
+    lag: po1
+  - from: core-sw1:Te1/0/10
+    to: dist-a1:Te1/1/1
+    kind: fiber
+    speed: 40G
+  - from: core-sw2:Te1/0/10
+    to: dist-b1:Te1/1/1
+    kind: fiber
+    speed: 40G
+  - from: dist-a1:Gi1/0/1
+    to: acc-a1:Gi0/48
+    kind: fiber
+    speed: 10G
+  - from: dist-a1:Gi1/0/2
+    to: acc-a2:Gi0/48
+    kind: fiber
+    speed: 10G
+  - from: dist-b1:Gi1/0/1
+    to: acc-b1:Gi0/48
+    kind: fiber
+    speed: 10G
+  - from: acc-a1:Gi0/1
+    to: ws-a1-1:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-a1:Gi0/2
+    to: ws-a1-2:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-a2:Gi0/1
+    to: ws-a2-1:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-a2:Gi0/2
+    to: ws-a2-2:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-b1:Gi0/1
+    to: ws-b1-1:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-b1:Gi0/2
+    to: ws-b1-2:eth0
+    kind: copper
+    speed: 1G

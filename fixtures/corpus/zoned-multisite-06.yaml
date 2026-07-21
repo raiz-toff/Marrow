@@ -1,0 +1,268 @@
+marrow: 2
+name: Financial Services HQ with Double-Nested Vault
+description: Bank HQ with fully redundant core, a DMZ nested inside HQ, an innermost vault segment nested inside the DMZ, and two branches
+theme: dark
+hero: hq-core-01
+
+zones:
+  - id: hq
+    name: Headquarters
+    accent: "#1e3a5f"
+  - id: hq-dmz
+    name: HQ DMZ
+    parent: hq
+    accent: "#b45309"
+    collapse: closed
+    note: Customer-facing services, firewalled from the general HQ LAN
+  - id: hq-vault
+    name: Core Banking Vault
+    parent: hq-dmz
+    accent: "#7f1d1d"
+    collapse: closed
+    note: Innermost segment - only reachable through the DMZ firewall pair
+  - id: branch-1
+    name: Branch Office 1
+    accent: "#166534"
+  - id: branch-2
+    name: Branch Office 2
+    accent: "#581c87"
+
+devices:
+  - id: hq-edge-rt-01
+    name: HQ Edge Router
+    icon: cisco/routers/router
+    tier: edge
+    zone: hq
+    mgmt_ip: 10.5.0.1
+  - id: hq-fw-01
+    name: HQ Firewall 1
+    icon: cisco/security/firewall
+    tier: edge
+    zone: hq
+    ha_pair_with: hq-fw-02
+    mgmt_ip: 10.5.0.2
+  - id: hq-fw-02
+    name: HQ Firewall 2
+    icon: cisco/security/firewall
+    tier: edge
+    zone: hq
+    ha_pair_with: hq-fw-01
+    mgmt_ip: 10.5.0.3
+  - id: hq-core-01
+    name: HQ Core Switch 1
+    icon: cisco/switches/layer-3-switch
+    tier: core
+    zone: hq
+    ha_pair_with: hq-core-02
+    hero: true
+    mgmt_ip: 10.5.0.10
+    note: Hero device - HQ core, fully redundant pair
+  - id: hq-core-02
+    name: HQ Core Switch 2
+    icon: cisco/switches/layer-3-switch
+    tier: core
+    zone: hq
+    ha_pair_with: hq-core-01
+    mgmt_ip: 10.5.0.11
+  - id: hq-dist-01
+    name: HQ Distribution
+    icon: cisco/switches/multilayer-remote-switch
+    tier: distribution
+    zone: hq
+  - id: hq-acc-01
+    name: HQ Access Switch
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: hq
+  - id: hq-pc-01
+    name: HQ Teller Workstation 1
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: hq
+  - id: hq-pc-02
+    name: HQ Teller Workstation 2
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: hq
+  - id: hq-nms-01
+    name: HQ NMS Appliance
+    icon: cisco/misc/network-management
+    tier: management
+    zone: hq
+    status: planned
+    note: Procurement approved, not yet racked or cabled - intentionally unlinked
+  - id: dmz-fw-01
+    name: DMZ Firewall 1
+    icon: cisco/security/pix-firewall
+    tier: edge
+    zone: hq-dmz
+    ha_pair_with: dmz-fw-02
+  - id: dmz-fw-02
+    name: DMZ Firewall 2
+    icon: cisco/security/pix-firewall
+    tier: edge
+    zone: hq-dmz
+    ha_pair_with: dmz-fw-01
+  - id: dmz-web-01
+    name: Customer Portal
+    icon: cisco/servers/file-server
+    tier: endpoint
+    zone: hq-dmz
+    role: customer portal
+  - id: dmz-api-01
+    name: Public API Gateway
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: hq-dmz
+    role: public API gateway
+  - id: vault-fw-01
+    name: Vault Segmentation Firewall
+    icon: cisco/security/firewall
+    tier: edge
+    zone: hq-vault
+    note: Innermost boundary - only path into the vault segment
+  - id: vault-core-01
+    name: Core Banking Ledger
+    icon: cisco/computer-and-peripherals/ibm-mainframe
+    tier: endpoint
+    zone: hq-vault
+    role: Core banking ledger
+    note: SOX scope - highest sensitivity tier, mainframe-hosted ledger
+  - id: vault-hsm-01
+    name: Hardware Security Module
+    icon: cisco/design/encryption-offload
+    tier: endpoint
+    zone: hq-vault
+    role: Hardware security module
+    note: Signs every wire transfer transaction
+  - id: b1-rt-01
+    name: Branch 1 Router
+    icon: cisco/routers/router
+    tier: edge
+    zone: branch-1
+    mgmt_ip: 10.6.0.1
+  - id: b1-sw-01
+    name: Branch 1 Switch
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: branch-1
+  - id: b1-pc-01
+    name: Branch 1 Teller Workstation
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: branch-1
+  - id: b2-rt-01
+    name: Branch 2 Router
+    icon: cisco/routers/router
+    tier: edge
+    zone: branch-2
+    mgmt_ip: 10.7.0.1
+  - id: b2-sw-01
+    name: Branch 2 Switch
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: branch-2
+  - id: b2-pc-01
+    name: Branch 2 Teller Workstation
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: branch-2
+
+links:
+  - from: hq-edge-rt-01:Gi0/0/1
+    to: hq-fw-01:outside
+    kind: copper
+    speed: 1G
+  - from: hq-fw-01:sync
+    to: hq-fw-02:sync
+    kind: copper
+    speed: 1G
+    note: HA state sync
+  - from: hq-fw-01:inside
+    to: hq-core-01:Te1/0/1
+    kind: fiber
+    speed: 10G
+    animated: true
+  - from: hq-fw-02:inside
+    to: hq-core-02:Te1/0/1
+    kind: fiber
+    speed: 10G
+  - from: hq-core-01:Te1/0/2
+    to: hq-core-02:Te1/0/2
+    kind: dac
+    speed: 40G
+    lag: po1
+  - from: hq-core-01:Te1/0/3
+    to: hq-core-02:Te1/0/3
+    kind: dac
+    speed: 40G
+    lag: po1
+  - from: hq-core-01:Te1/0/10
+    to: hq-dist-01:Te1/1/1
+    kind: fiber
+    speed: 10G
+  - from: hq-dist-01:Gi1/0/1
+    to: hq-acc-01:Gi0/48
+    kind: fiber
+    speed: 10G
+  - from: hq-acc-01:Gi0/1
+    to: hq-pc-01:eth0
+  - from: hq-acc-01:Gi0/2
+    to: hq-pc-02:eth0
+  - from: hq-core-01:Te1/0/20
+    to: dmz-fw-01:outside
+    kind: fiber
+    speed: 10G
+    note: HQ core to DMZ
+  - from: hq-core-02:Te1/0/20
+    to: dmz-fw-02:outside
+    kind: fiber
+    speed: 10G
+  - from: dmz-fw-01:sync
+    to: dmz-fw-02:sync
+    kind: copper
+    speed: 1G
+    note: HA state sync
+  - from: dmz-fw-01:inside
+    to: dmz-web-01:eno1
+    kind: copper
+    speed: 1G
+  - from: dmz-fw-02:inside
+    to: dmz-api-01:eno1
+    kind: copper
+    speed: 1G
+  - from: dmz-fw-01:vault0
+    to: vault-fw-01:outside
+    kind: fiber
+    speed: 10G
+    note: Only path into the vault segment
+  - from: vault-fw-01:inside
+    to: vault-core-01:eno1
+    kind: copper
+    speed: 1G
+  - from: vault-fw-01:inside2
+    to: vault-hsm-01:eno1
+    kind: copper
+    speed: 1G
+  - from: hq-edge-rt-01:Se0/0/0
+    to: b1-rt-01:Se0/0/0
+    kind: wan
+    speed: 10M
+    note: MPLS to Branch 1
+  - from: b1-rt-01:Gi0/1
+    to: b1-sw-01:Gi0/24
+    kind: copper
+    speed: 1G
+  - from: b1-sw-01:Gi0/1
+    to: b1-pc-01:eth0
+  - from: hq-edge-rt-01:Se0/0/1
+    to: b2-rt-01:Se0/0/0
+    kind: wan
+    speed: 10M
+    note: MPLS to Branch 2
+  - from: b2-rt-01:Gi0/1
+    to: b2-sw-01:Gi0/24
+    kind: copper
+    speed: 1G
+  - from: b2-sw-01:Gi0/1
+    to: b2-pc-01:eth0

@@ -1,0 +1,381 @@
+marrow: 2
+name: Multi-Tenant Fabric
+description: Nested campus/tenant zones sharing one fabric core, with HA pairs and LAG bundles repeated at every distribution layer
+theme: dark
+hero: core-sw-01
+zones:
+- id: campus
+  name: Campus Core
+- id: shared-services
+  name: Shared Services
+  parent: campus
+- id: tenant-a
+  name: Tenant A
+  parent: campus
+  accent: '#2980b9'
+- id: tenant-b
+  name: Tenant B
+  parent: campus
+  accent: '#27ae60'
+devices:
+- id: core-sw-01
+  icon: cisco/switches/layer-3-switch
+  tier: core
+  zone: campus
+  name: Fabric Core 1
+  mgmt_ip: 10.80.0.1
+  ha_pair_with: core-sw-02
+  hero: true
+  interfaces:
+  - name: Vlan1
+    description: fabric mgmt
+    vlan: 1
+    ip: 10.80.0.1/24
+- id: core-sw-02
+  icon: cisco/switches/layer-3-switch
+  tier: core
+  zone: campus
+  name: Fabric Core 2
+  mgmt_ip: 10.80.0.2
+  ha_pair_with: core-sw-01
+- id: shared-dist-01
+  icon: cisco/switches/multilayer-remote-switch
+  tier: distribution
+  zone: shared-services
+  name: Shared Distribution 1
+  mgmt_ip: 10.80.1.1
+  ha_pair_with: shared-dist-02
+- id: shared-dist-02
+  icon: cisco/switches/multilayer-remote-switch
+  tier: distribution
+  zone: shared-services
+  name: Shared Distribution 2
+  mgmt_ip: 10.80.1.2
+  ha_pair_with: shared-dist-01
+- id: shared-srv-01
+  icon: cisco/servers/file-server
+  tier: endpoint
+  zone: shared-services
+  name: Shared Srv 01
+  status: up
+- id: shared-srv-02
+  icon: cisco/servers/host
+  tier: endpoint
+  zone: shared-services
+  name: Shared Srv 02
+  status: up
+- id: shared-srv-03
+  icon: cisco/servers/file-server
+  tier: endpoint
+  zone: shared-services
+  name: Shared Srv 03
+  status: planned
+- id: ta-dist-01
+  icon: cisco/switches/multilayer-remote-switch
+  tier: distribution
+  zone: tenant-a
+  name: TA Distribution 1
+  mgmt_ip: 10.80.2.1
+  ha_pair_with: ta-dist-02
+- id: ta-dist-02
+  icon: cisco/switches/multilayer-remote-switch
+  tier: distribution
+  zone: tenant-a
+  name: TA Distribution 2
+  mgmt_ip: 10.80.2.2
+  ha_pair_with: ta-dist-01
+- id: ta-acc-01
+  icon: cisco/switches/workgroup-switch
+  tier: access
+  zone: tenant-a
+  name: TA Access 1
+  status: up
+- id: ta-acc-02
+  icon: cisco/switches/workgroup-switch
+  tier: access
+  zone: tenant-a
+  name: TA Access 2
+  status: up
+- id: ta-acc-03
+  icon: cisco/switches/workgroup-switch
+  tier: access
+  zone: tenant-a
+  name: TA Access 3
+  status: up
+- id: ta-acc-04
+  icon: cisco/switches/workgroup-switch
+  tier: access
+  zone: tenant-a
+  name: TA Access 4
+  status: up
+- id: ta-ep-01
+  icon: cisco/computer-and-peripherals/laptop
+  tier: endpoint
+  zone: tenant-a
+  name: TA Endpoint 1
+  status: up
+- id: ta-ep-02
+  icon: cisco/computer-and-peripherals/macintosh
+  tier: endpoint
+  zone: tenant-a
+  name: TA Endpoint 2
+  status: up
+- id: ta-ep-03
+  icon: cisco/servers/host
+  tier: endpoint
+  zone: tenant-a
+  name: TA Endpoint 3
+  status: up
+- id: ta-ep-04
+  icon: cisco/computer-and-peripherals/laptop
+  tier: endpoint
+  zone: tenant-a
+  name: TA Endpoint 4
+  status: up
+- id: ta-ep-05
+  icon: cisco/computer-and-peripherals/macintosh
+  tier: endpoint
+  zone: tenant-a
+  name: TA Endpoint 5
+  status: planned
+- id: tb-dist-01
+  icon: cisco/switches/multilayer-remote-switch
+  tier: distribution
+  zone: tenant-b
+  name: TB Distribution 1
+  mgmt_ip: 10.80.3.1
+  ha_pair_with: tb-dist-02
+- id: tb-dist-02
+  icon: cisco/switches/multilayer-remote-switch
+  tier: distribution
+  zone: tenant-b
+  name: TB Distribution 2
+  mgmt_ip: 10.80.3.2
+  ha_pair_with: tb-dist-01
+- id: tb-acc-01
+  icon: cisco/switches/workgroup-switch
+  tier: access
+  zone: tenant-b
+  name: TB Access 1
+  status: up
+- id: tb-acc-02
+  icon: cisco/switches/workgroup-switch
+  tier: access
+  zone: tenant-b
+  name: TB Access 2
+  status: up
+- id: tb-acc-03
+  icon: cisco/switches/workgroup-switch
+  tier: access
+  zone: tenant-b
+  name: TB Access 3
+  status: up
+- id: tb-acc-04
+  icon: cisco/switches/workgroup-switch
+  tier: access
+  zone: tenant-b
+  name: TB Access 4
+  status: degraded
+- id: tb-ep-01
+  icon: cisco/computer-and-peripherals/laptop
+  tier: endpoint
+  zone: tenant-b
+  name: TB Endpoint 1
+  status: up
+- id: tb-ep-02
+  icon: cisco/computer-and-peripherals/macintosh
+  tier: endpoint
+  zone: tenant-b
+  name: TB Endpoint 2
+  status: up
+- id: tb-ep-03
+  icon: cisco/servers/host
+  tier: endpoint
+  zone: tenant-b
+  name: TB Endpoint 3
+  status: up
+- id: tb-ep-04
+  icon: cisco/computer-and-peripherals/laptop
+  tier: endpoint
+  zone: tenant-b
+  name: TB Endpoint 4
+  status: up
+- id: tb-ep-05
+  icon: cisco/computer-and-peripherals/macintosh
+  tier: endpoint
+  zone: tenant-b
+  name: TB Endpoint 5
+  status: up
+links:
+- from: core-sw-01:Te1/0/1
+  to: core-sw-02:Te1/0/1
+  kind: dac
+  speed: 100G
+  lag: po-core
+- from: core-sw-01:Te1/0/2
+  to: core-sw-02:Te1/0/2
+  kind: dac
+  speed: 100G
+  lag: po-core
+- from: shared-dist-01:Te1/1/1
+  to: shared-dist-02:Te1/1/1
+  kind: dac
+  speed: 40G
+  lag: po-shared
+- from: shared-dist-01:Te1/1/2
+  to: shared-dist-02:Te1/1/2
+  kind: dac
+  speed: 40G
+  lag: po-shared
+- from: shared-dist-01:Te1/1/3
+  to: core-sw-01:Te1/0/3
+  kind: fiber
+  speed: 40G
+- from: shared-dist-01:Te1/1/4
+  to: core-sw-02:Te1/0/3
+  kind: fiber
+  speed: 40G
+- from: shared-dist-02:Te1/1/3
+  to: core-sw-01:Te1/0/4
+  kind: fiber
+  speed: 40G
+- from: shared-dist-02:Te1/1/4
+  to: core-sw-02:Te1/0/4
+  kind: fiber
+  speed: 40G
+- from: shared-dist-01:Te1/1/5
+  to: shared-srv-01:eno1
+  kind: copper
+  speed: 10G
+- from: shared-dist-02:Te1/1/5
+  to: shared-srv-02:eno1
+  kind: copper
+  speed: 10G
+- from: shared-dist-01:Te1/1/6
+  to: shared-srv-03:eno1
+  kind: copper
+  speed: 10G
+- from: ta-dist-01:Te1/1/1
+  to: ta-dist-02:Te1/1/1
+  kind: dac
+  speed: 40G
+  lag: po-ta
+- from: ta-dist-01:Te1/1/2
+  to: ta-dist-02:Te1/1/2
+  kind: dac
+  speed: 40G
+  lag: po-ta
+- from: ta-dist-01:Te1/1/3
+  to: core-sw-01:Te1/0/5
+  kind: fiber
+  speed: 40G
+- from: ta-dist-01:Te1/1/4
+  to: core-sw-02:Te1/0/5
+  kind: fiber
+  speed: 40G
+- from: ta-dist-02:Te1/1/3
+  to: core-sw-01:Te1/0/6
+  kind: fiber
+  speed: 40G
+- from: ta-dist-02:Te1/1/4
+  to: core-sw-02:Te1/0/6
+  kind: fiber
+  speed: 40G
+- from: ta-dist-01:Te1/1/5
+  to: ta-acc-01:Gi0/1
+  kind: fiber
+  speed: 10G
+- from: ta-dist-01:Te1/1/6
+  to: ta-acc-02:Gi0/1
+  kind: fiber
+  speed: 10G
+- from: ta-dist-02:Te1/1/5
+  to: ta-acc-03:Gi0/1
+  kind: fiber
+  speed: 10G
+- from: ta-dist-02:Te1/1/6
+  to: ta-acc-04:Gi0/1
+  kind: fiber
+  speed: 10G
+- from: ta-acc-01:Gi0/2
+  to: ta-ep-01:eth1
+  kind: copper
+  speed: 1G
+- from: ta-acc-02:Gi0/2
+  to: ta-ep-02:eth1
+  kind: copper
+  speed: 1G
+- from: ta-acc-03:Gi0/2
+  to: ta-ep-03:eno1
+  kind: copper
+  speed: 1G
+- from: ta-acc-04:Gi0/2
+  to: ta-ep-04:eth1
+  kind: copper
+  speed: 1G
+- from: ta-acc-01:Gi0/3
+  to: ta-ep-05:eth1
+  kind: copper
+  speed: 1G
+- from: tb-dist-01:Te1/1/1
+  to: tb-dist-02:Te1/1/1
+  kind: dac
+  speed: 40G
+  lag: po-tb
+- from: tb-dist-01:Te1/1/2
+  to: tb-dist-02:Te1/1/2
+  kind: dac
+  speed: 40G
+  lag: po-tb
+- from: tb-dist-01:Te1/1/3
+  to: core-sw-01:Te1/0/7
+  kind: fiber
+  speed: 40G
+- from: tb-dist-01:Te1/1/4
+  to: core-sw-02:Te1/0/7
+  kind: fiber
+  speed: 40G
+- from: tb-dist-02:Te1/1/3
+  to: core-sw-01:Te1/0/8
+  kind: fiber
+  speed: 40G
+- from: tb-dist-02:Te1/1/4
+  to: core-sw-02:Te1/0/8
+  kind: fiber
+  speed: 40G
+- from: tb-dist-01:Te1/1/5
+  to: tb-acc-01:Gi0/1
+  kind: fiber
+  speed: 10G
+- from: tb-dist-01:Te1/1/6
+  to: tb-acc-02:Gi0/1
+  kind: fiber
+  speed: 10G
+- from: tb-dist-02:Te1/1/5
+  to: tb-acc-03:Gi0/1
+  kind: fiber
+  speed: 10G
+- from: tb-dist-02:Te1/1/6
+  to: tb-acc-04:Gi0/1
+  kind: fiber
+  speed: 10G
+- from: tb-acc-01:Gi0/2
+  to: tb-ep-01:eth1
+  kind: copper
+  speed: 1G
+- from: tb-acc-02:Gi0/2
+  to: tb-ep-02:eth1
+  kind: copper
+  speed: 1G
+- from: tb-acc-03:Gi0/2
+  to: tb-ep-03:eno1
+  kind: copper
+  speed: 1G
+- from: tb-acc-04:Gi0/2
+  to: tb-ep-04:eth1
+  kind: copper
+  speed: 1G
+- from: tb-acc-01:Gi0/3
+  to: tb-ep-05:eth1
+  kind: copper
+  speed: 1G

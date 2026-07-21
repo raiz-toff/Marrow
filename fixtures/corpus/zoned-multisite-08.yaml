@@ -1,0 +1,343 @@
+marrow: 2
+name: University Campus - Admin, Library, and Residential
+description: Campus core datacenter fanning out to admin and library buildings plus a residential zone with two nested dorm sub-zones, dense wireless access
+theme: light
+hero: dc-core-01
+
+zones:
+  - id: datacenter
+    name: Campus Datacenter
+    accent: "#0f172a"
+  - id: admin
+    name: Admin Building
+    accent: "#b91c1c"
+  - id: library
+    name: Library
+    accent: "#7c2d12"
+  - id: dorms
+    name: Residential Halls
+    accent: "#4338ca"
+    note: Shared residential WLAN controller lives here
+  - id: dorm-a
+    name: Dorm A - Founders Hall
+    parent: dorms
+    accent: "#0891b2"
+  - id: dorm-b
+    name: Dorm B - Lakeside Hall
+    parent: dorms
+    accent: "#059669"
+
+devices:
+  - id: dc-rt-01
+    name: Campus Edge Router
+    icon: cisco/routers/router
+    tier: edge
+    zone: datacenter
+    role: Internet2 and commercial ISP edge
+    mgmt_ip: 10.0.0.1
+  - id: dc-fw-01
+    name: Campus Firewall
+    icon: cisco/security/firewall
+    tier: edge
+    zone: datacenter
+  - id: dc-core-01
+    name: Campus Core Switch 1
+    icon: cisco/switches/layer-3-switch
+    tier: core
+    zone: datacenter
+    ha_pair_with: dc-core-02
+    hero: true
+    mgmt_ip: 10.0.0.10
+    note: Hero device - campus core, HA pair, highest fan-out node
+  - id: dc-core-02
+    name: Campus Core Switch 2
+    icon: cisco/switches/layer-3-switch
+    tier: core
+    zone: datacenter
+    ha_pair_with: dc-core-01
+    mgmt_ip: 10.0.0.11
+  - id: dc-srv-lms-01
+    name: LMS Server
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: datacenter
+    role: Learning management system
+  - id: dc-srv-sis-01
+    name: SIS Server
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: datacenter
+    role: Student information system
+  - id: dc-srv-dns-01
+    name: Campus DNS Server
+    icon: cisco/datacenter/dns-server
+    tier: endpoint
+    zone: datacenter
+    role: Campus DNS
+  - id: dc-srv-file-01
+    name: Research Storage Server
+    icon: cisco/servers/file-server
+    tier: endpoint
+    zone: datacenter
+    role: Shared research storage
+  - id: admin-dist-01
+    name: Admin Distribution Switch
+    icon: cisco/switches/multilayer-remote-switch
+    tier: distribution
+    zone: admin
+  - id: admin-acc-01
+    name: Admin Access Switch
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: admin
+  - id: admin-pc-01
+    name: Registrar Laptop
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: admin
+  - id: admin-pc-02
+    name: Bursar Laptop
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: admin
+  - id: admin-printer-01
+    name: Admin Office Printer
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: admin
+  - id: admin-cam-01
+    name: Admin Building Camera
+    icon: cisco/datacenter/surveillance-camera
+    tier: endpoint
+    zone: admin
+    role: building security camera
+  - id: lib-dist-01
+    name: Library Distribution Switch
+    icon: cisco/switches/multilayer-remote-switch
+    tier: distribution
+    zone: library
+  - id: lib-acc-01
+    name: Library Access Switch
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: library
+  - id: lib-ap-01
+    name: Library AP - Ground Floor
+    icon: cisco/misc/access-point
+    tier: access
+    zone: library
+  - id: lib-ap-02
+    name: Library AP - Upper Floor
+    icon: cisco/misc/access-point
+    tier: access
+    zone: library
+  - id: lib-pc-01
+    name: Library Catalog Terminal 1
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: library
+    role: public catalog terminal
+  - id: lib-pc-02
+    name: Library Catalog Terminal 2
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: library
+    role: public catalog terminal
+  - id: lib-pc-03
+    name: Library Catalog Terminal 3
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: library
+    role: public catalog terminal
+  - id: dorms-dist-01
+    name: Dorms Distribution Switch
+    icon: cisco/switches/multilayer-remote-switch
+    tier: distribution
+    zone: dorms
+  - id: dorms-wlc-01
+    name: Residential WLAN Controller
+    icon: cisco/routers/wireless-router
+    tier: distribution
+    zone: dorms
+    role: Residential WLAN controller
+  - id: da-sw-01
+    name: Dorm A Switch
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: dorm-a
+  - id: da-ap-01
+    name: Dorm A AP - Floor 1
+    icon: cisco/misc/access-point
+    tier: access
+    zone: dorm-a
+  - id: da-ap-02
+    name: Dorm A AP - Floor 2
+    icon: cisco/misc/access-point
+    tier: access
+    zone: dorm-a
+  - id: da-pc-01
+    name: Dorm A Laptop 1
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: dorm-a
+  - id: da-pc-02
+    name: Dorm A Laptop 2
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: dorm-a
+  - id: da-pc-03
+    name: Dorm A Workstation
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: dorm-a
+  - id: da-pc-04
+    name: Dorm A Laptop 3
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: dorm-a
+  - id: db-sw-01
+    name: Dorm B Switch
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: dorm-b
+  - id: db-ap-01
+    name: Dorm B AP - Floor 1
+    icon: cisco/misc/access-point
+    tier: access
+    zone: dorm-b
+  - id: db-pc-01
+    name: Dorm B Laptop 1
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: dorm-b
+  - id: db-pc-02
+    name: Dorm B Workstation
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: dorm-b
+  - id: db-pc-03
+    name: Dorm B Laptop 2
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: dorm-b
+
+links:
+  - from: dc-rt-01:Gi0/0/1
+    to: dc-fw-01:outside
+    kind: copper
+    speed: 1G
+  - from: dc-fw-01:inside
+    to: dc-core-01:Te1/0/1
+    kind: fiber
+    speed: 10G
+    animated: true
+  - from: dc-core-01:Te1/0/2
+    to: dc-core-02:Te1/0/2
+    kind: dac
+    speed: 40G
+    lag: po1
+  - from: dc-core-01:Te1/0/3
+    to: dc-core-02:Te1/0/3
+    kind: dac
+    speed: 40G
+    lag: po1
+  - from: dc-core-01:Te1/0/10
+    to: dc-srv-lms-01:eno1
+    kind: copper
+    speed: 10G
+  - from: dc-core-01:Te1/0/11
+    to: dc-srv-sis-01:eno1
+    kind: copper
+    speed: 10G
+  - from: dc-core-02:Te1/0/10
+    to: dc-srv-dns-01:eno1
+    kind: copper
+    speed: 1G
+  - from: dc-core-02:Te1/0/11
+    to: dc-srv-file-01:eno1
+    kind: copper
+    speed: 10G
+  - from: dc-core-01:Te1/0/20
+    to: admin-dist-01:Te1/1/1
+    kind: fiber
+    speed: 10G
+  - from: admin-dist-01:Gi1/0/1
+    to: admin-acc-01:Gi0/48
+    kind: fiber
+    speed: 1G
+  - from: admin-acc-01:Gi0/1
+    to: admin-pc-01:eth0
+  - from: admin-acc-01:Gi0/2
+    to: admin-pc-02:eth0
+  - from: admin-acc-01:Gi0/3
+    to: admin-printer-01:eth0
+    kind: copper
+    speed: 100M
+  - from: admin-acc-01:Gi0/4
+    to: admin-cam-01:eth0
+    kind: copper
+    speed: 100M
+  - from: dc-core-01:Te1/0/21
+    to: lib-dist-01:Te1/1/1
+    kind: fiber
+    speed: 10G
+  - from: lib-dist-01:Gi1/0/1
+    to: lib-acc-01:Gi0/48
+    kind: fiber
+    speed: 1G
+  - from: lib-acc-01:Gi0/1
+    to: lib-ap-01:eth0
+    kind: copper
+    speed: 1G
+  - from: lib-acc-01:Gi0/2
+    to: lib-ap-02:eth0
+    kind: copper
+    speed: 1G
+  - from: lib-acc-01:Gi0/3
+    to: lib-pc-01:eth0
+  - from: lib-acc-01:Gi0/4
+    to: lib-pc-02:eth0
+  - from: lib-acc-01:Gi0/5
+    to: lib-pc-03:eth0
+  - from: dc-core-02:Te1/0/20
+    to: dorms-dist-01:Te1/1/1
+    kind: fiber
+    speed: 10G
+  - from: dorms-dist-01:Gi1/0/1
+    to: dorms-wlc-01:Gi0/0
+    kind: copper
+    speed: 1G
+  - from: dorms-dist-01:Gi1/0/10
+    to: da-sw-01:Gi0/24
+    kind: fiber
+    speed: 1G
+  - from: dorms-dist-01:Gi1/0/11
+    to: db-sw-01:Gi0/24
+    kind: fiber
+    speed: 1G
+  - from: dorms-wlc-01:Gi0/1
+    to: da-ap-01:eth0
+    kind: wireless
+    speed: 1G
+  - from: dorms-wlc-01:Gi0/2
+    to: da-ap-02:eth0
+    kind: wireless
+    speed: 1G
+  - from: da-sw-01:Gi0/1
+    to: da-pc-01:eth0
+  - from: da-sw-01:Gi0/2
+    to: da-pc-02:eth0
+  - from: da-sw-01:Gi0/3
+    to: da-pc-03:en0
+  - from: da-sw-01:Gi0/4
+    to: da-pc-04:eth0
+  - from: dorms-wlc-01:Gi0/3
+    to: db-ap-01:eth0
+    kind: wireless
+    speed: 1G
+  - from: db-sw-01:Gi0/1
+    to: db-pc-01:eth0
+  - from: db-sw-01:Gi0/2
+    to: db-pc-02:en0
+  - from: db-sw-01:Gi0/3
+    to: db-pc-03:eth0

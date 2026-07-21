@@ -1,0 +1,9 @@
+marrow: 2
+name: Unknown Keys
+devcies:
+  - id: acc-sw-01
+devices:
+  - id: core-sw-01
+    name: Core Switch
+    icon: cisco/switches/layer-3-switch
+    teir: core

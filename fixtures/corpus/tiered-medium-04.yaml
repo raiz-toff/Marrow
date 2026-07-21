@@ -1,0 +1,406 @@
+marrow: 2
+name: Branch WAN Hub
+description: HQ hub with dual-homed WAN links to six branch spokes over redundant MPLS/broadband
+theme: dark
+hero: hq-rtr-01
+zones:
+- id: edge
+  name: WAN Edge
+- id: core
+  name: HQ Core
+- id: hq-lan
+  name: HQ LAN
+- id: branches
+  name: Branch Sites
+devices:
+- id: hq-rtr-01
+  icon: cisco/routers/router
+  tier: edge
+  zone: edge
+  name: HQ WAN Router 1
+  mgmt_ip: 198.51.100.10
+  ha_pair_with: hq-rtr-02
+  hero: true
+- id: hq-rtr-02
+  icon: cisco/routers/router
+  tier: edge
+  zone: edge
+  name: HQ WAN Router 2
+  mgmt_ip: 198.51.100.11
+  ha_pair_with: hq-rtr-01
+- id: hq-core-sw-01
+  icon: cisco/switches/layer-3-switch
+  tier: core
+  zone: core
+  name: HQ Core Switch 1
+  mgmt_ip: 10.40.0.1
+  ha_pair_with: hq-core-sw-02
+- id: hq-core-sw-02
+  icon: cisco/switches/layer-3-switch
+  tier: core
+  zone: core
+  name: HQ Core Switch 2
+  mgmt_ip: 10.40.0.2
+  ha_pair_with: hq-core-sw-01
+- id: hq-dist-01
+  icon: cisco/switches/multilayer-remote-switch
+  tier: distribution
+  zone: hq-lan
+  name: HQ Distribution 1
+  mgmt_ip: 10.40.1.1
+- id: hq-acc-01
+  icon: cisco/switches/workgroup-switch
+  tier: access
+  zone: hq-lan
+  name: HQ Access 1
+- id: hq-acc-02
+  icon: cisco/switches/workgroup-switch
+  tier: access
+  zone: hq-lan
+  name: HQ Access 2
+- id: hq-srv-01
+  icon: cisco/servers/file-server
+  tier: endpoint
+  zone: hq-lan
+  name: HQ File Server
+  interfaces:
+  - name: eno1
+    description: primary
+    vlan: 20
+    ip: 10.40.20.5
+- id: hq-srv-02
+  icon: cisco/servers/host
+  tier: endpoint
+  zone: hq-lan
+  name: HQ Domain Controller
+- id: branch-rtr-01
+  icon: cisco/routers/router
+  tier: edge
+  zone: branches
+  name: Denver Branch Router
+  status: up
+  mgmt_ip: 192.0.2.1
+- id: branch-sw-01
+  icon: cisco/switches/workgroup-switch
+  tier: access
+  zone: branches
+  name: Denver Branch Switch
+- id: branch-ep-01-1
+  icon: cisco/computer-and-peripherals/laptop
+  tier: endpoint
+  zone: branches
+  name: Denver Front Desk Laptop
+  status: up
+- id: branch-ep-01-2
+  icon: cisco/servers/host
+  tier: endpoint
+  zone: branches
+  name: Denver Local Server
+- id: branch-rtr-02
+  icon: cisco/routers/router
+  tier: edge
+  zone: branches
+  name: Austin Branch Router
+  status: up
+  mgmt_ip: 192.0.2.2
+- id: branch-sw-02
+  icon: cisco/switches/workgroup-switch
+  tier: access
+  zone: branches
+  name: Austin Branch Switch
+- id: branch-ep-02-1
+  icon: cisco/computer-and-peripherals/laptop
+  tier: endpoint
+  zone: branches
+  name: Austin Front Desk Laptop
+  status: up
+- id: branch-ep-02-2
+  icon: cisco/servers/host
+  tier: endpoint
+  zone: branches
+  name: Austin Local Server
+- id: branch-rtr-03
+  icon: cisco/routers/router
+  tier: edge
+  zone: branches
+  name: Reno Branch Router
+  status: degraded
+  mgmt_ip: 192.0.2.3
+- id: branch-sw-03
+  icon: cisco/switches/workgroup-switch
+  tier: access
+  zone: branches
+  name: Reno Branch Switch
+- id: branch-ep-03-1
+  icon: cisco/computer-and-peripherals/laptop
+  tier: endpoint
+  zone: branches
+  name: Reno Front Desk Laptop
+  status: up
+- id: branch-ep-03-2
+  icon: cisco/servers/host
+  tier: endpoint
+  zone: branches
+  name: Reno Local Server
+- id: branch-rtr-04
+  icon: cisco/routers/router
+  tier: edge
+  zone: branches
+  name: Tampa Branch Router
+  status: up
+  mgmt_ip: 192.0.2.4
+- id: branch-sw-04
+  icon: cisco/switches/workgroup-switch
+  tier: access
+  zone: branches
+  name: Tampa Branch Switch
+- id: branch-ep-04-1
+  icon: cisco/computer-and-peripherals/laptop
+  tier: endpoint
+  zone: branches
+  name: Tampa Front Desk Laptop
+  status: up
+- id: branch-ep-04-2
+  icon: cisco/servers/host
+  tier: endpoint
+  zone: branches
+  name: Tampa Local Server
+- id: branch-rtr-05
+  icon: cisco/routers/router
+  tier: edge
+  zone: branches
+  name: Boise Branch Router
+  status: up
+  mgmt_ip: 192.0.2.5
+- id: branch-sw-05
+  icon: cisco/switches/workgroup-switch
+  tier: access
+  zone: branches
+  name: Boise Branch Switch
+- id: branch-ep-05-1
+  icon: cisco/computer-and-peripherals/laptop
+  tier: endpoint
+  zone: branches
+  name: Boise Front Desk Laptop
+  status: up
+- id: branch-ep-05-2
+  icon: cisco/servers/host
+  tier: endpoint
+  zone: branches
+  name: Boise Local Server
+- id: branch-rtr-06
+  icon: cisco/routers/router
+  tier: edge
+  zone: branches
+  name: Akron Branch Router
+  status: up
+  mgmt_ip: 192.0.2.6
+- id: branch-sw-06
+  icon: cisco/switches/workgroup-switch
+  tier: access
+  zone: branches
+  name: Akron Branch Switch
+- id: branch-ep-06-1
+  icon: cisco/computer-and-peripherals/laptop
+  tier: endpoint
+  zone: branches
+  name: Akron Front Desk Laptop
+  status: planned
+- id: branch-ep-06-2
+  icon: cisco/servers/host
+  tier: endpoint
+  zone: branches
+  name: Akron Local Server
+links:
+- from: hq-rtr-01:Gi0/0/1
+  to: hq-rtr-02:Gi0/0/1
+  kind: dac
+  speed: 10G
+  lag: po-edge
+- from: hq-rtr-01:Gi0/0/2
+  to: hq-rtr-02:Gi0/0/2
+  kind: dac
+  speed: 10G
+  lag: po-edge
+- from: hq-rtr-01:Gi0/0/3
+  to: hq-core-sw-01:Te1/0/1
+  kind: fiber
+  speed: 10G
+- from: hq-rtr-01:Gi0/0/4
+  to: hq-core-sw-02:Te1/0/1
+  kind: fiber
+  speed: 10G
+- from: hq-rtr-02:Gi0/0/3
+  to: hq-core-sw-01:Te1/0/2
+  kind: fiber
+  speed: 10G
+- from: hq-rtr-02:Gi0/0/4
+  to: hq-core-sw-02:Te1/0/2
+  kind: fiber
+  speed: 10G
+- from: hq-core-sw-01:Te1/0/3
+  to: hq-core-sw-02:Te1/0/3
+  kind: dac
+  speed: 40G
+  lag: po-core
+- from: hq-core-sw-01:Te1/0/4
+  to: hq-core-sw-02:Te1/0/4
+  kind: dac
+  speed: 40G
+  lag: po-core
+- from: hq-core-sw-01:Te1/0/5
+  to: hq-dist-01:Te1/1/1
+  kind: fiber
+  speed: 40G
+- from: hq-core-sw-02:Te1/0/5
+  to: hq-dist-01:Te1/1/2
+  kind: fiber
+  speed: 40G
+- from: hq-dist-01:Te1/1/3
+  to: hq-acc-01:Gi0/1
+  kind: fiber
+  speed: 10G
+- from: hq-dist-01:Te1/1/4
+  to: hq-acc-02:Gi0/1
+  kind: fiber
+  speed: 10G
+- from: hq-acc-01:Gi0/2
+  to: hq-srv-01:eno1
+  kind: copper
+  speed: 10G
+- from: hq-acc-02:Gi0/2
+  to: hq-srv-02:eno1
+  kind: copper
+  speed: 1G
+- from: hq-rtr-01:Gi0/0/5
+  to: branch-rtr-01:Gi0/0/1
+  kind: wan
+  speed: 100M
+  label: primary MPLS
+- from: hq-rtr-02:Gi0/0/5
+  to: branch-rtr-01:Gi0/0/2
+  kind: wan
+  speed: 100M
+  label: backup broadband
+- from: branch-rtr-01:Gi0/0/3
+  to: branch-sw-01:Gi0/1
+  kind: copper
+  speed: 1G
+- from: branch-sw-01:Gi0/2
+  to: branch-ep-01-1:eth1
+  kind: copper
+  speed: 1G
+- from: branch-sw-01:Gi0/3
+  to: branch-ep-01-2:eno1
+  kind: copper
+  speed: 1G
+- from: hq-rtr-01:Gi0/0/6
+  to: branch-rtr-02:Gi0/0/1
+  kind: wan
+  speed: 100M
+  label: primary MPLS
+- from: hq-rtr-02:Gi0/0/6
+  to: branch-rtr-02:Gi0/0/2
+  kind: wan
+  speed: 100M
+  label: backup broadband
+- from: branch-rtr-02:Gi0/0/3
+  to: branch-sw-02:Gi0/1
+  kind: copper
+  speed: 1G
+- from: branch-sw-02:Gi0/2
+  to: branch-ep-02-1:eth1
+  kind: copper
+  speed: 1G
+- from: branch-sw-02:Gi0/3
+  to: branch-ep-02-2:eno1
+  kind: copper
+  speed: 1G
+- from: hq-rtr-01:Gi0/0/7
+  to: branch-rtr-03:Gi0/0/1
+  kind: wan
+  speed: 100M
+  label: primary MPLS
+- from: hq-rtr-02:Gi0/0/7
+  to: branch-rtr-03:Gi0/0/2
+  kind: wan
+  speed: 100M
+  label: backup broadband
+- from: branch-rtr-03:Gi0/0/3
+  to: branch-sw-03:Gi0/1
+  kind: copper
+  speed: 1G
+- from: branch-sw-03:Gi0/2
+  to: branch-ep-03-1:eth1
+  kind: copper
+  speed: 1G
+- from: branch-sw-03:Gi0/3
+  to: branch-ep-03-2:eno1
+  kind: copper
+  speed: 1G
+- from: hq-rtr-01:Gi0/0/8
+  to: branch-rtr-04:Gi0/0/1
+  kind: wan
+  speed: 100M
+  label: primary MPLS
+- from: hq-rtr-02:Gi0/0/8
+  to: branch-rtr-04:Gi0/0/2
+  kind: wan
+  speed: 100M
+  label: backup broadband
+- from: branch-rtr-04:Gi0/0/3
+  to: branch-sw-04:Gi0/1
+  kind: copper
+  speed: 1G
+- from: branch-sw-04:Gi0/2
+  to: branch-ep-04-1:eth1
+  kind: copper
+  speed: 1G
+- from: branch-sw-04:Gi0/3
+  to: branch-ep-04-2:eno1
+  kind: copper
+  speed: 1G
+- from: hq-rtr-01:Gi0/0/9
+  to: branch-rtr-05:Gi0/0/1
+  kind: wan
+  speed: 100M
+  label: primary MPLS
+- from: hq-rtr-02:Gi0/0/9
+  to: branch-rtr-05:Gi0/0/2
+  kind: wan
+  speed: 100M
+  label: backup broadband
+- from: branch-rtr-05:Gi0/0/3
+  to: branch-sw-05:Gi0/1
+  kind: copper
+  speed: 1G
+- from: branch-sw-05:Gi0/2
+  to: branch-ep-05-1:eth1
+  kind: copper
+  speed: 1G
+- from: branch-sw-05:Gi0/3
+  to: branch-ep-05-2:eno1
+  kind: copper
+  speed: 1G
+- from: hq-rtr-01:Gi0/0/10
+  to: branch-rtr-06:Gi0/0/1
+  kind: wan
+  speed: 100M
+  label: primary MPLS
+- from: hq-rtr-02:Gi0/0/10
+  to: branch-rtr-06:Gi0/0/2
+  kind: wan
+  speed: 100M
+  label: backup broadband
+- from: branch-rtr-06:Gi0/0/3
+  to: branch-sw-06:Gi0/1
+  kind: copper
+  speed: 1G
+- from: branch-sw-06:Gi0/2
+  to: branch-ep-06-1:eth1
+  kind: copper
+  speed: 1G
+- from: branch-sw-06:Gi0/3
+  to: branch-ep-06-2:eno1
+  kind: copper
+  speed: 1G

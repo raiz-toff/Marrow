@@ -1,0 +1,362 @@
+marrow: 2
+name: Unified Comms Campus
+description: Voice cluster (CUCM + gateway + phone farm) and a data-side distribution tree sharing one HA core
+theme: dark
+hero: core-sw-01
+zones:
+- id: edge
+  name: Internet Edge
+- id: core
+  name: Core
+- id: voice
+  name: Voice
+- id: data
+  name: Data
+devices:
+- id: edge-rtr-01
+  icon: cisco/routers/router
+  tier: edge
+  zone: edge
+  name: Edge Router
+  mgmt_ip: 198.51.100.20
+- id: fw-01
+  icon: cisco/security/pix-firewall
+  tier: edge
+  zone: edge
+  name: Perimeter Firewall
+  mgmt_ip: 198.51.100.21
+- id: core-sw-01
+  icon: cisco/switches/layer-3-switch
+  tier: core
+  zone: core
+  name: Core Switch 1
+  mgmt_ip: 10.70.0.1
+  ha_pair_with: core-sw-02
+  hero: true
+  interfaces:
+  - name: Vlan1
+    description: core mgmt
+    vlan: 1
+    ip: 10.70.0.1/24
+- id: core-sw-02
+  icon: cisco/switches/layer-3-switch
+  tier: core
+  zone: core
+  name: Core Switch 2
+  mgmt_ip: 10.70.0.2
+  ha_pair_with: core-sw-01
+- id: cucm-01
+  icon: cisco/misc/call-manager
+  tier: distribution
+  zone: voice
+  name: Call Manager 1
+  mgmt_ip: 10.70.10.1
+  ha_pair_with: cucm-02
+- id: cucm-02
+  icon: cisco/misc/call-manager
+  tier: distribution
+  zone: voice
+  name: Call Manager 2
+  mgmt_ip: 10.70.10.2
+  ha_pair_with: cucm-01
+- id: voice-gw-01
+  icon: cisco/routers/voice-router
+  tier: distribution
+  zone: voice
+  name: Voice Gateway
+- id: voice-sw-01
+  icon: cisco/switches/workgroup-switch
+  tier: access
+  zone: voice
+  name: Voice Access Switch 1
+- id: voice-sw-02
+  icon: cisco/switches/workgroup-switch
+  tier: access
+  zone: voice
+  name: Voice Access Switch 2
+- id: ph-01
+  icon: cisco/datacenter/ip-phone
+  tier: endpoint
+  zone: voice
+  name: IP Phone 1
+  status: up
+- id: ph-02
+  icon: cisco/datacenter/ip-phone
+  tier: endpoint
+  zone: voice
+  name: IP Phone 2
+  status: up
+- id: ph-03
+  icon: cisco/datacenter/ip-phone
+  tier: endpoint
+  zone: voice
+  name: IP Phone 3
+  status: up
+- id: ph-04
+  icon: cisco/datacenter/ip-phone
+  tier: endpoint
+  zone: voice
+  name: IP Phone 4
+  status: up
+- id: ph-05
+  icon: cisco/datacenter/ip-phone
+  tier: endpoint
+  zone: voice
+  name: IP Phone 5
+  status: up
+- id: ph-06
+  icon: cisco/datacenter/ip-phone
+  tier: endpoint
+  zone: voice
+  name: IP Phone 6
+  status: up
+- id: ph-07
+  icon: cisco/datacenter/ip-phone
+  tier: endpoint
+  zone: voice
+  name: IP Phone 7
+  status: up
+- id: ph-08
+  icon: cisco/datacenter/ip-phone
+  tier: endpoint
+  zone: voice
+  name: IP Phone 8
+  status: degraded
+- id: dist-sw-01
+  icon: cisco/switches/multilayer-remote-switch
+  tier: distribution
+  zone: data
+  name: Data Distribution 1
+  mgmt_ip: 10.70.1.1
+- id: dist-sw-02
+  icon: cisco/switches/multilayer-remote-switch
+  tier: distribution
+  zone: data
+  name: Data Distribution 2
+  mgmt_ip: 10.70.1.2
+- id: acc-sw-01
+  icon: cisco/switches/workgroup-switch
+  tier: access
+  zone: data
+  name: Data Access 1
+- id: acc-sw-02
+  icon: cisco/switches/workgroup-switch
+  tier: access
+  zone: data
+  name: Data Access 2
+- id: acc-sw-03
+  icon: cisco/switches/workgroup-switch
+  tier: access
+  zone: data
+  name: Data Access 3
+- id: acc-sw-04
+  icon: cisco/switches/workgroup-switch
+  tier: access
+  zone: data
+  name: Data Access 4
+- id: pc-01
+  icon: cisco/computer-and-peripherals/laptop
+  tier: endpoint
+  zone: data
+  name: Workstation 01
+- id: pc-02
+  icon: cisco/computer-and-peripherals/macintosh
+  tier: endpoint
+  zone: data
+  name: Workstation 02
+- id: pc-03
+  icon: cisco/computer-and-peripherals/laptop
+  tier: endpoint
+  zone: data
+  name: Workstation 03
+- id: pc-04
+  icon: cisco/computer-and-peripherals/macintosh
+  tier: endpoint
+  zone: data
+  name: Workstation 04
+- id: pc-05
+  icon: cisco/computer-and-peripherals/laptop
+  tier: endpoint
+  zone: data
+  name: Workstation 05
+- id: pc-06
+  icon: cisco/computer-and-peripherals/macintosh
+  tier: endpoint
+  zone: data
+  name: Workstation 06
+- id: srv-01
+  icon: cisco/servers/file-server
+  tier: endpoint
+  zone: data
+  name: File Server
+  status: planned
+- id: srv-02
+  icon: cisco/servers/host
+  tier: endpoint
+  zone: data
+  name: Domain Controller
+links:
+- from: edge-rtr-01:Gi0/0/1
+  to: fw-01:Gi0/1
+  kind: wan
+  speed: 1G
+- from: fw-01:Gi0/2
+  to: core-sw-01:Te1/0/1
+  kind: fiber
+  speed: 10G
+- from: fw-01:Gi0/3
+  to: core-sw-02:Te1/0/1
+  kind: fiber
+  speed: 10G
+- from: core-sw-01:Te1/0/2
+  to: core-sw-02:Te1/0/2
+  kind: dac
+  speed: 40G
+  lag: po-core
+- from: core-sw-01:Te1/0/3
+  to: core-sw-02:Te1/0/3
+  kind: dac
+  speed: 40G
+  lag: po-core
+- from: core-sw-01:Te1/0/4
+  to: voice-gw-01:Gi0/0/1
+  kind: copper
+  speed: 1G
+- from: cucm-01:eno1
+  to: core-sw-01:Te1/0/5
+  kind: copper
+  speed: 1G
+- from: cucm-01:eno2
+  to: core-sw-02:Te1/0/4
+  kind: copper
+  speed: 1G
+- from: cucm-02:eno1
+  to: core-sw-01:Te1/0/6
+  kind: copper
+  speed: 1G
+- from: cucm-02:eno2
+  to: core-sw-02:Te1/0/5
+  kind: copper
+  speed: 1G
+- from: cucm-01:eno3
+  to: cucm-02:eno3
+  kind: copper
+  speed: 1G
+  lag: po-cucm
+- from: cucm-01:eno4
+  to: cucm-02:eno4
+  kind: copper
+  speed: 1G
+  lag: po-cucm
+- from: voice-sw-01:Gi0/1
+  to: core-sw-01:Te1/0/7
+  kind: fiber
+  speed: 10G
+- from: voice-sw-01:Gi0/2
+  to: core-sw-02:Te1/0/6
+  kind: fiber
+  speed: 10G
+- from: voice-sw-02:Gi0/1
+  to: core-sw-01:Te1/0/8
+  kind: fiber
+  speed: 10G
+- from: voice-sw-02:Gi0/2
+  to: core-sw-02:Te1/0/7
+  kind: fiber
+  speed: 10G
+- from: voice-sw-01:Gi0/3
+  to: ph-01:eth1
+  kind: copper
+  speed: 1G
+- from: voice-sw-01:Gi0/4
+  to: ph-02:eth1
+  kind: copper
+  speed: 1G
+- from: voice-sw-01:Gi0/5
+  to: ph-03:eth1
+  kind: copper
+  speed: 1G
+- from: voice-sw-01:Gi0/6
+  to: ph-04:eth1
+  kind: copper
+  speed: 1G
+- from: voice-sw-02:Gi0/3
+  to: ph-05:eth1
+  kind: copper
+  speed: 1G
+- from: voice-sw-02:Gi0/4
+  to: ph-06:eth1
+  kind: copper
+  speed: 1G
+- from: voice-sw-02:Gi0/5
+  to: ph-07:eth1
+  kind: copper
+  speed: 1G
+- from: voice-sw-02:Gi0/6
+  to: ph-08:eth1
+  kind: copper
+  speed: 1G
+- from: dist-sw-01:Te1/1/1
+  to: core-sw-01:Te1/0/9
+  kind: fiber
+  speed: 10G
+- from: dist-sw-01:Te1/1/2
+  to: core-sw-02:Te1/0/8
+  kind: fiber
+  speed: 10G
+- from: dist-sw-02:Te1/1/1
+  to: core-sw-01:Te1/0/10
+  kind: fiber
+  speed: 10G
+- from: dist-sw-02:Te1/1/2
+  to: core-sw-02:Te1/0/9
+  kind: fiber
+  speed: 10G
+- from: dist-sw-01:Te1/1/3
+  to: acc-sw-01:Gi0/1
+  kind: fiber
+  speed: 10G
+- from: dist-sw-01:Te1/1/4
+  to: acc-sw-02:Gi0/1
+  kind: fiber
+  speed: 10G
+- from: dist-sw-02:Te1/1/3
+  to: acc-sw-03:Gi0/1
+  kind: fiber
+  speed: 10G
+- from: dist-sw-02:Te1/1/4
+  to: acc-sw-04:Gi0/1
+  kind: fiber
+  speed: 10G
+- from: acc-sw-01:Gi0/2
+  to: pc-01:eth1
+  kind: copper
+  speed: 1G
+- from: acc-sw-01:Gi0/3
+  to: pc-02:eth1
+  kind: copper
+  speed: 1G
+- from: acc-sw-02:Gi0/2
+  to: pc-03:eth1
+  kind: copper
+  speed: 1G
+- from: acc-sw-03:Gi0/2
+  to: pc-04:eth1
+  kind: copper
+  speed: 1G
+- from: acc-sw-04:Gi0/2
+  to: pc-05:eth1
+  kind: copper
+  speed: 1G
+- from: acc-sw-04:Gi0/3
+  to: pc-06:eth1
+  kind: copper
+  speed: 1G
+- from: acc-sw-01:Gi0/4
+  to: srv-01:eno1
+  kind: copper
+  speed: 10G
+- from: acc-sw-02:Gi0/3
+  to: srv-02:eno1
+  kind: copper
+  speed: 1G

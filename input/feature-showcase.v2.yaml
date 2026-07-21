@@ -1,0 +1,133 @@
+marrow: 2
+name: Feature Showcase
+description: Status rings · tags · badges · callouts · zone notes · anchored annotations
+zones:
+  - id: production
+    name: Production
+    accent: "#10b981"
+    note: Change-freeze until Friday
+  - id: lab
+    name: Lab
+    accent: "#8b5cf6"
+devices:
+  - id: edge-fw
+    name: Edge Firewall
+    icon: cisco/security/firewall
+    tier: core
+    role: firewall
+    status: up
+    mgmt_ip: 203.0.113.1
+    note: |-
+      Internet edge.
+      Failover pair with EDGE_FW_2.
+      Purpose: Perimeter security + NAT
+      Location: DC-1 / Rack A1
+    x-v1-tags:
+      - 203.0.113.1
+      - asa-9.18
+    x-v1-badges:
+      - text: HA
+        color: emerald
+      - text: IPS
+        color: rose
+        position: bottom-right
+  - id: core-a
+    name: Core A
+    icon: cisco/switches/layer-3-switch
+    tier: distribution
+    zone: production
+    role: core
+    status: up
+    x-v1-tags:
+      - 10.0.0.2
+      - hsrp-active
+    x-v1-badges:
+      - text: HSRP
+        color: indigo
+  - id: core-b
+    name: Core B
+    icon: cisco/switches/layer-3-switch
+    tier: distribution
+    zone: lab
+    role: core
+    status: degraded
+    note: Fan tray degraded — RMA open
+    x-v1-tags:
+      - 10.0.0.3
+      - hsrp-standby
+    x-v1-badges:
+      - text: HSRP
+        color: slate
+  - id: dist-prod
+    name: Dist Prod
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: production
+    role: distribution
+  - id: srv-app
+    name: App Server
+    icon: cisco/servers/standard-host
+    tier: endpoint
+    zone: production
+    role: server
+    status: up
+    x-v1-tags:
+      - vlan-20
+  - id: srv-db
+    name: DB Server
+    icon: cisco/servers/standard-host
+    tier: endpoint
+    zone: production
+    role: server
+    status: down
+    note: Disk array offline since 02:10
+    x-v1-tags:
+      - vlan-20
+  - id: dist-lab
+    name: Dist Lab
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: lab
+    role: distribution
+    status: unknown
+  - id: lab-pc1
+    name: Lab PC 1
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: lab
+    role: host
+  - id: lab-pc2
+    name: Lab PC 2
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: lab
+    role: host
+links:
+  - from: edge-fw:Te0/0
+    to: core-a:Te1/1/1
+    kind: fiber
+  - from: edge-fw:Te0/1
+    to: core-b:Te1/1/1
+    kind: fiber
+  - from: core-a:Te1/0/1
+    to: core-b:Te1/0/1
+    lag: po1
+  - from: core-a:Te1/0/2
+    to: core-b:Te1/0/2
+    lag: po1
+  - from: core-a:Gi1/0/10
+    to: dist-prod:Gi0/1
+    kind: fiber
+  - from: core-b:Gi1/0/10
+    to: dist-lab:Gi0/1
+    kind: fiber
+  - from: dist-prod
+    to: srv-app
+    label: vlan 20
+  - from: dist-prod
+    to: srv-db
+    label: vlan 20
+  - from: dist-lab
+    to: lab-pc1
+  - from: dist-lab
+    to: lab-pc2

@@ -1,0 +1,122 @@
+marrow: 2
+name: Wireless Campus Pod
+description: Wireless-heavy single-floor pod — two access points serving laptops and a Mac over wireless links
+hero: core-sw1
+zones:
+  - id: wan
+    name: WAN
+  - id: core
+    name: Core
+  - id: floor1
+    name: Floor 1
+
+devices:
+  - id: edge-rtr1
+    name: Edge Router
+    icon: cisco/routers/wireless-router
+    tier: edge
+    zone: wan
+    mgmt_ip: 203.0.113.30
+  - id: fw1
+    name: Perimeter Firewall
+    icon: cisco/security/firewall
+    tier: edge
+    zone: wan
+  - id: core-sw1
+    name: Core Switch
+    icon: cisco/switches/layer-3-switch
+    tier: core
+    zone: core
+    hero: true
+    mgmt_ip: 10.40.1.1
+  - id: acc-sw1
+    name: Floor 1 Access Switch
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: floor1
+  - id: ap-floor1-a
+    name: Floor 1 AP A
+    icon: cisco/datacenter/wireless-access-point
+    tier: access
+    zone: floor1
+  - id: ap-floor1-b
+    name: Floor 1 AP B
+    icon: cisco/design/access-point
+    tier: access
+    zone: floor1
+  - id: laptop-01
+    name: Laptop 01
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: floor1
+  - id: laptop-02
+    name: Laptop 02
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: floor1
+  - id: mac-01
+    name: iMac 01
+    icon: cisco/computer-and-peripherals/macintosh
+    tier: endpoint
+    zone: floor1
+  - id: voip-01
+    name: Floor 1 IP Phone
+    icon: cisco/datacenter/ip-phone
+    tier: endpoint
+    zone: floor1
+  - id: printer-01
+    name: Floor 1 Printer
+    icon: cisco/computer-and-peripherals/printer
+    tier: endpoint
+    zone: floor1
+  - id: srv-file1
+    name: File Server
+    icon: cisco/servers/file-server
+    tier: endpoint
+    zone: core
+
+links:
+  - from: edge-rtr1:Gi0/0
+    to: fw1:Gi0/0
+    kind: copper
+    speed: 1G
+  - from: fw1:Gi0/1
+    to: core-sw1:Gi1/0/1
+    kind: fiber
+    speed: 1G
+  - from: core-sw1:Gi1/0/2
+    to: acc-sw1:Gi0/24
+    kind: fiber
+    speed: 10G
+  - from: core-sw1:Gi1/0/3
+    to: srv-file1:eno1
+    kind: copper
+    speed: 10G
+  - from: acc-sw1:Gi0/1
+    to: ap-floor1-a:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-sw1:Gi0/2
+    to: ap-floor1-b:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-sw1:Gi0/3
+    to: voip-01:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-sw1:Gi0/4
+    to: printer-01:eth0
+    kind: copper
+    speed: 1G
+  - from: ap-floor1-a:wlan0
+    to: laptop-01:wlan0
+    kind: wireless
+    speed: 100M
+  - from: ap-floor1-a:wlan1
+    to: mac-01:wlan0
+    kind: wireless
+    speed: 100M
+  - from: ap-floor1-b:wlan0
+    to: laptop-02:wlan0
+    kind: wireless
+    speed: 100M

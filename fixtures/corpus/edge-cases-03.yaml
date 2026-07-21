@@ -1,0 +1,68 @@
+marrow: 2
+name: Edge Case 03 - Long Names and Multi-line Notes
+description: >
+  Layout stress case: device names in the 35-45 character range and
+  multi-line block-scalar notes, to exercise label wrapping/truncation
+  and note-panel rendering in the layout engine.
+
+zones:
+  - id: global-backbone
+    name: Global Backbone
+
+devices:
+  - id: na-regional-dist-01
+    name: North America Regional Distribution Switch
+    icon: cisco/switches/multilayer-remote-switch
+    tier: distribution
+    zone: global-backbone
+    note: |
+      Primary distribution switch for the North America region.
+      Handles aggregation for three access closets on this floor.
+      Scheduled for a firmware upgrade during the next maintenance
+      window; do not decommission before the EU pair is validated.
+  - id: eu-dc-core-agg-01
+    name: European Datacenter Core Aggregation Router
+    icon: cisco/routers/router
+    tier: core
+    zone: global-backbone
+    note: |
+      Core aggregation router serving the European datacenter pod.
+      Carries the primary BGP peering sessions toward two upstream
+      transit providers. Any maintenance here requires a change
+      ticket and a second engineer on the bridge.
+  - id: apac-edge-fw-cluster-1
+    name: Asia Pacific Edge Firewall Cluster Node One
+    icon: cisco/security/firewall
+    tier: edge
+    zone: global-backbone
+    note: |
+      First node of a two-node active/passive firewall cluster
+      guarding the APAC edge. Its partner node is not modeled in
+      this fixture on purpose - this file only tests long labels,
+      not HA pairing semantics.
+  - id: primary-backup-archive-01
+    name: Primary Backup Archive File Storage Server
+    icon: cisco/servers/file-server
+    tier: endpoint
+    zone: global-backbone
+    note: |
+      Long-term archive target for nightly backup jobs across all
+      three regions above. Storage is intentionally described at
+      length here to verify that multi-paragraph notes do not
+      break the diagram's info panel layout.
+      Second paragraph, separated by a blank line above, to check
+      that paragraph breaks survive YAML block-scalar folding.
+
+links:
+  - from: na-regional-dist-01:Te1/1/1
+    to: eu-dc-core-agg-01:Gi0/0/1
+    kind: fiber
+    speed: 10G
+  - from: eu-dc-core-agg-01:Gi0/0/2
+    to: apac-edge-fw-cluster-1:outside
+    kind: wan
+    speed: 1G
+  - from: apac-edge-fw-cluster-1:inside
+    to: primary-backup-archive-01:eno1
+    kind: copper
+    speed: 1G

@@ -1,0 +1,24 @@
+marrow: 2
+name: Bad Values
+zones:
+  - id: office
+    name: Office
+    collapse: never
+devices:
+  - id: core-sw-01
+    name: Core Switch
+    icon: cisco/switches/layer-3-switch
+    tier: kore
+    zone: office
+    pin:
+      x: left
+      y: 10
+  - id: acc-sw-01
+    name: Access Switch
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: office
+links:
+  - from: core-sw-01:Gi1/0/1
+    to: acc-sw-01:Gi0/48
+    speed: 10Gbps

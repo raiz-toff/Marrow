@@ -1,4 +1,0 @@
-flask
-pyyaml
-jinja2
-flask-cors

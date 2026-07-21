@@ -1,0 +1,186 @@
+marrow: 2
+name: Regional HQ Dual-Homed
+description: Redundant edge routers and firewalls, HA core pair, dual distribution legs
+theme: dark
+hero: core-sw1
+zones:
+  - id: edge
+    name: Edge
+  - id: core
+    name: Core
+  - id: dist-north
+    name: Distribution North
+  - id: dist-south
+    name: Distribution South
+  - id: access-north
+    name: Access North
+  - id: access-south
+    name: Access South
+
+devices:
+  - id: edge-rtr1
+    name: Edge Router 1
+    icon: cisco/routers/router
+    tier: edge
+    zone: edge
+    ha_pair_with: edge-rtr2
+    mgmt_ip: 203.0.113.10
+  - id: edge-rtr2
+    name: Edge Router 2
+    icon: cisco/routers/router
+    tier: edge
+    zone: edge
+    ha_pair_with: edge-rtr1
+    mgmt_ip: 203.0.113.11
+  - id: fw1
+    name: Firewall 1
+    icon: cisco/security/pix-firewall
+    tier: edge
+    zone: edge
+    ha_pair_with: fw2
+    mgmt_ip: 10.10.0.1
+  - id: fw2
+    name: Firewall 2
+    icon: cisco/security/pix-firewall
+    tier: edge
+    zone: edge
+    ha_pair_with: fw1
+    mgmt_ip: 10.10.0.2
+  - id: core-sw1
+    name: Core Switch 1
+    icon: cisco/switches/layer-3-switch
+    tier: core
+    zone: core
+    ha_pair_with: core-sw2
+    mgmt_ip: 10.10.1.1
+    hero: true
+  - id: core-sw2
+    name: Core Switch 2
+    icon: cisco/switches/layer-3-switch
+    tier: core
+    zone: core
+    ha_pair_with: core-sw1
+    mgmt_ip: 10.10.1.2
+  - id: dist-n1
+    name: Distribution North 1
+    icon: cisco/switches/multilayer-remote-switch
+    tier: distribution
+    zone: dist-north
+  - id: dist-s1
+    name: Distribution South 1
+    icon: cisco/switches/multilayer-remote-switch
+    tier: distribution
+    zone: dist-south
+  - id: acc-n1
+    name: Access North 1
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: access-north
+  - id: acc-n2
+    name: Access North 2
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: access-north
+  - id: acc-s1
+    name: Access South 1
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: access-south
+  - id: ws-n1
+    name: North Workstation 1
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: access-north
+  - id: ws-n2
+    name: North Laptop 2
+    icon: cisco/computer-and-peripherals/laptop
+    tier: endpoint
+    zone: access-north
+  - id: ws-s1
+    name: South Workstation 1
+    icon: cisco/computer-and-peripherals/pc
+    tier: endpoint
+    zone: access-south
+  - id: srv-db1
+    name: Database Server
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: core
+    mgmt_ip: 10.10.9.5
+
+links:
+  - from: edge-rtr1:Gi0/0
+    to: edge-rtr2:Gi0/0
+    kind: copper
+    speed: 1G
+    label: HA heartbeat
+  - from: edge-rtr1:Gi0/1
+    to: fw1:Gi0/0
+    kind: copper
+    speed: 1G
+  - from: edge-rtr1:Gi0/2
+    to: fw2:Gi0/0
+    kind: copper
+    speed: 1G
+  - from: edge-rtr2:Gi0/1
+    to: fw1:Gi0/1
+    kind: copper
+    speed: 1G
+  - from: edge-rtr2:Gi0/2
+    to: fw2:Gi0/1
+    kind: copper
+    speed: 1G
+  - from: fw1:Gi0/2
+    to: core-sw1:Te1/0/1
+    kind: fiber
+    speed: 10G
+  - from: fw2:Gi0/2
+    to: core-sw2:Te1/0/1
+    kind: fiber
+    speed: 10G
+  - from: core-sw1:Te1/0/2
+    to: core-sw2:Te1/0/2
+    kind: dac
+    speed: 40G
+    lag: po1
+  - from: core-sw1:Te1/0/3
+    to: core-sw2:Te1/0/3
+    kind: dac
+    speed: 40G
+    lag: po1
+  - from: core-sw1:Te1/0/10
+    to: dist-n1:Te1/1/1
+    kind: fiber
+    speed: 40G
+  - from: core-sw2:Te1/0/10
+    to: dist-s1:Te1/1/1
+    kind: fiber
+    speed: 40G
+  - from: dist-n1:Gi1/0/1
+    to: acc-n1:Gi0/48
+    kind: fiber
+    speed: 10G
+  - from: dist-n1:Gi1/0/2
+    to: acc-n2:Gi0/48
+    kind: fiber
+    speed: 10G
+  - from: dist-s1:Gi1/0/1
+    to: acc-s1:Gi0/48
+    kind: fiber
+    speed: 10G
+  - from: acc-n1:Gi0/1
+    to: ws-n1:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-n2:Gi0/1
+    to: ws-n2:eth0
+    kind: copper
+    speed: 1G
+  - from: acc-s1:Gi0/1
+    to: ws-s1:eth0
+    kind: copper
+    speed: 1G
+  - from: core-sw1:Te1/0/11
+    to: srv-db1:eno1
+    kind: copper
+    speed: 10G

@@ -1,0 +1,1091 @@
+{
+  "pack": "affinity",
+  "title": "Affinity",
+  "version": "1.0.0",
+  "icons": [
+    {
+      "id": "affinity/symbol/bug",
+      "title": "Bug",
+      "category": "symbol",
+      "keywords": [
+        "bug",
+        "symbol"
+      ],
+      "file": "svg/symbol/bug.svg"
+    },
+    {
+      "id": "affinity/symbol/camera",
+      "title": "Camera",
+      "category": "symbol",
+      "keywords": [
+        "camera",
+        "symbol"
+      ],
+      "file": "svg/symbol/camera.svg"
+    },
+    {
+      "id": "affinity/symbol/camera-dome",
+      "title": "Camera Dome",
+      "category": "symbol",
+      "keywords": [
+        "camera",
+        "dome",
+        "symbol"
+      ],
+      "file": "svg/symbol/camera_dome.svg"
+    },
+    {
+      "id": "affinity/symbol/client",
+      "title": "Client",
+      "category": "symbol",
+      "keywords": [
+        "client",
+        "symbol"
+      ],
+      "file": "svg/symbol/client.svg"
+    },
+    {
+      "id": "affinity/symbol/cloud",
+      "title": "Cloud",
+      "category": "symbol",
+      "keywords": [
+        "cloud",
+        "symbol"
+      ],
+      "file": "svg/symbol/cloud.svg"
+    },
+    {
+      "id": "affinity/symbol/cog",
+      "title": "Cog",
+      "category": "symbol",
+      "keywords": [
+        "cog",
+        "symbol"
+      ],
+      "file": "svg/symbol/cog.svg"
+    },
+    {
+      "id": "affinity/symbol/communications",
+      "title": "Communications",
+      "category": "symbol",
+      "keywords": [
+        "communications",
+        "symbol"
+      ],
+      "file": "svg/symbol/communications.svg"
+    },
+    {
+      "id": "affinity/symbol/conversation",
+      "title": "Conversation",
+      "category": "symbol",
+      "keywords": [
+        "conversation",
+        "symbol"
+      ],
+      "file": "svg/symbol/conversation.svg"
+    },
+    {
+      "id": "affinity/symbol/dslam",
+      "title": "Dslam",
+      "category": "symbol",
+      "keywords": [
+        "dslam",
+        "symbol"
+      ],
+      "file": "svg/symbol/dslam.svg"
+    },
+    {
+      "id": "affinity/symbol/fingerprint",
+      "title": "Fingerprint",
+      "category": "symbol",
+      "keywords": [
+        "fingerprint",
+        "symbol"
+      ],
+      "file": "svg/symbol/fingerprint.svg"
+    },
+    {
+      "id": "affinity/symbol/firewall",
+      "title": "Firewall",
+      "category": "symbol",
+      "keywords": [
+        "firewall",
+        "symbol"
+      ],
+      "file": "svg/symbol/firewall.svg"
+    },
+    {
+      "id": "affinity/symbol/grid",
+      "title": "Grid",
+      "category": "symbol",
+      "keywords": [
+        "grid",
+        "symbol"
+      ],
+      "file": "svg/symbol/grid.svg"
+    },
+    {
+      "id": "affinity/symbol/grid2",
+      "title": "Grid2",
+      "category": "symbol",
+      "keywords": [
+        "grid2",
+        "symbol"
+      ],
+      "file": "svg/symbol/grid2.svg"
+    },
+    {
+      "id": "affinity/symbol/house",
+      "title": "House",
+      "category": "symbol",
+      "keywords": [
+        "house",
+        "symbol"
+      ],
+      "file": "svg/symbol/house.svg"
+    },
+    {
+      "id": "affinity/symbol/hub",
+      "title": "Hub",
+      "category": "symbol",
+      "keywords": [
+        "hub",
+        "symbol"
+      ],
+      "file": "svg/symbol/hub.svg"
+    },
+    {
+      "id": "affinity/symbol/inspect2",
+      "title": "Inspect2",
+      "category": "symbol",
+      "keywords": [
+        "inspect2",
+        "symbol"
+      ],
+      "file": "svg/symbol/inspect2.svg"
+    },
+    {
+      "id": "affinity/symbol/interconnect",
+      "title": "Interconnect",
+      "category": "symbol",
+      "keywords": [
+        "interconnect",
+        "symbol"
+      ],
+      "file": "svg/symbol/interconnect.svg"
+    },
+    {
+      "id": "affinity/symbol/isdn",
+      "title": "Isdn",
+      "category": "symbol",
+      "keywords": [
+        "isdn",
+        "symbol"
+      ],
+      "file": "svg/symbol/isdn.svg"
+    },
+    {
+      "id": "affinity/symbol/ldap",
+      "title": "Ldap",
+      "category": "symbol",
+      "keywords": [
+        "ldap",
+        "symbol"
+      ],
+      "file": "svg/symbol/ldap.svg"
+    },
+    {
+      "id": "affinity/symbol/link",
+      "title": "Link",
+      "category": "symbol",
+      "keywords": [
+        "link",
+        "symbol"
+      ],
+      "file": "svg/symbol/link.svg"
+    },
+    {
+      "id": "affinity/symbol/loadbalancer",
+      "title": "Loadbalancer",
+      "category": "symbol",
+      "keywords": [
+        "loadbalancer",
+        "symbol"
+      ],
+      "file": "svg/symbol/loadbalancer.svg"
+    },
+    {
+      "id": "affinity/symbol/nas",
+      "title": "Nas",
+      "category": "symbol",
+      "keywords": [
+        "nas",
+        "symbol"
+      ],
+      "file": "svg/symbol/nas.svg"
+    },
+    {
+      "id": "affinity/symbol/office",
+      "title": "Office",
+      "category": "symbol",
+      "keywords": [
+        "office",
+        "symbol"
+      ],
+      "file": "svg/symbol/office.svg"
+    },
+    {
+      "id": "affinity/symbol/padlock",
+      "title": "Padlock",
+      "category": "symbol",
+      "keywords": [
+        "padlock",
+        "symbol"
+      ],
+      "file": "svg/symbol/padlock.svg"
+    },
+    {
+      "id": "affinity/symbol/padlock-open",
+      "title": "Padlock Open",
+      "category": "symbol",
+      "keywords": [
+        "padlock",
+        "open",
+        "symbol"
+      ],
+      "file": "svg/symbol/padlock_open.svg"
+    },
+    {
+      "id": "affinity/symbol/pinpoint",
+      "title": "Pinpoint",
+      "category": "symbol",
+      "keywords": [
+        "pinpoint",
+        "symbol"
+      ],
+      "file": "svg/symbol/pinpoint.svg"
+    },
+    {
+      "id": "affinity/symbol/printer",
+      "title": "Printer",
+      "category": "symbol",
+      "keywords": [
+        "printer",
+        "symbol"
+      ],
+      "file": "svg/symbol/printer.svg"
+    },
+    {
+      "id": "affinity/symbol/router",
+      "title": "Router",
+      "category": "symbol",
+      "keywords": [
+        "router",
+        "symbol"
+      ],
+      "file": "svg/symbol/router.svg"
+    },
+    {
+      "id": "affinity/symbol/satellite",
+      "title": "Satellite",
+      "category": "symbol",
+      "keywords": [
+        "satellite",
+        "symbol"
+      ],
+      "file": "svg/symbol/satellite.svg"
+    },
+    {
+      "id": "affinity/symbol/scull",
+      "title": "Scull",
+      "category": "symbol",
+      "keywords": [
+        "scull",
+        "symbol"
+      ],
+      "file": "svg/symbol/scull.svg"
+    },
+    {
+      "id": "affinity/symbol/server-cluster",
+      "title": "Server Cluster",
+      "category": "symbol",
+      "keywords": [
+        "server",
+        "cluster",
+        "symbol"
+      ],
+      "file": "svg/symbol/server-cluster.svg"
+    },
+    {
+      "id": "affinity/symbol/server",
+      "title": "Server",
+      "category": "symbol",
+      "keywords": [
+        "server",
+        "symbol"
+      ],
+      "file": "svg/symbol/server.svg"
+    },
+    {
+      "id": "affinity/symbol/shield",
+      "title": "Shield",
+      "category": "symbol",
+      "keywords": [
+        "shield",
+        "symbol"
+      ],
+      "file": "svg/symbol/shield.svg"
+    },
+    {
+      "id": "affinity/symbol/storage",
+      "title": "Storage",
+      "category": "symbol",
+      "keywords": [
+        "storage",
+        "symbol"
+      ],
+      "file": "svg/symbol/storage.svg"
+    },
+    {
+      "id": "affinity/symbol/switch",
+      "title": "Switch",
+      "category": "symbol",
+      "keywords": [
+        "switch",
+        "symbol"
+      ],
+      "file": "svg/symbol/switch.svg"
+    },
+    {
+      "id": "affinity/symbol/switch-multilayer",
+      "title": "Switch Multilayer",
+      "category": "symbol",
+      "keywords": [
+        "switch",
+        "multilayer",
+        "symbol"
+      ],
+      "file": "svg/symbol/switch_multilayer.svg"
+    },
+    {
+      "id": "affinity/symbol/tablet",
+      "title": "Tablet",
+      "category": "symbol",
+      "keywords": [
+        "tablet",
+        "symbol"
+      ],
+      "file": "svg/symbol/tablet.svg"
+    },
+    {
+      "id": "affinity/symbol/tj45",
+      "title": "Tj45",
+      "category": "symbol",
+      "keywords": [
+        "tj45",
+        "symbol"
+      ],
+      "file": "svg/symbol/tj45.svg"
+    },
+    {
+      "id": "affinity/symbol/tree",
+      "title": "Tree",
+      "category": "symbol",
+      "keywords": [
+        "tree",
+        "symbol"
+      ],
+      "file": "svg/symbol/tree.svg"
+    },
+    {
+      "id": "affinity/symbol/user",
+      "title": "User",
+      "category": "symbol",
+      "keywords": [
+        "user",
+        "symbol"
+      ],
+      "file": "svg/symbol/user.svg"
+    },
+    {
+      "id": "affinity/symbol/wifi",
+      "title": "Wifi",
+      "category": "symbol",
+      "keywords": [
+        "wifi",
+        "symbol"
+      ],
+      "file": "svg/symbol/wifi.svg"
+    },
+    {
+      "id": "affinity/symbol/wlc",
+      "title": "Wlc",
+      "category": "symbol",
+      "keywords": [
+        "wlc",
+        "symbol"
+      ],
+      "file": "svg/symbol/wlc.svg"
+    },
+    {
+      "id": "affinity/symbol/xml",
+      "title": "Xml",
+      "category": "symbol",
+      "keywords": [
+        "xml",
+        "symbol"
+      ],
+      "file": "svg/symbol/xml.svg"
+    },
+    {
+      "id": "affinity/tile/bug",
+      "title": "Bug",
+      "category": "tile",
+      "keywords": [
+        "bug",
+        "tile"
+      ],
+      "file": "svg/tile/bug.svg"
+    },
+    {
+      "id": "affinity/tile/camera",
+      "title": "Camera",
+      "category": "tile",
+      "keywords": [
+        "camera",
+        "tile"
+      ],
+      "file": "svg/tile/camera.svg"
+    },
+    {
+      "id": "affinity/tile/camera-dome",
+      "title": "Camera Dome",
+      "category": "tile",
+      "keywords": [
+        "camera",
+        "dome",
+        "tile"
+      ],
+      "file": "svg/tile/camera_dome.svg"
+    },
+    {
+      "id": "affinity/tile/client",
+      "title": "Client",
+      "category": "tile",
+      "keywords": [
+        "client",
+        "tile"
+      ],
+      "file": "svg/tile/client.svg"
+    },
+    {
+      "id": "affinity/tile/client-vm",
+      "title": "Client Vm",
+      "category": "tile",
+      "keywords": [
+        "client",
+        "vm",
+        "tile"
+      ],
+      "file": "svg/tile/client_vm.svg"
+    },
+    {
+      "id": "affinity/tile/cloud",
+      "title": "Cloud",
+      "category": "tile",
+      "keywords": [
+        "cloud",
+        "tile"
+      ],
+      "file": "svg/tile/cloud.svg"
+    },
+    {
+      "id": "affinity/tile/coffee",
+      "title": "Coffee",
+      "category": "tile",
+      "keywords": [
+        "coffee",
+        "tile"
+      ],
+      "file": "svg/tile/coffee.svg"
+    },
+    {
+      "id": "affinity/tile/cog",
+      "title": "Cog",
+      "category": "tile",
+      "keywords": [
+        "cog",
+        "tile"
+      ],
+      "file": "svg/tile/cog.svg"
+    },
+    {
+      "id": "affinity/tile/communications",
+      "title": "Communications",
+      "category": "tile",
+      "keywords": [
+        "communications",
+        "tile"
+      ],
+      "file": "svg/tile/communications.svg"
+    },
+    {
+      "id": "affinity/tile/conversation",
+      "title": "Conversation",
+      "category": "tile",
+      "keywords": [
+        "conversation",
+        "tile"
+      ],
+      "file": "svg/tile/conversation.svg"
+    },
+    {
+      "id": "affinity/tile/dna",
+      "title": "Dna",
+      "category": "tile",
+      "keywords": [
+        "dna",
+        "tile"
+      ],
+      "file": "svg/tile/dna.svg"
+    },
+    {
+      "id": "affinity/tile/dna2",
+      "title": "Dna2",
+      "category": "tile",
+      "keywords": [
+        "dna2",
+        "tile"
+      ],
+      "file": "svg/tile/dna2.svg"
+    },
+    {
+      "id": "affinity/tile/dslam",
+      "title": "Dslam",
+      "category": "tile",
+      "keywords": [
+        "dslam",
+        "tile"
+      ],
+      "file": "svg/tile/dslam.svg"
+    },
+    {
+      "id": "affinity/tile/factory",
+      "title": "Factory",
+      "category": "tile",
+      "keywords": [
+        "factory",
+        "tile"
+      ],
+      "file": "svg/tile/factory.svg"
+    },
+    {
+      "id": "affinity/tile/fingerprint",
+      "title": "Fingerprint",
+      "category": "tile",
+      "keywords": [
+        "fingerprint",
+        "tile"
+      ],
+      "file": "svg/tile/fingerprint.svg"
+    },
+    {
+      "id": "affinity/tile/firewall",
+      "title": "Firewall",
+      "category": "tile",
+      "keywords": [
+        "firewall",
+        "tile"
+      ],
+      "file": "svg/tile/firewall.svg"
+    },
+    {
+      "id": "affinity/tile/firewall3",
+      "title": "Firewall3",
+      "category": "tile",
+      "keywords": [
+        "firewall3",
+        "tile"
+      ],
+      "file": "svg/tile/firewall3.svg"
+    },
+    {
+      "id": "affinity/tile/globe",
+      "title": "Globe",
+      "category": "tile",
+      "keywords": [
+        "globe",
+        "tile"
+      ],
+      "file": "svg/tile/globe.svg"
+    },
+    {
+      "id": "affinity/tile/grid",
+      "title": "Grid",
+      "category": "tile",
+      "keywords": [
+        "grid",
+        "tile"
+      ],
+      "file": "svg/tile/grid.svg"
+    },
+    {
+      "id": "affinity/tile/grid2",
+      "title": "Grid2",
+      "category": "tile",
+      "keywords": [
+        "grid2",
+        "tile"
+      ],
+      "file": "svg/tile/grid2.svg"
+    },
+    {
+      "id": "affinity/tile/health",
+      "title": "Health",
+      "category": "tile",
+      "keywords": [
+        "health",
+        "tile"
+      ],
+      "file": "svg/tile/health.svg"
+    },
+    {
+      "id": "affinity/tile/house",
+      "title": "House",
+      "category": "tile",
+      "keywords": [
+        "house",
+        "tile"
+      ],
+      "file": "svg/tile/house.svg"
+    },
+    {
+      "id": "affinity/tile/hub",
+      "title": "Hub",
+      "category": "tile",
+      "keywords": [
+        "hub",
+        "tile"
+      ],
+      "file": "svg/tile/hub.svg"
+    },
+    {
+      "id": "affinity/tile/inspect",
+      "title": "Inspect",
+      "category": "tile",
+      "keywords": [
+        "inspect",
+        "tile"
+      ],
+      "file": "svg/tile/inspect.svg"
+    },
+    {
+      "id": "affinity/tile/inspect2",
+      "title": "Inspect2",
+      "category": "tile",
+      "keywords": [
+        "inspect2",
+        "tile"
+      ],
+      "file": "svg/tile/inspect2.svg"
+    },
+    {
+      "id": "affinity/tile/interconnect",
+      "title": "Interconnect",
+      "category": "tile",
+      "keywords": [
+        "interconnect",
+        "tile"
+      ],
+      "file": "svg/tile/interconnect.svg"
+    },
+    {
+      "id": "affinity/tile/ip-phone",
+      "title": "Ip Phone",
+      "category": "tile",
+      "keywords": [
+        "ip",
+        "phone",
+        "tile"
+      ],
+      "file": "svg/tile/ip_phone.svg"
+    },
+    {
+      "id": "affinity/tile/isdn",
+      "title": "Isdn",
+      "category": "tile",
+      "keywords": [
+        "isdn",
+        "tile"
+      ],
+      "file": "svg/tile/isdn.svg"
+    },
+    {
+      "id": "affinity/tile/laptop",
+      "title": "Laptop",
+      "category": "tile",
+      "keywords": [
+        "laptop",
+        "tile"
+      ],
+      "file": "svg/tile/laptop.svg"
+    },
+    {
+      "id": "affinity/tile/ldap",
+      "title": "Ldap",
+      "category": "tile",
+      "keywords": [
+        "ldap",
+        "tile"
+      ],
+      "file": "svg/tile/ldap.svg"
+    },
+    {
+      "id": "affinity/tile/light-bulb",
+      "title": "Light Bulb",
+      "category": "tile",
+      "keywords": [
+        "light",
+        "bulb",
+        "tile"
+      ],
+      "file": "svg/tile/light_bulb.svg"
+    },
+    {
+      "id": "affinity/tile/link",
+      "title": "Link",
+      "category": "tile",
+      "keywords": [
+        "link",
+        "tile"
+      ],
+      "file": "svg/tile/link.svg"
+    },
+    {
+      "id": "affinity/tile/loadbalancer",
+      "title": "Loadbalancer",
+      "category": "tile",
+      "keywords": [
+        "loadbalancer",
+        "tile"
+      ],
+      "file": "svg/tile/loadbalancer.svg"
+    },
+    {
+      "id": "affinity/tile/nas",
+      "title": "Nas",
+      "category": "tile",
+      "keywords": [
+        "nas",
+        "tile"
+      ],
+      "file": "svg/tile/nas.svg"
+    },
+    {
+      "id": "affinity/tile/office",
+      "title": "Office",
+      "category": "tile",
+      "keywords": [
+        "office",
+        "tile"
+      ],
+      "file": "svg/tile/office.svg"
+    },
+    {
+      "id": "affinity/tile/optical",
+      "title": "Optical",
+      "category": "tile",
+      "keywords": [
+        "optical",
+        "tile"
+      ],
+      "file": "svg/tile/optical.svg"
+    },
+    {
+      "id": "affinity/tile/phone-cloud",
+      "title": "Phone Cloud",
+      "category": "tile",
+      "keywords": [
+        "phone",
+        "cloud",
+        "tile"
+      ],
+      "file": "svg/tile/phone_cloud.svg"
+    },
+    {
+      "id": "affinity/tile/phone-old",
+      "title": "Phone Old",
+      "category": "tile",
+      "keywords": [
+        "phone",
+        "old",
+        "tile"
+      ],
+      "file": "svg/tile/phone_old.svg"
+    },
+    {
+      "id": "affinity/tile/phone-wireless",
+      "title": "Phone Wireless",
+      "category": "tile",
+      "keywords": [
+        "phone",
+        "wireless",
+        "tile"
+      ],
+      "file": "svg/tile/phone_wireless.svg"
+    },
+    {
+      "id": "affinity/tile/pinpoint",
+      "title": "Pinpoint",
+      "category": "tile",
+      "keywords": [
+        "pinpoint",
+        "tile"
+      ],
+      "file": "svg/tile/pinpoint.svg"
+    },
+    {
+      "id": "affinity/tile/printer",
+      "title": "Printer",
+      "category": "tile",
+      "keywords": [
+        "printer",
+        "tile"
+      ],
+      "file": "svg/tile/printer.svg"
+    },
+    {
+      "id": "affinity/tile/rj45",
+      "title": "Rj45",
+      "category": "tile",
+      "keywords": [
+        "rj45",
+        "tile"
+      ],
+      "file": "svg/tile/rj45.svg"
+    },
+    {
+      "id": "affinity/tile/router",
+      "title": "Router",
+      "category": "tile",
+      "keywords": [
+        "router",
+        "tile"
+      ],
+      "file": "svg/tile/router.svg"
+    },
+    {
+      "id": "affinity/tile/router2",
+      "title": "Router2",
+      "category": "tile",
+      "keywords": [
+        "router2",
+        "tile"
+      ],
+      "file": "svg/tile/router2.svg"
+    },
+    {
+      "id": "affinity/tile/router-cloud",
+      "title": "Router Cloud",
+      "category": "tile",
+      "keywords": [
+        "router",
+        "cloud",
+        "tile"
+      ],
+      "file": "svg/tile/router_cloud.svg"
+    },
+    {
+      "id": "affinity/tile/satellite",
+      "title": "Satellite",
+      "category": "tile",
+      "keywords": [
+        "satellite",
+        "tile"
+      ],
+      "file": "svg/tile/satellite.svg"
+    },
+    {
+      "id": "affinity/tile/satellite-dish",
+      "title": "Satellite Dish",
+      "category": "tile",
+      "keywords": [
+        "satellite",
+        "dish",
+        "tile"
+      ],
+      "file": "svg/tile/satellite_dish.svg"
+    },
+    {
+      "id": "affinity/tile/scull",
+      "title": "Scull",
+      "category": "tile",
+      "keywords": [
+        "scull",
+        "tile"
+      ],
+      "file": "svg/tile/scull.svg"
+    },
+    {
+      "id": "affinity/tile/server",
+      "title": "Server",
+      "category": "tile",
+      "keywords": [
+        "server",
+        "tile"
+      ],
+      "file": "svg/tile/server.svg"
+    },
+    {
+      "id": "affinity/tile/servercluster",
+      "title": "Servercluster",
+      "category": "tile",
+      "keywords": [
+        "servercluster",
+        "tile"
+      ],
+      "file": "svg/tile/servercluster.svg"
+    },
+    {
+      "id": "affinity/tile/shield",
+      "title": "Shield",
+      "category": "tile",
+      "keywords": [
+        "shield",
+        "tile"
+      ],
+      "file": "svg/tile/shield.svg"
+    },
+    {
+      "id": "affinity/tile/statistics",
+      "title": "Statistics",
+      "category": "tile",
+      "keywords": [
+        "statistics",
+        "tile"
+      ],
+      "file": "svg/tile/statistics.svg"
+    },
+    {
+      "id": "affinity/tile/storage",
+      "title": "Storage",
+      "category": "tile",
+      "keywords": [
+        "storage",
+        "tile"
+      ],
+      "file": "svg/tile/storage.svg"
+    },
+    {
+      "id": "affinity/tile/switch",
+      "title": "Switch",
+      "category": "tile",
+      "keywords": [
+        "switch",
+        "tile"
+      ],
+      "file": "svg/tile/switch.svg"
+    },
+    {
+      "id": "affinity/tile/switch-multilayer",
+      "title": "Switch Multilayer",
+      "category": "tile",
+      "keywords": [
+        "switch",
+        "multilayer",
+        "tile"
+      ],
+      "file": "svg/tile/switch_multilayer.svg"
+    },
+    {
+      "id": "affinity/tile/tablet",
+      "title": "Tablet",
+      "category": "tile",
+      "keywords": [
+        "tablet",
+        "tile"
+      ],
+      "file": "svg/tile/tablet.svg"
+    },
+    {
+      "id": "affinity/tile/template",
+      "title": "Template",
+      "category": "tile",
+      "keywords": [
+        "template",
+        "tile"
+      ],
+      "file": "svg/tile/template.svg"
+    },
+    {
+      "id": "affinity/tile/tree",
+      "title": "Tree",
+      "category": "tile",
+      "keywords": [
+        "tree",
+        "tile"
+      ],
+      "file": "svg/tile/tree.svg"
+    },
+    {
+      "id": "affinity/tile/user",
+      "title": "User",
+      "category": "tile",
+      "keywords": [
+        "user",
+        "tile"
+      ],
+      "file": "svg/tile/user.svg"
+    },
+    {
+      "id": "affinity/tile/vm",
+      "title": "Vm",
+      "category": "tile",
+      "keywords": [
+        "vm",
+        "tile"
+      ],
+      "file": "svg/tile/vm.svg"
+    },
+    {
+      "id": "affinity/tile/vrf",
+      "title": "Vrf",
+      "category": "tile",
+      "keywords": [
+        "vrf",
+        "tile"
+      ],
+      "file": "svg/tile/vrf.svg"
+    },
+    {
+      "id": "affinity/tile/wifi",
+      "title": "Wifi",
+      "category": "tile",
+      "keywords": [
+        "wifi",
+        "tile"
+      ],
+      "file": "svg/tile/wifi.svg"
+    },
+    {
+      "id": "affinity/tile/wlc",
+      "title": "Wlc",
+      "category": "tile",
+      "keywords": [
+        "wlc",
+        "tile"
+      ],
+      "file": "svg/tile/wlc.svg"
+    },
+    {
+      "id": "affinity/tile/xml",
+      "title": "Xml",
+      "category": "tile",
+      "keywords": [
+        "xml",
+        "tile"
+      ],
+      "file": "svg/tile/xml.svg"
+    }
+  ]
+}

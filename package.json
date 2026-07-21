@@ -1,0 +1,27 @@
+{
+  "name": "marrow-v2",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "description": "Marrow v2 — agent-driven network topology studio (ground-up rewrite)",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "tsc -b && npm run bundle -w @marrow/runtime",
+    "clean": "tsc -b --clean",
+    "test": "vitest run",
+    "gen:icons": "node packages/icons/dist/generate-cli.js icon-packs/cisco cisco Cisco && node packages/icons/dist/generate-cli.js icon-packs/generic generic Generic && node packages/icons/dist/generate-cli.js icon-packs/k8s k8s Kubernetes && node packages/icons/dist/generate-cli.js icon-packs/affinity affinity Affinity",
+    "marrow": "node packages/cli/dist/index.js"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.3",
+    "esbuild": "^0.28.1",
+    "playwright": "^1.61.1",
+    "typescript": "^5.6.0",
+    "vitest": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}

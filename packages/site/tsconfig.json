@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist"
+  },
+  "include": ["src"],
+  "references": [
+    { "path": "../model" },
+    { "path": "../scene" },
+    { "path": "../layout" },
+    { "path": "../lint" },
+    { "path": "../render-svg" },
+    { "path": "../icons" },
+    { "path": "../runtime" }
+  ]
+}

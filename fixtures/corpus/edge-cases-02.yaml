@@ -1,0 +1,21 @@
+marrow: 2
+name: Edge Case 02 - Minimal Pair
+description: Smallest possible connected topology - two devices, one link.
+
+devices:
+  - id: rt-minimal-01
+    name: Minimal Router
+    icon: cisco/routers/router
+    tier: edge
+    status: up
+  - id: sw-minimal-01
+    name: Minimal Switch
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    status: up
+
+links:
+  - from: rt-minimal-01:Gi0/0/1
+    to: sw-minimal-01:Gi0/1
+    kind: copper
+    speed: 1G

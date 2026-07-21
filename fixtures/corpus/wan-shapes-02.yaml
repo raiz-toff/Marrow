@@ -1,0 +1,235 @@
+marrow: 2
+name: "WAN Hub and Spoke - National (24 Branches)"
+description: "Large single-hub hub-and-spoke: Dallas core router fans out to 24 branch routers nationwide"
+theme: dark
+
+devices:
+  - id: hub-dallas
+    name: Dallas Core Router
+    icon: cisco/routers/router
+    role: national hub
+    mgmt_ip: 10.20.0.1
+    hero: true
+    note: "National WAN hub aggregating 24 branch circuits"
+  - id: branch-austin
+    name: Austin Branch Router
+    icon: cisco/routers/router
+    role: branch spoke
+  - id: branch-baltimore
+    name: Baltimore Branch Router
+    icon: cisco/routers/wireless-router
+    role: branch spoke
+  - id: branch-cleveland
+    name: Cleveland Branch Router
+    icon: cisco/routers/service-router
+    role: branch spoke
+  - id: branch-columbus
+    name: Columbus Branch Router
+    icon: cisco/routers/mobile-access-router
+    role: branch spoke
+  - id: branch-elpaso
+    name: El Paso Branch Router
+    icon: cisco/routers/broadcast-router
+    role: branch spoke
+  - id: branch-fresno
+    name: Fresno Branch Router
+    icon: cisco/routers/netflow-router
+    role: branch spoke
+  - id: branch-indianapolis
+    name: Indianapolis Branch Router
+    icon: cisco/routers/iad-router
+    role: branch spoke
+  - id: branch-jacksonville
+    name: Jacksonville Branch Router
+    icon: cisco/routers/ip-telephony-router
+    role: branch spoke
+  - id: branch-kansascity
+    name: Kansas City Branch Router
+    icon: cisco/routers/isci-router
+    role: branch spoke
+  - id: branch-lasvegas
+    name: Las Vegas Branch Router
+    icon: cisco/routers/storage-router
+    role: branch spoke
+  - id: branch-louisville
+    name: Louisville Branch Router
+    icon: cisco/routers/nce-router
+    role: branch spoke
+  - id: branch-memphis
+    name: Memphis Branch Router
+    icon: cisco/routers/optical-services-router
+    role: branch spoke
+  - id: branch-milwaukee
+    name: Milwaukee Branch Router
+    icon: cisco/routers/content-service-router
+    role: branch spoke
+  - id: branch-minneapolis
+    name: Minneapolis Branch Router
+    icon: cisco/routers/space-router
+    role: branch spoke
+  - id: branch-neworleans
+    name: New Orleans Branch Router
+    icon: cisco/routers/atm-router
+    role: branch spoke
+  - id: branch-oklahomacity
+    name: Oklahoma City Branch Router
+    icon: cisco/routers/atm-tag-switch-router
+    role: branch spoke
+  - id: branch-omaha
+    name: Omaha Branch Router
+    icon: cisco/routers/gigabit-switch-atm-tag-router
+    role: branch spoke
+  - id: branch-philadelphia
+    name: Philadelphia Branch Router
+    icon: cisco/routers/router-in-building
+    role: branch spoke
+  - id: branch-pittsburgh
+    name: Pittsburgh Branch Router
+    icon: cisco/routers/router-with-silicon-switch
+    role: branch spoke
+  - id: branch-raleigh
+    name: Raleigh Branch Router
+    icon: cisco/routers/router
+    role: branch spoke
+  - id: branch-sacramento
+    name: Sacramento Branch Router
+    icon: cisco/routers/wireless-router
+    role: branch spoke
+  - id: branch-sandiego
+    name: San Diego Branch Router
+    icon: cisco/routers/service-router
+    role: branch spoke
+  - id: branch-seattle
+    name: Seattle Branch Router
+    icon: cisco/routers/mobile-access-router
+    role: branch spoke
+  - id: branch-tampa
+    name: Tampa Branch Router
+    icon: cisco/routers/broadcast-router
+    role: branch spoke
+
+links:
+  - from: "hub-dallas:Se0/0/0"
+    to: "branch-austin:Se0/0"
+    kind: wan
+    speed: 10M
+    status: up
+  - from: "hub-dallas:Se0/0/1"
+    to: "branch-baltimore:Se0/0"
+    kind: wan
+    speed: 100M
+    status: up
+    animated: true
+  - from: "hub-dallas:Se0/0/2"
+    to: "branch-cleveland:Se0/0"
+    kind: wan
+    speed: 1G
+    status: up
+  - from: "hub-dallas:Se0/0/3"
+    to: "branch-columbus:Se0/0"
+    kind: wan
+    speed: 100M
+    status: down
+  - from: "hub-dallas:Se0/0/4"
+    to: "branch-elpaso:Se0/0"
+    kind: wan
+    speed: 10M
+    status: up
+  - from: "hub-dallas:Se0/0/5"
+    to: "branch-fresno:Se0/0"
+    kind: wan
+    speed: 10M
+    status: up
+    animated: true
+  - from: "hub-dallas:Se0/0/6"
+    to: "branch-indianapolis:Se0/0"
+    kind: wan
+    speed: 100M
+    status: up
+  - from: "hub-dallas:Se0/0/7"
+    to: "branch-jacksonville:Se0/0"
+    kind: wan
+    speed: 1G
+    status: up
+  - from: "hub-dallas:Se0/0/8"
+    to: "branch-kansascity:Se0/0"
+    kind: wan
+    speed: 100M
+    status: up
+  - from: "hub-dallas:Se0/0/9"
+    to: "branch-lasvegas:Se0/0"
+    kind: wan
+    speed: 10M
+    status: planned
+  - from: "hub-dallas:Se0/0/10"
+    to: "branch-louisville:Se0/0"
+    kind: wan
+    speed: 10M
+    status: up
+  - from: "hub-dallas:Se0/0/11"
+    to: "branch-memphis:Se0/0"
+    kind: wan
+    speed: 100M
+    status: up
+    animated: true
+  - from: "hub-dallas:Se0/0/12"
+    to: "branch-milwaukee:Se0/0"
+    kind: wan
+    speed: 1G
+    status: up
+  - from: "hub-dallas:Se0/0/13"
+    to: "branch-minneapolis:Se0/0"
+    kind: wan
+    speed: 100M
+    status: up
+  - from: "hub-dallas:Se0/0/14"
+    to: "branch-neworleans:Se0/0"
+    kind: wan
+    speed: 10M
+    status: up
+  - from: "hub-dallas:Se0/0/15"
+    to: "branch-oklahomacity:Se0/0"
+    kind: wan
+    speed: 10M
+    status: down
+  - from: "hub-dallas:Se0/0/16"
+    to: "branch-omaha:Se0/0"
+    kind: wan
+    speed: 100M
+    status: up
+  - from: "hub-dallas:Se0/0/17"
+    to: "branch-philadelphia:Se0/0"
+    kind: wan
+    speed: 1G
+    status: up
+  - from: "hub-dallas:Se0/0/18"
+    to: "branch-pittsburgh:Se0/0"
+    kind: wan
+    speed: 100M
+    status: up
+    animated: true
+  - from: "hub-dallas:Se0/0/19"
+    to: "branch-raleigh:Se0/0"
+    kind: wan
+    speed: 10M
+    status: up
+  - from: "hub-dallas:Se0/0/20"
+    to: "branch-sacramento:Se0/0"
+    kind: wan
+    speed: 10M
+    status: planned
+  - from: "hub-dallas:Se0/0/21"
+    to: "branch-sandiego:Se0/0"
+    kind: wan
+    speed: 100M
+    status: up
+  - from: "hub-dallas:Se0/0/22"
+    to: "branch-seattle:Se0/0"
+    kind: wan
+    speed: 1G
+    status: degraded
+  - from: "hub-dallas:Se0/0/23"
+    to: "branch-tampa:Se0/0"
+    kind: wan
+    speed: 100M
+    status: up

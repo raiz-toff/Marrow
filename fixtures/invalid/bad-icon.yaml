@@ -1,0 +1,12 @@
+marrow: 2
+name: Bad Icons
+devices:
+  - id: core-sw-01
+    name: Core Switch
+    icon: cisco/switchs/layer-3-switch
+  - id: acc-sw-01
+    name: Access Switch
+    icon: cisco/switches/workgroup_switch
+links:
+  - from: core-sw-01:Gi1/0/1
+    to: acc-sw-01:Gi0/48
