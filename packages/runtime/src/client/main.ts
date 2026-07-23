@@ -1,6 +1,6 @@
 import { Camera } from './camera.js';
 import { CanvasEngine, type CScene } from './canvas-engine.js';
-import { globalSearchDocs, loadData, type DataDevice, type DataLink, type EmbeddedData } from './data.js';
+import { devicePageIds, globalSearchDocs, loadData, type DataDevice, type DataLink, type EmbeddedData } from './data.js';
 import { parseHash, serializeHash } from '../shared/hash.js';
 import { searchDocs, type SearchDoc } from '../shared/search.js';
 
@@ -414,7 +414,7 @@ interface DeviceMaps {
 
 function renderInspector(ctx: Ctx, d: DataDevice): void {
   fillInspector(
-    { deviceById: ctx.deviceById, linksByDevice: ctx.linksByDevice, devicePages: ctx.data.devicePages ?? [] },
+    { deviceById: ctx.deviceById, linksByDevice: ctx.linksByDevice, devicePages: devicePageIds(ctx.data) },
     d,
     (id) => {
       const resolved = resolveNodeFor(ctx, id);
@@ -964,7 +964,7 @@ function setupContextMenu(ctx: Ctx): void {
     if (forNode !== undefined) {
       const d = ctx.deviceById.get(forNode);
       if (!d) return;
-      const hasPage = (ctx.data.devicePages ?? []).includes(d.id) && currentPage() !== `devices/${d.id}.html`;
+      const hasPage = devicePageIds(ctx.data).includes(d.id) && currentPage() !== `devices/${d.id}.html`;
       menu.innerHTML =
         `<div class="m-ctx-title">${html(d.name)}<small>${html([d.mgmtIp, d.tier].filter(Boolean).join(' · ') || d.id)}</small></div>` +
         sep() +
@@ -1421,7 +1421,7 @@ function setupInventoryDetails(data: EmbeddedData): void {
       (linksByDevice.get(key) ?? linksByDevice.set(key, []).get(key)!).push(l);
     }
   }
-  const maps: DeviceMaps = { deviceById, linksByDevice, devicePages: data.devicePages ?? [] };
+  const maps: DeviceMaps = { deviceById, linksByDevice, devicePages: devicePageIds(data) };
 
   const show = (id: string): void => {
     const d = deviceById.get(id);

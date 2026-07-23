@@ -204,7 +204,7 @@ export function createSiteBuilder(
       ...(options.brand !== undefined ? { brand: options.brand } : {}),
       dataJson: embeddedData(collapsed, {
         page: path,
-        devicePages: plan.devicePages,
+        // devicePages omitted — derived client-side from the shared search index
         hero: def.hero,
         scene: tier === 'canvas' ? scene : undefined,
       }),
@@ -226,7 +226,8 @@ export function createSiteBuilder(
       body: inventoryBody(topology, plan, zi, (id) => iconSource(options.icons).svg(id)),
       ...(options.brand !== undefined ? { brand: options.brand } : {}),
       // full device+link payload: the inventory drawer shows device details in place
-      dataJson: embeddedData(topology, { page: 'inventory.html', devicePages: plan.devicePages }),
+      // (devicePages omitted — derived client-side from the shared search index)
+      dataJson: embeddedData(topology, { page: 'inventory.html' }),
       assets: { mode: 'external' },
       navLinks,
     });
@@ -361,7 +362,7 @@ function searchDataJs(topology: Topology, plan: SitePlan, zi: ZoneIndex): string
 
 export function embeddedData(
   t: Topology,
-  extra: { page: string; devicePages: string[]; hero?: string | undefined; scene?: Scene | undefined },
+  extra: { page: string; devicePages?: string[]; hero?: string | undefined; scene?: Scene | undefined },
 ): string {
   const payload = {
     name: t.name,
@@ -369,7 +370,10 @@ export function embeddedData(
     ...(t.description !== undefined ? { description: t.description } : {}),
     theme: t.theme,
     page: extra.page,
-    devicePages: extra.devicePages,
+    // The full device-page manifest is NOT embedded per page: the runtime derives
+    // it from the shared search index (see devicePageIds). Emitted only when a
+    // caller has no search asset to fall back on.
+    ...(extra.devicePages !== undefined ? { devicePages: extra.devicePages } : {}),
     ...(extra.hero !== undefined ? { hero: extra.hero } : {}),
     devices: t.devices.map((d) => ({
       id: d.id,
