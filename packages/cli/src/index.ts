@@ -15,7 +15,7 @@ const USAGE = `marrow — agent-driven network topology studio (v2)
 usage:
   marrow validate <file...> [--json] [--no-icons] [--packs <dir>]
   marrow build <file> [-o <out.html>] [--packs <dir>]
-  marrow serve <file-or-dir> [--port <n>] [--packs <dir>]
+  marrow serve [file-or-dir] [--port <n>] [--packs <dir>]      (defaults to ./input)
   marrow import <v1-file> [-o <out.yaml>] [--packs <dir>]
   marrow snapshot <file> [-o <out.png>] [--focus <device-id>] [--theme <dark|light>] [--json] [--packs <dir>]
   marrow icons search <query...> [--json] [--max <n>] [--packs <dir>]
@@ -245,9 +245,11 @@ async function cmdServe(rest: string[]): Promise<number> {
     return 2;
   }
   const { values, positionals } = parsed.args;
-  const input = positionals[0];
-  if (!input) {
-    console.error('usage: marrow serve <file-or-dir> [--port <n>]');
+  // No target given → the conventional authoring directory, so a bare
+  // `marrow serve` (and `npm run dev`) works in any standard checkout.
+  const input = positionals[0] ?? (existsSync('input') ? 'input' : undefined);
+  if (input === undefined) {
+    console.error('usage: marrow serve [file-or-dir] [--port <n>]   (defaults to ./input)');
     return 2;
   }
   const packs = loadIconCatalog(values.packs);

@@ -1,0 +1,41 @@
+marrow: 2
+name: WAN Branches
+description: One hub, spokes touching only the hub — a radial layout
+theme: dark
+hero: hub
+
+devices:
+  - id: hub
+    name: WAN Hub
+    icon: affinity/tile/router-cloud
+    role: MPLS concentrator
+    mgmt_ip: 10.255.0.1
+  - id: br-lon
+    name: London
+    icon: affinity/tile/router
+  - id: br-nyc
+    name: New York
+    icon: affinity/tile/router
+  - id: br-sfo
+    name: San Francisco
+    icon: affinity/tile/router
+  - id: br-ber
+    name: Berlin
+    icon: affinity/tile/router
+    status: down
+    note: Circuit outage — carrier ticket INC-4471
+  - id: br-tyo
+    name: Tokyo
+    icon: affinity/tile/router
+  - id: br-syd
+    name: Sydney
+    icon: affinity/tile/router
+    status: planned
+
+links:
+  - { from: hub:Gi0/1, to: br-lon:Gi0/0, kind: wan, speed: 1G }
+  - { from: hub:Gi0/2, to: br-nyc:Gi0/0, kind: wan, speed: 1G }
+  - { from: hub:Gi0/3, to: br-sfo:Gi0/0, kind: wan, speed: 1G }
+  - { from: hub:Gi0/4, to: br-ber:Gi0/0, kind: wan, speed: 1G, status: down }
+  - { from: hub:Gi0/5, to: br-tyo:Gi0/0, kind: wan, speed: 100M }
+  - { from: hub:Gi0/6, to: br-syd:Gi0/0, kind: wan, speed: 1G, status: planned }

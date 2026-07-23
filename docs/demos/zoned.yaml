@@ -1,0 +1,67 @@
+marrow: 2
+name: Two Sites
+description: Two zones with devices — a zoned mosaic
+theme: dark
+hero: hq-core-01
+
+zones:
+  - id: hq
+    name: Headquarters
+    accent: "#7aa2ff"
+  - id: dc
+    name: Datacenter
+    accent: "#4fc3a1"
+
+devices:
+  - id: hq-core-01
+    name: HQ Core 1
+    icon: affinity/tile/switch-multilayer
+    tier: core
+    zone: hq
+    ha_pair_with: hq-core-02
+  - id: hq-core-02
+    name: HQ Core 2
+    icon: affinity/tile/switch-multilayer
+    tier: core
+    zone: hq
+    ha_pair_with: hq-core-01
+  - id: hq-acc-01
+    name: HQ Access
+    icon: affinity/tile/switch
+    tier: access
+    zone: hq
+  - id: hq-fw
+    name: HQ Firewall
+    icon: affinity/tile/firewall
+    tier: edge
+    zone: hq
+  - id: dc-rt
+    name: DC Router
+    icon: affinity/tile/router
+    tier: edge
+    zone: dc
+  - id: dc-sw
+    name: DC Switch
+    icon: affinity/tile/switch-multilayer
+    tier: core
+    zone: dc
+  - id: dc-srv-01
+    name: App Cluster
+    icon: affinity/tile/server
+    tier: endpoint
+    zone: dc
+  - id: dc-srv-02
+    name: Database
+    icon: affinity/tile/server
+    tier: endpoint
+    zone: dc
+    note: Primary — failover to DR nightly
+
+links:
+  - { from: hq-fw:eth1, to: hq-core-01:Te1/0/1, kind: fiber, speed: 10G }
+  - { from: hq-core-01:Te1/0/2, to: hq-core-02:Te1/0/2, kind: dac, speed: 40G, lag: po1 }
+  - { from: hq-core-01:Gi1/0/1, to: hq-acc-01:Gi0/48, kind: fiber, speed: 10G }
+  - { from: hq-fw:eth2, to: dc-rt:Gi0/0, kind: wan, speed: 1G, label: site-to-site }
+  - { from: dc-rt:Gi0/1, to: dc-sw:Te1/0/1, kind: fiber, speed: 10G }
+  - { from: dc-sw:Te1/0/2, to: dc-srv-01:eno1, kind: dac, speed: 25G }
+  - { from: dc-sw:Te1/0/3, to: dc-srv-02:eno1, kind: dac, speed: 25G }

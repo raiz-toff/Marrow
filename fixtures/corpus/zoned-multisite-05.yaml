@@ -96,12 +96,12 @@ devices:
     role: Customer A app server
   - id: ca-pc-01
     name: Customer A Laptop 1
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: customer-a
   - id: ca-pc-02
     name: Customer A Laptop 2
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: customer-a
   - id: cb-rt-01
@@ -117,7 +117,7 @@ devices:
     zone: customer-b
   - id: cb-pc-01
     name: Customer B Workstation
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: customer-b
   - id: cc-rt-01
@@ -128,7 +128,7 @@ devices:
     mgmt_ip: 10.102.0.1
   - id: cc-pc-01
     name: Customer C Laptop
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: customer-c
   - id: cd-rt-01
@@ -144,12 +144,12 @@ devices:
     zone: customer-d
   - id: cd-pc-01
     name: Customer D Laptop
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: customer-d
   - id: cd-pc-02
     name: Customer D Workstation
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: customer-d
 

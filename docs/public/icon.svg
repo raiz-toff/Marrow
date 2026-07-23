@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" fill="none">
+  <!-- A crop of the wordmark: the "rr" pair, the second one arrowed. -->
+  <g stroke="#18181b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M7 26V13a5 5 0 0 1 5-5"/>
+    <path d="M17 26V13"/>
+  </g>
+  <g stroke="#2563eb" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M17 13a5 5 0 0 1 5-5h3"/>
+    <path d="M22.8 5.8L25 8l-2.2 2.2"/>
+  </g>
+</svg>

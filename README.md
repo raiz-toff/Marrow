@@ -1,4 +1,7 @@
-# Marrow
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/public/wordmark-dark.svg">
+  <img src="docs/public/wordmark.svg" alt="Marrow" width="232" height="48">
+</picture>
 
 **Turn a description of your network into an interactive diagram that lives on your own site — no login wall, no SaaS lock-in.**
 
@@ -10,6 +13,8 @@ host.
 
 [![CI](https://github.com/raiz-toff/Marrow/actions/workflows/ci.yml/badge.svg)](https://github.com/raiz-toff/Marrow/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+📖 **[Full documentation](https://marrow-docs.vercel.app)** — schema, CLI, guides, and the reasoning behind the design.
 
 ---
 
@@ -46,21 +51,12 @@ your organization's name and footer note, a default theme and accent color, and
 a drop-in icon pack for your own logos. It finishes by building a sample diagram
 so you know the whole pipeline works. It's safe to re-run after every `git pull`.
 
-Prefer to do it by hand?
+Then:
 
 ```bash
-npm install && npm run build
-npm run marrow -- icons fetch --yes        # optional: aws / azure / gcp
-
-npm run marrow -- validate fixtures/valid/small-office.yaml
-npm run marrow -- build    fixtures/valid/small-office.yaml
+npm run validate fixtures/valid/small-office.yaml
+npm run build    fixtures/valid/small-office.yaml
 open output/small-office.html              # a single, shareable file
-```
-
-Live-preview with hot reload while you edit:
-
-```bash
-npm run marrow -- serve fixtures/valid/small-office.yaml
 ```
 
 ## A tiny topology
@@ -93,84 +89,66 @@ links:
 ```
 
 `validate` catches every reference/typo with a line number, a fix hint, and
-"did you mean" suggestions. `build` turns it into HTML. See a fuller example in
-[`fixtures/valid/`](fixtures/valid/) and the complete schema in
-[AGENTS.md](AGENTS.md).
+"did you mean" suggestions. `build` turns it into HTML.
 
 ## Commands
 
 ```
-npm run marrow -- validate <file...> [--json]        # schema + reference check
-npm run marrow -- build    <file> [--single] [-o out] # single file or site folder
-npm run marrow -- serve    <file-or-dir> [--host 0.0.0.0] [--port 5200]
-npm run marrow -- snapshot <file> [-o out.png]        # render to an image
-npm run marrow -- import   <v1-file> [-o out.yaml]    # bring legacy YAML forward
-npm run marrow -- icons search <keyword>              # find real icon ids
-npm run marrow -- icons fetch [pack...] [--yes]       # install aws/azure/gcp
+npm run dev                                 # live preview of input/, hot reload
+npm run dev:lan                             # same, reachable from the LAN
+npm run validate <file...>                  # schema + reference check
+npm run build    <file>                     # single file or site folder
+npm run snapshot <file>                     # render to an image
+npm run icons search <keyword>              # find real icon ids
+npm run marrow  import <v1-file>            # bring legacy YAML forward
+
+# Flags need a `--` separator — npm strips flag names otherwise:
+npm run build -- input/net.yaml --single -o out.html
+npm run icons -- fetch --yes                # install aws/azure/gcp
 ```
 
-## Branding
+Full flag reference: **[docs → CLI](https://marrow-docs.vercel.app/reference/cli)**.
 
-Settings that are the same on **every** diagram live in one file,
-[`marrow.config.yaml`](marrow.config.yaml):
+## Documentation
 
-```yaml
-brand:
-  name: Acme Networks
-  note: Proprietary & Confidential
-  logo: brand/logo.svg                      # inlined at build time
-  link: https://acme.example.com            # logo + name link here
-  github: https://github.com/acme/network   # small source mark
-```
+The complete manual lives in [`docs/`](docs/) and is published as a site.
 
-It applies globally — the sidebar footer, the inspector drawer, and the brand
-strip along the top of every page. `npm run setup` fills it in for you.
+| | |
+| --- | --- |
+| [Getting started](https://marrow-docs.vercel.app/getting-started/installation) | Install, first diagram, live preview |
+| [Guides](https://marrow-docs.vercel.app/guides/authoring) | Authoring, zones & tiers, layout, icons, branding, output, embedding |
+| [Reference](https://marrow-docs.vercel.app/reference/schema) | Every key, flag, and diagnostic code |
+| [For agents](https://marrow-docs.vercel.app/agents/golden-loop) | The golden loop and the rules |
+| [Decisions](https://marrow-docs.vercel.app/decisions/overview) | Why the tool is shaped the way it is |
+| [Glossary](https://marrow-docs.vercel.app/glossary) | The precise vocabulary |
 
-Topology files describe a *network*; this file describes who it belongs to, so
-branding is **not** settable per-diagram — that separation is deliberate.
-
-- SVG logos are inlined (use `fill="currentColor"` to follow the light/dark
-  theme); PNG/JPG/WEBP/GIF are embedded as `data:` URIs. Diagrams stay
-  self-contained either way, and external URLs are stripped at build time.
-- `link` and `github` are http(s)-only *hyperlinks*, never resource loads —
-  diagrams still render fully offline; nothing is fetched unless someone clicks.
-- Point at a different file with `marrow build <file> --config other.yaml`.
+Run it locally with `npm run docs`.
 
 ## Icons
 
-Marrow ships these packs in-repo (freely redistributable):
+Marrow ships `cisco` (Apache-2.0), `affinity` (MIT), `k8s` (CC-BY-4.0), and
+`generic` (MIT) in-repo — about 1,120 icons that work on a fresh clone. The
+`aws`, `azure`, and `gcp` packs are **fetched from the vendors**, whose terms
+permit use in diagrams but not redistribution:
 
-| Pack | Source | License |
-| --- | --- | --- |
-| `affinity` | [ecceman/affinity](https://github.com/ecceman/affinity) | MIT |
-| `k8s` | [kubernetes/community](https://github.com/kubernetes/community/tree/master/icons) | CC-BY-4.0 |
-| `generic` | original Marrow assets | MIT |
+```bash
+npm run marrow -- icons fetch --yes
+```
 
-These packs are **not redistributed** — each user fetches them from the vendor's
-own servers (their terms permit use in diagrams, not redistribution):
+The `cisco` pack is jgraph's Apache-2.0 [draw.io](https://github.com/jgraph/drawio)
+stencils — Cisco-*style* shapes redrawn from scratch, not Cisco's own artwork.
+It carries one restriction the rest of Marrow doesn't: it may not be used in
+Atlassian marketplace products. See
+[icon-packs/LICENSES.md](icon-packs/LICENSES.md).
 
-| Pack | How to get it | License |
-| --- | --- | --- |
-| `aws` | `marrow icons fetch aws` | [AWS Site Terms](https://aws.amazon.com/architecture/icons/) |
-| `azure` | `marrow icons fetch azure` | [Microsoft terms](https://learn.microsoft.com/en-us/azure/architecture/icons/) |
-| `gcp` | `marrow icons fetch gcp` | [Google terms](https://cloud.google.com/icons) |
-| `cisco` | provide your own SVGs (e.g. from draw.io shape libraries) into `icon-packs/cisco/svg/` | © Cisco |
-
-Full attribution and details: [icon-packs/LICENSES.md](icon-packs/LICENSES.md).
-
-## How it's built
-
-Marrow is a TypeScript monorepo under `packages/*`: a strict YAML schema with
-agent-grade diagnostics, an ELK + libavoid layout/routing pipeline, a geometry
-linter, an SVG renderer plus a canvas tier for scale, and a ~20 KB runtime
-client. Contributor-facing internals live in
-[packages/README.md](packages/README.md); the agent operating guide is in
-[AGENTS.md](AGENTS.md). Run the suite with `npm test` (244 tests).
+Details: [docs → Icon packs](https://marrow-docs.vercel.app/reference/icon-packs).
 
 ## Contributing
 
-Issues and PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) and our
-[Code of Conduct](CODE_OF_CONDUCT.md).
+Issues and PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md), our
+[Code of Conduct](CODE_OF_CONDUCT.md), and the
+[architecture notes](https://marrow-docs.vercel.app/contributing/architecture).
+Run the suite with `npm test` (244 tests).
 
 ## License
 

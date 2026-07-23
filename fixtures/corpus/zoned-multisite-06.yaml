@@ -76,12 +76,12 @@ devices:
     zone: hq
   - id: hq-pc-01
     name: HQ Teller Workstation 1
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: hq
   - id: hq-pc-02
     name: HQ Teller Workstation 2
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: hq
   - id: hq-nms-01
@@ -123,7 +123,7 @@ devices:
     note: Innermost boundary - only path into the vault segment
   - id: vault-core-01
     name: Core Banking Ledger
-    icon: cisco/computer-and-peripherals/ibm-mainframe
+    icon: cisco/endpoints/ibm-mainframe
     tier: endpoint
     zone: hq-vault
     role: Core banking ledger
@@ -148,7 +148,7 @@ devices:
     zone: branch-1
   - id: b1-pc-01
     name: Branch 1 Teller Workstation
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: branch-1
   - id: b2-rt-01
@@ -164,7 +164,7 @@ devices:
     zone: branch-2
   - id: b2-pc-01
     name: Branch 2 Teller Workstation
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: branch-2
 

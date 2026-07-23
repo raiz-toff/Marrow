@@ -58,7 +58,7 @@ devices:
     role: MES/ERP server
   - id: corp-pc-01
     name: Plant Manager Laptop
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: corporate
   - id: pf-fw-01
@@ -98,7 +98,7 @@ devices:
     role: PLC controller
   - id: cl1-hmi-01
     name: Line 1 HMI Panel
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: cell-line-1
     role: HMI panel
@@ -115,7 +115,7 @@ devices:
     role: PLC controller
   - id: cl2-hmi-01
     name: Line 2 HMI Panel
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: cell-line-2
     role: HMI panel

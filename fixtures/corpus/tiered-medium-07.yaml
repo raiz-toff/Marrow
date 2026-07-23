@@ -155,32 +155,32 @@ devices:
   zone: data
   name: Data Access 4
 - id: pc-01
-  icon: cisco/computer-and-peripherals/laptop
+  icon: cisco/endpoints/laptop
   tier: endpoint
   zone: data
   name: Workstation 01
 - id: pc-02
-  icon: cisco/computer-and-peripherals/macintosh
+  icon: cisco/endpoints/macintosh
   tier: endpoint
   zone: data
   name: Workstation 02
 - id: pc-03
-  icon: cisco/computer-and-peripherals/laptop
+  icon: cisco/endpoints/laptop
   tier: endpoint
   zone: data
   name: Workstation 03
 - id: pc-04
-  icon: cisco/computer-and-peripherals/macintosh
+  icon: cisco/endpoints/macintosh
   tier: endpoint
   zone: data
   name: Workstation 04
 - id: pc-05
-  icon: cisco/computer-and-peripherals/laptop
+  icon: cisco/endpoints/laptop
   tier: endpoint
   zone: data
   name: Workstation 05
 - id: pc-06
-  icon: cisco/computer-and-peripherals/macintosh
+  icon: cisco/endpoints/macintosh
   tier: endpoint
   zone: data
   name: Workstation 06

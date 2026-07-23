@@ -134,25 +134,25 @@ devices:
   name: Endpoint A-2
   status: up
 - id: ep-a-03
-  icon: cisco/computer-and-peripherals/laptop
+  icon: cisco/endpoints/laptop
   tier: endpoint
   zone: building-a
   name: Endpoint A-3
   status: up
 - id: ep-a-04
-  icon: cisco/computer-and-peripherals/macintosh
+  icon: cisco/endpoints/macintosh
   tier: endpoint
   zone: building-a
   name: Endpoint A-4
   status: up
 - id: ep-a-05
-  icon: cisco/computer-and-peripherals/laptop
+  icon: cisco/endpoints/laptop
   tier: endpoint
   zone: building-a
   name: Endpoint A-5
   status: up
 - id: ep-a-06
-  icon: cisco/computer-and-peripherals/macintosh
+  icon: cisco/endpoints/macintosh
   tier: endpoint
   zone: building-a
   name: Endpoint A-6
@@ -236,25 +236,25 @@ devices:
   name: Endpoint B-2
   status: up
 - id: ep-b-03
-  icon: cisco/computer-and-peripherals/laptop
+  icon: cisco/endpoints/laptop
   tier: endpoint
   zone: building-b
   name: Endpoint B-3
   status: up
 - id: ep-b-04
-  icon: cisco/computer-and-peripherals/macintosh
+  icon: cisco/endpoints/macintosh
   tier: endpoint
   zone: building-b
   name: Endpoint B-4
   status: up
 - id: ep-b-05
-  icon: cisco/computer-and-peripherals/laptop
+  icon: cisco/endpoints/laptop
   tier: endpoint
   zone: building-b
   name: Endpoint B-5
   status: up
 - id: ep-b-06
-  icon: cisco/computer-and-peripherals/macintosh
+  icon: cisco/endpoints/macintosh
   tier: endpoint
   zone: building-b
   name: Endpoint B-6

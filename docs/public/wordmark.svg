@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="232" height="48" viewBox="0 0 116 24" fill="none">
+  <g stroke="#18181b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <!-- m -->
+    <path d="M4 18v-6a6 6 0 0 1 12 0v6M16 12a6 6 0 0 1 12 0v6"/>
+    <!-- a -->
+    <path d="M44 6v12M44 12a6 6 0 1 0-12 0 6 6 0 1 0 12 0"/>
+    <!-- r -->
+    <path d="M48 18v-6a6 6 0 0 1 6-6"/>
+    <!-- r, second — stem only; its shoulder is the accent below -->
+    <path d="M58 18v-6"/>
+    <!-- o -->
+    <path d="M84 12a6 6 0 1 0-12 0 6 6 0 1 0 12 0"/>
+    <!-- w -->
+    <path d="M88 6l5 12 7-12 7 12 5-12"/>
+  </g>
+  <!-- the second r's shoulder resolves into an arrowhead: the one accent -->
+  <g stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M58 12a6 6 0 0 1 6-6h4"/>
+    <path d="M65.8 3.8L68 6l-2.2 2.2"/>
+  </g>
+</svg>

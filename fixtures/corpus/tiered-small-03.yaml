@@ -47,27 +47,27 @@ devices:
     zone: engineering
   - id: ws-sales1
     name: Sales Desktop 1
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: sales
   - id: ws-sales2
     name: Sales Laptop 2
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: sales
   - id: ws-eng1
     name: Engineering iMac 1
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: engineering
   - id: ws-eng2
     name: Engineering Laptop 2
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: engineering
   - id: printer-sales1
     name: Sales Printer
-    icon: cisco/computer-and-peripherals/printer
+    icon: cisco/endpoints/printer
     tier: endpoint
     zone: sales
   - id: srv-app1

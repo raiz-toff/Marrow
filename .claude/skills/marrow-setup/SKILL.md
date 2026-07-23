@@ -14,7 +14,7 @@ Run these from the repo root, in order, skipping steps already done:
 1. **Install + compile**
    ```
    npm install
-   npm run build
+   npm run compile
    ```
 
 2. **Fetch the vendor icon packs.** The `aws`, `azure`, and `gcp` packs are
@@ -22,7 +22,7 @@ Run these from the repo root, in order, skipping steps already done:
    redistributing the libraries, so every clone downloads them from the
    vendors' own servers (sources + license pointers: `icon-sources.json`):
    ```
-   npm run marrow -- icons fetch --yes
+   npm run icons -- fetch --yes
    ```
    Before running it, tell the user what will be downloaded and from where
    (AWS, Microsoft, and Google official icon packages, under each vendor's
@@ -32,7 +32,7 @@ Run these from the repo root, in order, skipping steps already done:
 
 3. **Verify**
    ```
-   npm run marrow -- icons search ec2      # should list aws/compute/amazon-ec2
+   npm run icons search ec2      # should list aws/compute/amazon-ec2
    npm test                                # full suite, no network needed
    ```
 

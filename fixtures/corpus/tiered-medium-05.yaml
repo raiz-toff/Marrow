@@ -32,7 +32,7 @@ devices:
   status: degraded
   note: secondary undergoing patch cycle
 - id: ids-01
-  icon: cisco/cisco-safe-security-icons/ids
+  icon: cisco/safe-security/ids
   tier: edge
   zone: dmz
   name: Intrusion Detection Sensor
@@ -122,32 +122,32 @@ devices:
   name: Office AP 2
   status: planned
 - id: pc-01
-  icon: cisco/computer-and-peripherals/laptop
+  icon: cisco/endpoints/laptop
   tier: endpoint
   zone: access
   name: Workstation 01
 - id: pc-02
-  icon: cisco/computer-and-peripherals/macintosh
+  icon: cisco/endpoints/macintosh
   tier: endpoint
   zone: access
   name: Workstation 02
 - id: pc-03
-  icon: cisco/computer-and-peripherals/laptop
+  icon: cisco/endpoints/laptop
   tier: endpoint
   zone: access
   name: Workstation 03
 - id: pc-04
-  icon: cisco/computer-and-peripherals/macintosh
+  icon: cisco/endpoints/macintosh
   tier: endpoint
   zone: access
   name: Workstation 04
 - id: pc-05
-  icon: cisco/computer-and-peripherals/laptop
+  icon: cisco/endpoints/laptop
   tier: endpoint
   zone: access
   name: Workstation 05
 - id: pc-06
-  icon: cisco/computer-and-peripherals/macintosh
+  icon: cisco/endpoints/macintosh
   tier: endpoint
   zone: access
   name: Workstation 06

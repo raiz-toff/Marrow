@@ -92,17 +92,17 @@ devices:
     zone: admin
   - id: admin-pc-01
     name: Registrar Laptop
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: admin
   - id: admin-pc-02
     name: Bursar Laptop
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: admin
   - id: admin-printer-01
     name: Admin Office Printer
-    icon: cisco/computer-and-peripherals/printer
+    icon: cisco/endpoints/printer
     tier: endpoint
     zone: admin
   - id: admin-cam-01
@@ -133,19 +133,19 @@ devices:
     zone: library
   - id: lib-pc-01
     name: Library Catalog Terminal 1
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: library
     role: public catalog terminal
   - id: lib-pc-02
     name: Library Catalog Terminal 2
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: library
     role: public catalog terminal
   - id: lib-pc-03
     name: Library Catalog Terminal 3
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: library
     role: public catalog terminal
@@ -177,22 +177,22 @@ devices:
     zone: dorm-a
   - id: da-pc-01
     name: Dorm A Laptop 1
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: dorm-a
   - id: da-pc-02
     name: Dorm A Laptop 2
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: dorm-a
   - id: da-pc-03
     name: Dorm A Workstation
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: dorm-a
   - id: da-pc-04
     name: Dorm A Laptop 3
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: dorm-a
   - id: db-sw-01
@@ -207,17 +207,17 @@ devices:
     zone: dorm-b
   - id: db-pc-01
     name: Dorm B Laptop 1
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: dorm-b
   - id: db-pc-02
     name: Dorm B Workstation
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: dorm-b
   - id: db-pc-03
     name: Dorm B Laptop 2
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: dorm-b
 

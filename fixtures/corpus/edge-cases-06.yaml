@@ -61,7 +61,7 @@ devices:
     status: up
   - id: pc-endpoint-01
     name: Design Workstation
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: access-zone
     status: down

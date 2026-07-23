@@ -17,7 +17,7 @@ function run(args: string[], cwd = repoRoot) {
 
 beforeAll(() => {
   if (!existsSync(cli)) {
-    throw new Error('CLI not built — run npm run build first');
+    throw new Error('CLI not built — run npm run compile first');
   }
 });
 

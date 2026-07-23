@@ -96,7 +96,7 @@ devices:
         vlan: 4
   - id: pc-closet-01
     name: Closet Test Laptop
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: wiring-closet
   - id: srv-closet-01

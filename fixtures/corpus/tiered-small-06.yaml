@@ -46,17 +46,17 @@ devices:
     zone: floor1
   - id: laptop-01
     name: Laptop 01
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: floor1
   - id: laptop-02
     name: Laptop 02
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: floor1
   - id: mac-01
     name: iMac 01
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: floor1
   - id: voip-01
@@ -66,7 +66,7 @@ devices:
     zone: floor1
   - id: printer-01
     name: Floor 1 Printer
-    icon: cisco/computer-and-peripherals/printer
+    icon: cisco/endpoints/printer
     tier: endpoint
     zone: floor1
   - id: srv-file1

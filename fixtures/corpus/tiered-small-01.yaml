@@ -44,22 +44,22 @@ devices:
     zone: lan
   - id: ws-01
     name: Workstation 01
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: lan
   - id: ws-02
     name: Laptop 02
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: lan
   - id: ws-03
     name: iMac 03
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: lan
   - id: printer-01
     name: Office Printer
-    icon: cisco/computer-and-peripherals/printer
+    icon: cisco/endpoints/printer
     tier: endpoint
     zone: lan
   - id: voip-01

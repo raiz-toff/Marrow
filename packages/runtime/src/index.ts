@@ -9,6 +9,6 @@ export function getRuntimeSource(): string {
   try {
     return readFileSync(url, 'utf8');
   } catch {
-    throw new Error('runtime bundle missing — run: npm run build (which bundles @marrow/runtime)');
+    throw new Error('runtime bundle missing — run: npm run compile (which bundles @marrow/runtime)');
   }
 }

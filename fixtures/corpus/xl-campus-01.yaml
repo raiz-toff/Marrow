@@ -303,37 +303,37 @@ devices:
     status: degraded
   - id: ep-building-a-f1-01-01
     name: Building A - HQ Tower F1 Desktop PC 1-1
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: building-a-floor-1
   - id: ep-building-a-f1-01-02
     name: Building A - HQ Tower F1 Laptop 1-2
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: building-a-floor-1
   - id: ep-building-a-f1-01-03
     name: Building A - HQ Tower F1 Mac Workstation 1-3
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: building-a-floor-1
   - id: ep-building-a-f1-01-04
     name: Building A - HQ Tower F1 Tablet 1-4
-    icon: cisco/computer-and-peripherals/tablet
+    icon: cisco/endpoints/tablet
     tier: endpoint
     zone: building-a-floor-1
   - id: ep-building-a-f1-01-05
     name: Building A - HQ Tower F1 Printer 1-5
-    icon: cisco/computer-and-peripherals/printer
+    icon: cisco/endpoints/printer
     tier: endpoint
     zone: building-a-floor-1
   - id: ep-building-a-f1-01-06
     name: Building A - HQ Tower F1 IP Phone 1-6
-    icon: cisco/modemand-phones/ip-phone
+    icon: cisco/modems-and-phones/ip-phone
     tier: endpoint
     zone: building-a-floor-1
   - id: ep-building-a-f1-01-07
     name: Building A - HQ Tower F1 Desktop PC 1-7
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: building-a-floor-1
   - id: acc-building-a-f1-02
@@ -344,37 +344,37 @@ devices:
     mgmt_ip: 10.0.20.12
   - id: ep-building-a-f1-02-01
     name: Building A - HQ Tower F1 Laptop 2-1
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: building-a-floor-1
   - id: ep-building-a-f1-02-02
     name: Building A - HQ Tower F1 Mac Workstation 2-2
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: building-a-floor-1
   - id: ep-building-a-f1-02-03
     name: Building A - HQ Tower F1 Tablet 2-3
-    icon: cisco/computer-and-peripherals/tablet
+    icon: cisco/endpoints/tablet
     tier: endpoint
     zone: building-a-floor-1
   - id: ep-building-a-f1-02-04
     name: Building A - HQ Tower F1 Printer 2-4
-    icon: cisco/computer-and-peripherals/printer
+    icon: cisco/endpoints/printer
     tier: endpoint
     zone: building-a-floor-1
   - id: ep-building-a-f1-02-05
     name: Building A - HQ Tower F1 IP Phone 2-5
-    icon: cisco/modemand-phones/ip-phone
+    icon: cisco/modems-and-phones/ip-phone
     tier: endpoint
     zone: building-a-floor-1
   - id: ep-building-a-f1-02-06
     name: Building A - HQ Tower F1 Desktop PC 2-6
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: building-a-floor-1
   - id: ep-building-a-f1-02-07
     name: Building A - HQ Tower F1 Laptop 2-7
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: building-a-floor-1
   - id: acc-building-a-f1-03
@@ -385,39 +385,39 @@ devices:
     mgmt_ip: 10.0.20.13
   - id: ep-building-a-f1-03-01
     name: Building A - HQ Tower F1 Mac Workstation 3-1
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: building-a-floor-1
   - id: ep-building-a-f1-03-02
     name: Building A - HQ Tower F1 Tablet 3-2
-    icon: cisco/computer-and-peripherals/tablet
+    icon: cisco/endpoints/tablet
     tier: endpoint
     zone: building-a-floor-1
     status: down
   - id: ep-building-a-f1-03-03
     name: Building A - HQ Tower F1 Printer 3-3
-    icon: cisco/computer-and-peripherals/printer
+    icon: cisco/endpoints/printer
     tier: endpoint
     zone: building-a-floor-1
     status: degraded
   - id: ep-building-a-f1-03-04
     name: Building A - HQ Tower F1 IP Phone 3-4
-    icon: cisco/modemand-phones/ip-phone
+    icon: cisco/modems-and-phones/ip-phone
     tier: endpoint
     zone: building-a-floor-1
   - id: ep-building-a-f1-03-05
     name: Building A - HQ Tower F1 Desktop PC 3-5
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: building-a-floor-1
   - id: ep-building-a-f1-03-06
     name: Building A - HQ Tower F1 Laptop 3-6
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: building-a-floor-1
   - id: ep-building-a-f1-03-07
     name: Building A - HQ Tower F1 Mac Workstation 3-7
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: building-a-floor-1
   - id: ap-building-a-f2-01
@@ -434,42 +434,42 @@ devices:
     mgmt_ip: 10.0.20.21
   - id: ep-building-a-f2-01-01
     name: Building A - HQ Tower F2 Desktop PC 1-1
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: building-a-floor-2
   - id: ep-building-a-f2-01-02
     name: Building A - HQ Tower F2 Laptop 1-2
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: building-a-floor-2
   - id: ep-building-a-f2-01-03
     name: Building A - HQ Tower F2 Mac Workstation 1-3
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: building-a-floor-2
   - id: ep-building-a-f2-01-04
     name: Building A - HQ Tower F2 Tablet 1-4
-    icon: cisco/computer-and-peripherals/tablet
+    icon: cisco/endpoints/tablet
     tier: endpoint
     zone: building-a-floor-2
   - id: ep-building-a-f2-01-05
     name: Building A - HQ Tower F2 Printer 1-5
-    icon: cisco/computer-and-peripherals/printer
+    icon: cisco/endpoints/printer
     tier: endpoint
     zone: building-a-floor-2
   - id: ep-building-a-f2-01-06
     name: Building A - HQ Tower F2 IP Phone 1-6
-    icon: cisco/modemand-phones/ip-phone
+    icon: cisco/modems-and-phones/ip-phone
     tier: endpoint
     zone: building-a-floor-2
   - id: ep-building-a-f2-01-07
     name: Building A - HQ Tower F2 Desktop PC 1-7
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: building-a-floor-2
   - id: ep-building-a-f2-01-08
     name: Building A - HQ Tower F2 Laptop 1-8
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: building-a-floor-2
   - id: acc-building-a-f2-02
@@ -481,43 +481,43 @@ devices:
     status: planned
   - id: ep-building-a-f2-02-01
     name: Building A - HQ Tower F2 Mac Workstation 2-1
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: building-a-floor-2
   - id: ep-building-a-f2-02-02
     name: Building A - HQ Tower F2 Tablet 2-2
-    icon: cisco/computer-and-peripherals/tablet
+    icon: cisco/endpoints/tablet
     tier: endpoint
     zone: building-a-floor-2
   - id: ep-building-a-f2-02-03
     name: Building A - HQ Tower F2 Printer 2-3
-    icon: cisco/computer-and-peripherals/printer
+    icon: cisco/endpoints/printer
     tier: endpoint
     zone: building-a-floor-2
   - id: ep-building-a-f2-02-04
     name: Building A - HQ Tower F2 IP Phone 2-4
-    icon: cisco/modemand-phones/ip-phone
+    icon: cisco/modems-and-phones/ip-phone
     tier: endpoint
     zone: building-a-floor-2
     status: degraded
   - id: ep-building-a-f2-02-05
     name: Building A - HQ Tower F2 Desktop PC 2-5
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: building-a-floor-2
   - id: ep-building-a-f2-02-06
     name: Building A - HQ Tower F2 Laptop 2-6
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: building-a-floor-2
   - id: ep-building-a-f2-02-07
     name: Building A - HQ Tower F2 Mac Workstation 2-7
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: building-a-floor-2
   - id: ep-building-a-f2-02-08
     name: Building A - HQ Tower F2 Tablet 2-8
-    icon: cisco/computer-and-peripherals/tablet
+    icon: cisco/endpoints/tablet
     tier: endpoint
     zone: building-a-floor-2
   - id: acc-building-a-f2-03
@@ -528,42 +528,42 @@ devices:
     mgmt_ip: 10.0.20.23
   - id: ep-building-a-f2-03-01
     name: Building A - HQ Tower F2 Printer 3-1
-    icon: cisco/computer-and-peripherals/printer
+    icon: cisco/endpoints/printer
     tier: endpoint
     zone: building-a-floor-2
   - id: ep-building-a-f2-03-02
     name: Building A - HQ Tower F2 IP Phone 3-2
-    icon: cisco/modemand-phones/ip-phone
+    icon: cisco/modems-and-phones/ip-phone
     tier: endpoint
     zone: building-a-floor-2
   - id: ep-building-a-f2-03-03
     name: Building A - HQ Tower F2 Desktop PC 3-3
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: building-a-floor-2
   - id: ep-building-a-f2-03-04
     name: Building A - HQ Tower F2 Laptop 3-4
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: building-a-floor-2
   - id: ep-building-a-f2-03-05
     name: Building A - HQ Tower F2 Mac Workstation 3-5
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: building-a-floor-2
   - id: ep-building-a-f2-03-06
     name: Building A - HQ Tower F2 Tablet 3-6
-    icon: cisco/computer-and-peripherals/tablet
+    icon: cisco/endpoints/tablet
     tier: endpoint
     zone: building-a-floor-2
   - id: ep-building-a-f2-03-07
     name: Building A - HQ Tower F2 Printer 3-7
-    icon: cisco/computer-and-peripherals/printer
+    icon: cisco/endpoints/printer
     tier: endpoint
     zone: building-a-floor-2
   - id: ep-building-a-f2-03-08
     name: Building A - HQ Tower F2 IP Phone 3-8
-    icon: cisco/modemand-phones/ip-phone
+    icon: cisco/modems-and-phones/ip-phone
     tier: endpoint
     zone: building-a-floor-2
   - id: acc-building-a-f2-04
@@ -574,44 +574,44 @@ devices:
     mgmt_ip: 10.0.20.24
   - id: ep-building-a-f2-04-01
     name: Building A - HQ Tower F2 Desktop PC 4-1
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: building-a-floor-2
   - id: ep-building-a-f2-04-02
     name: Building A - HQ Tower F2 Laptop 4-2
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: building-a-floor-2
   - id: ep-building-a-f2-04-03
     name: Building A - HQ Tower F2 Mac Workstation 4-3
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: building-a-floor-2
     status: down
   - id: ep-building-a-f2-04-04
     name: Building A - HQ Tower F2 Tablet 4-4
-    icon: cisco/computer-and-peripherals/tablet
+    icon: cisco/endpoints/tablet
     tier: endpoint
     zone: building-a-floor-2
   - id: ep-building-a-f2-04-05
     name: Building A - HQ Tower F2 Printer 4-5
-    icon: cisco/computer-and-peripherals/printer
+    icon: cisco/endpoints/printer
     tier: endpoint
     zone: building-a-floor-2
     status: degraded
   - id: ep-building-a-f2-04-06
     name: Building A - HQ Tower F2 IP Phone 4-6
-    icon: cisco/modemand-phones/ip-phone
+    icon: cisco/modems-and-phones/ip-phone
     tier: endpoint
     zone: building-a-floor-2
   - id: ep-building-a-f2-04-07
     name: Building A - HQ Tower F2 Desktop PC 4-7
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: building-a-floor-2
   - id: ep-building-a-f2-04-08
     name: Building A - HQ Tower F2 Laptop 4-8
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: building-a-floor-2
   - id: ap-building-a-f3-01
@@ -628,47 +628,47 @@ devices:
     mgmt_ip: 10.0.20.31
   - id: ep-building-a-f3-01-01
     name: Building A - HQ Tower F3 Desktop PC 1-1
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: building-a-floor-3
   - id: ep-building-a-f3-01-02
     name: Building A - HQ Tower F3 Laptop 1-2
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: building-a-floor-3
   - id: ep-building-a-f3-01-03
     name: Building A - HQ Tower F3 Mac Workstation 1-3
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: building-a-floor-3
   - id: ep-building-a-f3-01-04
     name: Building A - HQ Tower F3 Tablet 1-4
-    icon: cisco/computer-and-peripherals/tablet
+    icon: cisco/endpoints/tablet
     tier: endpoint
     zone: building-a-floor-3
   - id: ep-building-a-f3-01-05
     name: Building A - HQ Tower F3 Printer 1-5
-    icon: cisco/computer-and-peripherals/printer
+    icon: cisco/endpoints/printer
     tier: endpoint
     zone: building-a-floor-3
   - id: ep-building-a-f3-01-06
     name: Building A - HQ Tower F3 IP Phone 1-6
-    icon: cisco/modemand-phones/ip-phone
+    icon: cisco/modems-and-phones/ip-phone
     tier: endpoint
     zone: building-a-floor-3
   - id: ep-building-a-f3-01-07
     name: Building A - HQ Tower F3 Desktop PC 1-7
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: building-a-floor-3
   - id: ep-building-a-f3-01-08
     name: Building A - HQ Tower F3 Laptop 1-8
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: building-a-floor-3
   - id: ep-building-a-f3-01-09
     name: Building A - HQ Tower F3 Mac Workstation 1-9
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: building-a-floor-3
   - id: acc-building-a-f3-02
@@ -679,48 +679,48 @@ devices:
     mgmt_ip: 10.0.20.32
   - id: ep-building-a-f3-02-01
     name: Building A - HQ Tower F3 Tablet 2-1
-    icon: cisco/computer-and-peripherals/tablet
+    icon: cisco/endpoints/tablet
     tier: endpoint
     zone: building-a-floor-3
   - id: ep-building-a-f3-02-02
     name: Building A - HQ Tower F3 Printer 2-2
-    icon: cisco/computer-and-peripherals/printer
+    icon: cisco/endpoints/printer
     tier: endpoint
     zone: building-a-floor-3
   - id: ep-building-a-f3-02-03
     name: Building A - HQ Tower F3 IP Phone 2-3
-    icon: cisco/modemand-phones/ip-phone
+    icon: cisco/modems-and-phones/ip-phone
     tier: endpoint
     zone: building-a-floor-3
   - id: ep-building-a-f3-02-04
     name: Building A - HQ Tower F3 Desktop PC 2-4
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: building-a-floor-3
     status: degraded
   - id: ep-building-a-f3-02-05
     name: Building A - HQ Tower F3 Laptop 2-5
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: building-a-floor-3
   - id: ep-building-a-f3-02-06
     name: Building A - HQ Tower F3 Mac Workstation 2-6
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: building-a-floor-3
   - id: ep-building-a-f3-02-07
     name: Building A - HQ Tower F3 Tablet 2-7
-    icon: cisco/computer-and-peripherals/tablet
+    icon: cisco/endpoints/tablet
     tier: endpoint
     zone: building-a-floor-3
   - id: ep-building-a-f3-02-08
     name: Building A - HQ Tower F3 Printer 2-8
-    icon: cisco/computer-and-peripherals/printer
+    icon: cisco/endpoints/printer
     tier: endpoint
     zone: building-a-floor-3
   - id: ep-building-a-f3-02-09
     name: Building A - HQ Tower F3 IP Phone 2-9
-    icon: cisco/modemand-phones/ip-phone
+    icon: cisco/modems-and-phones/ip-phone
     tier: endpoint
     zone: building-a-floor-3
   - id: dist-building-b-01
@@ -751,33 +751,33 @@ devices:
     mgmt_ip: 10.0.21.11
   - id: ep-building-b-f1-01-01
     name: Building B - Innovation Center F1 Desktop PC 1-1
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: building-b-floor-1
   - id: ep-building-b-f1-01-02
     name: Building B - Innovation Center F1 Laptop 1-2
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: building-b-floor-1
   - id: ep-building-b-f1-01-03
     name: Building B - Innovation Center F1 Mac Workstation 1-3
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: building-b-floor-1
   - id: ep-building-b-f1-01-04
     name: Building B - Innovation Center F1 Tablet 1-4
-    icon: cisco/computer-and-peripherals/tablet
+    icon: cisco/endpoints/tablet
     tier: endpoint
     zone: building-b-floor-1
     status: planned
   - id: ep-building-b-f1-01-05
     name: Building B - Innovation Center F1 Printer 1-5
-    icon: cisco/computer-and-peripherals/printer
+    icon: cisco/endpoints/printer
     tier: endpoint
     zone: building-b-floor-1
   - id: ep-building-b-f1-01-06
     name: Building B - Innovation Center F1 IP Phone 1-6
-    icon: cisco/modemand-phones/ip-phone
+    icon: cisco/modems-and-phones/ip-phone
     tier: endpoint
     zone: building-b-floor-1
   - id: acc-building-b-f1-02
@@ -788,34 +788,34 @@ devices:
     mgmt_ip: 10.0.21.12
   - id: ep-building-b-f1-02-01
     name: Building B - Innovation Center F1 Desktop PC 2-1
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: building-b-floor-1
   - id: ep-building-b-f1-02-02
     name: Building B - Innovation Center F1 Laptop 2-2
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: building-b-floor-1
     status: down
   - id: ep-building-b-f1-02-03
     name: Building B - Innovation Center F1 Mac Workstation 2-3
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: building-b-floor-1
   - id: ep-building-b-f1-02-04
     name: Building B - Innovation Center F1 Tablet 2-4
-    icon: cisco/computer-and-peripherals/tablet
+    icon: cisco/endpoints/tablet
     tier: endpoint
     zone: building-b-floor-1
   - id: ep-building-b-f1-02-05
     name: Building B - Innovation Center F1 Printer 2-5
-    icon: cisco/computer-and-peripherals/printer
+    icon: cisco/endpoints/printer
     tier: endpoint
     zone: building-b-floor-1
     status: degraded
   - id: ep-building-b-f1-02-06
     name: Building B - Innovation Center F1 IP Phone 2-6
-    icon: cisco/modemand-phones/ip-phone
+    icon: cisco/modems-and-phones/ip-phone
     tier: endpoint
     zone: building-b-floor-1
   - id: acc-building-b-f1-03
@@ -826,32 +826,32 @@ devices:
     mgmt_ip: 10.0.21.13
   - id: ep-building-b-f1-03-01
     name: Building B - Innovation Center F1 Desktop PC 3-1
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: building-b-floor-1
   - id: ep-building-b-f1-03-02
     name: Building B - Innovation Center F1 Laptop 3-2
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: building-b-floor-1
   - id: ep-building-b-f1-03-03
     name: Building B - Innovation Center F1 Mac Workstation 3-3
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: building-b-floor-1
   - id: ep-building-b-f1-03-04
     name: Building B - Innovation Center F1 Tablet 3-4
-    icon: cisco/computer-and-peripherals/tablet
+    icon: cisco/endpoints/tablet
     tier: endpoint
     zone: building-b-floor-1
   - id: ep-building-b-f1-03-05
     name: Building B - Innovation Center F1 Printer 3-5
-    icon: cisco/computer-and-peripherals/printer
+    icon: cisco/endpoints/printer
     tier: endpoint
     zone: building-b-floor-1
   - id: ep-building-b-f1-03-06
     name: Building B - Innovation Center F1 IP Phone 3-6
-    icon: cisco/modemand-phones/ip-phone
+    icon: cisco/modems-and-phones/ip-phone
     tier: endpoint
     zone: building-b-floor-1
   - id: ap-building-b-f2-01
@@ -868,37 +868,37 @@ devices:
     mgmt_ip: 10.0.21.21
   - id: ep-building-b-f2-01-01
     name: Building B - Innovation Center F2 Desktop PC 1-1
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: building-b-floor-2
   - id: ep-building-b-f2-01-02
     name: Building B - Innovation Center F2 Laptop 1-2
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: building-b-floor-2
   - id: ep-building-b-f2-01-03
     name: Building B - Innovation Center F2 Mac Workstation 1-3
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: building-b-floor-2
   - id: ep-building-b-f2-01-04
     name: Building B - Innovation Center F2 Tablet 1-4
-    icon: cisco/computer-and-peripherals/tablet
+    icon: cisco/endpoints/tablet
     tier: endpoint
     zone: building-b-floor-2
   - id: ep-building-b-f2-01-05
     name: Building B - Innovation Center F2 Printer 1-5
-    icon: cisco/computer-and-peripherals/printer
+    icon: cisco/endpoints/printer
     tier: endpoint
     zone: building-b-floor-2
   - id: ep-building-b-f2-01-06
     name: Building B - Innovation Center F2 IP Phone 1-6
-    icon: cisco/modemand-phones/ip-phone
+    icon: cisco/modems-and-phones/ip-phone
     tier: endpoint
     zone: building-b-floor-2
   - id: ep-building-b-f2-01-07
     name: Building B - Innovation Center F2 Desktop PC 1-7
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: building-b-floor-2
   - id: acc-building-b-f2-02
@@ -909,38 +909,38 @@ devices:
     mgmt_ip: 10.0.21.22
   - id: ep-building-b-f2-02-01
     name: Building B - Innovation Center F2 Laptop 2-1
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: building-b-floor-2
     status: degraded
   - id: ep-building-b-f2-02-02
     name: Building B - Innovation Center F2 Mac Workstation 2-2
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: building-b-floor-2
   - id: ep-building-b-f2-02-03
     name: Building B - Innovation Center F2 Tablet 2-3
-    icon: cisco/computer-and-peripherals/tablet
+    icon: cisco/endpoints/tablet
     tier: endpoint
     zone: building-b-floor-2
   - id: ep-building-b-f2-02-04
     name: Building B - Innovation Center F2 Printer 2-4
-    icon: cisco/computer-and-peripherals/printer
+    icon: cisco/endpoints/printer
     tier: endpoint
     zone: building-b-floor-2
   - id: ep-building-b-f2-02-05
     name: Building B - Innovation Center F2 IP Phone 2-5
-    icon: cisco/modemand-phones/ip-phone
+    icon: cisco/modems-and-phones/ip-phone
     tier: endpoint
     zone: building-b-floor-2
   - id: ep-building-b-f2-02-06
     name: Building B - Innovation Center F2 Desktop PC 2-6
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: building-b-floor-2
   - id: ep-building-b-f2-02-07
     name: Building B - Innovation Center F2 Laptop 2-7
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: building-b-floor-2
   - id: acc-building-b-f2-03
@@ -951,37 +951,37 @@ devices:
     mgmt_ip: 10.0.21.23
   - id: ep-building-b-f2-03-01
     name: Building B - Innovation Center F2 Mac Workstation 3-1
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: building-b-floor-2
   - id: ep-building-b-f2-03-02
     name: Building B - Innovation Center F2 Tablet 3-2
-    icon: cisco/computer-and-peripherals/tablet
+    icon: cisco/endpoints/tablet
     tier: endpoint
     zone: building-b-floor-2
   - id: ep-building-b-f2-03-03
     name: Building B - Innovation Center F2 Printer 3-3
-    icon: cisco/computer-and-peripherals/printer
+    icon: cisco/endpoints/printer
     tier: endpoint
     zone: building-b-floor-2
   - id: ep-building-b-f2-03-04
     name: Building B - Innovation Center F2 IP Phone 3-4
-    icon: cisco/modemand-phones/ip-phone
+    icon: cisco/modems-and-phones/ip-phone
     tier: endpoint
     zone: building-b-floor-2
   - id: ep-building-b-f2-03-05
     name: Building B - Innovation Center F2 Desktop PC 3-5
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: building-b-floor-2
   - id: ep-building-b-f2-03-06
     name: Building B - Innovation Center F2 Laptop 3-6
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: building-b-floor-2
   - id: ep-building-b-f2-03-07
     name: Building B - Innovation Center F2 Mac Workstation 3-7
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: building-b-floor-2
   - id: acc-building-b-f2-04
@@ -993,38 +993,38 @@ devices:
     status: down
   - id: ep-building-b-f2-04-01
     name: Building B - Innovation Center F2 Tablet 4-1
-    icon: cisco/computer-and-peripherals/tablet
+    icon: cisco/endpoints/tablet
     tier: endpoint
     zone: building-b-floor-2
   - id: ep-building-b-f2-04-02
     name: Building B - Innovation Center F2 Printer 4-2
-    icon: cisco/computer-and-peripherals/printer
+    icon: cisco/endpoints/printer
     tier: endpoint
     zone: building-b-floor-2
   - id: ep-building-b-f2-04-03
     name: Building B - Innovation Center F2 IP Phone 4-3
-    icon: cisco/modemand-phones/ip-phone
+    icon: cisco/modems-and-phones/ip-phone
     tier: endpoint
     zone: building-b-floor-2
   - id: ep-building-b-f2-04-04
     name: Building B - Innovation Center F2 Desktop PC 4-4
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: building-b-floor-2
     status: degraded
   - id: ep-building-b-f2-04-05
     name: Building B - Innovation Center F2 Laptop 4-5
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: building-b-floor-2
   - id: ep-building-b-f2-04-06
     name: Building B - Innovation Center F2 Mac Workstation 4-6
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: building-b-floor-2
   - id: ep-building-b-f2-04-07
     name: Building B - Innovation Center F2 Tablet 4-7
-    icon: cisco/computer-and-peripherals/tablet
+    icon: cisco/endpoints/tablet
     tier: endpoint
     zone: building-b-floor-2
   - id: ap-building-b-f3-01
@@ -1041,43 +1041,43 @@ devices:
     mgmt_ip: 10.0.21.31
   - id: ep-building-b-f3-01-01
     name: Building B - Innovation Center F3 Desktop PC 1-1
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: building-b-floor-3
   - id: ep-building-b-f3-01-02
     name: Building B - Innovation Center F3 Laptop 1-2
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: building-b-floor-3
     status: planned
   - id: ep-building-b-f3-01-03
     name: Building B - Innovation Center F3 Mac Workstation 1-3
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: building-b-floor-3
   - id: ep-building-b-f3-01-04
     name: Building B - Innovation Center F3 Tablet 1-4
-    icon: cisco/computer-and-peripherals/tablet
+    icon: cisco/endpoints/tablet
     tier: endpoint
     zone: building-b-floor-3
   - id: ep-building-b-f3-01-05
     name: Building B - Innovation Center F3 Printer 1-5
-    icon: cisco/computer-and-peripherals/printer
+    icon: cisco/endpoints/printer
     tier: endpoint
     zone: building-b-floor-3
   - id: ep-building-b-f3-01-06
     name: Building B - Innovation Center F3 IP Phone 1-6
-    icon: cisco/modemand-phones/ip-phone
+    icon: cisco/modems-and-phones/ip-phone
     tier: endpoint
     zone: building-b-floor-3
   - id: ep-building-b-f3-01-07
     name: Building B - Innovation Center F3 Desktop PC 1-7
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: building-b-floor-3
   - id: ep-building-b-f3-01-08
     name: Building B - Innovation Center F3 Laptop 1-8
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: building-b-floor-3
   - id: acc-building-b-f3-02
@@ -1088,43 +1088,43 @@ devices:
     mgmt_ip: 10.0.21.32
   - id: ep-building-b-f3-02-01
     name: Building B - Innovation Center F3 Mac Workstation 2-1
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: building-b-floor-3
   - id: ep-building-b-f3-02-02
     name: Building B - Innovation Center F3 Tablet 2-2
-    icon: cisco/computer-and-peripherals/tablet
+    icon: cisco/endpoints/tablet
     tier: endpoint
     zone: building-b-floor-3
   - id: ep-building-b-f3-02-03
     name: Building B - Innovation Center F3 Printer 2-3
-    icon: cisco/computer-and-peripherals/printer
+    icon: cisco/endpoints/printer
     tier: endpoint
     zone: building-b-floor-3
   - id: ep-building-b-f3-02-04
     name: Building B - Innovation Center F3 IP Phone 2-4
-    icon: cisco/modemand-phones/ip-phone
+    icon: cisco/modems-and-phones/ip-phone
     tier: endpoint
     zone: building-b-floor-3
   - id: ep-building-b-f3-02-05
     name: Building B - Innovation Center F3 Desktop PC 2-5
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: building-b-floor-3
     status: degraded
   - id: ep-building-b-f3-02-06
     name: Building B - Innovation Center F3 Laptop 2-6
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: building-b-floor-3
   - id: ep-building-b-f3-02-07
     name: Building B - Innovation Center F3 Mac Workstation 2-7
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: building-b-floor-3
   - id: ep-building-b-f3-02-08
     name: Building B - Innovation Center F3 Tablet 2-8
-    icon: cisco/computer-and-peripherals/tablet
+    icon: cisco/endpoints/tablet
     tier: endpoint
     zone: building-b-floor-3
   - id: dist-building-c-01
@@ -1155,47 +1155,47 @@ devices:
     mgmt_ip: 10.0.22.11
   - id: ep-building-c-f1-01-01
     name: Building C - Operations F1 Desktop PC 1-1
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: building-c-floor-1
   - id: ep-building-c-f1-01-02
     name: Building C - Operations F1 Laptop 1-2
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: building-c-floor-1
   - id: ep-building-c-f1-01-03
     name: Building C - Operations F1 Mac Workstation 1-3
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: building-c-floor-1
   - id: ep-building-c-f1-01-04
     name: Building C - Operations F1 Tablet 1-4
-    icon: cisco/computer-and-peripherals/tablet
+    icon: cisco/endpoints/tablet
     tier: endpoint
     zone: building-c-floor-1
   - id: ep-building-c-f1-01-05
     name: Building C - Operations F1 Printer 1-5
-    icon: cisco/computer-and-peripherals/printer
+    icon: cisco/endpoints/printer
     tier: endpoint
     zone: building-c-floor-1
   - id: ep-building-c-f1-01-06
     name: Building C - Operations F1 IP Phone 1-6
-    icon: cisco/modemand-phones/ip-phone
+    icon: cisco/modems-and-phones/ip-phone
     tier: endpoint
     zone: building-c-floor-1
   - id: ep-building-c-f1-01-07
     name: Building C - Operations F1 Desktop PC 1-7
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: building-c-floor-1
   - id: ep-building-c-f1-01-08
     name: Building C - Operations F1 Laptop 1-8
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: building-c-floor-1
   - id: ep-building-c-f1-01-09
     name: Building C - Operations F1 Mac Workstation 1-9
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: building-c-floor-1
     status: down
@@ -1207,48 +1207,48 @@ devices:
     mgmt_ip: 10.0.22.12
   - id: ep-building-c-f1-02-01
     name: Building C - Operations F1 Tablet 2-1
-    icon: cisco/computer-and-peripherals/tablet
+    icon: cisco/endpoints/tablet
     tier: endpoint
     zone: building-c-floor-1
   - id: ep-building-c-f1-02-02
     name: Building C - Operations F1 Printer 2-2
-    icon: cisco/computer-and-peripherals/printer
+    icon: cisco/endpoints/printer
     tier: endpoint
     zone: building-c-floor-1
   - id: ep-building-c-f1-02-03
     name: Building C - Operations F1 IP Phone 2-3
-    icon: cisco/modemand-phones/ip-phone
+    icon: cisco/modems-and-phones/ip-phone
     tier: endpoint
     zone: building-c-floor-1
   - id: ep-building-c-f1-02-04
     name: Building C - Operations F1 Desktop PC 2-4
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: building-c-floor-1
     status: degraded
   - id: ep-building-c-f1-02-05
     name: Building C - Operations F1 Laptop 2-5
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: building-c-floor-1
   - id: ep-building-c-f1-02-06
     name: Building C - Operations F1 Mac Workstation 2-6
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: building-c-floor-1
   - id: ep-building-c-f1-02-07
     name: Building C - Operations F1 Tablet 2-7
-    icon: cisco/computer-and-peripherals/tablet
+    icon: cisco/endpoints/tablet
     tier: endpoint
     zone: building-c-floor-1
   - id: ep-building-c-f1-02-08
     name: Building C - Operations F1 Printer 2-8
-    icon: cisco/computer-and-peripherals/printer
+    icon: cisco/endpoints/printer
     tier: endpoint
     zone: building-c-floor-1
   - id: ep-building-c-f1-02-09
     name: Building C - Operations F1 IP Phone 2-9
-    icon: cisco/modemand-phones/ip-phone
+    icon: cisco/modems-and-phones/ip-phone
     tier: endpoint
     zone: building-c-floor-1
   - id: acc-building-c-f1-03
@@ -1259,47 +1259,47 @@ devices:
     mgmt_ip: 10.0.22.13
   - id: ep-building-c-f1-03-01
     name: Building C - Operations F1 Desktop PC 3-1
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: building-c-floor-1
   - id: ep-building-c-f1-03-02
     name: Building C - Operations F1 Laptop 3-2
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: building-c-floor-1
   - id: ep-building-c-f1-03-03
     name: Building C - Operations F1 Mac Workstation 3-3
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: building-c-floor-1
   - id: ep-building-c-f1-03-04
     name: Building C - Operations F1 Tablet 3-4
-    icon: cisco/computer-and-peripherals/tablet
+    icon: cisco/endpoints/tablet
     tier: endpoint
     zone: building-c-floor-1
   - id: ep-building-c-f1-03-05
     name: Building C - Operations F1 Printer 3-5
-    icon: cisco/computer-and-peripherals/printer
+    icon: cisco/endpoints/printer
     tier: endpoint
     zone: building-c-floor-1
   - id: ep-building-c-f1-03-06
     name: Building C - Operations F1 IP Phone 3-6
-    icon: cisco/modemand-phones/ip-phone
+    icon: cisco/modems-and-phones/ip-phone
     tier: endpoint
     zone: building-c-floor-1
   - id: ep-building-c-f1-03-07
     name: Building C - Operations F1 Desktop PC 3-7
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: building-c-floor-1
   - id: ep-building-c-f1-03-08
     name: Building C - Operations F1 Laptop 3-8
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: building-c-floor-1
   - id: ep-building-c-f1-03-09
     name: Building C - Operations F1 Mac Workstation 3-9
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: building-c-floor-1
   - id: ap-building-c-f2-01
@@ -1316,34 +1316,34 @@ devices:
     mgmt_ip: 10.0.22.21
   - id: ep-building-c-f2-01-01
     name: Building C - Operations F2 Desktop PC 1-1
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: building-c-floor-2
   - id: ep-building-c-f2-01-02
     name: Building C - Operations F2 Laptop 1-2
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: building-c-floor-2
     status: degraded
   - id: ep-building-c-f2-01-03
     name: Building C - Operations F2 Mac Workstation 1-3
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: building-c-floor-2
   - id: ep-building-c-f2-01-04
     name: Building C - Operations F2 Tablet 1-4
-    icon: cisco/computer-and-peripherals/tablet
+    icon: cisco/endpoints/tablet
     tier: endpoint
     zone: building-c-floor-2
   - id: ep-building-c-f2-01-05
     name: Building C - Operations F2 Printer 1-5
-    icon: cisco/computer-and-peripherals/printer
+    icon: cisco/endpoints/printer
     tier: endpoint
     zone: building-c-floor-2
     status: planned
   - id: ep-building-c-f2-01-06
     name: Building C - Operations F2 IP Phone 1-6
-    icon: cisco/modemand-phones/ip-phone
+    icon: cisco/modems-and-phones/ip-phone
     tier: endpoint
     zone: building-c-floor-2
   - id: acc-building-c-f2-02
@@ -1354,32 +1354,32 @@ devices:
     mgmt_ip: 10.0.22.22
   - id: ep-building-c-f2-02-01
     name: Building C - Operations F2 Desktop PC 2-1
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: building-c-floor-2
   - id: ep-building-c-f2-02-02
     name: Building C - Operations F2 Laptop 2-2
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: building-c-floor-2
   - id: ep-building-c-f2-02-03
     name: Building C - Operations F2 Mac Workstation 2-3
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: building-c-floor-2
   - id: ep-building-c-f2-02-04
     name: Building C - Operations F2 Tablet 2-4
-    icon: cisco/computer-and-peripherals/tablet
+    icon: cisco/endpoints/tablet
     tier: endpoint
     zone: building-c-floor-2
   - id: ep-building-c-f2-02-05
     name: Building C - Operations F2 Printer 2-5
-    icon: cisco/computer-and-peripherals/printer
+    icon: cisco/endpoints/printer
     tier: endpoint
     zone: building-c-floor-2
   - id: ep-building-c-f2-02-06
     name: Building C - Operations F2 IP Phone 2-6
-    icon: cisco/modemand-phones/ip-phone
+    icon: cisco/modems-and-phones/ip-phone
     tier: endpoint
     zone: building-c-floor-2
   - id: acc-building-c-f2-03
@@ -1390,33 +1390,33 @@ devices:
     mgmt_ip: 10.0.22.23
   - id: ep-building-c-f2-03-01
     name: Building C - Operations F2 Desktop PC 3-1
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: building-c-floor-2
     status: down
   - id: ep-building-c-f2-03-02
     name: Building C - Operations F2 Laptop 3-2
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: building-c-floor-2
   - id: ep-building-c-f2-03-03
     name: Building C - Operations F2 Mac Workstation 3-3
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: building-c-floor-2
   - id: ep-building-c-f2-03-04
     name: Building C - Operations F2 Tablet 3-4
-    icon: cisco/computer-and-peripherals/tablet
+    icon: cisco/endpoints/tablet
     tier: endpoint
     zone: building-c-floor-2
   - id: ep-building-c-f2-03-05
     name: Building C - Operations F2 Printer 3-5
-    icon: cisco/computer-and-peripherals/printer
+    icon: cisco/endpoints/printer
     tier: endpoint
     zone: building-c-floor-2
   - id: ep-building-c-f2-03-06
     name: Building C - Operations F2 IP Phone 3-6
-    icon: cisco/modemand-phones/ip-phone
+    icon: cisco/modems-and-phones/ip-phone
     tier: endpoint
     zone: building-c-floor-2
   - id: acc-building-c-f2-04
@@ -1428,32 +1428,32 @@ devices:
     status: degraded
   - id: ep-building-c-f2-04-01
     name: Building C - Operations F2 Desktop PC 4-1
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: building-c-floor-2
   - id: ep-building-c-f2-04-02
     name: Building C - Operations F2 Laptop 4-2
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: building-c-floor-2
   - id: ep-building-c-f2-04-03
     name: Building C - Operations F2 Mac Workstation 4-3
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: building-c-floor-2
   - id: ep-building-c-f2-04-04
     name: Building C - Operations F2 Tablet 4-4
-    icon: cisco/computer-and-peripherals/tablet
+    icon: cisco/endpoints/tablet
     tier: endpoint
     zone: building-c-floor-2
   - id: ep-building-c-f2-04-05
     name: Building C - Operations F2 Printer 4-5
-    icon: cisco/computer-and-peripherals/printer
+    icon: cisco/endpoints/printer
     tier: endpoint
     zone: building-c-floor-2
   - id: ep-building-c-f2-04-06
     name: Building C - Operations F2 IP Phone 4-6
-    icon: cisco/modemand-phones/ip-phone
+    icon: cisco/modems-and-phones/ip-phone
     tier: endpoint
     zone: building-c-floor-2
   - id: ap-building-c-f3-01
@@ -1470,37 +1470,37 @@ devices:
     mgmt_ip: 10.0.22.31
   - id: ep-building-c-f3-01-01
     name: Building C - Operations F3 Desktop PC 1-1
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: building-c-floor-3
   - id: ep-building-c-f3-01-02
     name: Building C - Operations F3 Laptop 1-2
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: building-c-floor-3
   - id: ep-building-c-f3-01-03
     name: Building C - Operations F3 Mac Workstation 1-3
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: building-c-floor-3
   - id: ep-building-c-f3-01-04
     name: Building C - Operations F3 Tablet 1-4
-    icon: cisco/computer-and-peripherals/tablet
+    icon: cisco/endpoints/tablet
     tier: endpoint
     zone: building-c-floor-3
   - id: ep-building-c-f3-01-05
     name: Building C - Operations F3 Printer 1-5
-    icon: cisco/computer-and-peripherals/printer
+    icon: cisco/endpoints/printer
     tier: endpoint
     zone: building-c-floor-3
   - id: ep-building-c-f3-01-06
     name: Building C - Operations F3 IP Phone 1-6
-    icon: cisco/modemand-phones/ip-phone
+    icon: cisco/modems-and-phones/ip-phone
     tier: endpoint
     zone: building-c-floor-3
   - id: ep-building-c-f3-01-07
     name: Building C - Operations F3 Desktop PC 1-7
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: building-c-floor-3
   - id: acc-building-c-f3-02
@@ -1511,38 +1511,38 @@ devices:
     mgmt_ip: 10.0.22.32
   - id: ep-building-c-f3-02-01
     name: Building C - Operations F3 Laptop 2-1
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: building-c-floor-3
   - id: ep-building-c-f3-02-02
     name: Building C - Operations F3 Mac Workstation 2-2
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: building-c-floor-3
   - id: ep-building-c-f3-02-03
     name: Building C - Operations F3 Tablet 2-3
-    icon: cisco/computer-and-peripherals/tablet
+    icon: cisco/endpoints/tablet
     tier: endpoint
     zone: building-c-floor-3
     status: degraded
   - id: ep-building-c-f3-02-04
     name: Building C - Operations F3 Printer 2-4
-    icon: cisco/computer-and-peripherals/printer
+    icon: cisco/endpoints/printer
     tier: endpoint
     zone: building-c-floor-3
   - id: ep-building-c-f3-02-05
     name: Building C - Operations F3 IP Phone 2-5
-    icon: cisco/modemand-phones/ip-phone
+    icon: cisco/modems-and-phones/ip-phone
     tier: endpoint
     zone: building-c-floor-3
   - id: ep-building-c-f3-02-06
     name: Building C - Operations F3 Desktop PC 2-6
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: building-c-floor-3
   - id: ep-building-c-f3-02-07
     name: Building C - Operations F3 Laptop 2-7
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: building-c-floor-3
   - id: ap-building-c-f4-01
@@ -1559,43 +1559,43 @@ devices:
     mgmt_ip: 10.0.22.41
   - id: ep-building-c-f4-01-01
     name: Building C - Operations F4 Desktop PC 1-1
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: building-c-floor-4
   - id: ep-building-c-f4-01-02
     name: Building C - Operations F4 Laptop 1-2
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: building-c-floor-4
   - id: ep-building-c-f4-01-03
     name: Building C - Operations F4 Mac Workstation 1-3
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: building-c-floor-4
   - id: ep-building-c-f4-01-04
     name: Building C - Operations F4 Tablet 1-4
-    icon: cisco/computer-and-peripherals/tablet
+    icon: cisco/endpoints/tablet
     tier: endpoint
     zone: building-c-floor-4
   - id: ep-building-c-f4-01-05
     name: Building C - Operations F4 Printer 1-5
-    icon: cisco/computer-and-peripherals/printer
+    icon: cisco/endpoints/printer
     tier: endpoint
     zone: building-c-floor-4
   - id: ep-building-c-f4-01-06
     name: Building C - Operations F4 IP Phone 1-6
-    icon: cisco/modemand-phones/ip-phone
+    icon: cisco/modems-and-phones/ip-phone
     tier: endpoint
     zone: building-c-floor-4
     status: down
   - id: ep-building-c-f4-01-07
     name: Building C - Operations F4 Desktop PC 1-7
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: building-c-floor-4
   - id: ep-building-c-f4-01-08
     name: Building C - Operations F4 Laptop 1-8
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: building-c-floor-4
   - id: acc-building-c-f4-02
@@ -1606,44 +1606,44 @@ devices:
     mgmt_ip: 10.0.22.42
   - id: ep-building-c-f4-02-01
     name: Building C - Operations F4 Mac Workstation 2-1
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: building-c-floor-4
   - id: ep-building-c-f4-02-02
     name: Building C - Operations F4 Tablet 2-2
-    icon: cisco/computer-and-peripherals/tablet
+    icon: cisco/endpoints/tablet
     tier: endpoint
     zone: building-c-floor-4
   - id: ep-building-c-f4-02-03
     name: Building C - Operations F4 Printer 2-3
-    icon: cisco/computer-and-peripherals/printer
+    icon: cisco/endpoints/printer
     tier: endpoint
     zone: building-c-floor-4
     status: planned
   - id: ep-building-c-f4-02-04
     name: Building C - Operations F4 IP Phone 2-4
-    icon: cisco/modemand-phones/ip-phone
+    icon: cisco/modems-and-phones/ip-phone
     tier: endpoint
     zone: building-c-floor-4
     status: degraded
   - id: ep-building-c-f4-02-05
     name: Building C - Operations F4 Desktop PC 2-5
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: building-c-floor-4
   - id: ep-building-c-f4-02-06
     name: Building C - Operations F4 Laptop 2-6
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: building-c-floor-4
   - id: ep-building-c-f4-02-07
     name: Building C - Operations F4 Mac Workstation 2-7
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: building-c-floor-4
   - id: ep-building-c-f4-02-08
     name: Building C - Operations F4 Tablet 2-8
-    icon: cisco/computer-and-peripherals/tablet
+    icon: cisco/endpoints/tablet
     tier: endpoint
     zone: building-c-floor-4
   - id: acc-building-c-f4-03
@@ -1654,42 +1654,42 @@ devices:
     mgmt_ip: 10.0.22.43
   - id: ep-building-c-f4-03-01
     name: Building C - Operations F4 Printer 3-1
-    icon: cisco/computer-and-peripherals/printer
+    icon: cisco/endpoints/printer
     tier: endpoint
     zone: building-c-floor-4
   - id: ep-building-c-f4-03-02
     name: Building C - Operations F4 IP Phone 3-2
-    icon: cisco/modemand-phones/ip-phone
+    icon: cisco/modems-and-phones/ip-phone
     tier: endpoint
     zone: building-c-floor-4
   - id: ep-building-c-f4-03-03
     name: Building C - Operations F4 Desktop PC 3-3
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: building-c-floor-4
   - id: ep-building-c-f4-03-04
     name: Building C - Operations F4 Laptop 3-4
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: building-c-floor-4
   - id: ep-building-c-f4-03-05
     name: Building C - Operations F4 Mac Workstation 3-5
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: building-c-floor-4
   - id: ep-building-c-f4-03-06
     name: Building C - Operations F4 Tablet 3-6
-    icon: cisco/computer-and-peripherals/tablet
+    icon: cisco/endpoints/tablet
     tier: endpoint
     zone: building-c-floor-4
   - id: ep-building-c-f4-03-07
     name: Building C - Operations F4 Printer 3-7
-    icon: cisco/computer-and-peripherals/printer
+    icon: cisco/endpoints/printer
     tier: endpoint
     zone: building-c-floor-4
   - id: ep-building-c-f4-03-08
     name: Building C - Operations F4 IP Phone 3-8
-    icon: cisco/modemand-phones/ip-phone
+    icon: cisco/modems-and-phones/ip-phone
     tier: endpoint
     zone: building-c-floor-4
   - id: dist-building-d-01
@@ -1720,48 +1720,48 @@ devices:
     mgmt_ip: 10.0.23.11
   - id: ep-building-d-f1-01-01
     name: Building D - Support Annex F1 Desktop PC 1-1
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: building-d-floor-1
   - id: ep-building-d-f1-01-02
     name: Building D - Support Annex F1 Laptop 1-2
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: building-d-floor-1
   - id: ep-building-d-f1-01-03
     name: Building D - Support Annex F1 Mac Workstation 1-3
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: building-d-floor-1
   - id: ep-building-d-f1-01-04
     name: Building D - Support Annex F1 Tablet 1-4
-    icon: cisco/computer-and-peripherals/tablet
+    icon: cisco/endpoints/tablet
     tier: endpoint
     zone: building-d-floor-1
     status: degraded
   - id: ep-building-d-f1-01-05
     name: Building D - Support Annex F1 Printer 1-5
-    icon: cisco/computer-and-peripherals/printer
+    icon: cisco/endpoints/printer
     tier: endpoint
     zone: building-d-floor-1
   - id: ep-building-d-f1-01-06
     name: Building D - Support Annex F1 IP Phone 1-6
-    icon: cisco/modemand-phones/ip-phone
+    icon: cisco/modems-and-phones/ip-phone
     tier: endpoint
     zone: building-d-floor-1
   - id: ep-building-d-f1-01-07
     name: Building D - Support Annex F1 Desktop PC 1-7
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: building-d-floor-1
   - id: ep-building-d-f1-01-08
     name: Building D - Support Annex F1 Laptop 1-8
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: building-d-floor-1
   - id: ep-building-d-f1-01-09
     name: Building D - Support Annex F1 Mac Workstation 1-9
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: building-d-floor-1
   - id: acc-building-d-f1-02
@@ -1772,48 +1772,48 @@ devices:
     mgmt_ip: 10.0.23.12
   - id: ep-building-d-f1-02-01
     name: Building D - Support Annex F1 Tablet 2-1
-    icon: cisco/computer-and-peripherals/tablet
+    icon: cisco/endpoints/tablet
     tier: endpoint
     zone: building-d-floor-1
   - id: ep-building-d-f1-02-02
     name: Building D - Support Annex F1 Printer 2-2
-    icon: cisco/computer-and-peripherals/printer
+    icon: cisco/endpoints/printer
     tier: endpoint
     zone: building-d-floor-1
   - id: ep-building-d-f1-02-03
     name: Building D - Support Annex F1 IP Phone 2-3
-    icon: cisco/modemand-phones/ip-phone
+    icon: cisco/modems-and-phones/ip-phone
     tier: endpoint
     zone: building-d-floor-1
   - id: ep-building-d-f1-02-04
     name: Building D - Support Annex F1 Desktop PC 2-4
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: building-d-floor-1
   - id: ep-building-d-f1-02-05
     name: Building D - Support Annex F1 Laptop 2-5
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: building-d-floor-1
     status: down
   - id: ep-building-d-f1-02-06
     name: Building D - Support Annex F1 Mac Workstation 2-6
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: building-d-floor-1
   - id: ep-building-d-f1-02-07
     name: Building D - Support Annex F1 Tablet 2-7
-    icon: cisco/computer-and-peripherals/tablet
+    icon: cisco/endpoints/tablet
     tier: endpoint
     zone: building-d-floor-1
   - id: ep-building-d-f1-02-08
     name: Building D - Support Annex F1 Printer 2-8
-    icon: cisco/computer-and-peripherals/printer
+    icon: cisco/endpoints/printer
     tier: endpoint
     zone: building-d-floor-1
   - id: ep-building-d-f1-02-09
     name: Building D - Support Annex F1 IP Phone 2-9
-    icon: cisco/modemand-phones/ip-phone
+    icon: cisco/modems-and-phones/ip-phone
     tier: endpoint
     zone: building-d-floor-1
   - id: acc-building-d-f1-03
@@ -1824,48 +1824,48 @@ devices:
     mgmt_ip: 10.0.23.13
   - id: ep-building-d-f1-03-01
     name: Building D - Support Annex F1 Desktop PC 3-1
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: building-d-floor-1
   - id: ep-building-d-f1-03-02
     name: Building D - Support Annex F1 Laptop 3-2
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: building-d-floor-1
   - id: ep-building-d-f1-03-03
     name: Building D - Support Annex F1 Mac Workstation 3-3
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: building-d-floor-1
     status: degraded
   - id: ep-building-d-f1-03-04
     name: Building D - Support Annex F1 Tablet 3-4
-    icon: cisco/computer-and-peripherals/tablet
+    icon: cisco/endpoints/tablet
     tier: endpoint
     zone: building-d-floor-1
   - id: ep-building-d-f1-03-05
     name: Building D - Support Annex F1 Printer 3-5
-    icon: cisco/computer-and-peripherals/printer
+    icon: cisco/endpoints/printer
     tier: endpoint
     zone: building-d-floor-1
   - id: ep-building-d-f1-03-06
     name: Building D - Support Annex F1 IP Phone 3-6
-    icon: cisco/modemand-phones/ip-phone
+    icon: cisco/modems-and-phones/ip-phone
     tier: endpoint
     zone: building-d-floor-1
   - id: ep-building-d-f1-03-07
     name: Building D - Support Annex F1 Desktop PC 3-7
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: building-d-floor-1
   - id: ep-building-d-f1-03-08
     name: Building D - Support Annex F1 Laptop 3-8
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: building-d-floor-1
   - id: ep-building-d-f1-03-09
     name: Building D - Support Annex F1 Mac Workstation 3-9
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: building-d-floor-1
   - id: acc-building-d-f1-04
@@ -1876,48 +1876,48 @@ devices:
     mgmt_ip: 10.0.23.14
   - id: ep-building-d-f1-04-01
     name: Building D - Support Annex F1 Tablet 4-1
-    icon: cisco/computer-and-peripherals/tablet
+    icon: cisco/endpoints/tablet
     tier: endpoint
     zone: building-d-floor-1
   - id: ep-building-d-f1-04-02
     name: Building D - Support Annex F1 Printer 4-2
-    icon: cisco/computer-and-peripherals/printer
+    icon: cisco/endpoints/printer
     tier: endpoint
     zone: building-d-floor-1
   - id: ep-building-d-f1-04-03
     name: Building D - Support Annex F1 IP Phone 4-3
-    icon: cisco/modemand-phones/ip-phone
+    icon: cisco/modems-and-phones/ip-phone
     tier: endpoint
     zone: building-d-floor-1
   - id: ep-building-d-f1-04-04
     name: Building D - Support Annex F1 Desktop PC 4-4
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: building-d-floor-1
   - id: ep-building-d-f1-04-05
     name: Building D - Support Annex F1 Laptop 4-5
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: building-d-floor-1
   - id: ep-building-d-f1-04-06
     name: Building D - Support Annex F1 Mac Workstation 4-6
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: building-d-floor-1
   - id: ep-building-d-f1-04-07
     name: Building D - Support Annex F1 Tablet 4-7
-    icon: cisco/computer-and-peripherals/tablet
+    icon: cisco/endpoints/tablet
     tier: endpoint
     zone: building-d-floor-1
     status: planned
   - id: ep-building-d-f1-04-08
     name: Building D - Support Annex F1 Printer 4-8
-    icon: cisco/computer-and-peripherals/printer
+    icon: cisco/endpoints/printer
     tier: endpoint
     zone: building-d-floor-1
   - id: ep-building-d-f1-04-09
     name: Building D - Support Annex F1 IP Phone 4-9
-    icon: cisco/modemand-phones/ip-phone
+    icon: cisco/modems-and-phones/ip-phone
     tier: endpoint
     zone: building-d-floor-1
   - id: ap-building-d-f2-01
@@ -1934,33 +1934,33 @@ devices:
     mgmt_ip: 10.0.23.21
   - id: ep-building-d-f2-01-01
     name: Building D - Support Annex F2 Desktop PC 1-1
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: building-d-floor-2
     status: degraded
   - id: ep-building-d-f2-01-02
     name: Building D - Support Annex F2 Laptop 1-2
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: building-d-floor-2
   - id: ep-building-d-f2-01-03
     name: Building D - Support Annex F2 Mac Workstation 1-3
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: building-d-floor-2
   - id: ep-building-d-f2-01-04
     name: Building D - Support Annex F2 Tablet 1-4
-    icon: cisco/computer-and-peripherals/tablet
+    icon: cisco/endpoints/tablet
     tier: endpoint
     zone: building-d-floor-2
   - id: ep-building-d-f2-01-05
     name: Building D - Support Annex F2 Printer 1-5
-    icon: cisco/computer-and-peripherals/printer
+    icon: cisco/endpoints/printer
     tier: endpoint
     zone: building-d-floor-2
   - id: ep-building-d-f2-01-06
     name: Building D - Support Annex F2 IP Phone 1-6
-    icon: cisco/modemand-phones/ip-phone
+    icon: cisco/modems-and-phones/ip-phone
     tier: endpoint
     zone: building-d-floor-2
   - id: acc-building-d-f2-02
@@ -1971,33 +1971,33 @@ devices:
     mgmt_ip: 10.0.23.22
   - id: ep-building-d-f2-02-01
     name: Building D - Support Annex F2 Desktop PC 2-1
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: building-d-floor-2
   - id: ep-building-d-f2-02-02
     name: Building D - Support Annex F2 Laptop 2-2
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: building-d-floor-2
   - id: ep-building-d-f2-02-03
     name: Building D - Support Annex F2 Mac Workstation 2-3
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: building-d-floor-2
   - id: ep-building-d-f2-02-04
     name: Building D - Support Annex F2 Tablet 2-4
-    icon: cisco/computer-and-peripherals/tablet
+    icon: cisco/endpoints/tablet
     tier: endpoint
     zone: building-d-floor-2
     status: down
   - id: ep-building-d-f2-02-05
     name: Building D - Support Annex F2 Printer 2-5
-    icon: cisco/computer-and-peripherals/printer
+    icon: cisco/endpoints/printer
     tier: endpoint
     zone: building-d-floor-2
   - id: ep-building-d-f2-02-06
     name: Building D - Support Annex F2 IP Phone 2-6
-    icon: cisco/modemand-phones/ip-phone
+    icon: cisco/modems-and-phones/ip-phone
     tier: endpoint
     zone: building-d-floor-2
 links:
