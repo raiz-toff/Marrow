@@ -157,31 +157,31 @@ devices:
   name: File Server
   status: planned
 - id: pc-01
-  icon: cisco/computer-and-peripherals/laptop
+  icon: cisco/endpoints/laptop
   tier: endpoint
   zone: access
   name: Sales Laptop 1
   status: up
 - id: pc-02
-  icon: cisco/computer-and-peripherals/macintosh
+  icon: cisco/endpoints/macintosh
   tier: endpoint
   zone: access
   name: Design Workstation 1
   status: up
 - id: pc-03
-  icon: cisco/computer-and-peripherals/laptop
+  icon: cisco/endpoints/laptop
   tier: endpoint
   zone: access
   name: Sales Laptop 2
   status: up
 - id: pc-04
-  icon: cisco/computer-and-peripherals/macintosh
+  icon: cisco/endpoints/macintosh
   tier: endpoint
   zone: access
   name: Design Workstation 2
   status: up
 - id: pc-05
-  icon: cisco/computer-and-peripherals/laptop
+  icon: cisco/endpoints/laptop
   tier: endpoint
   zone: access
   name: Front Desk Laptop

@@ -27,16 +27,29 @@
   "license": "MIT",
   "author": "rajkumar",
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "docs"
   ],
   "scripts": {
+    "prepare": "npm run compile",
     "setup": "node scripts/setup.mjs",
-    "build": "tsc -b && npm run bundle -w @marrow/runtime",
+    "dev": "node packages/cli/dist/index.js serve",
+    "dev:lan": "node packages/cli/dist/index.js serve --host 0.0.0.0",
+    "start": "npm run dev",
+    "build": "node packages/cli/dist/index.js build",
+    "validate": "node packages/cli/dist/index.js validate",
+    "snapshot": "node packages/cli/dist/index.js snapshot",
+    "icons": "node packages/cli/dist/index.js icons",
+    "marrow": "node packages/cli/dist/index.js",
+    "compile": "tsc -b && npm run bundle -w @marrow/runtime",
     "clean": "tsc -b --clean",
     "test": "vitest run",
+    "test:watch": "vitest",
     "gen:icons": "node packages/icons/dist/generate-cli.js icon-packs/cisco cisco Cisco && node packages/icons/dist/generate-cli.js icon-packs/generic generic Generic && node packages/icons/dist/generate-cli.js icon-packs/k8s k8s Kubernetes && node packages/icons/dist/generate-cli.js icon-packs/affinity affinity Affinity",
     "icons:pack": "node packages/icons/dist/generate-cli.js",
-    "marrow": "node packages/cli/dist/index.js"
+    "docs": "npm run dev -w @marrow/docs",
+    "docs:build": "npm run generate -w @marrow/docs",
+    "demos": "node docs/scripts/build-demos.mjs"
   },
   "devDependencies": {
     "@types/node": "^24.13.3",

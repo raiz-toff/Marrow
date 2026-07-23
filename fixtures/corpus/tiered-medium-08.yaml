@@ -109,13 +109,13 @@ devices:
   name: TA Access 4
   status: up
 - id: ta-ep-01
-  icon: cisco/computer-and-peripherals/laptop
+  icon: cisco/endpoints/laptop
   tier: endpoint
   zone: tenant-a
   name: TA Endpoint 1
   status: up
 - id: ta-ep-02
-  icon: cisco/computer-and-peripherals/macintosh
+  icon: cisco/endpoints/macintosh
   tier: endpoint
   zone: tenant-a
   name: TA Endpoint 2
@@ -127,13 +127,13 @@ devices:
   name: TA Endpoint 3
   status: up
 - id: ta-ep-04
-  icon: cisco/computer-and-peripherals/laptop
+  icon: cisco/endpoints/laptop
   tier: endpoint
   zone: tenant-a
   name: TA Endpoint 4
   status: up
 - id: ta-ep-05
-  icon: cisco/computer-and-peripherals/macintosh
+  icon: cisco/endpoints/macintosh
   tier: endpoint
   zone: tenant-a
   name: TA Endpoint 5
@@ -177,13 +177,13 @@ devices:
   name: TB Access 4
   status: degraded
 - id: tb-ep-01
-  icon: cisco/computer-and-peripherals/laptop
+  icon: cisco/endpoints/laptop
   tier: endpoint
   zone: tenant-b
   name: TB Endpoint 1
   status: up
 - id: tb-ep-02
-  icon: cisco/computer-and-peripherals/macintosh
+  icon: cisco/endpoints/macintosh
   tier: endpoint
   zone: tenant-b
   name: TB Endpoint 2
@@ -195,13 +195,13 @@ devices:
   name: TB Endpoint 3
   status: up
 - id: tb-ep-04
-  icon: cisco/computer-and-peripherals/laptop
+  icon: cisco/endpoints/laptop
   tier: endpoint
   zone: tenant-b
   name: TB Endpoint 4
   status: up
 - id: tb-ep-05
-  icon: cisco/computer-and-peripherals/macintosh
+  icon: cisco/endpoints/macintosh
   tier: endpoint
   zone: tenant-b
   name: TB Endpoint 5

@@ -86,7 +86,7 @@ devices:
   zone: branches
   name: Denver Branch Switch
 - id: branch-ep-01-1
-  icon: cisco/computer-and-peripherals/laptop
+  icon: cisco/endpoints/laptop
   tier: endpoint
   zone: branches
   name: Denver Front Desk Laptop
@@ -109,7 +109,7 @@ devices:
   zone: branches
   name: Austin Branch Switch
 - id: branch-ep-02-1
-  icon: cisco/computer-and-peripherals/laptop
+  icon: cisco/endpoints/laptop
   tier: endpoint
   zone: branches
   name: Austin Front Desk Laptop
@@ -132,7 +132,7 @@ devices:
   zone: branches
   name: Reno Branch Switch
 - id: branch-ep-03-1
-  icon: cisco/computer-and-peripherals/laptop
+  icon: cisco/endpoints/laptop
   tier: endpoint
   zone: branches
   name: Reno Front Desk Laptop
@@ -155,7 +155,7 @@ devices:
   zone: branches
   name: Tampa Branch Switch
 - id: branch-ep-04-1
-  icon: cisco/computer-and-peripherals/laptop
+  icon: cisco/endpoints/laptop
   tier: endpoint
   zone: branches
   name: Tampa Front Desk Laptop
@@ -178,7 +178,7 @@ devices:
   zone: branches
   name: Boise Branch Switch
 - id: branch-ep-05-1
-  icon: cisco/computer-and-peripherals/laptop
+  icon: cisco/endpoints/laptop
   tier: endpoint
   zone: branches
   name: Boise Front Desk Laptop
@@ -201,7 +201,7 @@ devices:
   zone: branches
   name: Akron Branch Switch
 - id: branch-ep-06-1
-  icon: cisco/computer-and-peripherals/laptop
+  icon: cisco/endpoints/laptop
   tier: endpoint
   zone: branches
   name: Akron Front Desk Laptop

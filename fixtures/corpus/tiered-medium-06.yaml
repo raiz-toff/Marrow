@@ -174,7 +174,7 @@ devices:
   name: Access Switch 20
   status: planned
 - id: ep-01
-  icon: cisco/computer-and-peripherals/macintosh
+  icon: cisco/endpoints/macintosh
   tier: endpoint
   zone: access
   name: Endpoint 1
@@ -192,13 +192,13 @@ devices:
   name: Endpoint 3
   status: up
 - id: ep-04
-  icon: cisco/computer-and-peripherals/laptop
+  icon: cisco/endpoints/laptop
   tier: endpoint
   zone: access
   name: Endpoint 4
   status: up
 - id: ep-05
-  icon: cisco/computer-and-peripherals/macintosh
+  icon: cisco/endpoints/macintosh
   tier: endpoint
   zone: access
   name: Endpoint 5
@@ -216,13 +216,13 @@ devices:
   name: Endpoint 7
   status: up
 - id: ep-08
-  icon: cisco/computer-and-peripherals/laptop
+  icon: cisco/endpoints/laptop
   tier: endpoint
   zone: access
   name: Endpoint 8
   status: up
 - id: ep-09
-  icon: cisco/computer-and-peripherals/macintosh
+  icon: cisco/endpoints/macintosh
   tier: endpoint
   zone: access
   name: Endpoint 9
@@ -240,13 +240,13 @@ devices:
   name: Endpoint 11
   status: up
 - id: ep-12
-  icon: cisco/computer-and-peripherals/laptop
+  icon: cisco/endpoints/laptop
   tier: endpoint
   zone: access
   name: Endpoint 12
   status: up
 - id: ep-13
-  icon: cisco/computer-and-peripherals/macintosh
+  icon: cisco/endpoints/macintosh
   tier: endpoint
   zone: access
   name: Endpoint 13
@@ -264,13 +264,13 @@ devices:
   name: Endpoint 15
   status: up
 - id: ep-16
-  icon: cisco/computer-and-peripherals/laptop
+  icon: cisco/endpoints/laptop
   tier: endpoint
   zone: access
   name: Endpoint 16
   status: up
 - id: ep-17
-  icon: cisco/computer-and-peripherals/macintosh
+  icon: cisco/endpoints/macintosh
   tier: endpoint
   zone: access
   name: Endpoint 17
@@ -288,13 +288,13 @@ devices:
   name: Endpoint 19
   status: up
 - id: ep-20
-  icon: cisco/computer-and-peripherals/laptop
+  icon: cisco/endpoints/laptop
   tier: endpoint
   zone: access
   name: Endpoint 20
   status: up
 - id: ep-21
-  icon: cisco/computer-and-peripherals/macintosh
+  icon: cisco/endpoints/macintosh
   tier: endpoint
   zone: access
   name: Endpoint 21
@@ -312,7 +312,7 @@ devices:
   name: Endpoint 23
   status: up
 - id: ep-24
-  icon: cisco/computer-and-peripherals/laptop
+  icon: cisco/endpoints/laptop
   tier: endpoint
   zone: access
   name: Endpoint 24

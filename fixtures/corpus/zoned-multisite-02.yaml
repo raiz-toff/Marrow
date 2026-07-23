@@ -58,7 +58,7 @@ devices:
     role: ERP / inventory
   - id: hq-pc-01
     name: HQ Merchandising Laptop
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: hq
   - id: sec-fw-01
@@ -69,7 +69,7 @@ devices:
     note: Only path between general LAN and the card-data environment
   - id: sec-ids-01
     name: PCI IDS Sensor
-    icon: cisco/cisco-safe-security-icons/ids
+    icon: cisco/safe-security/ids
     tier: edge
     zone: hq-security
   - id: sec-log-01
@@ -91,13 +91,13 @@ devices:
     zone: store-north
   - id: sn-pos-01
     name: Store North POS 1
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: store-north
     role: POS terminal
   - id: sn-pos-02
     name: Store North POS 2
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: store-north
     role: POS terminal
@@ -114,7 +114,7 @@ devices:
     zone: store-south
   - id: ss-pos-01
     name: Store South POS 1
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: store-south
     role: POS terminal
@@ -131,7 +131,7 @@ devices:
     zone: store-east
   - id: se-pos-01
     name: Store East POS 1
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: store-east
     role: POS terminal

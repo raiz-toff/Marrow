@@ -174,8 +174,8 @@ ok('Dependencies installed');
 
 // 3. Build
 step('Compiling the toolchain');
-info('npm run build — TypeScript + the runtime client bundle');
-if (!run('npm', ['run', 'build']).okay) fail('`npm run build` did not complete.', 'Check the compiler output above.');
+info('npm run compile — TypeScript + the runtime client bundle');
+if (!run('npm', ['run', 'compile']).okay) fail('`npm run compile` did not complete.', 'Check the compiler output above.');
 ok('Toolchain compiled (dist/ is fresh)');
 
 // 4. Icon packs

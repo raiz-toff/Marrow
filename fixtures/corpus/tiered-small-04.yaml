@@ -26,25 +26,25 @@ devices:
     zone: store
   - id: pos-01
     name: POS Terminal 1
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: store
     role: Point of Sale Terminal
   - id: pos-02
     name: POS Terminal 2
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: store
     role: Point of Sale Terminal
   - id: pos-03
     name: POS Terminal 3
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: store
     role: Point of Sale Terminal
   - id: printer-01
     name: Receipt Printer
-    icon: cisco/computer-and-peripherals/printer
+    icon: cisco/endpoints/printer
     tier: endpoint
     zone: store
   - id: ap-01
@@ -59,7 +59,7 @@ devices:
     zone: store
   - id: laptop-mgr
     name: Store Manager Laptop
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: store
     role: Store Manager Laptop

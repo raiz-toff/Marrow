@@ -110,12 +110,12 @@ devices:
     note: Primary financial database, replicated to cloud-dr
   - id: hq-pc-01
     name: HQ Reception Laptop
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: hq
   - id: hq-pc-02
     name: HQ Design Workstation
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: hq
   - id: dmz-fw-01
@@ -138,7 +138,7 @@ devices:
     role: SMTP relay
   - id: dmz-ids-01
     name: DMZ IDS Sensor
-    icon: cisco/cisco-safe-security-icons/ids
+    icon: cisco/safe-security/ids
     tier: edge
     zone: hq-dmz
     note: Passive tap off the firewall span port
@@ -160,7 +160,7 @@ devices:
     zone: branch-east
   - id: be-pc-01
     name: Branch East Laptop
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: branch-east
   - id: bw-rt-01
@@ -176,7 +176,7 @@ devices:
     zone: branch-west
   - id: bw-pc-01
     name: Branch West Laptop
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: branch-west
   - id: dr-vpn-01

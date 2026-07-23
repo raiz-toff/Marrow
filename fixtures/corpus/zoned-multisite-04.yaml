@@ -70,7 +70,7 @@ devices:
     role: Regional app server
   - id: r1-pc-01
     name: Region 1 Laptop
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: region-1
   - id: r1-edge-mpls-01
@@ -116,7 +116,7 @@ devices:
     zone: region-2
   - id: r2-pc-01
     name: Region 2 Workstation
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: region-2
   - id: r2-edge-mpls-01
@@ -156,12 +156,12 @@ devices:
     zone: region-3
   - id: r3-pc-01
     name: Region 3 Laptop
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: region-3
   - id: r3-legacy-modem-01
     name: Region 3 Legacy Modem
-    icon: cisco/modemand-phones/modem
+    icon: cisco/modems-and-phones/modem
     tier: edge
     zone: region-3
     role: Legacy serial backup link

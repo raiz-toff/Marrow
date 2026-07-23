@@ -92,13 +92,13 @@ devices:
     status: unknown
   - id: lab-pc1
     name: Lab PC 1
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: lab
     role: host
   - id: lab-pc2
     name: Lab PC 2
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: lab
     role: host

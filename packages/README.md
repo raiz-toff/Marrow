@@ -1,9 +1,18 @@
 # Marrow internals
 
 Agent-authored YAML in → a self-contained, offline, interactive network-diagram
-site out. This document maps the monorepo for contributors. User-facing docs are
-in the [root README](../README.md); the agent operating guide is in
-[AGENTS.md](../AGENTS.md).
+site out. The contributor documentation is on the docs site, which lives in this
+repository under [`../docs/content/6.contributing/`](../docs/content/6.contributing/):
+
+| | |
+| --- | --- |
+| [Architecture](../docs/content/6.contributing/2.architecture.md) | The compile pipeline, stage by stage, and the design invariants |
+| [Package map](../docs/content/6.contributing/3.packages.md) | What lives in each package, and where to make a given change |
+| [Testing](../docs/content/6.contributing/4.testing.md) | The suite, the fixture corpus, and verifying visual work |
+| [Adding an icon pack](../docs/content/6.contributing/5.adding-an-icon-pack.md) | Directory layout, manifest generation, licensing |
+
+User-facing docs: [root README](../README.md). Agent operating guide:
+[AGENTS.md](../AGENTS.md). Contribution process: [CONTRIBUTING.md](../CONTRIBUTING.md).
 
 ## Package map
 
@@ -24,19 +33,11 @@ packages/
 └─ cli           the marrow command
 ```
 
-Supporting trees at the repo root:
-
-```
-icon-packs/      drop-in icon packs (manifest.json + svg/) — affinity, k8s, generic (committed);
-                 aws, azure, gcp, cisco (user-provided; see icon-packs/LICENSES.md)
-fixtures/        valid/invalid/corpus/v1 topologies driving the test suite
-```
-
 ## Build & test
 
 ```
 npm install
-npm run build            # tsc -b + bundle the runtime client
+npm run compile            # tsc -b + bundle the runtime client
 npm test                 # 244 tests (vitest)
 ```
 
@@ -47,3 +48,7 @@ npm test                 # 244 tests (vitest)
 - Unknown keys are errors (except `x-`-prefixed annotations, which are ignored).
 - Meaning is **declared** in YAML, never guessed from names.
 - Determinism everywhere; builds must be reproducible byte-for-byte.
+- Every visual change lands in `render-svg` **and** the canvas engine **and**
+  `site/styles.ts` — never just one.
+- No framework dependencies in the viewer: the chrome is shadcn/ui *ported* to
+  vanilla CSS and TypeScript, because output must stay single-file and offline.

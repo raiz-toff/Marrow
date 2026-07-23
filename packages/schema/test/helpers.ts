@@ -21,7 +21,7 @@ export function ciscoCatalog(): IconCatalog {
     cached = loadCatalog(join(repoRoot, 'icon-packs'));
     if (cached.size === 0) {
       throw new Error(
-        'icon catalog is empty — generate it first: npm run build && npm run gen:icons',
+        'icon catalog is empty — generate it first: npm run compile && npm run gen:icons',
       );
     }
   }

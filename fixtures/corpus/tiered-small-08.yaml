@@ -41,27 +41,27 @@ devices:
     hero: true
   - id: ws-01
     name: Workstation 01
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: leaf
   - id: ws-02
     name: Laptop 02
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: leaf
   - id: ws-03
     name: iMac 03
-    icon: cisco/computer-and-peripherals/macintosh
+    icon: cisco/endpoints/macintosh
     tier: endpoint
     zone: leaf
   - id: ws-04
     name: Workstation 04
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: leaf
   - id: printer-01
     name: Leaf Printer
-    icon: cisco/computer-and-peripherals/printer
+    icon: cisco/endpoints/printer
     tier: endpoint
     zone: leaf
   - id: voip-01

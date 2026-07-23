@@ -88,17 +88,17 @@ devices:
     zone: access-south
   - id: ws-n1
     name: North Workstation 1
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: access-north
   - id: ws-n2
     name: North Laptop 2
-    icon: cisco/computer-and-peripherals/laptop
+    icon: cisco/endpoints/laptop
     tier: endpoint
     zone: access-north
   - id: ws-s1
     name: South Workstation 1
-    icon: cisco/computer-and-peripherals/pc
+    icon: cisco/endpoints/pc
     tier: endpoint
     zone: access-south
   - id: srv-db1

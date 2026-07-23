@@ -1,0 +1,53 @@
+marrow: 2
+name: Branch Office
+description: Every device declares a tier — layered top-down
+theme: dark
+hero: core-sw
+
+devices:
+  - id: edge-rt
+    name: Edge Router
+    icon: affinity/tile/router
+    tier: edge
+    role: WAN edge
+    mgmt_ip: 192.0.2.1
+  - id: fw
+    name: Firewall
+    icon: affinity/tile/firewall
+    tier: edge
+    mgmt_ip: 192.0.2.2
+  - id: core-sw
+    name: Core Switch
+    icon: affinity/tile/switch-multilayer
+    tier: core
+    mgmt_ip: 10.0.0.1
+    interfaces:
+      - name: Te1/0/1
+        description: uplink to firewall
+        vlan: 10
+  - id: acc-sw-01
+    name: Access 1
+    icon: affinity/tile/switch
+    tier: access
+  - id: acc-sw-02
+    name: Access 2
+    icon: affinity/tile/switch
+    tier: access
+  - id: srv
+    name: File Server
+    icon: affinity/tile/server
+    tier: endpoint
+    status: degraded
+    note: Disk array rebuilding
+  - id: wks
+    name: Workstations
+    icon: affinity/tile/laptop
+    tier: endpoint
+
+links:
+  - { from: edge-rt:Gi0/0, to: fw:eth1, kind: wan, speed: 1G }
+  - { from: fw:eth2, to: core-sw:Te1/0/1, kind: fiber, speed: 10G }
+  - { from: core-sw:Gi1/0/1, to: acc-sw-01:Gi0/48, kind: fiber, speed: 10G }
+  - { from: core-sw:Gi1/0/2, to: acc-sw-02:Gi0/48, kind: fiber, speed: 10G }
+  - { from: acc-sw-01:Gi0/1, to: srv:eno1, speed: 1G, status: degraded }
+  - { from: acc-sw-02:Gi0/1, to: wks:eth0, speed: 1G }
