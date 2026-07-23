@@ -1,0 +1,25 @@
+# The Vercel CLI does NOT read .gitignore — without this file it uploads the
+# whole working tree (20k+ files: build output, Python venvs, fetched icon
+# packs) and hits the 15,000-file limit. The docs site is the only deploy
+# target and needs none of the below. Keep packages/ (npm workspace members the
+# root install resolves) and docs/ (the site itself).
+
+# Generated Marrow build output
+output/
+.output/
+.nuxt/
+docs/.output/
+docs/.nuxt/
+
+# Archived Python v1 (reference only) + its virtualenvs
+legacy-v1/
+
+# Vendor icon SVGs — the docs use pre-built demo HTML, not these
+icon-packs/
+
+# Corpus fixtures and sample inputs — not needed to build the docs
+fixtures/
+input/
+
+# Local Vercel link state (also gitignored)
+.vercel/
