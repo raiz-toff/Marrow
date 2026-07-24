@@ -1,0 +1,20 @@
+marrow: 2
+name: LACP Port-Channels
+description: Link aggregation — an inter-core bundle plus dual-homed LACP uplinks
+theme: dark
+hero: core-01
+
+devices:
+  - { id: core-01, name: Core 1, icon: cisco/switches/layer-3-switch, tier: core, ha_pair_with: core-02 }
+  - { id: core-02, name: Core 2, icon: cisco/switches/layer-3-switch, tier: core, ha_pair_with: core-01 }
+  - { id: dist-01, name: Distribution, icon: cisco/switches/layer-3-switch, tier: distribution }
+
+links:
+  # inter-core port-channel Po1 — a plain 2×40G LACP bundle
+  - { from: core-01:Te1/0/1, to: core-02:Te1/0/1, kind: dac, speed: 40G, lag: po1, lacp: active }
+  - { from: core-01:Te1/0/2, to: core-02:Te1/0/2, kind: dac, speed: 40G, lag: po1, lacp: active }
+  # dual-homed uplinks: Po10 to core-1, Po11 to core-2 — LACP bundles carrying a trunk
+  - { from: dist-01:Te1/1/1, to: core-01:Te1/0/10, kind: fiber, speed: 10G, lag: po10, lacp: active, mode: trunk }
+  - { from: dist-01:Te1/1/2, to: core-01:Te1/0/11, kind: fiber, speed: 10G, lag: po10, lacp: active, mode: trunk }
+  - { from: dist-01:Te1/2/1, to: core-02:Te1/0/10, kind: fiber, speed: 10G, lag: po11, lacp: active, mode: trunk }
+  - { from: dist-01:Te1/2/2, to: core-02:Te1/0/11, kind: fiber, speed: 10G, lag: po11, lacp: active, mode: trunk }

@@ -117,6 +117,17 @@ kbd {
 }
 .m-edge.m-speed-10g, .m-edge.m-speed-25g { stroke-width: 3; }
 .m-edge.m-speed-40g, .m-edge.m-speed-100g, .m-edge.m-speed-400g { stroke-width: 4.5; }
+/* ── logical link modes: the stroke pattern says WHAT the cable carries.
+      Placed before the status rules so a degraded/planned colour still wins.
+      Dash values are in pathLength units (edges carry pathLength="1", so px
+      dashes are swallowed) — a tunnel shows ~the same dash count at any length. */
+:root { --dash-tunnel: 0.02 0.014; --dash-peering: 0.004 0.011; }
+.m-edge.m-mode-trunk { stroke-width: 4.5; }                 /* casing for the double rail */
+.m-edge.m-mode-stack { stroke-width: 5; stroke-linecap: round; }
+.m-edge.m-mode-tunnel { stroke-dasharray: var(--dash-tunnel); }
+.m-edge.m-mode-peering { stroke-dasharray: var(--dash-peering); stroke-linecap: round; opacity: .82; }
+/* the bg-coloured slot carved down the trunk casing → two parallel rails */
+.m-edge-rail { fill: none; stroke: var(--bg); stroke-width: 1.7; stroke-linejoin: round; opacity: .92; }
 /* traffic reads as accent; status colors below still win */
 .m-edge.m-flow { stroke: var(--m-accent); }
 /* dash vocabulary — one source of truth, reused by the inspector swatch */
@@ -158,16 +169,27 @@ kbd {
 .m-edge-label rect { fill: var(--bg); stroke: var(--line-strong); stroke-width: 1; rx: 10px; }
 .m-edge-label text { fill: var(--ink); font-size: 11px; font-weight: 700; }
 
+/* semantic link chips — VLANs / encap / protocol / lag, with an optional glyph */
+.m-edge-chip > rect { fill: var(--bg); stroke: var(--line-strong); stroke-width: 1; }
+.m-edge-chip > text { fill: var(--ink); font-size: 10.5px; font-weight: 600; letter-spacing: .01em; }
+.m-chip-glyph { fill: var(--ink-dim); }
+.m-chip-glyph path { fill: none; stroke: var(--ink-dim); stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; }
+.m-chip-glyph-stroke path { fill: none; stroke: var(--ink-dim); stroke-width: 1.3; stroke-linecap: round; }
+/* the VPN/tunnel chip is tinted so the padlock reads as "secure overlay" */
+.m-edge-chip[data-glyph="lock"] > rect { stroke: color-mix(in srgb, var(--m-accent) 50%, var(--line-strong)); }
+.m-edge-chip[data-glyph="lock"] .m-chip-glyph { fill: color-mix(in srgb, var(--m-accent) 70%, var(--ink-dim)); }
+
 /* focus mode: dim everything but the hovered/selected neighborhood */
 .m-node, .m-edge, .m-zone, .m-zone-titles { transition: opacity .25s; }
 .focus-mode .m-node:not(.is-focus):not(.is-adj):not(.is-selected) { opacity: .15; }
 .focus-mode .m-edge:not(.is-path) { opacity: .08; }
+.focus-mode .m-edge-rail { opacity: .08; }
 .focus-mode .m-zone { opacity: .35; }
 
 /* LOD: labels fade when zoomed far out; leaf links recede so the far view
    reads trunks and structure */
 :root[data-zoom="far"] .m-label { opacity: 0; }
-:root[data-zoom="far"] .m-edge.m-leaf { opacity: .18; }
+:root[data-zoom="far"] .m-edge.m-leaf, :root[data-zoom="far"] .m-edge-rail.m-leaf { opacity: .18; }
 
 /* ── entrance choreography ── */
 .m-enter-zone { animation: mZoneIn .5s ease-out both; }
@@ -176,14 +198,17 @@ kbd {
   animation-delay: var(--d, 0s);
   transform-box: fill-box; transform-origin: center;
 }
-.m-edge { stroke-dasharray: 1; stroke-dashoffset: 1; animation: mDraw .55s ease-out forwards; animation-delay: .7s; }
+.m-edge, .m-edge-rail { stroke-dasharray: 1; stroke-dashoffset: 1; animation: mDraw .55s ease-out forwards; animation-delay: .7s; }
 .m-edge.m-flow { animation: mDraw .55s ease-out forwards, mFlow 1.1s linear infinite; animation-delay: .7s, 1.4s; }
 @keyframes mZoneIn { from { opacity: 0; } }
 @keyframes mNodeIn { from { opacity: 0; transform: scale(.96) translateY(4px); } }
 @keyframes mDraw { to { stroke-dashoffset: 0; } }
 @keyframes mFlow { from { stroke-dasharray: .06 .045; stroke-dashoffset: .21; } to { stroke-dasharray: .06 .045; stroke-dashoffset: 0; } }
 .settled .m-enter-zone, .settled .m-enter-node { animation: none; }
-.settled .m-edge { animation: none; stroke-dasharray: none; stroke-dashoffset: 0; }
+.settled .m-edge, .settled .m-edge-rail { animation: none; stroke-dasharray: none; stroke-dashoffset: 0; }
+/* mode dashes must outlive the settle reset above (higher specificity, later) */
+.settled .m-edge.m-mode-tunnel { stroke-dasharray: var(--dash-tunnel); }
+.settled .m-edge.m-mode-peering { stroke-dasharray: var(--dash-peering); }
 .settled .m-edge.m-flow { animation: mFlow 1.1s linear infinite; }
 
 /* ── the menu chip (SidebarTrigger) floats top-left; view settings live in
@@ -656,6 +681,12 @@ a.m-side-row.active i, a.m-side-row.active em { color: var(--sidebar-fg); }
 }
 .m-swatch .m-edge.m-status-degraded { stroke-dasharray: var(--dash-degraded); }
 .m-swatch .m-edge.m-status-planned { stroke-dasharray: var(--dash-planned); }
+/* logical modes restated in px for the fixed-length swatch (no pathLength here,
+   so the graph's pathLength-unit mode dashes would collapse to nothing) */
+.m-swatch .m-edge.m-mode-tunnel { stroke-dasharray: 6 4; }
+.m-swatch .m-edge.m-mode-peering { stroke-dasharray: 1.5 4; stroke-linecap: round; }
+.m-swatch .m-edge.m-mode-trunk { stroke-width: 5; }
+.m-swatch .m-edge.m-mode-stack { stroke-width: 6; stroke-linecap: round; }
 /* mFlow's dashes are fractions of pathLength=1; in px terms that is 6/4.5 */
 @keyframes mSwatchFlow { to { stroke-dashoffset: -21px; } }
 .m-swatch .m-edge.m-flow { stroke-dasharray: 6 4.5; animation: mSwatchFlow 1.1s linear infinite; }

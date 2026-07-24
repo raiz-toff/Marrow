@@ -22,6 +22,7 @@ export default defineAppConfig({
       darkModeToggle: true,
       logo: { light: '/wordmark.svg', dark: '/wordmark-dark.svg' },
       nav: [
+        { title: 'Showcase', to: '/showcase', showLinkIcon: false },
         { title: 'Docs', to: '/getting-started/installation', showLinkIcon: false },
         { title: 'Reference', to: '/reference/schema', showLinkIcon: false },
         { title: 'For agents', to: '/agents/golden-loop', showLinkIcon: false },

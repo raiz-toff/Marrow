@@ -131,6 +131,12 @@ export async function layoutTopology(t: Topology, options: LayoutOptions = {}): 
     if (l.kind !== undefined) edge.kind = l.kind;
     if (l.speed !== undefined) edge.speed = l.speed;
     if (l.lag !== undefined) edge.lag = l.lag;
+    if (l.mode !== undefined) edge.mode = l.mode;
+    if (l.vlans !== undefined) edge.vlans = l.vlans;
+    if (l.nativeVlan !== undefined) edge.nativeVlan = l.nativeVlan;
+    if (l.encap !== undefined) edge.encap = l.encap;
+    if (l.protocol !== undefined) edge.protocol = l.protocol;
+    if (l.lacp !== undefined) edge.lacp = l.lacp;
     if (l.label !== undefined) edge.label = l.label;
     edges.push(edge);
   }

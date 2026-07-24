@@ -26,7 +26,23 @@ export const DEVICE_KEYS = [
   'config',
   'interfaces',
 ] as const;
-export const LINK_KEYS = ['from', 'to', 'kind', 'speed', 'lag', 'status', 'animated', 'label', 'note'] as const;
+export const LINK_KEYS = [
+  'from',
+  'to',
+  'kind',
+  'speed',
+  'lag',
+  'mode',
+  'vlans',
+  'native_vlan',
+  'encap',
+  'protocol',
+  'lacp',
+  'status',
+  'animated',
+  'label',
+  'note',
+] as const;
 export const INTERFACE_KEYS = ['name', 'description', 'vlan', 'ip'] as const;
 export const PIN_KEYS = ['x', 'y'] as const;
 export const ENDPOINT_KEYS = ['device', 'port'] as const;

@@ -1,5 +1,6 @@
 import { Camera } from './camera.js';
 import { CanvasEngine, type CScene } from './canvas-engine.js';
+import { linkSemanticsWords } from './link.js';
 import { devicePageIds, globalSearchDocs, loadData, type DataDevice, type DataLink, type EmbeddedData } from './data.js';
 import { parseHash, serializeHash } from '../shared/hash.js';
 import { searchDocs, type SearchDoc } from '../shared/search.js';
@@ -337,7 +338,9 @@ function setupCanvasPointer(ctx: Ctx): void {
       if (edge) {
         const from = ctx.deviceById.get(edge.from.node)?.name ?? edge.from.node;
         const to = ctx.deviceById.get(edge.to.node)?.name ?? edge.to.node;
-        const meta = [edge.from.port, edge.to.port, edge.speed, edge.kind].filter(Boolean).join(' · ');
+        const meta = [edge.from.port, edge.to.port, edge.speed, edge.kind, ...linkSemanticsWords(edge)]
+          .filter(Boolean)
+          .join(' · ');
         tip.innerHTML = `<strong>${html(from)} ↔ ${html(to)}</strong>${meta ? `<span>${html(meta)}</span>` : ''}`;
         const rect = ctx.stage.getBoundingClientRect();
         tip.style.left = `${ev.clientX - rect.left + 14}px`;
@@ -458,8 +461,9 @@ function fillInspector(maps: DeviceMaps, d: DataDevice, onGoto: (id: string) => 
             const mine = l.from.device === d.id ? l.from : l.to;
             const other = l.from.device === d.id ? l.to : l.from;
             const otherName = maps.deviceById.get(other.device)?.name ?? other.device;
-            // the line itself, drawn as the canvas draws it, then the words
-            const words = [l.kind, l.speed, l.lag].filter(Boolean).join(' · ');
+            // the line itself, drawn as the canvas draws it, then the words:
+            // logical semantics (trunk/tunnel/peering/lag) first, then medium/speed
+            const words = [...linkSemanticsWords(l), l.kind, l.speed].filter(Boolean).join(' · ');
             const meta = `<span class="m-link-meta">${linkSwatch(l)}${words ? `<span>${h(words)}</span>` : ''}</span>`;
             return `<li><button data-goto="${h(other.device)}"><span class="m-link-other">${h(otherName)}</span><span class="m-link-ports">${h(mine.port ?? '—')} → ${h(other.port ?? '—')}</span>${meta}</button></li>`;
           })
@@ -1178,8 +1182,46 @@ function download(blob: Blob, filename: string): void {
 }
 
 function setupTheme(): void {
+  const root = document.documentElement;
+  const mql = matchMedia('(prefers-color-scheme: dark)');
+
+  // `theme: auto` follows the viewer's OS scheme — unless they made an explicit
+  // in-diagram choice, which is remembered for standalone viewing.
+  const applyAuto = (): void => {
+    if (root.dataset['themeMode'] === 'auto' && !localStorage.getItem('marrow-theme')) {
+      root.dataset['theme'] = mql.matches ? 'dark' : 'light';
+    }
+  };
   const stored = localStorage.getItem('marrow-theme');
-  if (stored === 'dark' || stored === 'light') document.documentElement.dataset['theme'] = stored;
+  if (stored === 'dark' || stored === 'light') root.dataset['theme'] = stored;
+  else applyAuto();
+  mql.addEventListener('change', applyAuto);
+
+  // Embed API: a host page (docs site, blog, app) owns the surrounding UI, so
+  // it can drive the diagram's theme. A diagram in an iframe is otherwise an
+  // isolated document that can't see the host's light/dark toggle.
+  //   host → iframe:  postMessage({ type: 'marrow:theme', theme: 'dark'|'light'|'auto' })
+  //   iframe → host:  postMessage({ type: 'marrow:ready' })  (once, on load)
+  // A host-driven theme is not persisted — it must not leak into standalone use.
+  addEventListener('message', (e: MessageEvent) => {
+    const d = e.data as { type?: string; theme?: string } | null;
+    if (!d || d.type !== 'marrow:theme') return;
+    if (d.theme === 'auto') {
+      root.dataset['themeMode'] = 'auto';
+      applyAuto();
+    } else if (d.theme === 'dark' || d.theme === 'light') {
+      delete root.dataset['themeMode'];
+      root.dataset['theme'] = d.theme;
+    }
+  });
+  if (window.parent !== window) {
+    try {
+      window.parent.postMessage({ type: 'marrow:ready' }, '*');
+    } catch {
+      /* cross-origin parent — the host can still post in, we just can't ping out */
+    }
+  }
+
   // the static shell ships "Ctrl K"; swap for the platform's own key on Macs
   if (/Mac|iP(hone|ad|od)/.test(navigator.platform)) {
     for (const kbd of document.querySelectorAll('.m-searchpill kbd, .m-dock-hint kbd')) kbd.textContent = '⌘ K';
@@ -1908,10 +1950,12 @@ function html(s: string): string {
  * can never drift out of sync with the diagram.
  */
 function linkSwatch(l: DataLink): string {
+  const mode = l.mode ?? (l.encap !== undefined ? 'tunnel' : undefined);
   const cls =
     'm-edge' +
     ` m-status-${cssSafe(l.status)}` +
     (l.speed ? ` m-speed-${cssSafe(l.speed)}` : '') +
+    (mode ? ` m-mode-${cssSafe(mode)}` : '') +
     (l.animated ? ' m-flow' : '');
   return (
     // no pathLength here: the swatch is a real 56px line, so the px dash

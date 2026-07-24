@@ -26,6 +26,7 @@ export const DIAGNOSTIC_CODES = {
   'MRW-W102': 'Empty zone',
   'MRW-W103': 'Isolated device',
   'MRW-W104': 'Self-link',
+  'MRW-W105': 'Link semantics mismatch',
 } as const;
 
 export type DiagnosticCode = keyof typeof DIAGNOSTIC_CODES;

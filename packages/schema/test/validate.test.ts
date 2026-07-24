@@ -118,3 +118,76 @@ describe('invalid fixtures produce the intended diagnostics', () => {
     expect(cs).toContain('MRW-W103');
   });
 });
+
+describe('logical link semantics', () => {
+  const base = [
+    'marrow: 2',
+    'name: Semantics',
+    'devices:',
+    '  - { id: a, icon: cisco/switches/layer-3-switch }',
+    '  - { id: b, icon: cisco/switches/workgroup-switch }',
+  ].join('\n');
+  const withLink = (link: string) =>
+    validateSource(`${base}\nlinks:\n  - ${link}`, { icons: ciscoCatalog() });
+
+  test('a fully-specified trunk LAG validates and normalizes every field', () => {
+    const r = withLink('{ from: a:Te1/0/1, to: b:Te1/0/1, mode: trunk, vlans: "10,20,30", native_vlan: 1, lag: po1, lacp: active, encap: gre }');
+    // encap on a trunk is contradictory → one advisory, but still valid
+    expect(r.valid).toBe(true);
+    const l = r.topology!.links[0]!;
+    expect(l.mode).toBe('trunk');
+    expect(l.vlans).toBe('10,20,30');
+    expect(l.nativeVlan).toBe(1);
+    expect(l.lag).toBe('po1');
+    expect(l.lacp).toBe('active');
+  });
+
+  test('numeric vlans is coerced to a string', () => {
+    const l = withLink('{ from: a, to: b, mode: access, vlans: 10 }').topology!.links[0]!;
+    expect(l.vlans).toBe('10');
+  });
+
+  test('an unknown mode/encap/protocol enum value → MRW-E011', () => {
+    expect(codes(withLink('{ from: a, to: b, mode: bogus }').diagnostics)).toContain('MRW-E011');
+    expect(codes(withLink('{ from: a, to: b, encap: rot13 }').diagnostics)).toContain('MRW-E011');
+    expect(codes(withLink('{ from: a, to: b, protocol: bgp4 }').diagnostics)).toContain('MRW-E011');
+    expect(codes(withLink('{ from: a, to: b, lacp: sometimes }').diagnostics)).toContain('MRW-E011');
+  });
+
+  test('native_vlan out of range is rejected', () => {
+    const r = withLink('{ from: a, to: b, mode: trunk, native_vlan: 9999 }');
+    expect(r.valid).toBe(false);
+    // zod range violations surface as MRW-E006 (same mapping as interface vlan)
+    expect(codes(r.diagnostics)).toContain('MRW-E006');
+  });
+
+  test('encap on a non-tunnel mode → W105 (advisory, still valid)', () => {
+    const r = withLink('{ from: a, to: b, mode: routed, encap: ipsec }');
+    expect(r.valid).toBe(true);
+    expect(codes(r.diagnostics)).toContain('MRW-W105');
+  });
+
+  test('protocol on a trunk → W105', () => {
+    expect(codes(withLink('{ from: a, to: b, mode: trunk, protocol: ospf }').diagnostics)).toContain('MRW-W105');
+  });
+
+  test('lacp without a lag id → W105', () => {
+    expect(codes(withLink('{ from: a, to: b, lacp: active }').diagnostics)).toContain('MRW-W105');
+  });
+
+  test('native_vlan on an access port → W105', () => {
+    expect(codes(withLink('{ from: a, to: b, mode: access, native_vlan: 5 }').diagnostics)).toContain('MRW-W105');
+  });
+
+  test('encap alone (no mode) is accepted — the renderer derives tunnel', () => {
+    const r = withLink('{ from: a, to: b, encap: vxlan }');
+    expect(r.valid).toBe(true);
+    expect(codes(r.diagnostics)).not.toContain('MRW-W105');
+    expect(r.topology!.links[0]!.encap).toBe('vxlan');
+  });
+
+  test('a misspelled link key is still MRW-E005 with suggestions', () => {
+    const cs = codes(withLink('{ from: a, to: b, mdoe: trunk }').diagnostics);
+    expect(cs).toContain('MRW-E005');
+  });
+});

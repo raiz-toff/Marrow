@@ -60,6 +60,12 @@ export function rawToTopology(raw: RawTopology): Topology {
     if (l.kind !== undefined) link.kind = l.kind;
     if (l.speed !== undefined) link.speed = l.speed;
     if (l.lag !== undefined) link.lag = l.lag;
+    if (l.mode !== undefined) link.mode = l.mode;
+    if (l.vlans !== undefined) link.vlans = String(l.vlans);
+    if (l.native_vlan !== undefined) link.nativeVlan = l.native_vlan;
+    if (l.encap !== undefined) link.encap = l.encap;
+    if (l.protocol !== undefined) link.protocol = l.protocol;
+    if (l.lacp !== undefined) link.lacp = l.lacp;
     if (l.label !== undefined) link.label = l.label;
     if (l.note !== undefined) link.note = l.note;
     return link;

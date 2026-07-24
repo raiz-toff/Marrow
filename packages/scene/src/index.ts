@@ -59,7 +59,135 @@ export interface SceneEdge {
   kind?: string;
   speed?: string;
   lag?: string;
+  /** Logical function — access | trunk | routed | tunnel | peering | stack. */
+  mode?: string;
+  /** VLAN set/range carried (trunk) or the access VLAN. */
+  vlans?: string;
+  /** Native (untagged) VLAN on a trunk. */
+  nativeVlan?: number;
+  /** Overlay/VPN encapsulation — ipsec | gre | vxlan | … */
+  encap?: string;
+  /** Routing / control-plane protocol — ospf | ebgp | … */
+  protocol?: string;
+  /** Aggregation control mode — active | passive | on | static | pagp. */
+  lacp?: string;
   label?: string;
+}
+
+// ─── link visual language ────────────────────────────────────────────────────
+// The single source of truth for how a link's logical semantics become a
+// symbol. render-svg calls this directly; the (deliberately decoupled) runtime
+// client mirrors it — keep the two in sync.
+
+/** At-a-glance stroke pattern, set by the link's mode. Status dash still wins. */
+export type LinkPattern = 'solid' | 'double' | 'dashed' | 'dotted' | 'thick';
+/** A small glyph drawn with the midpoint chip. */
+export type LinkGlyph = 'lock' | 'bundle' | 'vlan' | 'proto' | 'hop' | 'stack';
+
+export interface LinkPresentation {
+  /** Effective mode after deriving from attributes (encap ⇒ tunnel). */
+  mode?: string;
+  pattern: LinkPattern;
+  /** Midpoint chip text, or undefined. */
+  chip?: string;
+  glyph?: LinkGlyph;
+}
+
+const ENCAP_LABEL: Record<string, string> = {
+  ipsec: 'IPsec',
+  gre: 'GRE',
+  vxlan: 'VXLAN',
+  wireguard: 'WG',
+  dmvpn: 'DMVPN',
+  mpls: 'MPLS',
+  l2tp: 'L2TP',
+  geneve: 'Geneve',
+  ssl: 'SSL',
+};
+
+const PROTO_LABEL: Record<string, string> = {
+  ospf: 'OSPF',
+  ebgp: 'eBGP',
+  ibgp: 'iBGP',
+  bgp: 'BGP',
+  eigrp: 'EIGRP',
+  isis: 'IS-IS',
+  rip: 'RIP',
+  static: 'static',
+};
+
+/** Human label for an encap id (falls back to upper-case). */
+export function encapLabel(encap: string): string {
+  return ENCAP_LABEL[encap] ?? encap.toUpperCase();
+}
+
+/** Human label for a routing-protocol id (falls back to upper-case). */
+export function protocolLabel(protocol: string): string {
+  return PROTO_LABEL[protocol] ?? protocol.toUpperCase();
+}
+
+function clampChip(s: string, max = 10): string {
+  return s.length <= max ? s : s.slice(0, max - 1) + '…';
+}
+
+/**
+ * Resolve a link's logical semantics into a symbol. Pattern comes from the
+ * mode; the chip carries the exact detail (VLANs / encap / protocol / lag).
+ * A `lag` id always takes the chip — it's the aggregation identity — while the
+ * mode still drives the pattern (so a LAG'd trunk reads as a double rail).
+ */
+export function linkPresentation(e: {
+  mode?: string;
+  vlans?: string;
+  encap?: string;
+  protocol?: string;
+  lag?: string;
+  lacp?: string;
+}): LinkPresentation {
+  const mode = e.mode ?? (e.encap !== undefined ? 'tunnel' : undefined);
+  const pattern: LinkPattern =
+    mode === 'trunk'
+      ? 'double'
+      : mode === 'tunnel'
+        ? 'dashed'
+        : mode === 'peering'
+          ? 'dotted'
+          : mode === 'stack'
+            ? 'thick'
+            : 'solid';
+
+  let chip: string | undefined;
+  let glyph: LinkGlyph | undefined;
+  if (e.lag !== undefined) {
+    chip = e.lag.toUpperCase();
+    glyph = 'bundle';
+  } else if (mode === 'tunnel') {
+    chip = e.encap !== undefined ? encapLabel(e.encap) : 'VPN';
+    glyph = 'lock';
+  } else if (mode === 'trunk') {
+    chip = e.vlans !== undefined ? clampChip(e.vlans) : 'trunk';
+    glyph = 'vlan';
+  } else if (mode === 'peering') {
+    chip = e.protocol !== undefined ? protocolLabel(e.protocol) : 'peer';
+    glyph = 'proto';
+  } else if (mode === 'routed') {
+    if (e.protocol !== undefined) {
+      chip = protocolLabel(e.protocol);
+      glyph = 'hop';
+    }
+  } else if (mode === 'stack') {
+    chip = 'stack';
+    glyph = 'stack';
+  } else if (mode === 'access' && e.vlans !== undefined) {
+    chip = 'v' + clampChip(e.vlans, 8);
+    glyph = 'vlan';
+  }
+
+  const out: LinkPresentation = { pattern };
+  if (mode !== undefined) out.mode = mode;
+  if (chip !== undefined) out.chip = chip;
+  if (glyph !== undefined) out.glyph = glyph;
+  return out;
 }
 
 /**

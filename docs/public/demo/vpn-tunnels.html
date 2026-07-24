@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" data-root="" data-page="index.html">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="marrow-v2">
+<title>VPN &amp; Tunnels — Marrow</title>
+<style>
+:root {
+  --bg: #09090b; --bg-raise: #27272a; --panel: #18181b;
+  --line: #27272a; --line-strong: #3f3f46;
+  --ink: #fafafa; --ink-dim: #a1a1aa; --ink-faint: #71717a;
+  --chip: #18181b; --chip-line: #3f3f46; --grid-dot: #1c1c1f;
+  --m-accent: #3b82f6; --ring: #3b82f6; --zone: #71717a;
+  --up: #22c55e; --down: #ef4444; --degraded: #f59e0b; --planned: #71717a; --unknown: #71717a;
+  --edge: #d4d4d8;
+  /* shadcn sidebar layer (ported literals from shadcn/ui new-york-v4) */
+  --sidebar: oklch(0.205 0 0); --sidebar-fg: #fafafa;
+  --sidebar-accent: oklch(0.269 0 0); --sidebar-border: rgb(255 255 255 / .1);
+  --radius-sm: 6px; --radius: 8px; --radius-lg: 12px;
+  --frame-top: 52px; --frame-x: 20px; --frame-bottom: 20px; --frame-left: 20px;
+  --shadow: 0 10px 30px -12px rgb(0 0 0 / .55), 0 4px 10px -6px rgb(0 0 0 / .45);
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / .4);
+  --inspector-w: 356px;
+}
+:root[data-theme="light"] {
+  --bg: #fafafa; --bg-raise: #f4f4f5; --panel: #ffffff;
+  --line: #e4e4e7; --line-strong: #d4d4d8;
+  --ink: #18181b; --ink-dim: #71717a; --ink-faint: #a1a1aa;
+  --chip: #ffffff; --chip-line: #d4d4d8; --grid-dot: #e4e4e7;
+  --m-accent: #2563eb; --ring: #2563eb; --zone: #71717a;
+  --up: #16a34a; --down: #dc2626; --degraded: #d97706; --planned: #a1a1aa; --unknown: #a1a1aa;
+  --edge: #71717a;
+  --sidebar: oklch(0.985 0 0); --sidebar-fg: #18181b;
+  --sidebar-accent: oklch(0.97 0 0); --sidebar-border: oklch(0.922 0 0);
+  --shadow: 0 10px 24px -8px rgb(0 0 0 / .10), 0 4px 8px -4px rgb(0 0 0 / .06);
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / .05);
+}
+
+* { box-sizing: border-box; margin: 0; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body {
+  background: var(--bg); color: var(--ink);
+  font: 14px/1.45 -apple-system, system-ui, "Segoe UI", sans-serif;
+  overflow: hidden;
+}
+:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+/* shadcn focus ring: soft 3px halo on HTML controls (SVG keeps the outline) */
+button:focus-visible, input:focus-visible, a:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 35%, transparent);
+}
+
+/* shadcn Kbd: muted chip, h-5, sans, min-w-5 — one style for every shortcut hint */
+kbd {
+  display: inline-flex; align-items: center; justify-content: center;
+  height: 20px; min-width: 20px; padding: 0 5px; border-radius: 4px;
+  background: var(--bg-raise); color: var(--ink-dim);
+  font: 500 12px -apple-system, system-ui, "Segoe UI", sans-serif;
+}
+
+/* thin themed scrollbars (shadcn ScrollArea feel) */
+* { scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
+*::-webkit-scrollbar { width: 8px; height: 8px; }
+*::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 999px; }
+*::-webkit-scrollbar-track { background: transparent; }
+
+/* ── stage & svg: the canvas lives inside a boxed viewport (v1-style shell) —
+      an inset framed panel; chrome (rail, dock) floats outside it ── */
+.m-stage {
+  position: fixed;
+  inset: var(--frame-top) var(--frame-x) var(--frame-bottom) var(--frame-left);
+  cursor: grab;
+  background: var(--bg);
+  border: 1px solid var(--line); border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  transition: left .3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.m-stage.m-grabbing { cursor: grabbing; }
+.m-svg { width: 100%; height: 100%; display: block; }
+.m-canvas { width: 100%; height: 100%; display: block; }
+.m-sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
+.m-grid-dot { fill: var(--grid-dot); }
+.m-grid { pointer-events: none; }
+
+/* ── zones ── */
+.m-zone-panel {
+  fill: color-mix(in srgb, var(--m-zone-accent, var(--zone)) 9%, transparent);
+  stroke: color-mix(in srgb, var(--m-zone-accent, var(--zone)) 42%, transparent);
+  stroke-width: 1.2;
+}
+.m-zone-label {
+  fill: color-mix(in srgb, var(--m-zone-accent, var(--zone)) 88%, var(--ink));
+  font-size: 12px; font-weight: 600; letter-spacing: .1em;
+  /* bg halo: the title layer sits above edges, so a crossing link is
+     knocked out cleanly instead of slicing through the letters */
+  paint-order: stroke; stroke: var(--bg); stroke-width: 3.5px; stroke-linejoin: round;
+}
+
+/* ── edges ── */
+.m-edge {
+  fill: none; stroke: var(--edge); stroke-width: 1.5; stroke-linejoin: round;
+  opacity: .92; transition: opacity .25s, stroke .25s; cursor: pointer;
+}
+.m-edge.m-speed-10g, .m-edge.m-speed-25g { stroke-width: 3; }
+.m-edge.m-speed-40g, .m-edge.m-speed-100g, .m-edge.m-speed-400g { stroke-width: 4.5; }
+/* ── logical link modes: the stroke pattern says WHAT the cable carries.
+      Placed before the status rules so a degraded/planned colour still wins.
+      Dash values are in pathLength units (edges carry pathLength="1", so px
+      dashes are swallowed) — a tunnel shows ~the same dash count at any length. */
+:root { --dash-tunnel: 0.02 0.014; --dash-peering: 0.004 0.011; }
+.m-edge.m-mode-trunk { stroke-width: 4.5; }                 /* casing for the double rail */
+.m-edge.m-mode-stack { stroke-width: 5; stroke-linecap: round; }
+.m-edge.m-mode-tunnel { stroke-dasharray: var(--dash-tunnel); }
+.m-edge.m-mode-peering { stroke-dasharray: var(--dash-peering); stroke-linecap: round; opacity: .82; }
+/* the bg-coloured slot carved down the trunk casing → two parallel rails */
+.m-edge-rail { fill: none; stroke: var(--bg); stroke-width: 1.7; stroke-linejoin: round; opacity: .92; }
+/* traffic reads as accent; status colors below still win */
+.m-edge.m-flow { stroke: var(--m-accent); }
+/* dash vocabulary — one source of truth, reused by the inspector swatch */
+:root { --dash-degraded: 14 7; --dash-planned: 2 7; }
+.m-edge.m-status-down { stroke: var(--down); }
+.m-edge.m-status-degraded { stroke: var(--degraded); stroke-dasharray: var(--dash-degraded); }
+.m-edge.m-status-planned { stroke: var(--planned); stroke-dasharray: var(--dash-planned); stroke-linecap: round; }
+.m-edge.is-path { stroke: var(--m-accent); opacity: 1; }
+
+/* ── nodes ── */
+.m-node { cursor: pointer; outline: none; }
+.m-chip {
+  fill: var(--chip); stroke: var(--chip-line); stroke-width: 1.25;
+  transition: stroke .15s, stroke-width .15s;
+}
+.m-node:hover .m-chip, .m-node:focus-visible .m-chip { stroke: var(--ink-dim); }
+/* selection & hero: a clean accent ring — no glow */
+.m-node.m-hero .m-chip { stroke: var(--ring); stroke-width: 1.5; }
+.m-node.is-selected .m-chip { stroke: var(--ring); stroke-width: 2; }
+.m-led { stroke: var(--bg); stroke-width: 2; }
+.m-status-up .m-led { fill: var(--up); }
+.m-status-down .m-led { fill: var(--down); }
+.m-status-degraded .m-led { fill: var(--degraded); }
+.m-status-planned .m-led { fill: var(--planned); }
+.m-status-unknown .m-led { fill: var(--unknown); }
+.m-label { fill: var(--ink); font-size: 12px; paint-order: stroke; stroke: var(--bg); stroke-width: 3px; transition: opacity .3s; }
+.m-icon-fallback { fill: var(--ink-dim); font-size: 18px; font-weight: 600; }
+
+/* ghost "door" nodes: dimmed stubs that navigate to their own page */
+.m-node.m-ghost { opacity: .55; }
+.m-node.m-ghost .m-chip { stroke-dasharray: 4 3; }
+.m-node.m-ghost:hover { opacity: .9; }
+
+/* aggregate badges (device counts, stacks) */
+.m-badge rect { fill: var(--m-accent); stroke: var(--bg); stroke-width: 2; }
+.m-badge text { fill: #fff; font-size: 11px; font-weight: 700; }
+
+/* edge aggregate labels (×24) */
+.m-edge-label rect { fill: var(--bg); stroke: var(--line-strong); stroke-width: 1; rx: 10px; }
+.m-edge-label text { fill: var(--ink); font-size: 11px; font-weight: 700; }
+
+/* semantic link chips — VLANs / encap / protocol / lag, with an optional glyph */
+.m-edge-chip > rect { fill: var(--bg); stroke: var(--line-strong); stroke-width: 1; }
+.m-edge-chip > text { fill: var(--ink); font-size: 10.5px; font-weight: 600; letter-spacing: .01em; }
+.m-chip-glyph { fill: var(--ink-dim); }
+.m-chip-glyph path { fill: none; stroke: var(--ink-dim); stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; }
+.m-chip-glyph-stroke path { fill: none; stroke: var(--ink-dim); stroke-width: 1.3; stroke-linecap: round; }
+/* the VPN/tunnel chip is tinted so the padlock reads as "secure overlay" */
+.m-edge-chip[data-glyph="lock"] > rect { stroke: color-mix(in srgb, var(--m-accent) 50%, var(--line-strong)); }
+.m-edge-chip[data-glyph="lock"] .m-chip-glyph { fill: color-mix(in srgb, var(--m-accent) 70%, var(--ink-dim)); }
+
+/* focus mode: dim everything but the hovered/selected neighborhood */
+.m-node, .m-edge, .m-zone, .m-zone-titles { transition: opacity .25s; }
+.focus-mode .m-node:not(.is-focus):not(.is-adj):not(.is-selected) { opacity: .15; }
+.focus-mode .m-edge:not(.is-path) { opacity: .08; }
+.focus-mode .m-edge-rail { opacity: .08; }
+.focus-mode .m-zone { opacity: .35; }
+
+/* LOD: labels fade when zoomed far out; leaf links recede so the far view
+   reads trunks and structure */
+:root[data-zoom="far"] .m-label { opacity: 0; }
+:root[data-zoom="far"] .m-edge.m-leaf, :root[data-zoom="far"] .m-edge-rail.m-leaf { opacity: .18; }
+
+/* ── entrance choreography ── */
+.m-enter-zone { animation: mZoneIn .5s ease-out both; }
+.m-enter-node {
+  animation: mNodeIn .42s cubic-bezier(.22,.7,.28,1) both;
+  animation-delay: var(--d, 0s);
+  transform-box: fill-box; transform-origin: center;
+}
+.m-edge, .m-edge-rail { stroke-dasharray: 1; stroke-dashoffset: 1; animation: mDraw .55s ease-out forwards; animation-delay: .7s; }
+.m-edge.m-flow { animation: mDraw .55s ease-out forwards, mFlow 1.1s linear infinite; animation-delay: .7s, 1.4s; }
+@keyframes mZoneIn { from { opacity: 0; } }
+@keyframes mNodeIn { from { opacity: 0; transform: scale(.96) translateY(4px); } }
+@keyframes mDraw { to { stroke-dashoffset: 0; } }
+@keyframes mFlow { from { stroke-dasharray: .06 .045; stroke-dashoffset: .21; } to { stroke-dasharray: .06 .045; stroke-dashoffset: 0; } }
+.settled .m-enter-zone, .settled .m-enter-node { animation: none; }
+.settled .m-edge, .settled .m-edge-rail { animation: none; stroke-dasharray: none; stroke-dashoffset: 0; }
+/* mode dashes must outlive the settle reset above (higher specificity, later) */
+.settled .m-edge.m-mode-tunnel { stroke-dasharray: var(--dash-tunnel); }
+.settled .m-edge.m-mode-peering { stroke-dasharray: var(--dash-peering); }
+.settled .m-edge.m-flow { animation: mFlow 1.1s linear infinite; }
+
+/* ── the menu chip (SidebarTrigger) floats top-left; view settings live in
+      the ⌘K command center ── */
+.m-rail-wrap {
+  position: fixed; top: 12px; left: 12px; z-index: 31;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 8px;
+  pointer-events: none;
+  /* travels with the panel when it opens/closes — same curve as the sidebar */
+  transition: left .3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.m-chip-btn {
+  width: 32px; height: 32px; flex: none; border: 0; border-radius: var(--radius);
+  background: var(--ink); color: var(--bg);
+  display: grid; place-items: center; cursor: pointer; pointer-events: auto;
+  box-shadow: var(--shadow-sm);
+  transition: background .15s, color .15s, transform .15s;
+}
+.m-chip-btn:hover { background: color-mix(in srgb, var(--ink) 86%, var(--bg)); }
+.m-chip-btn:active { transform: scale(.94); }
+/* like shadcn's ghost SidebarTrigger, the chip stays neutral — the sidebar
+   itself is the open/closed signal */
+.m-chip-btn.on { background: var(--ink); color: var(--bg); }
+
+/* ── top dock (hides above the edge, a Search tab peeks out;
+      hover or keyboard focus slides it down) ── */
+.m-dock {
+  position: fixed; top: 0; left: 50%; z-index: 30;
+  transform: translate(-50%, -100%);
+  display: flex; align-items: center; gap: 12px;
+  padding: 9px 16px 10px;
+  background: var(--panel); border: 1px solid var(--line); border-top: none;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  box-shadow: var(--shadow);
+  transition: transform .45s cubic-bezier(0.16, 1, 0.3, 1);
+  max-width: min(860px, calc(100vw - 120px));
+}
+.m-dock:hover, .m-dock:focus-within { transform: translate(-50%, 0); }
+.m-dock-div { width: 1px; height: 20px; background: var(--line); flex: none; }
+.m-dock-hint {
+  position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 7px;
+  padding: 5px 12px 6px;
+  background: var(--panel); border: 1px solid var(--line); border-top: none;
+  border-radius: 0 0 var(--radius) var(--radius);
+  color: var(--ink-dim); font: inherit; font-size: 12px; cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  white-space: nowrap; pointer-events: auto;
+  transition: opacity .3s cubic-bezier(0.16, 1, 0.3, 1), transform .3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.m-dock:hover .m-dock-hint, .m-dock:focus-within .m-dock-hint {
+  opacity: 0; transform: translateX(-50%) translateY(-10px); pointer-events: none;
+}
+
+/* ── breadcrumbs: shadcn Breadcrumb, persistent in the top strip — muted
+      links, chevron separators, current page in the foreground color.
+      Anchored to the stage's left edge so it moves with the sidebar. ── */
+.m-breadcrumbs {
+  /* floor of 56px keeps it clear of the floating trigger chip on single-file pages */
+  position: fixed; top: 0; left: max(calc(var(--frame-left) + 2px), 56px); height: var(--frame-top);
+  z-index: 20; display: flex; align-items: center; gap: 6px;
+  font-size: 14px; white-space: nowrap;
+  /* never run under the centered search dock */
+  max-width: calc(50vw - var(--frame-left) - 120px); overflow: hidden;
+  transition: left .3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.m-breadcrumbs a { color: var(--ink-dim); text-decoration: none; transition: color .15s; }
+.m-breadcrumbs a:hover { color: var(--ink); }
+.m-breadcrumbs .m-crumb-here { color: var(--ink); overflow: hidden; text-overflow: ellipsis; }
+.m-breadcrumbs .m-crumb-sep { display: grid; place-items: center; color: var(--ink-faint); }
+/* breadcrumb separator: full icon size (the shell bakes 12px, scale it up) */
+.m-crumb-sep svg { width: 16px; height: 16px; }
+
+/* ── watermark: sits inside the boxed viewport, clipped at its edges ── */
+.m-watermark {
+  position: fixed; left: calc(var(--frame-left) + 16px); bottom: calc(var(--frame-bottom) + 4px); z-index: 4;
+  pointer-events: none; user-select: none; line-height: .88;
+  max-width: calc(100vw - var(--frame-left) - var(--frame-x) - 32px); overflow: hidden;
+}
+.m-watermark span {
+  display: block; white-space: nowrap;
+  font-size: clamp(40px, 7.5vw, 108px); font-weight: 800; letter-spacing: -.01em; text-transform: uppercase;
+  color: color-mix(in srgb, var(--ink) 4%, transparent);
+}
+.m-watermark small {
+  display: block; margin: 8px 0 6px 4px;
+  font-size: 11px; font-weight: 600; letter-spacing: .25em; text-transform: uppercase;
+  color: color-mix(in srgb, var(--ink) 11%, transparent);
+}
+
+/* ── backdrop: author-branded margin around the boxed viewport (backdrop: in
+      the YAML) — brand line in the top strip, note in the bottom strip ── */
+.m-backdrop { position: fixed; inset: 0; z-index: 0; pointer-events: none; user-select: none; }
+.m-backdrop-text {
+  position: absolute; top: 0; right: 24px; height: var(--frame-top);
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; font-weight: 600; letter-spacing: .22em; text-transform: uppercase;
+  color: color-mix(in srgb, var(--ink) 38%, transparent);
+}
+.m-backdrop-text svg { flex: none; }
+.m-backdrop-note {
+  position: absolute; bottom: 0; left: 0; right: 0; height: var(--frame-bottom);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 500; letter-spacing: .18em; text-transform: uppercase;
+  color: color-mix(in srgb, var(--ink) 26%, transparent);
+}
+
+/* ── crumbs ── */
+.m-crumbs { display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; white-space: nowrap; }
+.m-crumbs a { color: var(--ink-dim); text-decoration: none; transition: color .15s; }
+.m-crumbs a:hover { color: var(--ink); }
+.m-crumb-here { color: var(--ink); }
+.m-crumb-sep { display: grid; place-items: center; color: var(--ink-faint); }
+.m-searchpill {
+  display: inline-flex; align-items: center; gap: 8px;
+  border: 1px solid var(--line); background: var(--bg-raise); color: var(--ink-dim);
+  border-radius: var(--radius); padding: 6px 8px 6px 12px; font: inherit; font-size: 13px;
+  cursor: pointer; transition: border-color .15s, background .15s;
+}
+.m-searchpill:hover { border-color: var(--line-strong); }
+.m-searchpill span { color: var(--ink-dim); }
+
+/* ── sidebar: shadcn Sidebar, "sidebar" variant — a full-height panel docked
+      flush to the left edge (header / grouped content / footer), toggled by
+      the menu chip (SidebarTrigger). Opening it pushes the stage right and
+      tucks the icon rail away. ── */
+.m-sidebar {
+  position: fixed; top: 0; bottom: 0; left: 0; width: 256px; z-index: 26; /* SIDEBAR_WIDTH = 16rem */
+  transform: translateX(-100%);
+  transition: transform .3s cubic-bezier(0.16, 1, 0.3, 1), width .2s linear; /* shadcn: duration-200 ease-linear */
+  pointer-events: none;
+}
+.m-sidebar.open { transform: translateX(0); pointer-events: auto; }
+/* collapsible="icon": with nav rows present, collapsed = a 3rem icon strip
+   (SIDEBAR_WIDTH_ICON), never fully hidden — matching the shadcn sidebar.
+   Pages without nav (single-file diagrams) keep the offcanvas hide above. */
+.m-sidebar.m-nav:not(.open) {
+  width: 48px; transform: translateX(0); pointer-events: auto;
+}
+/* the open/strip sidebar claims the layout: stage shifts, the rail reacts */
+body:has(.m-sidebar.open) { --frame-left: 272px; }
+body:has(.m-sidebar.m-nav:not(.open)) { --frame-left: 64px; }
+body:has(.m-sidebar.m-nav:not(.open)) .m-doc { padding-left: 72px; }
+
+/* icon-strip internals: logo only in the header, square icon rows with
+   flyout labels, non-nav groups collapsed away */
+.m-sidebar:not(.open) .m-sidebar-inner { overflow: visible; }
+/* strip under a floating chip: leave room for it (chip ends at y=42) */
+body:has(.m-rail-wrap) .m-sidebar:not(.open) .m-sidebar-inner { padding-top: 52px; }
+/* strip mode: the proprietary logo anchors the BOTTOM of the strip (shadcn
+   footer position); nav icons start right under the trigger chip */
+.m-sidebar.m-nav:not(.open) .m-side-header { padding: 8px; justify-content: center; order: 99; margin-top: auto; }
+.m-sidebar:not(.open) .m-side-id { display: none; }
+.m-sidebar:not(.open) h4 { display: none; }
+.m-sidebar:not(.open) section:not(:has(a.m-side-row)) { display: none; }
+.m-sidebar:not(.open) .m-side-static { display: none; }
+.m-sidebar:not(.open) .m-side-row { width: 32px; height: 32px; padding: 8px; justify-content: center; position: relative; }
+.m-sidebar:not(.open) .m-side-row em { display: none; }
+.m-sidebar:not(.open) .m-side-row > span {
+  position: absolute; left: 100%; top: 50%;
+  transform: translateY(-50%) translateX(-6px);
+  margin-left: 12px; padding: 5px 10px; overflow: visible;
+  background: var(--ink); color: var(--bg);
+  font-size: 11px; font-weight: 500; white-space: nowrap;
+  border-radius: var(--radius-sm); box-shadow: var(--shadow-sm);
+  opacity: 0; visibility: hidden; pointer-events: none;
+  transition: opacity .15s, transform .15s, visibility .15s;
+  z-index: 40;
+}
+.m-sidebar:not(.open) .m-side-row:hover > span { opacity: 1; visibility: visible; transform: translateY(-50%) translateX(0); }
+.m-sidebar-inner {
+  height: 100%; overflow-y: auto;
+  background: var(--sidebar); color: var(--sidebar-fg);
+  border-right: 1px solid var(--sidebar-border);
+  display: flex; flex-direction: column;
+}
+/* SidebarHeader / SidebarGroup / SidebarFooter: each a p-2 block */
+.m-sidebar-inner section { padding: 8px; }
+/* SidebarFooter: last section pins to the bottom */
+.m-sidebar-inner section:last-of-type { margin-top: auto; }
+/* company brand footer (backdrop.text; Marrow by default) */
+.m-side-foot {
+  display: flex; align-items: center; gap: 8px; padding: 12px 16px; flex: none;
+  border-top: 1px solid var(--sidebar-border); margin-top: 2px;
+  font-size: 11px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase;
+  color: color-mix(in srgb, var(--sidebar-fg) 45%, transparent);
+}
+.m-side-foot svg { flex: none; width: 14px; height: 14px; }
+.m-sidebar:not(.open) .m-side-foot { display: none; }
+/* ── global company logo (brand/brand.html) ──────────────────────────────────
+   Author-supplied markup of unknown size: clamp it everywhere it appears so a
+   large SVG/bitmap can never blow out the chrome. */
+/* the brand mark as a hyperlink (brand.link): inherits the footer's type, only
+   the hover underline marks it as clickable */
+.m-brand-link {
+  display: inline-flex; align-items: center; gap: 8px; min-width: 0;
+  color: inherit; text-decoration: none; font: inherit; letter-spacing: inherit;
+}
+.m-brand-link:hover { text-decoration: underline; text-underline-offset: 2px; }
+/* the source/repo mark sits at the far end of the footer row */
+.m-brand-gh {
+  margin-left: auto; flex: none; display: inline-flex; color: inherit; opacity: .65;
+  transition: opacity .15s;
+}
+.m-brand-gh:hover { opacity: 1; }
+.m-brand-gh svg { width: 14px; height: 14px; }
+.m-brand-logo { display: inline-flex; align-items: center; flex: none; }
+.m-brand-logo svg, .m-brand-logo img { display: block; width: auto; object-fit: contain; }
+.m-side-foot .m-brand-logo svg, .m-side-foot .m-brand-logo img,
+.m-drawer-foot .m-brand-logo svg, .m-drawer-foot .m-brand-logo img {
+  height: 14px; max-width: 80px;
+}
+.m-backdrop-text .m-brand-logo svg, .m-backdrop-text .m-brand-logo img { height: 16px; max-width: 140px; }
+/* shadcn Menubar: a compact trigger row under the sidebar header; its
+   popovers reuse the DropdownMenu/ContextMenu content style */
+.m-menubar { display: flex; gap: 2px; padding: 0 8px 6px; border-bottom: 1px solid var(--sidebar-border); margin-bottom: 4px; }
+.m-menubar button {
+  border: 0; background: none; color: var(--sidebar-fg); font: inherit; font-size: 13px; font-weight: 500;
+  padding: 4px 10px; border-radius: var(--radius-sm); cursor: pointer; transition: background .1s;
+}
+.m-menubar button:hover, .m-menubar button.open { background: var(--sidebar-accent); }
+.m-sidebar:not(.open) .m-menubar { display: none; }
+
+/* SidebarGroupLabel: h-8 px-2 text-xs font-medium fg/70 — no uppercase */
+.m-sidebar h4 {
+  display: flex; align-items: center; height: 32px; padding: 0 8px; margin: 0;
+  font-size: 12px; font-weight: 500; letter-spacing: 0; text-transform: none;
+  color: color-mix(in srgb, var(--sidebar-fg) 70%, transparent);
+}
+.m-field { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 0 8px 8px; font-size: 13px; }
+.m-field > span { color: var(--ink-dim); }
+.m-seg {
+  display: inline-flex; gap: 2px; padding: 2px;
+  background: var(--bg-raise); border-radius: var(--radius);
+}
+.m-seg button {
+  border: 0; background: none; color: var(--ink-dim); font: inherit; font-size: 12px; font-weight: 500;
+  padding: 3px 9px; border-radius: var(--radius-sm); cursor: pointer; transition: background .15s, color .15s;
+}
+.m-seg button.active { background: var(--panel); color: var(--ink); box-shadow: var(--shadow-sm); }
+.m-switch {
+  width: 34px; height: 20px; flex: none; position: relative; cursor: pointer; padding: 0;
+  border: 0; border-radius: 999px; background: var(--line-strong);
+  transition: background .15s;
+}
+.m-switch .m-knob {
+  position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%;
+  background: #fff; box-shadow: var(--shadow-sm); transition: translate .15s;
+}
+.m-switch[aria-checked="true"] { background: var(--m-accent); }
+.m-switch[aria-checked="true"] .m-knob { translate: 14px 0; }
+.m-legend { list-style: none; padding: 0 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 7px 8px; font-size: 12px; color: var(--ink-dim); }
+.m-legend li { display: flex; align-items: center; gap: 7px; }
+.m-legend li:nth-last-child(-n+2) { grid-column: span 2; }
+.m-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex: none; }
+.m-line { width: 18px; border-top: 2px solid var(--edge); display: inline-block; flex: none; }
+.m-line-dash { border-top-style: dashed; }
+/* SidebarHeader card + SidebarMenuButton rows: [icon] label ······ badge */
+.m-side-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px; border-radius: var(--radius-sm);
+}
+/* stage pages: reserve the 48px strip so the floating trigger chip at (8,10)
+   never overlaps the sidebar title */
+body:has(.m-rail-wrap) .m-side-header { padding: 10px 8px 8px 48px; }
+/* with a nav sidebar, the trigger chip tucks inside the 48px strip column */
+body:has(.m-sidebar.m-nav) .m-rail-wrap { left: 8px; top: 10px; }
+/* open: the trigger rides along to the panel's top-right corner, clear of the
+   title. 216px = SIDEBAR_WIDTH(256) - chip(32) - gutter(8). */
+body:has(.m-sidebar.open) .m-rail-wrap { left: 216px; top: 10px; }
+/* …so the title reclaims the left gutter and instead keeps clear on the right */
+body:has(.m-sidebar.open) .m-side-header { padding: 10px 44px 8px 8px; }
+.m-side-id { min-width: 0; }
+.m-side-id strong { display: block; font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.m-side-id small { display: block; font-size: 11px; color: color-mix(in srgb, var(--sidebar-fg) 60%, transparent); margin-top: 1px; }
+.m-side-nav { display: flex; flex-direction: column; gap: 1px; }
+/* SidebarMenuButton: h-8 gap-2 rounded-md p-2 text-sm; icons size-4 */
+.m-side-row {
+  display: flex; align-items: center; gap: 8px; height: 32px;
+  color: var(--sidebar-fg); text-decoration: none; font-size: 14px; font-weight: 400;
+  padding: 0 8px; border-radius: var(--radius-sm); transition: background .15s;
+}
+.m-side-row i { display: grid; place-items: center; color: color-mix(in srgb, var(--sidebar-fg) 65%, transparent); flex: none; }
+.m-side-row span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* SidebarMenuBadge */
+.m-side-row em { margin-left: auto; font-style: normal; font-size: 12px; font-variant-numeric: tabular-nums; color: color-mix(in srgb, var(--sidebar-fg) 55%, transparent); font-weight: 500; }
+a.m-side-row:hover { background: var(--sidebar-accent); }
+/* data-[active=true]: accent bg + font-medium */
+a.m-side-row.active { background: var(--sidebar-accent); font-weight: 500; }
+a.m-side-row.active i, a.m-side-row.active em { color: var(--sidebar-fg); }
+/* collapsible nav groups: shadcn SidebarMenuSub — indent rail + chevron */
+.m-side-group-head { width: 100%; background: none; border: 0; cursor: pointer; }
+.m-side-group-head:hover { background: var(--sidebar-accent); }
+.m-side-group-head .m-chev {
+  flex: none; display: grid; place-items: center; margin-left: 2px;
+  color: color-mix(in srgb, var(--sidebar-fg) 55%, transparent);
+  rotate: 90deg; transition: rotate .2s;
+}
+.m-side-group.collapsed .m-side-group-head .m-chev { rotate: 0deg; }
+.m-sidebar.open .m-side-sub {
+  margin-left: 15px; border-left: 1px solid var(--sidebar-border); padding-left: 6px;
+}
+.m-sidebar.open .m-side-group.collapsed .m-side-sub { display: none; }
+/* icon strip: a group is ONE icon (its head); members stay tucked away.
+   Clicking the head expands the sidebar with that group open. */
+.m-sidebar:not(.open) .m-side-sub { display: none; }
+.m-sidebar:not(.open) .m-chev { display: none; }
+.m-sidebar:not(.open) .m-side-group-head { width: 32px; height: 32px; padding: 8px; justify-content: center; position: relative; }
+.m-side-static { cursor: default; }
+.m-side-static span { color: color-mix(in srgb, var(--sidebar-fg) 65%, transparent); font-weight: 400; }
+.m-side-static em { color: var(--sidebar-fg); font-weight: 500; }
+.m-side-actions { display: flex; flex-direction: column; gap: 6px; }
+.m-side-actions .m-btn { width: 100%; }
+.m-about { font-size: 12px; display: grid; gap: 2px; }
+.m-about dt { color: var(--ink-faint); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; margin-top: 7px; }
+.m-about dd { color: var(--ink); }
+
+/* view settings applied via root data attributes */
+:root[data-labels="off"] .m-label { opacity: 0 !important; }
+:root[data-labels="on"] .m-label { opacity: 1 !important; }
+:root[data-motion="off"] .m-edge.m-flow { animation: none !important; stroke-dasharray: none; }
+
+/* ── port label chips (LOD: near zoom, or forced via setting) ── */
+.m-portlabel { opacity: 0; transition: opacity .25s; pointer-events: none; }
+:root[data-zoom="near"] .m-portlabel, :root[data-ports="on"] .m-portlabel { opacity: 1; }
+:root[data-ports="off"] .m-portlabel { opacity: 0 !important; }
+/* hovering/focusing an edge reveals its chips regardless of the toggle */
+.m-portlabel.is-hot { opacity: 1 !important; }
+.m-portlabel rect { fill: var(--bg); stroke: var(--line-strong); stroke-width: 1; rx: 9px; }
+.m-portlabel text { fill: var(--ink); font: 500 9px ui-monospace, monospace; }
+.m-portlabel.is-hot rect { stroke: var(--m-accent); }
+/* "+N": stands for ports that had no room — full list lives in the inspector */
+.m-portsum text { fill: var(--ink); font-weight: 700; }
+.m-btn {
+  background: none; border: 1px solid var(--line); color: var(--ink);
+  border-radius: var(--radius); padding: 5px 11px; font: inherit; font-size: 13px; font-weight: 500;
+  cursor: pointer; transition: background .15s, border-color .15s;
+}
+.m-btn:hover { background: var(--bg-raise); border-color: var(--line-strong); }
+.m-btn:active { background: color-mix(in srgb, var(--ink) 10%, transparent); }
+.m-kbd { color: var(--ink-faint); font-size: 11px; border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; margin-left: 6px; }
+
+/* ── zoom controls: one joined card, matching the rail's language ── */
+.m-controls {
+  position: fixed; right: calc(var(--frame-x) + 12px); bottom: calc(var(--frame-bottom) + 12px); z-index: 20;
+  display: flex; flex-direction: column; gap: 2px; padding: 4px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  transition: right .25s ease;
+}
+/* the open inspector must never bury the controls or the minimap */
+:root.has-selection .m-controls { right: calc(var(--inspector-w) + 24px); }
+:root.has-selection .m-minimap { right: calc(var(--inspector-w) + 70px); }
+.m-controls .m-btn {
+  width: 30px; height: 30px; padding: 0; border: 1px solid transparent; border-radius: var(--radius);
+  display: grid; place-items: center;
+  background: none; box-shadow: none; color: var(--ink-dim);
+}
+.m-controls .m-btn:hover { background: var(--bg-raise); border-color: var(--line); color: var(--ink); }
+.m-ctl-sep { height: 1px; background: var(--line); margin: 2px 4px; }
+
+/* ── minimap ── */
+.m-minimap {
+  position: fixed; right: calc(var(--frame-x) + 58px); bottom: calc(var(--frame-bottom) + 12px); z-index: 20; /* beside the zoom controls */
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-lg);
+  padding: 5px; box-shadow: var(--shadow);
+  transition: right .25s ease, border-color .15s;
+}
+.m-minimap:hover { border-color: var(--line-strong); }
+.m-minimap > svg { display: block; cursor: crosshair; }
+.m-mini-toggle {
+  position: absolute; top: 4px; right: 4px; z-index: 1;
+  width: 20px; height: 20px; display: grid; place-items: center;
+  background: var(--panel);
+  border: 1px solid var(--line); border-radius: var(--radius-sm); color: var(--ink-dim);
+  cursor: pointer; padding: 0; opacity: 0;
+  transition: opacity .15s, background .15s, color .15s;
+}
+.m-minimap:hover .m-mini-toggle { opacity: 1; }
+.m-mini-toggle:hover { background: var(--bg-raise); color: var(--ink); }
+/* collapsed: an icon card matching the zoom controls */
+.m-minimap.collapsed { padding: 4px; }
+.m-minimap.collapsed > svg { display: none; }
+.m-minimap.collapsed .m-mini-toggle {
+  position: static; opacity: 1;
+  width: 30px; height: 30px; border-radius: var(--radius);
+  background: none; border: 1px solid transparent; color: var(--ink-dim);
+}
+.m-minimap.collapsed .m-mini-toggle:hover { background: var(--bg-raise); border-color: var(--line); color: var(--ink); }
+.m-mini-world { fill: color-mix(in srgb, var(--ink) 5%, transparent); stroke: color-mix(in srgb, var(--line) 70%, transparent); stroke-width: 1; }
+.m-mini-zone {
+  fill: color-mix(in srgb, var(--m-zone-accent, var(--zone)) 20%, transparent);
+  stroke: color-mix(in srgb, var(--m-zone-accent, var(--zone)) 55%, transparent);
+  stroke-width: 1;
+}
+.m-mini-dot { fill: var(--ink-dim); }
+.m-mini-dot.m-status-up { fill: color-mix(in srgb, var(--up) 80%, var(--ink-dim)); }
+.m-mini-dot.m-status-down { fill: var(--down); }
+.m-mini-dot.m-status-degraded { fill: var(--degraded); }
+.m-mini-dot.m-status-planned { fill: var(--planned); }
+.m-mini-view { fill: color-mix(in srgb, var(--m-accent) 13%, transparent); stroke: var(--m-accent); stroke-width: 1.3; }
+
+/* ── inspector: shadcn Drawer (right edge) — full-height, flush, border-left;
+      slides in from the edge like DrawerContent ── */
+.m-inspector {
+  position: fixed; top: 0; right: 0; bottom: 0; width: var(--inspector-w); z-index: 25;
+  background: var(--panel); border-left: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  display: flex; flex-direction: column;
+  animation: mSlideIn .3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes mSlideIn { from { translate: 100% 0; } }
+.m-inspector-head {
+  display: flex; align-items: center; padding: 14px 16px; gap: 10px;
+  border-bottom: 1px solid var(--line); flex: none;
+}
+.m-inspector-id { flex: 1; min-width: 0; display: grid; gap: 1px; }
+.m-inspector-title { font-size: 15px; font-weight: 600; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.m-inspector-desc { font-size: 12px; color: var(--ink-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.m-inspector-desc:empty { display: none; }
+.m-inspector-close {
+  width: 28px; height: 28px; border-radius: var(--radius-sm); background: none; border: 0;
+  color: var(--ink-dim); cursor: pointer; display: grid; place-items: center;
+  transition: background .15s, color .15s;
+}
+.m-inspector-close:hover { background: var(--bg-raise); color: var(--ink); }
+.m-inspector-body { overflow-y: auto; padding: 16px 16px 24px; flex: 1; }
+/* company brand footer on the drawer (backdrop.text; Marrow by default) */
+.m-drawer-foot {
+  display: flex; align-items: center; gap: 8px; padding: 11px 16px; flex: none;
+  border-top: 1px solid var(--line);
+  font-size: 11px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase;
+  color: color-mix(in srgb, var(--ink) 42%, transparent);
+}
+.m-drawer-foot svg { flex: none; width: 14px; height: 14px; }
+.m-inspector-body h3 { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; font-weight: 600; color: var(--ink-faint); margin: 20px 0 8px; }
+.m-icon-badge { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+/* direct child only — the "Open page" link's arrow must not inherit this */
+.m-icon-badge > svg { width: 44px; height: 44px; background: var(--bg-raise); border: 1px solid var(--line); border-radius: var(--radius); padding: 6px; }
+.m-status-pill {
+  font-size: 11px; font-weight: 500; text-transform: capitalize; padding: 2px 9px; border-radius: 999px;
+  background: var(--bg-raise); color: var(--ink-dim);
+  border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+}
+.m-status-pill.m-status-up { background: color-mix(in srgb, var(--up) 14%, transparent); color: var(--up); }
+.m-status-pill.m-status-down { background: color-mix(in srgb, var(--down) 15%, transparent); color: var(--down); }
+.m-status-pill.m-status-degraded { background: color-mix(in srgb, var(--degraded) 15%, transparent); color: var(--degraded); }
+.m-facts { display: grid; grid-template-columns: 84px 1fr; gap: 5px 10px; font-size: 13px; }
+.m-facts dt { color: var(--ink-dim); }
+.m-facts dd { overflow-wrap: anywhere; }
+.m-links { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.m-links button {
+  width: 100%; text-align: left; background: var(--bg-raise); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 8px 10px; color: var(--ink); font: inherit; font-size: 13px;
+  cursor: pointer; display: grid; gap: 2px; transition: background .15s, border-color .15s;
+}
+.m-links button:hover { border-color: var(--line-strong); }
+.m-link-other { font-weight: 600; }
+.m-link-ports, .m-link-meta { color: var(--ink-dim); font-size: 12px; }
+/* a miniature of the link drawn with the SAME edge classes as the canvas, so
+   speed (width), status (colour/dash) and flow (animation) all carry over */
+.m-link-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.m-swatch { width: 56px; height: 10px; flex: none; overflow: visible; }
+/* the swatch is a fixed 56px line, NOT a pathLength-normalised graph edge, so
+   it opts out of the intro draw-on and restates the dash patterns in px from
+   the same variables the edges use */
+.m-swatch .m-edge {
+  cursor: default; opacity: .95;
+  animation: none; stroke-dasharray: none; stroke-dashoffset: 0;
+}
+.m-swatch .m-edge.m-status-degraded { stroke-dasharray: var(--dash-degraded); }
+.m-swatch .m-edge.m-status-planned { stroke-dasharray: var(--dash-planned); }
+/* logical modes restated in px for the fixed-length swatch (no pathLength here,
+   so the graph's pathLength-unit mode dashes would collapse to nothing) */
+.m-swatch .m-edge.m-mode-tunnel { stroke-dasharray: 6 4; }
+.m-swatch .m-edge.m-mode-peering { stroke-dasharray: 1.5 4; stroke-linecap: round; }
+.m-swatch .m-edge.m-mode-trunk { stroke-width: 5; }
+.m-swatch .m-edge.m-mode-stack { stroke-width: 6; stroke-linecap: round; }
+/* mFlow's dashes are fractions of pathLength=1; in px terms that is 6/4.5 */
+@keyframes mSwatchFlow { to { stroke-dashoffset: -21px; } }
+.m-swatch .m-edge.m-flow { stroke-dasharray: 6 4.5; animation: mSwatchFlow 1.1s linear infinite; }
+/* the swatch is a legend, not part of the graph — path focus must not dim it */
+.focus-mode .m-swatch .m-edge:not(.is-path) { opacity: .95; }
+.m-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.m-table th { text-align: left; color: var(--ink-dim); font-weight: 500; padding: 3px 6px; border-bottom: 1px solid var(--line); }
+.m-table td { padding: 4px 6px; border-bottom: 1px solid color-mix(in srgb, var(--line) 45%, transparent); }
+.m-table tbody tr { transition: background .15s; }
+.m-table tbody tr:hover { background: color-mix(in srgb, var(--ink) 3%, transparent); }
+.m-note { white-space: pre-wrap; font-size: 13px; color: var(--ink); }
+.m-config {
+  background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 10px; font: 12px/1.5 ui-monospace, monospace; overflow-x: auto; white-space: pre;
+}
+
+/* ── spotlight: shadcn Command dialog (cmdk) — icon'd input row, a muted
+      group heading, kbd-hint footer ── */
+.m-spotlight {
+  position: fixed; inset: 0; z-index: 40; background: rgb(0 0 0 / .6);
+  display: flex; align-items: flex-start; justify-content: center; padding-top: 14vh;
+}
+.m-spotlight-box {
+  width: min(560px, 92vw); background: var(--panel); border: 1px solid var(--line);
+  border-radius: var(--radius-lg); box-shadow: var(--shadow); overflow: hidden;
+  display: flex; flex-direction: column;
+  animation: mPop .15s cubic-bezier(.22,.7,.28,1);
+}
+@keyframes mPop { from { scale: .98; opacity: 0; } }
+.m-spotlight-head {
+  display: flex; align-items: center; gap: 10px; padding: 0 16px;
+  border-bottom: 1px solid var(--line); color: var(--ink-faint); flex: none;
+}
+.m-spotlight input {
+  flex: 1; background: none; border: 0; outline: none; color: var(--ink);
+  font: inherit; font-size: 15px; line-height: 1.4; padding: 13px 0;
+}
+.m-spotlight input:focus-visible { box-shadow: none; }
+.m-spotlight input::placeholder { color: var(--ink-faint); }
+.m-spotlight ul { list-style: none; padding: 6px; margin: 0; max-height: 46vh; overflow-y: auto; }
+/* CommandItem: [icon] label ···· shortcut/sub */
+.m-spotlight li[data-idx] { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: var(--radius-sm); cursor: pointer; font-size: 13px; }
+.m-spotlight li.active, .m-spotlight li[data-idx]:hover { background: var(--bg-raise); }
+/* CommandGroup heading */
+.m-spotlight .m-cmd-h { padding: 6px 10px 5px; font-size: 11px; font-weight: 500; color: var(--ink-faint); }
+/* CommandSeparator: -mx to bleed to the box edges */
+.m-spotlight .m-cmd-s { height: 1px; background: var(--line); margin: 5px -6px; }
+.m-spotlight li.m-empty { cursor: default; color: var(--ink-dim); display: flex; justify-content: center; padding: 18px 12px; font-size: 13px; }
+.m-cmd-ic { width: 16px; height: 16px; flex: none; display: grid; place-items: center; color: var(--ink-dim); }
+.m-cmd-ic svg { width: 16px; height: 16px; }
+/* CommandShortcut slot: an ml-auto Kbd chip */
+.m-cmd-kbd { margin-left: auto; flex: none; }
+.m-hit-name { flex: 1; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.m-hit-sub { color: var(--ink-dim); font-size: 12px; flex: none; }
+.m-spotlight-foot {
+  display: flex; gap: 16px; padding: 8px 14px;
+  border-top: 1px solid var(--line); flex: none;
+  font-size: 11px; color: var(--ink-faint);
+}
+.m-spotlight-foot span { display: inline-flex; align-items: center; gap: 5px; }
+.m-spotlight-foot kbd { height: 18px; font-size: 11px; }
+
+/* ── context menu: shadcn ContextMenuContent — popover panel, h-8 items with
+      a check column, right-aligned shortcuts, bleed separators ── */
+.m-ctxmenu {
+  position: fixed; z-index: 45; min-width: 208px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 4px;
+  animation: mPop .12s cubic-bezier(.22,.7,.28,1);
+}
+.m-ctx-title { padding: 6px 10px 7px; font-size: 13px; font-weight: 600; }
+.m-ctx-title small { display: block; font-weight: 400; font-size: 11.5px; color: var(--ink-dim); margin-top: 1px; }
+.m-ctx-item {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  height: 32px; padding: 0 10px 0 6px; border: 0; border-radius: var(--radius-sm);
+  background: none; color: var(--ink); font: inherit; font-size: 13px; text-align: left;
+  cursor: pointer; transition: background .1s;
+}
+.m-ctx-item:hover { background: var(--bg-raise); }
+.m-ctx-item:focus-visible { background: var(--bg-raise); box-shadow: none; }
+.m-ctx-item.disabled { opacity: .5; cursor: default; }
+.m-ctx-check { width: 16px; flex: none; display: grid; place-items: center; color: var(--ink); }
+.m-ctx-label { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.m-ctx-kbd { margin-left: auto; flex: none; }
+.m-ctx-sep { height: 1px; background: var(--line); margin: 4px -4px; }
+
+/* ── keyboard-shortcuts guide (shadcn Dialog) ── */
+.m-shortcuts {
+  position: fixed; inset: 0; z-index: 46; background: rgb(0 0 0 / .6);
+  display: flex; align-items: flex-start; justify-content: center; padding-top: 11vh;
+}
+.m-shortcuts-box {
+  width: min(460px, 92vw); max-height: 76vh; display: flex; flex-direction: column;
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-lg);
+  box-shadow: var(--shadow); overflow: hidden;
+  animation: mPop .15s cubic-bezier(.22,.7,.28,1);
+}
+.m-shortcuts-head {
+  display: flex; align-items: flex-start; gap: 10px; padding: 16px 16px 12px;
+  border-bottom: 1px solid var(--line); flex: none;
+}
+.m-shortcuts-head > div { flex: 1; }
+.m-shortcuts-head strong { font-size: 15px; letter-spacing: -.01em; }
+.m-shortcuts-head small { display: block; font-size: 12.5px; color: var(--ink-dim); margin-top: 2px; }
+.m-shortcuts-close {
+  width: 28px; height: 28px; border-radius: var(--radius-sm); background: none; border: 0;
+  color: var(--ink-dim); cursor: pointer; display: grid; place-items: center; flex: none;
+  transition: background .15s, color .15s;
+}
+.m-shortcuts-close:hover { background: var(--bg-raise); color: var(--ink); }
+.m-shortcuts-body { overflow-y: auto; padding: 6px 16px 18px; }
+.m-shortcuts-body h5 {
+  font-size: 11px; font-weight: 500; color: var(--ink-faint); margin: 14px 0 4px;
+}
+.m-sc-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 5px 0; font-size: 13px;
+}
+.m-sc-row > span:first-child { color: var(--ink); }
+.m-sc-keys { display: inline-flex; gap: 4px; flex: none; }
+
+/* ── tooltip ── */
+.m-tooltip {
+  position: absolute; z-index: 30; pointer-events: none;
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 7px 10px; font-size: 12px; display: grid; gap: 2px;
+  box-shadow: var(--shadow); max-width: 320px;
+}
+.m-tooltip span { color: var(--ink-dim); }
+
+/* ── document pages (inventory) ── */
+.m-doc-body { overflow: auto; }
+/* header band: a solid strip under the breadcrumb with a hairline rule, so
+   scrolling content passes beneath it cleanly */
+.m-doc-body::before {
+  content: ""; position: fixed; top: 0; left: 0; right: 0; height: var(--frame-top);
+  background: var(--bg); border-bottom: 1px solid var(--line); z-index: 19;
+}
+.m-doc { padding: 88px 24px 48px; }
+.m-doc-inner { max-width: 980px; margin: 0 auto; }
+/* the inventory's panel group gets a wide (but not edge-to-edge) canvas */
+.m-doc-inner:has(.m-inv-cols) { max-width: 1320px; }
+.m-doc h1 { font-size: 20px; font-weight: 600; letter-spacing: -.01em; margin-bottom: 4px; }
+.m-dim { color: var(--ink-dim); }
+.m-inv-filter {
+  margin: 16px 0 12px; width: min(360px, 100%); background: var(--panel);
+  border: 1px solid var(--line); border-radius: var(--radius); color: var(--ink);
+  font: inherit; font-size: 13px; padding: 8px 12px; outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+.m-inv-filter::placeholder { color: var(--ink-faint); }
+.m-inv-filter:focus {
+  border-color: var(--ring);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 20%, transparent);
+}
+.m-inventory { font-size: 13px; }
+.m-inventory th { cursor: pointer; user-select: none; height: 36px; }
+.m-inventory th:hover { color: var(--ink); }
+.m-inventory td { padding: 7px 8px; }
+.m-inventory td a { color: var(--ink); text-decoration: none; font-weight: 500; }
+.m-inventory td a:hover { color: var(--m-accent); }
+
+/* status cell: the diagram's LED language — a dot + muted text, no pill wash */
+.m-inv-status { display: inline-flex; align-items: center; gap: 7px; color: var(--ink-dim); text-transform: capitalize; }
+.m-inv-status i { width: 8px; height: 8px; border-radius: 50%; background: var(--unknown); flex: none; }
+.m-inv-status.m-status-up i { background: var(--up); }
+.m-inv-status.m-status-down i { background: var(--down); }
+.m-inv-status.m-status-degraded i { background: var(--degraded); }
+.m-inv-status.m-status-planned i { background: var(--planned); }
+
+/* device icon chip in the name cell — 24px chip, 18px vendor icon */
+.m-inv-name { display: inline-flex; align-items: center; gap: 9px; }
+.m-inv-ic {
+  width: 24px; height: 24px; flex: none; display: grid; place-items: center;
+  background: var(--bg-raise); border: 1px solid var(--line); border-radius: 6px;
+  padding: 3px; overflow: hidden;
+}
+.m-inv-ic svg { width: 100%; height: 100%; display: block; }
+
+/* filter + tabs bar */
+.m-inv-bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 16px 0 14px; }
+.m-inv-bar .m-inv-filter { margin: 0; }
+/* shadcn Tabs */
+.m-tabs { display: inline-flex; gap: 2px; padding: 3px; background: var(--bg-raise); border-radius: var(--radius); }
+.m-tab {
+  border: 0; background: none; color: var(--ink-dim); font: inherit; font-size: 13px; font-weight: 500;
+  padding: 5px 14px; border-radius: var(--radius-sm); cursor: pointer; transition: background .15s, color .15s;
+}
+.m-tab.active { background: var(--panel); color: var(--ink); box-shadow: var(--shadow-sm); }
+
+/* zone cards (shadcn Card + Table) */
+.m-inv-group {
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-lg);
+  padding: 4px 16px 12px; margin-bottom: 14px;
+}
+.m-inv-group > header { display: flex; align-items: baseline; gap: 10px; padding: 13px 0 6px; }
+.m-inv-group > header a, .m-inv-group > header { font-size: 14px; font-weight: 600; color: var(--ink); }
+.m-inv-group > header a { text-decoration: none; }
+.m-inv-group > header a:hover { color: var(--m-accent); }
+.m-inv-group > header em { font-style: normal; font-size: 12px; font-weight: 400; color: var(--ink-faint); }
+/* nested-zone sub-header row */
+.m-inv-sub td { padding: 12px 8px 4px; font-size: 11px; font-weight: 500; color: var(--ink-faint); border-bottom: none; }
+
+/* resizable card viewport: capped scroll region with a sticky header row */
+.m-inv-scroll { max-height: 320px; overflow-y: auto; }
+.m-inv-scroll thead th { position: sticky; top: 0; background: var(--panel); z-index: 2; }
+/* shadcn Resizable: a panel group. Columns sit side by side split by
+   vertical handles (drag = trade width); sections inside a column are split
+   by horizontal handles (drag = trade height). All with the withHandle pill. */
+.m-inv-cols { display: flex; align-items: flex-start; }
+.m-inv-col { flex: 1 1 0; min-width: 0; }
+.m-inv-view[data-view="zones"] .m-inv-group { margin-bottom: 0; container-type: inline-size; }
+.m-rsz-v {
+  flex: 0 0 17px; align-self: stretch; position: relative;
+  display: grid; place-items: center;
+  cursor: col-resize; touch-action: none; user-select: none;
+}
+.m-rsz-v::before { content: ""; position: absolute; top: 12px; bottom: 12px; left: 50%; width: 1px; background: var(--line); }
+.m-rsz-v .m-rsz-grip { width: 14px; height: 26px; position: relative; z-index: 1; }
+.m-rsz-v:hover .m-rsz-grip { color: var(--ink); border-color: var(--ring); }
+/* narrow panels shed detail columns instead of breaking: id → role → mgmt ip */
+@container (max-width: 700px) { .m-inventory th:nth-child(2), .m-inventory td:nth-child(2) { display: none; } }
+@container (max-width: 560px) { .m-inventory th:nth-child(4), .m-inventory td:nth-child(4) { display: none; } }
+@container (max-width: 440px) { .m-inventory th:nth-child(6), .m-inventory td:nth-child(6) { display: none; } }
+/* narrow viewports: fall back to one column */
+@media (max-width: 1080px) { .m-inv-cols { display: block; } .m-rsz-v { display: none; } }
+.m-rsz-handle {
+  position: relative; display: grid; place-items: center; height: 17px;
+  cursor: row-resize; touch-action: none; user-select: none;
+}
+.m-rsz-handle::before { content: ""; position: absolute; left: 12px; right: 12px; top: 50%; height: 1px; background: var(--line); }
+.m-rsz-grip {
+  position: relative; z-index: 1; display: grid; place-items: center;
+  width: 26px; height: 14px; border-radius: 4px;
+  background: var(--bg-raise); border: 1px solid var(--line-strong); color: var(--ink-dim);
+}
+.m-rsz-handle:hover .m-rsz-grip { color: var(--ink); border-color: var(--ring); }
+.m-inv-group .m-pagination { padding: 10px 0 0; }
+
+/* shadcn Pagination */
+.m-pagination { display: flex; align-items: center; justify-content: center; gap: 4px; padding: 18px 0 6px; }
+.m-page {
+  min-width: 32px; height: 32px; padding: 0 10px; border: 0; border-radius: var(--radius-sm);
+  background: none; color: var(--ink); font: inherit; font-size: 13px; cursor: pointer;
+  transition: background .15s;
+}
+.m-page:hover { background: var(--bg-raise); }
+.m-page.active { border: 1px solid var(--line-strong); }
+.m-page:disabled { opacity: .5; cursor: default; background: none; }
+.m-page-nav { font-weight: 500; }
+.m-page-ell { color: var(--ink-faint); padding: 0 2px; }
+.m-full-link { margin-left: auto; display: inline-flex; align-items: center; gap: 3px; color: var(--m-accent); font-size: 13px; text-decoration: none; }
+.m-full-link:hover { text-decoration: underline; }
+.m-members { list-style: none; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 3px 10px; font-size: 12px; color: var(--ink-dim); }
+
+/* ── reduced motion: kill choreography and chrome slides ── */
+@media (prefers-reduced-motion: reduce) {
+  .m-enter-zone, .m-enter-node { animation: none !important; }
+  .m-edge, .m-edge.m-flow { animation: none !important; stroke-dasharray: none; stroke-dashoffset: 0; }
+  .m-sidebar, .m-dock, .m-dock-hint, .m-breadcrumbs, .m-inspector, .m-spotlight-box,
+  .m-controls, .m-minimap, .m-chip-btn { transition: none !important; animation: none !important; }
+}
+
+/* ── print ── */
+@media print {
+  .m-sidebar, .m-rail-wrap, .m-dock, .m-breadcrumbs, .m-controls, .m-minimap, .m-inspector, .m-spotlight, .m-tooltip, .m-backdrop { display: none !important; }
+  .m-stage { position: static; inset: auto; border: none; box-shadow: none; }
+  body { overflow: visible; background: #fff; }
+}
+</style>
+</head>
+<body>
+<div class="m-backdrop" aria-hidden="true"><span class="m-backdrop-text"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 20V10a4 4 0 0 1 4-4"/><path d="M13 20V10"/><path d="M13 10a4 4 0 0 1 4-4h2"/><path d="m17.2 4.2 1.8 1.8-1.8 1.8"/></svg><span>Marrow</span></span></div>
+<div class="m-rail-wrap">
+<button class="m-chip-btn m-sidebar-btn" type="button" data-title="Panel" aria-label="Toggle panel"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+</div>
+<nav class="m-breadcrumbs" aria-label="Breadcrumb"><span class="m-crumb-here">VPN &amp; Tunnels</span></nav>
+<div class="m-dock">
+  <button class="m-searchpill m-search-btn" type="button" aria-label="Search">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><span>Search devices…</span><kbd>Ctrl K</kbd>
+  </button>
+  <button class="m-dock-hint m-search-btn" type="button" aria-label="Search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><span>Search</span><kbd>Ctrl K</kbd></button>
+</div>
+<aside class="m-sidebar">
+<div class="m-sidebar-inner">
+<div class="m-side-header">
+  <div class="m-side-id"><strong>VPN &amp; Tunnels</strong><small>5 devices · 4 links · 4 zones</small></div>
+</div>
+<nav class="m-menubar" role="menubar" aria-label="Application menu">
+  <button type="button" data-menu="view" role="menuitem">View</button>
+  <button type="button" data-menu="export" role="menuitem">Export</button>
+  <button type="button" data-menu="help" role="menuitem">Help</button>
+</nav>
+
+<section><h4>Legend</h4>
+  <ul class="m-legend">
+    <li><i class="m-dot" style="background:var(--up)"></i>up</li>
+    <li><i class="m-dot" style="background:var(--degraded)"></i>degraded</li>
+    <li><i class="m-dot" style="background:var(--down)"></i>down</li>
+    <li><i class="m-dot" style="background:var(--planned)"></i>planned</li>
+    <li><i class="m-line"></i>link</li>
+    <li><i class="m-line m-line-dash"></i>degraded / planned</li>
+  </ul>
+</section>
+<section><h4>About</h4><div class="m-side-nav"><div class="m-side-row m-side-static"><span>Layout</span><em>Zoned mosaic</em></div><div class="m-side-row m-side-static"><span>Renderer</span><em>SVG (hero tier)</em></div></div></section>
+<div class="m-side-foot"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 20V10a4 4 0 0 1 4-4"/><path d="M13 20V10"/><path d="M13 10a4 4 0 0 1 4-4h2"/><path d="m17.2 4.2 1.8 1.8-1.8 1.8"/></svg><span>Marrow</span><a class="m-brand-gh" href="https://github.com/raiz-toff/Marrow" target="_blank" rel="noopener noreferrer" aria-label="Source repository" title="Source repository"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.4 5.4 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg></a></div>
+</div>
+</aside>
+<main class="m-stage">
+<svg class="m-svg" data-w="528" data-h="598" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Network topology diagram">
+<defs>
+<pattern id="m-grid-dots" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="1.2" cy="1.2" r="1.2" class="m-grid-dot"/></pattern>
+<symbol id="ic-cisco-security-firewall" viewBox="0 0 100 100"><g transform="translate(-11.1194, 3.6567) scale(1.3433)"><g><g><rect x="31" y="1" width="29" height="67" fill="none" stroke="none" pointer-events="all" /><path d="M 31 68 L 31 12.53 L 47.57 12.53 L 47.57 68 Z M 47.57 12.53 L 31 12.53 L 46.02 1 L 60 1 Z M 60 1 L 60 53.87 L 47.57 68 L 47.57 12.53 Z" fill="#036897" stroke="#ffffff" stroke-width="2" stroke-linejoin="round" stroke-miterlimit="10" pointer-events="all" style="fill: rgb(3, 104, 151); stroke: rgb(255, 255, 255);" /><path d="M 56.37 13.04 L 56.37 4.14 M 56.37 31.37 L 56.37 22.46 M 56.37 49.16 L 56.37 40.25 M 60 44.97 L 47.57 59.1 M 60 36.08 L 47.57 49.68 M 60 27.18 L 47.57 40.25 M 60 18.27 L 47.57 31.37 M 60 9.9 L 47.57 21.95 M 47.57 12.53 L 60 1 M 47.57 59.1 L 31 59.1 M 47.57 49.68 L 31 49.68 M 47.57 40.25 L 31 40.25 M 47.57 30.83 L 31 30.83 M 47.57 21.95 L 31 21.95 M 52.23 62.76 L 52.23 53.87 M 52.23 44.97 L 52.23 36.08 M 52.23 26.66 L 52.23 17.75" fill="none" stroke="#ffffff" stroke-width="2" stroke-linejoin="round" stroke-miterlimit="10" pointer-events="all" style="stroke: rgb(255, 255, 255);" /></g></g></g></symbol>
+<symbol id="ic-cisco-switches-layer-3-switch" viewBox="0 0 100 100"><g transform="translate(-24.5312, -10.4688) scale(1.4062)"><g><g><rect x="21" y="11" width="64" height="64" fill="none" stroke="none" pointer-events="all" /><path d="M 21 75 L 21 18.47 L 77.61 18.47 L 77.61 75 Z M 85 68.07 L 85 11 L 77.61 18.47 L 77.61 75 Z M 31.05 11 L 21 18.47 L 77.61 18.47 L 85 11 Z" fill="#036897" stroke="#ffffff" stroke-width="2" stroke-linejoin="round" stroke-miterlimit="10" pointer-events="all" style="fill: rgb(3, 104, 151); stroke: rgb(255, 255, 255);" /><path d="M 50.63 38.2 L 50.63 25.94 L 52.74 25.94 L 49.56 21.67 L 46.91 25.94 L 48.5 25.94 L 48.5 38.2 Z M 44.28 40.34 L 35.81 31.27 L 37.39 30.2 L 32.11 29.14 L 33.17 34.47 L 34.22 32.87 L 43.22 41.4 Z M 41.11 46.2 L 28.93 46.2 L 28.93 44.07 L 24.7 46.74 L 28.93 49.94 L 28.93 47.8 L 41.11 47.8 Z M 43.22 52.07 L 34.22 61.14 L 33.17 59.54 L 32.11 64.87 L 37.39 63.8 L 35.81 62.2 L 44.28 53.67 Z M 48.5 55.27 L 48.5 67.54 L 46.91 67.54 L 49.56 72.34 L 52.74 67.54 L 50.63 67.54 L 50.63 55.27 Z M 54.85 53.67 L 63.85 62.2 L 62.26 63.8 L 67.54 64.87 L 66.5 59.54 L 64.91 61.14 L 56.44 52.07 Z M 58.02 47.8 L 70.19 47.8 L 70.19 49.94 L 74.95 46.74 L 70.19 44.07 L 70.19 46.2 L 58.02 46.2 Z M 56.44 41.4 L 64.91 32.87 L 66.5 34.47 L 67.54 29.14 L 62.26 30.2 L 63.85 31.27 L 54.85 40.34 Z" fill="#ffffff" stroke="none" pointer-events="all" style="fill: rgb(255, 255, 255);" /><path d="M 56.98 57.4 C 62.78 53.14 64.37 45.14 60.15 39.27 C 56.44 33.4 48.5 32.34 42.69 36.07 C 36.87 40.34 35.28 48.34 39.52 54.2 C 43.74 60.07 51.67 61.67 56.98 57.4 Z" fill="#ffffff" stroke="#036c9b" stroke-width="1.06" stroke-miterlimit="10" pointer-events="all" style="fill: rgb(255, 255, 255); stroke: rgb(3, 108, 155);" /></g></g></g></symbol>
+</defs>
+<g class="m-camera">
+<rect class="m-grid" width="528" height="598" fill="url(#m-grid-dots)"/>
+<g class="m-zones">
+<g class="m-zone m-enter-zone" data-zone="bra" data-depth="0" style="--m-zone-accent:#4fc3a1"><rect x="24" y="24" width="124" height="160" rx="16" class="m-zone-panel"/></g>
+<g class="m-zone m-enter-zone" data-zone="brb" data-depth="0" style="--m-zone-accent:#4fc3a1"><rect x="204" y="24" width="124" height="160" rx="16" class="m-zone-panel"/></g>
+<g class="m-zone m-enter-zone" data-zone="dc" data-depth="0" style="--m-zone-accent:#e0a458"><rect x="24" y="240" width="120" height="334" rx="16" class="m-zone-panel"/></g>
+<g class="m-zone m-enter-zone" data-zone="hq" data-depth="0" style="--m-zone-accent:#7aa2ff"><rect x="384" y="24" width="120" height="160" rx="16" class="m-zone-panel"/></g>
+</g>
+<g class="m-edges">
+<path class="m-edge m-status-up m-mode-tunnel" pathLength="1" d="M444 70 L444 63 Q444 56 437 56 L93 56 Q86 56 86 63 L86 70" data-edge="hq-fw--bra-fw#1" data-from="hq-fw" data-to="bra-fw" data-from-port="tun1" data-to-port="tun1" data-mode="tunnel" data-encap="ipsec" data-meta="tun1 · tun1 · tunnel · IPsec"/><g class="m-edge-chip" data-glyph="lock"><rect x="236.25" y="48" width="57.5" height="16" rx="8"/><g class="m-chip-glyph"><rect x="243.25" y="54.5" width="9" height="6.5" rx="1.5"/><path d="M244.95 54.5 v-1.8 a2.8 2.8 0 0 1 5.6 0 v1.8" fill="none"/></g><text x="271" y="59.6" text-anchor="middle">IPsec</text></g>
+<path class="m-edge m-status-up m-mode-tunnel" pathLength="1" d="M412 102 L298 102" data-edge="hq-fw--brb-fw#1" data-from="hq-fw" data-to="brb-fw" data-from-port="tun2" data-to-port="tun2" data-mode="tunnel" data-encap="ipsec" data-meta="tun2 · tun2 · tunnel · IPsec"/><g class="m-edge-chip" data-glyph="lock"><rect x="326.25" y="94" width="57.5" height="16" rx="8"/><g class="m-chip-glyph"><rect x="333.25" y="100.5" width="9" height="6.5" rx="1.5"/><path d="M334.95 100.5 v-1.8 a2.8 2.8 0 0 1 5.6 0 v1.8" fill="none"/></g><text x="361" y="105.6" text-anchor="middle">IPsec</text></g>
+<path class="m-edge m-status-up m-mode-tunnel" pathLength="1" d="M412 118 L364 118 Q356 118 356 126 L356 310 Q356 318 348 318 L116 318" data-edge="hq-fw--leaf-01#1" data-from="hq-fw" data-to="leaf-01" data-from-port="gre0" data-to-port="gre0" data-mode="tunnel" data-encap="gre" data-meta="gre0 · gre0 · tunnel · GRE"/><g class="m-edge-chip" data-glyph="lock"><rect x="333.55" y="302" width="44.9" height="16" rx="8"/><g class="m-chip-glyph"><rect x="340.55" y="308.5" width="9" height="6.5" rx="1.5"/><path d="M342.25 308.5 v-1.8 a2.8 2.8 0 0 1 5.6 0 v1.8" fill="none"/></g><text x="362" y="313.6" text-anchor="middle">GRE</text></g>
+<path class="m-edge m-status-up m-mode-tunnel" pathLength="1" d="M84 372 L84 460" data-edge="leaf-01--leaf-02#1" data-from="leaf-01" data-to="leaf-02" data-from-port="vx0" data-to-port="vx0" data-mode="tunnel" data-encap="vxlan" data-meta="vx0 · vx0 · tunnel · VXLAN"/><g class="m-edge-chip" data-glyph="lock"><rect x="55.25" y="408" width="57.5" height="16" rx="8"/><g class="m-chip-glyph"><rect x="62.25" y="414.5" width="9" height="6.5" rx="1.5"/><path d="M63.95 414.5 v-1.8 a2.8 2.8 0 0 1 5.6 0 v1.8" fill="none"/></g><text x="90" y="419.6" text-anchor="middle">VXLAN</text></g>
+</g>
+<g class="m-zone-titles">
+<g class="m-zone m-enter-zone" data-zone="bra" data-depth="0" style="--m-zone-accent:#4fc3a1"><text x="38" y="46" class="m-zone-label">BRANCH A</text></g>
+<g class="m-zone m-enter-zone" data-zone="brb" data-depth="0" style="--m-zone-accent:#4fc3a1"><text x="218" y="46" class="m-zone-label">BRANCH B</text></g>
+<g class="m-zone m-enter-zone" data-zone="dc" data-depth="0" style="--m-zone-accent:#e0a458"><text x="38" y="262" class="m-zone-label">DATACENTER</text></g>
+<g class="m-zone m-enter-zone" data-zone="hq" data-depth="0" style="--m-zone-accent:#7aa2ff"><text x="398" y="46" class="m-zone-label">HQ</text></g>
+</g>
+<g class="m-portlabels">
+<g class="m-portlabel" data-edge="hq-fw--bra-fw#1" data-node="hq-fw"><rect x="415.8" y="48.0" width="32.4" height="16" rx="4"/><text x="432.0" y="59.0" text-anchor="middle">tun1</text></g>
+<g class="m-portlabel" data-edge="hq-fw--bra-fw#1" data-node="bra-fw"><rect x="81.8" y="48.0" width="32.4" height="16" rx="4"/><text x="98.0" y="59.0" text-anchor="middle">tun1</text></g>
+<g class="m-portlabel" data-edge="hq-fw--brb-fw#1" data-node="hq-fw"><rect x="369.8" y="94.0" width="32.4" height="16" rx="4"/><text x="386.0" y="105.0" text-anchor="middle">tun2</text></g>
+<g class="m-portlabel" data-edge="hq-fw--brb-fw#1" data-node="brb-fw"><rect x="307.8" y="94.0" width="32.4" height="16" rx="4"/><text x="324.0" y="105.0" text-anchor="middle">tun2</text></g>
+<g class="m-portlabel" data-edge="hq-fw--leaf-01#1" data-node="hq-fw"><rect x="369.8" y="110.0" width="32.4" height="16" rx="4"/><text x="386.0" y="121.0" text-anchor="middle">gre0</text></g>
+<g class="m-portlabel" data-edge="hq-fw--leaf-01#1" data-node="leaf-01"><rect x="125.8" y="310.0" width="32.4" height="16" rx="4"/><text x="142.0" y="321.0" text-anchor="middle">gre0</text></g>
+<g class="m-portlabel" data-edge="leaf-01--leaf-02#1" data-node="leaf-01"><rect x="70.6" y="390.0" width="26.8" height="16" rx="4"/><text x="84.0" y="401.0" text-anchor="middle">vx0</text></g>
+<g class="m-portlabel" data-edge="leaf-01--leaf-02#1" data-node="leaf-02"><rect x="70.6" y="426.0" width="26.8" height="16" rx="4"/><text x="84.0" y="437.0" text-anchor="middle">vx0</text></g>
+</g>
+<g class="m-nodes">
+<g class="m-node m-status-up" data-node="bra-fw" data-tier="edge" data-zone="bra" style="--d:0.15s" tabindex="0" role="button" aria-label="Branch A FW"><g class="m-node-inner m-enter-node"><rect class="m-chip" x="54" y="70" width="64" height="64" rx="13"/><use href="#ic-cisco-security-firewall" x="62" y="78" width="48" height="48"/><circle class="m-led" cx="114.2" cy="73.8" r="4.2"/><text class="m-label" x="86" y="152" text-anchor="middle" textLength="68" lengthAdjust="spacingAndGlyphs">Branch A FW</text></g></g>
+<g class="m-node m-status-up" data-node="brb-fw" data-tier="edge" data-zone="brb" style="--d:0.18s" tabindex="0" role="button" aria-label="Branch B FW"><g class="m-node-inner m-enter-node"><rect class="m-chip" x="234" y="70" width="64" height="64" rx="13"/><use href="#ic-cisco-security-firewall" x="242" y="78" width="48" height="48"/><circle class="m-led" cx="294.2" cy="73.8" r="4.2"/><text class="m-label" x="266" y="152" text-anchor="middle" textLength="68" lengthAdjust="spacingAndGlyphs">Branch B FW</text></g></g>
+<g class="m-node m-status-up" data-node="hq-fw" data-tier="edge" data-zone="hq" style="--d:0.21s" tabindex="0" role="button" aria-label="HQ Firewall"><g class="m-node-inner m-enter-node"><rect class="m-chip" x="412" y="70" width="64" height="64" rx="13"/><use href="#ic-cisco-security-firewall" x="420" y="78" width="48" height="48"/><circle class="m-led" cx="472.2" cy="73.8" r="4.2"/><text class="m-label" x="444" y="152" text-anchor="middle" textLength="60" lengthAdjust="spacingAndGlyphs">HQ Firewall</text></g></g>
+<g class="m-node m-status-up" data-node="leaf-01" data-tier="access" data-zone="dc" style="--d:0.54s" tabindex="0" role="button" aria-label="Leaf 1"><g class="m-node-inner m-enter-node"><rect class="m-chip" x="52" y="286" width="64" height="64" rx="13"/><use href="#ic-cisco-switches-layer-3-switch" x="60" y="294" width="48" height="48"/><circle class="m-led" cx="112.2" cy="289.8" r="4.2"/><text class="m-label" x="84" y="368" text-anchor="middle" textLength="31" lengthAdjust="spacingAndGlyphs">Leaf 1</text></g></g>
+<g class="m-node m-status-up" data-node="leaf-02" data-tier="access" data-zone="dc" style="--d:0.5700000000000001s" tabindex="0" role="button" aria-label="Leaf 2"><g class="m-node-inner m-enter-node"><rect class="m-chip" x="52" y="460" width="64" height="64" rx="13"/><use href="#ic-cisco-switches-layer-3-switch" x="60" y="468" width="48" height="48"/><circle class="m-led" cx="112.2" cy="463.8" r="4.2"/><text class="m-label" x="84" y="542" text-anchor="middle" textLength="33" lengthAdjust="spacingAndGlyphs">Leaf 2</text></g></g>
+</g>
+</g>
+</svg>
+<div class="m-tooltip" hidden></div>
+</main>
+<div class="m-watermark" aria-hidden="true"><span>VPN &amp; Tunnels</span><small>Site-to-site IPsec, a GRE tunnel, and a VXLAN overlay</small></div>
+<aside class="m-inspector" hidden>
+  <div class="m-inspector-head">
+    <div class="m-inspector-id">
+      <span class="m-inspector-title"></span>
+      <small class="m-inspector-desc"></small>
+    </div>
+    <button class="m-inspector-close" type="button" aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+  </div>
+  <div class="m-inspector-body"></div>
+  <div class="m-drawer-foot"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 20V10a4 4 0 0 1 4-4"/><path d="M13 20V10"/><path d="M13 10a4 4 0 0 1 4-4h2"/><path d="m17.2 4.2 1.8 1.8-1.8 1.8"/></svg><span>Marrow</span><a class="m-brand-gh" href="https://github.com/raiz-toff/Marrow" target="_blank" rel="noopener noreferrer" aria-label="Source repository" title="Source repository"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.4 5.4 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg></a></div>
+</aside>
+<div class="m-shortcuts" hidden>
+  <div class="m-shortcuts-box">
+    <div class="m-shortcuts-head">
+      <div><strong>Keyboard shortcuts</strong><small>Driving the diagram from the keys</small></div>
+      <button class="m-shortcuts-close" type="button" aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+    </div>
+    <div class="m-shortcuts-body">
+      <h5>Search &amp; commands</h5>
+      <div class="m-sc-row"><span>Command center</span><span class="m-sc-keys"><kbd>Ctrl K</kbd><kbd>/</kbd></span></div>
+      <div class="m-sc-row"><span>Navigate results · open</span><span class="m-sc-keys"><kbd>↑</kbd><kbd>↓</kbd><kbd>↵</kbd></span></div>
+      <h5>Camera</h5>
+      <div class="m-sc-row"><span>Fit view</span><span class="m-sc-keys"><kbd>F</kbd><kbd>Ctrl 0</kbd></span></div>
+      <div class="m-sc-row"><span>Zoom in / out</span><span class="m-sc-keys"><kbd>+</kbd><kbd>−</kbd><kbd>Ctrl +</kbd><kbd>Ctrl −</kbd></span></div>
+      <div class="m-sc-row"><span>Pan · zoom</span><span class="m-sc-keys"><kbd>drag</kbd><kbd>scroll</kbd></span></div>
+      <h5>Devices</h5>
+      <div class="m-sc-row"><span>Open focused device</span><span class="m-sc-keys"><kbd>↵</kbd><kbd>Space</kbd></span></div>
+      <div class="m-sc-row"><span>Walk connected neighbors</span><span class="m-sc-keys"><kbd>←</kbd><kbd>↑</kbd><kbd>→</kbd><kbd>↓</kbd></span></div>
+      <div class="m-sc-row"><span>Device / view options</span><span class="m-sc-keys"><kbd>right-click</kbd></span></div>
+      <div class="m-sc-row"><span>Deselect · close</span><span class="m-sc-keys"><kbd>Esc</kbd></span></div>
+      <h5>Panels</h5>
+      <div class="m-sc-row"><span>Toggle sidebar</span><span class="m-sc-keys"><kbd>Ctrl B</kbd></span></div>
+    </div>
+  </div>
+</div>
+<div class="m-spotlight" hidden>
+  <div class="m-spotlight-box">
+    <div class="m-spotlight-head"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input type="text" placeholder="Search devices, IPs, interfaces…" aria-label="Search"></div>
+    <ul></ul>
+    <div class="m-spotlight-foot">
+      <span><kbd>↑</kbd><kbd>↓</kbd> navigate</span>
+      <span><kbd>↵</kbd> open</span>
+      <span><kbd>esc</kbd> close</span>
+    </div>
+  </div>
+</div>
+<div class="m-minimap" hidden></div>
+<div class="m-controls">
+  <button class="m-btn m-ctl-in" type="button" title="Zoom in" aria-label="Zoom in"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></button>
+  <button class="m-btn m-ctl-out" type="button" title="Zoom out" aria-label="Zoom out"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+  <button class="m-btn m-ctl-fit" type="button" title="Fit view" aria-label="Fit view"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button>
+  <span class="m-ctl-sep"></span>
+  <button class="m-btn m-ctl-cmd m-search-btn" type="button" title="Command center" aria-label="Open command center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3"/></svg></button>
+</div>
+<script type="application/json" id="marrow-data">{"name":"VPN & Tunnels","description":"Site-to-site IPsec, a GRE tunnel, and a VXLAN overlay","theme":"dark","page":"index.html","devicePages":[],"devices":[{"id":"hq-fw","name":"HQ Firewall","icon":"cisco/security/firewall","tier":"edge","zone":"hq","status":"up","interfaces":[]},{"id":"bra-fw","name":"Branch A FW","icon":"cisco/security/firewall","tier":"edge","zone":"bra","status":"up","interfaces":[]},{"id":"brb-fw","name":"Branch B FW","icon":"cisco/security/firewall","tier":"edge","zone":"brb","status":"up","interfaces":[]},{"id":"leaf-01","name":"Leaf 1","icon":"cisco/switches/layer-3-switch","tier":"access","zone":"dc","status":"up","interfaces":[]},{"id":"leaf-02","name":"Leaf 2","icon":"cisco/switches/layer-3-switch","tier":"access","zone":"dc","status":"up","interfaces":[]}],"links":[{"id":"hq-fw--bra-fw#1","from":{"device":"hq-fw","port":"tun1"},"to":{"device":"bra-fw","port":"tun1"},"mode":"tunnel","encap":"ipsec","status":"up"},{"id":"hq-fw--brb-fw#1","from":{"device":"hq-fw","port":"tun2"},"to":{"device":"brb-fw","port":"tun2"},"mode":"tunnel","encap":"ipsec","status":"up"},{"id":"hq-fw--leaf-01#1","from":{"device":"hq-fw","port":"gre0"},"to":{"device":"leaf-01","port":"gre0"},"mode":"tunnel","encap":"gre","status":"up"},{"id":"leaf-01--leaf-02#1","from":{"device":"leaf-01","port":"vx0"},"to":{"device":"leaf-02","port":"vx0"},"mode":"tunnel","encap":"vxlan","status":"up"}],"zones":[{"id":"hq","name":"HQ"},{"id":"bra","name":"Branch A"},{"id":"brb","name":"Branch B"},{"id":"dc","name":"Datacenter"}]}</script>
+<script>"use strict";(()=>{var ee=class{constructor(t,n,o,a){this.group=t;this.viewport=n;this.sceneSize=o;this.onChange=a}group;viewport;sceneSize;onChange;state={x:0,y:0,k:1};raf=0;anim;get(){return{...this.state}}set(t,n=!1){let o={x:t.x??this.state.x,y:t.y??this.state.y,k:Q(t.k??this.state.k,.06,4)};if(!n){this.cancelAnim(),this.state=o,this.apply();return}this.animateTo(o,620)}fitState(t=1){let n=this.viewport(),o=28,a=Q(Math.min((n.w-o*2)/this.sceneSize.w,(n.h-o*2)/this.sceneSize.h,1.4)*t,.06,4);return{x:(n.w-this.sceneSize.w*a)/2,y:(n.h-this.sceneSize.h*a)/2,k:a}}fit(t=!1){this.set(this.fitState(),t)}flyTo(t){let n=this.viewport(),o=Q(Math.min(n.w/(t.w*6),n.h/(t.h*5),1.35),.5,4);this.animateTo({x:n.w/2-(t.x+t.w/2)*o,y:n.h/2-(t.y+t.h/2)*o,k:o},620)}zoomAt(t,n,o){let{x:a,y:s,k:r}=this.state,i=Q(r*o,.06,4),c=(t-a)/r,p=(n-s)/r;this.cancelAnim(),this.state={x:t-c*i,y:n-p*i,k:i},this.apply()}panBy(t,n){this.cancelAnim(),this.state={...this.state,x:this.state.x+t,y:this.state.y+n},this.apply()}animateTo(t,n){this.cancelAnim();let o={...this.state},a=performance.now(),s=r=>{let i=Math.min(1,(r-a)/n),c=1-Math.pow(1-i,3);this.state={x:o.x+(t.x-o.x)*c,y:o.y+(t.y-o.y)*c,k:o.k+(t.k-o.k)*c},this.apply(),i<1?this.anim=requestAnimationFrame(s):this.anim=void 0};this.anim=requestAnimationFrame(s)}cancelAnim(){this.anim!==void 0&&cancelAnimationFrame(this.anim),this.anim=void 0}apply(){this.raf||(this.raf=requestAnimationFrame(()=>{this.raf=0;let{x:t,y:n,k:o}=this.state;this.group.setAttribute("transform",`translate(${t} ${n}) scale(${o})`),this.onChange(this.state)}))}};function Q(e,t,n){return Math.max(t,Math.min(n,e))}var Re={ipsec:"IPsec",gre:"GRE",vxlan:"VXLAN",wireguard:"WG",dmvpn:"DMVPN",mpls:"MPLS",l2tp:"L2TP",geneve:"Geneve",ssl:"SSL"},Ge={ospf:"OSPF",ebgp:"eBGP",ibgp:"iBGP",bgp:"BGP",eigrp:"EIGRP",isis:"IS-IS",rip:"RIP",static:"static"};function we(e){return Re[e]??e.toUpperCase()}function te(e){return Ge[e]??e.toUpperCase()}function ye(e,t=10){return e.length<=t?e:e.slice(0,t-1)+"\u2026"}function ke(e){let t=e.mode??(e.encap!==void 0?"tunnel":void 0),n=t==="trunk"?"double":t==="tunnel"?"dashed":t==="peering"?"dotted":t==="stack"?"thick":"solid",o,a;e.lag!==void 0?(o=e.lag.toUpperCase(),a="bundle"):t==="tunnel"?(o=e.encap!==void 0?we(e.encap):"VPN",a="lock"):t==="trunk"?(o=e.vlans!==void 0?ye(e.vlans):"trunk",a="vlan"):t==="peering"?(o=e.protocol!==void 0?te(e.protocol):"peer",a="proto"):t==="routed"?e.protocol!==void 0&&(o=te(e.protocol),a="hop"):t==="stack"?(o="stack",a="stack"):t==="access"&&e.vlans!==void 0&&(o="v"+ye(e.vlans,8),a="vlan");let s={pattern:n};return t!==void 0&&(s.mode=t),o!==void 0&&(s.chip=o),a!==void 0&&(s.glyph=a),s}function ae(e){let t=[],n=e.mode??(e.encap!==void 0?"tunnel":void 0);if(n==="trunk"){t.push(e.vlans!==void 0?`trunk ${e.vlans}`:"trunk");let o=e.nativeVlan??e.native_vlan;o!==void 0&&t.push(`native ${o}`)}else n==="access"?t.push(e.vlans!==void 0?`access vlan ${e.vlans}`:"access"):n==="tunnel"?t.push(e.encap!==void 0?`${we(e.encap)} tunnel`:"tunnel"):n==="peering"?t.push(e.protocol!==void 0?`${te(e.protocol)} peering`:"peering"):n==="routed"?t.push(e.protocol!==void 0?`routed \xB7 ${te(e.protocol)}`:"routed"):n==="stack"&&t.push("stack");return e.lag!==void 0&&t.push(e.lacp!==void 0?`${e.lag} \xB7 LACP ${e.lacp}`:e.lag),t}function Ve(e,t){switch(t){case"up":return e.up;case"down":return e.down;case"degraded":return e.degraded;case"planned":return e.planned;default:return e.unknown}}function Ee(){let e=getComputedStyle(document.documentElement),t=(n,o)=>e.getPropertyValue(n).trim()||o;return{up:t("--up","#30d158"),down:t("--down","#e5484d"),degraded:t("--degraded","#f5a524"),planned:t("--planned","#5a6478"),unknown:t("--unknown","#8a93a6"),edge:t("--edge","#4c7ab0"),accent:t("--m-accent","#7aa2ff"),chip:t("--chip","#151d2b"),chipLine:t("--chip-line","#2a3a52"),ink:t("--ink","#dbe2ee"),inkDim:t("--ink-dim","#8a93a6"),bg:t("--bg","#0b0e14"),zone:t("--zone","#3d5a80"),bgRaise:t("--bg-raise","#10151f"),line:t("--line","#223047")}}var ne=class e{constructor(t,n,o){this.canvas=t;this.stage=n;this.scene=o;let a=t.getContext("2d");if(!a)throw new Error("no 2d context");this.ctx2d=a;for(let s of o.nodes){this.nodeById.set(s.id,s);let r=Math.floor(s.box.x/e.CELL),i=Math.floor((s.box.x+s.box.w)/e.CELL),c=Math.floor(s.box.y/e.CELL),p=Math.floor((s.box.y+s.box.h)/e.CELL);for(let f=r;f<=i;f++)for(let h=c;h<=p;h++){let d=`${f}:${h}`;(this.grid.get(d)??this.grid.set(d,[]).get(d)).push(s.id)}}if(this.resize(),new ResizeObserver(()=>{this.resize(),this.requestDraw()}).observe(n),this.loadIcons(),new MutationObserver(()=>{this.colors=Ee(),this.requestDraw()}).observe(document.documentElement,{attributes:!0,attributeFilter:["data-theme"]}),!this.reduced){let s=()=>{this.requestDraw(),performance.now()-this.entranceStart<1400&&requestAnimationFrame(s)};requestAnimationFrame(s)}}canvas;stage;scene;ctx2d;camera={x:0,y:0,k:1};focus;selected;raf=0;colors=Ee();icons=new Map;labelWidths=new Map;zoneTitles=new Map;nodeById=new Map;grid=new Map;static CELL=160;entranceStart=performance.now();reduced=matchMedia("(prefers-reduced-motion: reduce)").matches;labelMode="auto";portMode="auto";motion=!0;setPortMode(t){this.portMode=t,this.requestDraw()}applyCamera(t){this.camera=t,this.requestDraw()}setLabelMode(t){this.labelMode=t,this.requestDraw()}setMotion(t){this.motion=t,this.requestDraw()}setFocus(t){this.focus=t,this.requestDraw()}setSelected(t){this.selected=t,this.requestDraw()}nodeBox(t){return this.nodeById.get(t)?.box}nodeAt(t,n){let o=`${Math.floor(t/e.CELL)}:${Math.floor(n/e.CELL)}`;for(let a of this.grid.get(o)??[]){let s=this.nodeById.get(a);if(t>=s.box.x&&t<=s.box.x+s.box.w&&n>=s.box.y&&n<=s.box.y+s.box.h)return s}}edgeAt(t,n,o){let a,s=o;for(let r of this.scene.edges)for(let i=0;i<r.points.length-1;i++){let c=Ne(t,n,r.points[i],r.points[i+1]);c<s&&(s=c,a=r)}return a}portChip(t,n,o){t.font=o.summary?"700 9px ui-monospace, monospace":"500 9px ui-monospace, monospace",t.fillStyle=this.colors.bgRaise,t.strokeStyle=this.colors.line,t.lineWidth=1/n,F(t,o.box.x,o.box.y,o.box.w,o.box.h,4),t.fill(),t.stroke(),t.fillStyle=o.summary?this.colors.ink:this.colors.inkDim,t.textAlign="center",t.fillText(o.label,o.box.x+o.box.w/2,o.box.y+o.box.h/2+3),t.textAlign="left"}zoneTitle(t,n,o,a,s){let r=`${n}@${Math.round(s)}`,i=this.zoneTitles.get(r);if(i!==void 0)return i;let c=o;if(t.measureText(o).width>a){let p=[...o];for(;p.length>0&&t.measureText(p.join("")+"\u2026").width>a;)p.pop();c=p.join("").trimEnd()+"\u2026"}return this.zoneTitles.set(r,c),c}resize(){let t=this.stage.getBoundingClientRect(),n=Math.min(devicePixelRatio||1,2);this.canvas.width=Math.round(t.width*n),this.canvas.height=Math.round(t.height*n),this.canvas.style.width=`${t.width}px`,this.canvas.style.height=`${t.height}px`}async loadIcons(){let t=document.querySelector("svg.m-sprite");if(!t)return;let n=[...new Set(this.scene.nodes.map(o=>o.icon))];await Promise.all(n.map(async o=>{let a=t.querySelector(`#ic-${We(o)}`);if(!a)return;let r=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${a.getAttribute("viewBox")??"0 0 100 100"}" width="96" height="96">${a.innerHTML}</svg>`,i=new Blob([r],{type:"image/svg+xml"}),c=URL.createObjectURL(i);try{let p=new Image;await new Promise((f,h)=>{p.onload=()=>f(),p.onerror=()=>h(new Error(`icon ${o}`)),p.src=c}),this.icons.set(o,typeof createImageBitmap=="function"?await createImageBitmap(p):p)}catch{}finally{URL.revokeObjectURL(c)}})),this.requestDraw()}requestDraw(){this.raf||(this.raf=requestAnimationFrame(()=>{this.raf=0,this.draw()}))}exportBitmap(t=2800){let n=Math.min(t/this.scene.size.w,t/this.scene.size.h,2),o=document.createElement("canvas");o.width=Math.round(this.scene.size.w*n),o.height=Math.round(this.scene.size.h*n);let a=this.focus,s=this.camera,r={c:this.canvasOverride,g:this.ctxOverride,w:this.viewportOverride};this.focus=void 0,this.camera={x:0,y:0,k:n},this.canvasOverride=o,this.ctxOverride=o.getContext("2d"),this.viewportOverride={w:o.width,h:o.height},this.ctxOverride.fillStyle=this.colors.bg,this.ctxOverride.fillRect(0,0,o.width,o.height);try{this.draw()}finally{this.focus=a,this.camera=s,this.canvasOverride=r.c,this.ctxOverride=r.g,this.viewportOverride=r.w,this.requestDraw()}return o}canvasOverride;ctxOverride;viewportOverride;draw(){let t=this.ctxOverride!==void 0,n=this.ctxOverride??this.ctx2d,o=this.canvasOverride??this.canvas,a=t?1:Math.min(devicePixelRatio||1,2),{x:s,y:r,k:i}=this.camera,c=this.colors;n.setTransform(a,0,0,a,0,0),t||n.clearRect(0,0,o.width,o.height),n.setTransform(a*i,0,0,a*i,a*s,a*r);let p=this.viewportOverride??(()=>{let l=this.stage.getBoundingClientRect();return{w:l.width,h:l.height}})(),f=-s/i,h=-r/i,d=f+p.w/i,m=h+p.h/i,g=(l,L=24)=>l.x+l.w>f-L&&l.x<d+L&&l.y+l.h>h-L&&l.y<m+L,v=this.reduced||t?1:Math.min(1,(performance.now()-this.entranceStart)/900),w=this.focus!==void 0,E=this.labelMode==="on"?!0:this.labelMode==="off"?!1:i>.5,x=this.portMode==="on"?!0:this.portMode==="off"?!1:i>1.4,S=this.motion&&!this.reduced&&!t,y=performance.now()/1100%1;for(let l of this.scene.zones){if(!g(l.box,40))continue;let L=l.accent??c.zone;n.globalAlpha=(w?.35:1)*v,n.fillStyle=Le(L,.09),n.strokeStyle=Le(L,.42),n.lineWidth=1.2/i,F(n,l.box.x,l.box.y,l.box.w,l.box.h,16),n.fill(),n.stroke()}n.globalAlpha=1;let b={up:0,unknown:1,planned:2,degraded:3,down:4},u=new Map(this.scene.nodes.map(l=>[l.id,l.tier])),k=[...this.scene.edges].sort((l,L)=>(b[l.status]??0)-(b[L.status]??0)||l.id.localeCompare(L.id));for(let l of k){let L=l.points[0],C=Oe(l.points);if(!g(C,8))continue;let $=this.focus?.edges.has(l.id)??!1,q=(u.get(l.from.node)==="endpoint"||u.get(l.to.node)==="endpoint")&&i<.55?.22:1;n.globalAlpha=(w&&!$?.08:.92)*v*q,n.strokeStyle=$?c.accent:l.status==="down"?c.down:l.status==="degraded"?c.degraded:l.status==="planned"?c.planned:l.animated?c.accent:c.edge;let B=ke(l),z=l.speed==="40G"||l.speed==="100G"||l.speed==="400G"?4.5:l.speed==="10G"||l.speed==="25G"?3:1.5;B.pattern==="thick"?z=Math.max(z,5):B.pattern==="double"&&(z=Math.max(z,4.5)),n.lineWidth=z/Math.sqrt(i);let P=B.pattern==="dashed"?[9,6]:B.pattern==="dotted"?[1.5,5]:[];n.setLineDash(l.status==="degraded"?[14,7]:l.status==="planned"?[2,7]:l.animated&&S?[8,6]:P),l.animated&&S&&(n.lineDashOffset=-y*14),n.lineJoin="round",n.lineCap=l.status==="planned"||B.pattern==="dotted"||B.pattern==="thick"?"round":"butt";let I=()=>{n.beginPath(),n.moveTo(L.x,L.y);for(let M=1;M<l.points.length-1;M++){let H=l.points[M],R=l.points[M+1],D=l.points[M-1],O=Math.min(8,Math.hypot(H.x-D.x,H.y-D.y)/2,Math.hypot(R.x-H.x,R.y-H.y)/2);O>.5?n.arcTo(H.x,H.y,R.x,R.y,O):n.lineTo(H.x,H.y)}if(l.points.length>1){let M=l.points[l.points.length-1];n.lineTo(M.x,M.y)}};if(I(),n.stroke(),B.pattern==="double"&&(n.setLineDash([]),n.strokeStyle=c.bg,n.lineWidth=1.7/Math.sqrt(i),I(),n.stroke()),n.setLineDash([]),n.lineDashOffset=0,l.label&&E){let M=xe(l.points);n.font="600 11px system-ui, sans-serif";let H=n.measureText(l.label).width+12;n.fillStyle=c.bgRaise,n.strokeStyle=c.line,n.lineWidth=1/i,F(n,M.x-H/2,M.y-9,H,18,9),n.fill(),n.stroke(),n.fillStyle=c.inkDim,n.textAlign="center",n.fillText(l.label,M.x,M.y+4),n.textAlign="left"}if(B.chip&&E){let M=xe(l.points),H=M.y+(l.label?17:0);n.font="600 10.5px system-ui, sans-serif";let R=n.measureText(B.chip).width+14;n.fillStyle=c.bg,n.strokeStyle=c.line,n.lineWidth=1/i,F(n,M.x-R/2,H-8,R,16,8),n.fill(),n.stroke(),n.fillStyle=c.ink,n.textAlign="center",n.fillText(B.chip,M.x,H+3.4),n.textAlign="left"}}n.globalAlpha=1;for(let l of this.scene.zones){if(!g(l.box,40)||!E&&l.depth!==0)continue;n.globalAlpha=(w?.35:1)*v;let L=12/Math.max(i,.35);n.font=`650 ${L}px system-ui, sans-serif`;let C=n;"letterSpacing"in n&&(C.letterSpacing=`${L*.1}px`);let $=this.zoneTitle(n,l.id,l.name.toUpperCase(),l.box.w-28,L),T=l.box.x+14,q=l.box.y+22/Math.max(i,.6);n.strokeStyle=c.bg,n.lineWidth=3.5*(L/12),n.lineJoin="round",n.strokeText($,T,q),n.fillStyle=l.accent??c.zone,n.fillText($,T,q),"letterSpacing"in n&&(C.letterSpacing="0px")}n.globalAlpha=1;for(let l of this.scene.portChips??[]){if(!g(l.box,8))continue;let L=l.edge!==void 0?this.focus?.edges.has(l.edge)??!1:this.focus!==void 0&&(this.focus.focus===l.node||this.focus.adjacent.has(l.node));(w?!L:!x)||(n.globalAlpha=v,this.portChip(n,i,l))}n.globalAlpha=1;for(let l of this.scene.nodes){if(!g(l.box))continue;let L=this.focus?.focus===l.id,C=this.focus?.adjacent.has(l.id)??!1,$=this.selected===l.id,T=w&&!L&&!C&&!$;n.globalAlpha=(T?.15:l.ghost?.55:1)*v;let q=l.accent??c.accent,B=$||l.hero;n.fillStyle=c.chip,n.strokeStyle=B?q:L?c.inkDim:c.chipLine,n.lineWidth=($?2:l.hero?1.5:1.25)/Math.sqrt(i),l.ghost&&n.setLineDash([4,3]),F(n,l.chip.x,l.chip.y,l.chip.w,l.chip.h,13),n.fill(),n.stroke(),n.setLineDash([]);let z=this.icons.get(l.icon);if(z?n.drawImage(z,l.chip.x+8,l.chip.y+8,l.chip.w-16,l.chip.h-16):(n.fillStyle=c.inkDim,n.font="700 18px system-ui, sans-serif",n.textAlign="center",n.fillText(l.label.slice(0,2).toUpperCase(),l.chip.x+l.chip.w/2,l.chip.y+l.chip.h/2+6),n.textAlign="left"),n.fillStyle=Ve(c,l.status),n.strokeStyle=c.bg,n.lineWidth=2,n.beginPath(),n.arc(l.chip.x+l.chip.w-3.8,l.chip.y+3.8,4.2,0,Math.PI*2),n.fill(),n.stroke(),l.badge){n.font="700 11px system-ui, sans-serif";let P=Math.max(17,n.measureText(l.badge).width+12),I=l.chip.x+l.chip.w-3.8,M=l.chip.y+l.chip.h-3.8;n.fillStyle=q,n.strokeStyle=c.bg,n.lineWidth=2,F(n,I+8.5-P,M-8.5,P,17,8.5),n.fill(),n.stroke(),n.fillStyle="#fff",n.textAlign="center",n.fillText(l.badge,I+8.5-P/2,M+4),n.textAlign="left"}if(E){n.font="12px system-ui, sans-serif";let P=this.labelWidths.get(l.label);P===void 0&&(P=n.measureText(l.label).width,this.labelWidths.set(l.label,P));let I=P>l.labelBox.w?l.labelBox.w/P:1,M=l.labelBox.x+l.labelBox.w/2,H=l.labelBox.y+l.labelBox.h-4;I<1&&(n.save(),n.translate(M,H),n.scale(I,1),n.translate(-M,-H)),n.textAlign="center",n.lineWidth=3,n.strokeStyle=c.bg,n.strokeText(l.label,M,H),n.fillStyle=T?c.inkDim:c.ink,n.fillText(l.label,M,H),n.textAlign="left",I<1&&n.restore()}}n.globalAlpha=1,S&&this.scene.edges.some(l=>l.animated)&&this.requestDraw()}};function F(e,t,n,o,a,s){let r=Math.min(s,o/2,a/2);e.beginPath(),e.moveTo(t+r,n),e.arcTo(t+o,n,t+o,n+a,r),e.arcTo(t+o,n+a,t,n+a,r),e.arcTo(t,n+a,t,n,r),e.arcTo(t,n,t+o,n,r),e.closePath()}function Le(e,t){if(e.startsWith("#")&&(e.length===7||e.length===4)){let n=e.length===4?`#${e[1]}${e[1]}${e[2]}${e[2]}${e[3]}${e[3]}`:e,o=Math.round(t*255).toString(16).padStart(2,"0");return`${n}${o}`}return e}function Oe(e){let t=1/0,n=1/0,o=-1/0,a=-1/0;for(let s of e)t=Math.min(t,s.x),n=Math.min(n,s.y),o=Math.max(o,s.x),a=Math.max(a,s.y);return{x:t,y:n,w:o-t,h:a-n}}function xe(e){let t=0;for(let o=0;o<e.length-1;o++)t+=Math.abs(e[o+1].x-e[o].x)+Math.abs(e[o+1].y-e[o].y);let n=t/2;for(let o=0;o<e.length-1;o++){let a=e[o],s=e[o+1],r=Math.abs(s.x-a.x)+Math.abs(s.y-a.y);if(r>=n&&r>0){let i=n/r;return{x:a.x+(s.x-a.x)*i,y:a.y+(s.y-a.y)*i}}n-=r}return e[0]??{x:0,y:0}}function Ne(e,t,n,o){let a=o.x-n.x,s=o.y-n.y,r=a*a+s*s,i=r===0?0:Math.max(0,Math.min(1,((e-n.x)*a+(t-n.y)*s)/r)),c=n.x+i*a,p=n.y+i*s;return Math.hypot(e-c,t-p)}function We(e){return e.toLowerCase().replace(/[^a-z0-9-]/g,"-")}function ce(){return window.__MARROW_SEARCH?.docs}var oe;function ie(e){if(oe!==void 0)return oe;let t=ce();return oe=t!==void 0?t.filter(n=>n.page===`devices/${n.id}.html`).map(n=>n.id):e.devicePages??[],oe}function Se(){let e=document.getElementById("marrow-data");if(!e?.textContent)throw new Error("marrow: embedded data missing");return JSON.parse(e.textContent)}function Me(e){let t={},n=e.startsWith("#")?e.slice(1):e;for(let o of n.split(";")){let[a,s]=o.split("=",2);if(a==="d"&&s)t.device=decodeURIComponent(s);else if(a==="c"&&s){let[r,i,c]=s.split(",").map(Number);[r,i,c].every(p=>Number.isFinite(p))&&c>0&&(t.camera={x:r,y:i,k:c})}}return t}function Ce(e){let t=[];if(e.device!==void 0&&t.push(`d=${encodeURIComponent(e.device)}`),e.camera){let{x:n,y:o,k:a}=e.camera;t.push(`c=${de(n)},${de(o)},${de(a)}`)}return t.length>0?`#${t.join(";")}`:""}function de(e){return Math.round(e*100)/100}function $e(e,t,n=12){let o=e.toLowerCase().split(/[^a-z0-9./:-]+/).filter(s=>s.length>0);if(o.length===0)return[];let a=[];for(let s of t){let r=[[s.id.toLowerCase(),10],[s.name.toLowerCase(),8],[s.ip?.toLowerCase()??"",7],[s.role?.toLowerCase()??"",4],[s.zone?.toLowerCase()??"",3],[s.tier?.toLowerCase()??"",2],[(s.extra??[]).join(" ").toLowerCase(),2]],i=0,c=!0;for(let p of o){let f=0;for(let[h,d]of r)h!==""&&(h===p?f=Math.max(f,d*3):h.startsWith(p)?f=Math.max(f,d*2):h.includes(p)&&(f=Math.max(f,d)));if(f===0){c=!1;break}i+=f}c&&a.push({id:s.id,score:i})}return a.sort((s,r)=>r.score-s.score||s.id.localeCompare(r.id)),a.slice(0,n)}var U=()=>document.documentElement.dataset.root??"",fe=()=>document.documentElement.dataset.page??"index.html";function Fe(){let e=Se(),t=document.querySelector(".m-stage"),n=document.querySelector(".m-svg"),o=document.querySelector(".m-canvas");if(!t||!n&&!o){De(),Be(void 0),Te(void 0,e),Ae(void 0),He(),nt(),tt(e);return}let a=new Map(e.devices.map(y=>[y.id,y])),s=new Map,r=new Map;for(let y of e.links)for(let[b,u]of[[y.from.device,y.to.device],[y.to.device,y.from.device]])(s.get(b)??s.set(b,[]).get(b)).push(y),(r.get(b)??r.set(b,new Set).get(b)).add(u);let i={w:1,h:1},c,p=new Map,f=new Map;if(n){i={w:Number(n.dataset.w)||1,h:Number(n.dataset.h)||1};for(let y of n.querySelectorAll(".m-node[data-node]"))p.set(y.dataset.node,y);for(let y of n.querySelectorAll(".m-edge[data-edge]"))f.set(y.dataset.edge,y)}if(o){let y=e.scene;if(!y)throw new Error("marrow: canvas page without embedded scene");c=new ne(o,t,y),i=y.size}let h=n?.querySelector(".m-camera")??void 0,d=new ee(h??document.createElementNS("http://www.w3.org/2000/svg","g"),()=>{let y=t.getBoundingClientRect();return{w:y.width,h:y.height}},i,y=>{document.documentElement.dataset.zoom=y.k<.55?"far":y.k>1.5?"near":"mid",c?.applyCamera(y),g(),v()}),m={mode:c?"canvas":"svg",data:e,camera:d,stage:t,deviceById:a,linksByDevice:s,neighborIds:r,nodeEls:p,edgeEls:f,selected:void 0};n&&(m.svg=n),c&&(m.engine=c),je(m,t),m.mode==="svg"?Ke(m):Ue(m),document.querySelector(".m-inspector-close")?.addEventListener("click",()=>J(m)),Te(m,e),Je(m),De(),ot(m),Ye(m),Ae(m),He();let g=rt(m,t);Be(m),Xe(m);let v=at(m);for(let y of["labels","ports","motion","minimap"]){let b=localStorage.getItem(`marrow-${y}`);b!==null&&W(m,y,b)}let w=Me(location.hash),E=matchMedia("(prefers-reduced-motion: reduce)").matches;w.camera?d.set(w.camera):(d.set(d.fitState(1.08)),E?d.fit():setTimeout(()=>d.fit(!0),120));let x=w.device??e.hero;if(x!==void 0){let y=he(m,x);y!==void 0&&V(m,y,!1)}let S=()=>document.documentElement.classList.add("settled");setTimeout(S,E||w.camera?0:1900),addEventListener("pointerdown",S,{once:!0})}function le(e,t){return e.mode==="svg"?e.nodeEls.has(t):e.engine.nodeBox(t)!==void 0}function me(e,t){if(e.mode==="canvas")return e.engine.nodeBox(t);let n=e.nodeEls.get(t);if(!n)return;let o=n.getBBox();return{x:o.x,y:o.y,w:o.width,h:o.height}}function _(e,t){if(e.mode==="canvas"){let n=new Set((e.linksByDevice.get(t)??[]).map(o=>o.id));e.engine.setFocus({focus:t,adjacent:e.neighborIds.get(t)??new Set,edges:n});return}se(e),e.nodeEls.get(t)?.classList.add("is-focus");for(let n of e.neighborIds.get(t)??[])e.nodeEls.get(n)?.classList.add("is-adj");for(let n of e.linksByDevice.get(t)??[])e.edgeEls.get(n.id)?.classList.add("is-path"),ue(e,n.id,!0)}function ue(e,t,n){let o=`.m-portlabel[data-edge="${CSS.escape(t)}"]`;for(let a of e.svg.querySelectorAll(o))a.classList.toggle("is-hot",n)}function se(e){if(e.mode==="canvas"){e.engine.setFocus(void 0);return}for(let t of e.svg.querySelectorAll(".is-focus, .is-adj, .is-path, .is-hot"))t.classList.remove("is-focus","is-adj","is-path","is-hot")}function Ie(e,t){if(e.mode==="canvas"){e.engine.setSelected(t);return}for(let n of e.svg.querySelectorAll(".is-selected"))n.classList.remove("is-selected");t!==void 0&&e.nodeEls.get(t)?.classList.add("is-selected")}function he(e,t){if(le(e,t))return t;let n=e.data.devices.find(o=>o.stack?.members.includes(t));return n!==void 0&&le(e,n.id)?n.id:void 0}function je(e,t){t.addEventListener("wheel",r=>{r.preventDefault();let i=t.getBoundingClientRect();e.camera.zoomAt(r.clientX-i.left,r.clientY-i.top,Math.exp(-r.deltaY*.0016))},{passive:!1});let n=!1,o=!1,a={x:0,y:0};t.addEventListener("pointerdown",r=>{e.mode==="svg"&&r.target.closest("[data-node]")||e.mode==="canvas"&&K(e,r)||(n=!0,o=!1,a={x:r.clientX,y:r.clientY},t.setPointerCapture(r.pointerId),t.classList.add("m-grabbing"))}),t.addEventListener("pointermove",r=>{n&&(Math.abs(r.clientX-a.x)+Math.abs(r.clientY-a.y)>2&&(o=!0),e.camera.panBy(r.clientX-a.x,r.clientY-a.y),a={x:r.clientX,y:r.clientY})});let s=r=>{n&&!o&&e.mode==="canvas"&&!K(e,r)&&J(e),n=!1,t.classList.remove("m-grabbing")};t.addEventListener("pointerup",s),t.addEventListener("pointercancel",()=>{n=!1,t.classList.remove("m-grabbing")})}function Ke(e){let t=document.documentElement;e.svg.addEventListener("pointerover",n=>{let o=n.target.closest("[data-node]");o&&(_(e,o.dataset.node),t.classList.add("focus-mode"))}),e.svg.addEventListener("pointerout",n=>{n.target.closest("[data-node]")&&(t.classList.remove("focus-mode"),se(e),e.selected&&_(e,e.selected))}),e.svg.addEventListener("click",n=>{let o=n.target.closest("[data-node]");if(o){let a=o.dataset.href;if(a!==void 0){location.href=U()+a;return}V(e,o.dataset.node,!1)}else J(e)}),e.svg.addEventListener("pointerover",n=>{let o=n.target.closest(".m-edge[data-edge]");o&&ue(e,o.getAttribute("data-edge"),!0)}),e.svg.addEventListener("pointerout",n=>{let o=n.target.closest(".m-edge[data-edge]");!o||o.classList.contains("is-path")||ue(e,o.getAttribute("data-edge"),!1)}),Ze(e)}function qe(e,t){let n=e.stage.getBoundingClientRect(),o=e.camera.get();return{x:(t.clientX-n.left-o.x)/o.k,y:(t.clientY-n.top-o.y)/o.k}}function K(e,t){let n=qe(e,t);return e.engine.nodeAt(n.x,n.y)}function Ue(e){let t=document.documentElement,n=document.querySelector(".m-tooltip"),o;e.stage.addEventListener("pointermove",a=>{let s=K(e,a);if(s?.id!==o&&(o=s?.id,s?(_(e,s.id),t.classList.add("focus-mode"),e.stage.style.cursor="pointer"):(t.classList.remove("focus-mode"),se(e),e.selected&&_(e,e.selected),e.stage.style.cursor="")),!!n){if(!s){let r=qe(e,a),i=e.camera.get(),c=e.engine.edgeAt(r.x,r.y,8/i.k);if(c){let p=e.deviceById.get(c.from.node)?.name??c.from.node,f=e.deviceById.get(c.to.node)?.name??c.to.node,h=[c.from.port,c.to.port,c.speed,c.kind,...ae(c)].filter(Boolean).join(" \xB7 ");n.innerHTML=`<strong>${A(p)} \u2194 ${A(f)}</strong>${h?`<span>${A(h)}</span>`:""}`;let d=e.stage.getBoundingClientRect();n.style.left=`${a.clientX-d.left+14}px`,n.style.top=`${a.clientY-d.top+14}px`,n.hidden=!1;return}}n.hidden=!0}}),e.stage.addEventListener("click",a=>{let s=K(e,a);if(s){if(s.href!==void 0){location.href=U()+s.href;return}V(e,s.id,!1)}}),e.stage.addEventListener("pointerleave",()=>{n&&(n.hidden=!0)})}function V(e,t,n=!0){let o=e.deviceById.get(t);if(!(!o||!le(e,t))){if(e.selected=t,Ie(e,t),document.documentElement.classList.add("has-selection"),_(e,t),_e(e,o),n){let a=me(e,t);a&&e.camera.flyTo(a)}pe(e)}}function J(e){e.selected=void 0,Ie(e,void 0),document.documentElement.classList.remove("has-selection"),se(e);let t=document.querySelector(".m-inspector");t&&(t.hidden=!0),pe(e)}function Xe(e){document.addEventListener("pointerdown",t=>{e.selected===void 0||t.target.closest(".m-inspector, .m-controls, .m-minimap, .m-spotlight, .m-rail-wrap, .m-dock, .m-sidebar, [data-node]")||e.mode==="canvas"&&K(e,t)||J(e)})}function _e(e,t){Pe({deviceById:e.deviceById,linksByDevice:e.linksByDevice,devicePages:ie(e.data)},t,n=>{let o=he(e,n);o!==void 0&&V(e,o)})}function Pe(e,t,n){let o=document.querySelector(".m-inspector"),a=document.querySelector(".m-inspector-body"),s=document.querySelector(".m-inspector-title");if(!o||!a||!s)return;s.textContent=t.name;let r=document.querySelector(".m-inspector-desc");r&&(r.textContent=[t.role??t.tier,t.zone].filter(Boolean).join(" \xB7 "));let i=A,c=[["ID",t.id],["Tier",t.tier],["Zone",t.zone],["Role",t.role],["Status",t.status],["Mgmt IP",t.mgmtIp],["HA pair",t.haPairWith]],p=e.linksByDevice.get(t.id)??[],f=e.devicePages.includes(t.id)&&fe()!==`devices/${t.id}.html`?`<a class="m-full-link" href="${U()}devices/${encodeURIComponent(t.id)}.html#d=${encodeURIComponent(t.id)}">Open page<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg></a>`:"";a.innerHTML=[`<div class="m-icon-badge"><svg viewBox="0 0 48 48"><use href="#ic-${X(t.icon)}" width="48" height="48"/></svg><span class="m-status-pill m-status-${X(t.status)}">${i(t.status)}</span>${f}</div>`,`<dl class="m-facts">${c.filter(([,h])=>h!==void 0).map(([h,d])=>`<dt>${i(h)}</dt><dd>${i(d)}</dd>`).join("")}</dl>`,p.length?`<h3>Links (${p.length})</h3><ul class="m-links">${p.map(h=>{let d=h.from.device===t.id?h.from:h.to,m=h.from.device===t.id?h.to:h.from,g=e.deviceById.get(m.device)?.name??m.device,v=[...ae(h),h.kind,h.speed].filter(Boolean).join(" \xB7 "),w=`<span class="m-link-meta">${ct(h)}${v?`<span>${i(v)}</span>`:""}</span>`;return`<li><button data-goto="${i(m.device)}"><span class="m-link-other">${i(g)}</span><span class="m-link-ports">${i(d.port??"\u2014")} \u2192 ${i(m.port??"\u2014")}</span>${w}</button></li>`}).join("")}</ul>`:"",t.interfaces.length?`<h3>Interfaces (${t.interfaces.length})</h3><table class="m-table"><thead><tr><th>Name</th><th>VLAN</th><th>IP</th><th>Description</th></tr></thead><tbody>${t.interfaces.map(h=>`<tr><td>${i(h.name)}</td><td>${h.vlan??""}</td><td>${i(h.ip??"")}</td><td>${i(h.description??"")}</td></tr>`).join("")}</tbody></table>`:"",t.stack?`<h3>Members (${t.stack.members.length})</h3><ul class="m-members">${t.stack.members.map(h=>`<li>${i(h)}</li>`).join("")}</ul>`:"",t.note?`<h3>Note</h3><div class="m-note">${i(t.note)}</div>`:"",t.config?`<h3>Config</h3><pre class="m-config">${i(t.config)}</pre>`:""].join(""),o.hidden=!1;for(let h of a.querySelectorAll("[data-goto]"))h.addEventListener("click",()=>n(h.dataset.goto))}function Te(e,t){let n=document.querySelector(".m-spotlight"),o=document.querySelector(".m-spotlight input"),a=document.querySelector(".m-spotlight ul");if(!n||!o||!a)return;let s=ce(),r=new Map,i;s?i=s.map(u=>{r.set(u.id,u.page);let k={id:u.id,name:u.name};return u.role!==void 0&&(k.role=u.role),u.zone!==void 0&&(k.zone=u.zone),u.tier!==void 0&&(k.tier=u.tier),u.ip!==void 0&&(k.ip=u.ip),k}):i=t.devices.map(u=>{let k={id:u.id,name:u.name,extra:u.interfaces.map(l=>l.name)};return u.role!==void 0&&(k.role=u.role),u.zone!==void 0&&(k.zone=u.zone),u.tier!==void 0&&(k.tier=u.tier),u.mgmtIp!==void 0&&(k.ip=u.mgmtIp),k});let c=new Map;if(s)for(let u of s)c.set(u.id,[u.ip,u.zone,u.tier].filter(Boolean).join(" \xB7 "));else for(let u of t.devices)c.set(u.id,[u.mgmtIp,u.zone,u.tier].filter(Boolean).join(" \xB7 "));let p=new Map(i.map(u=>[u.id,u.name])),f=u=>{let k=r.get(u);if(e!==void 0&&(k===void 0||k===fe())){let l=he(e,u);if(l!==void 0){V(e,l);return}}location.href=`${U()}${k??"index.html"}#d=${encodeURIComponent(u)}`},h=u=>`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${u}</svg>`,d={moon:h('<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>'),tag:h('<path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/>'),plug:h('<path d="M12 22v-5"/><path d="M9 8V2"/><path d="M15 8V2"/><path d="M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z"/>'),pulse:h('<path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/>'),map:h('<path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"/><path d="M15 5.764v15"/><path d="M9 3.236v15"/>'),image:h('<rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>'),vector:h('<circle cx="19" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><path d="M5 17A12 12 0 0 1 17 5"/>')},m=()=>{let u=document.documentElement,k=($,T)=>localStorage.getItem(`marrow-${$}`)??T,l=$=>{let T=["auto","on","off"];return T[(T.indexOf(k($,"auto"))+1)%T.length]},L=($,T)=>j(e,$,T),C=[{label:"Toggle theme",icon:d.moon,shortcut:u.dataset.theme??"dark",keywords:"dark light mode appearance",run:()=>L("theme",u.dataset.theme==="light"?"dark":"light")}];return e!==void 0&&C.push({label:"Device labels",icon:d.tag,shortcut:k("labels","auto"),keywords:"names show hide cycle",run:()=>L("labels",l("labels"))},{label:"Port labels",icon:d.plug,shortcut:k("ports","auto"),keywords:"interfaces chips cycle",run:()=>L("ports",l("ports"))},{label:"Link motion",icon:d.pulse,shortcut:k("motion","on")!=="off"?"on":"off",keywords:"animation flow dashes",run:()=>L("motion",k("motion","on")!=="off"?"off":"on")},{label:"Minimap",icon:d.map,shortcut:k("minimap","on")!=="off"?"on":"off",keywords:"overview map corner",run:()=>L("minimap",k("minimap","on")!=="off"?"off":"on")}),C},g=()=>{let u=[];for(let C of document.querySelectorAll(".m-side-nav a.m-side-row"))C.href!==""&&u.push({label:C.dataset.label??C.querySelector("span")?.textContent??C.href,icon:C.querySelector("i")?.innerHTML??"",keywords:"go to open page",run:()=>{location.href=C.href}});let k=/Mac|iP(hone|ad|od)/.test(navigator.platform),l=[],L=(C,$,T={})=>{let q=document.querySelector(C);if(!q)return;let B={label:$,icon:q.querySelector("svg")?.outerHTML??"",run:()=>q.click()};T.shortcut!==void 0&&(B.shortcut=T.shortcut),T.keywords!==void 0&&(B.keywords=T.keywords),l.push(B)};return L(".m-ctl-fit","Fit view",{shortcut:"F",keywords:"zoom reset center"}),L(".m-ctl-in","Zoom in",{shortcut:"+"}),L(".m-ctl-out","Zoom out",{shortcut:"\u2212"}),L(".m-sidebar-btn","Toggle sidebar",{shortcut:k?"\u2318B":"Ctrl B",keywords:"panel browse"}),l.push({label:"Keyboard shortcuts",icon:h('<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>'),keywords:"help keys guide hotkeys",run:ze}),e!==void 0&&(l.push({label:"Export PNG",icon:d.image,keywords:"download image screenshot save",run:()=>{ge(e)}}),e.mode==="svg"&&l.push({label:"Export SVG",icon:d.vector,keywords:"download vector save",run:()=>Z(new Blob([re(e)],{type:"image/svg+xml"}),`${Y(e)}.svg`)})),{nav:u,actions:l,view:m()}},v=[],w=0,E=()=>{n.hidden=!1,o.value="",y(""),o.focus()},x=()=>{n.hidden=!0},S=u=>{u&&(x(),u.kind==="device"?f(u.id):u.cmd.run())},y=u=>{let k=u.trim(),l=k.toLowerCase(),L=D=>k===""||`${D.label} ${D.keywords??""}`.toLowerCase().includes(l),{nav:C,actions:$,view:T}=g(),q=k===""?[]:$e(k,i),B=C.filter(L),z=$.filter(L),P=T.filter(L);v=[],w=0;let I="",M=D=>`<li class="m-cmd-h">${D}</li>`,H=()=>'<li class="m-cmd-s" aria-hidden="true"></li>',R=(D,O,N)=>{let be=v.length-1;return`<li data-idx="${be}" class="${be===0?"active":""}"><span class="m-cmd-ic">${D}</span><span class="m-hit-name">${A(O)}</span>${N}</li>`};if(q.length>0){I+=M("Devices");for(let D of q)v.push({kind:"device",id:D.id}),I+=R("",p.get(D.id)??D.id,`<span class="m-hit-sub">${A(c.get(D.id)??"")}</span>`)}for(let[D,O]of[["Navigation",B],["Actions",z],["View",P]])if(O.length!==0){I!==""&&(I+=H()),I+=M(D);for(let N of O)v.push({kind:"cmd",cmd:N}),I+=R(N.icon,N.label,N.shortcut!==void 0?`<kbd class="m-cmd-kbd">${A(N.shortcut)}</kbd>`:"")}if(v.length===0){a.innerHTML='<li class="m-empty">No results found.</li>';return}a.innerHTML=I;for(let D of a.querySelectorAll("li[data-idx]"))D.addEventListener("click",()=>S(v[Number(D.dataset.idx)]))},b=u=>{let k=[...a.querySelectorAll("li[data-idx]")];k.length!==0&&(k[w]?.classList.remove("active"),w=(w+u+k.length)%k.length,k[w].classList.add("active"),k[w].scrollIntoView({block:"nearest"}))};o.addEventListener("input",()=>y(o.value)),o.addEventListener("keydown",u=>{u.key==="ArrowDown"?(u.preventDefault(),b(1)):u.key==="ArrowUp"?(u.preventDefault(),b(-1)):u.key==="Enter"?S(v[w]):u.key==="Escape"&&x()}),n.addEventListener("click",u=>{u.target===n&&x()});for(let u of document.querySelectorAll(".m-search-btn"))u.addEventListener("click",E);addEventListener("keydown",u=>{(u.key==="k"&&(u.metaKey||u.ctrlKey)||u.key==="/"&&!ve())&&(u.preventDefault(),n.hidden?E():x())})}function ze(){let e=document.querySelector(".m-shortcuts");e&&(e.hidden=!1)}function He(){let e=document.querySelector(".m-shortcuts");e&&(e.querySelector(".m-shortcuts-close")?.addEventListener("click",()=>{e.hidden=!0}),e.addEventListener("click",t=>{t.target===e&&(e.hidden=!0)}),addEventListener("keydown",t=>{t.key==="Escape"&&!e.hidden&&(e.hidden=!0)}))}function Ae(e){let t=document.querySelector(".m-menubar");if(!t)return;let n=document.createElement("div");n.className="m-ctxmenu m-menupop",n.hidden=!0,document.body.append(n);let o,a='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',s=(g,v)=>localStorage.getItem(`marrow-${g}`)??v,i=/Mac|iP(hone|ad|od)/.test(navigator.platform)?"\u2318":"Ctrl ",c=(g,v,w={})=>`<button class="m-ctx-item" data-act="${g}"><span class="m-ctx-check">${w.check===!0?a:""}</span><span class="m-ctx-label">${A(v)}</span>`+(typeof w.check=="string"?`<kbd class="m-ctx-kbd">${A(w.check)}</kbd>`:w.shortcut!==void 0?`<kbd class="m-ctx-kbd">${A(w.shortcut)}</kbd>`:"")+"</button>",p=()=>'<div class="m-ctx-sep"></div>',f=g=>g==="view"?(e!==void 0?c("fit","Fit view",{shortcut:"F"})+c("zoom-in","Zoom in",{shortcut:`${i}+`})+c("zoom-out","Zoom out",{shortcut:`${i}\u2212`})+p()+c("t-labels","Device labels",{check:s("labels","auto")})+c("t-ports","Port labels",{check:s("ports","auto")})+c("t-motion","Link motion",{check:s("motion","on")!=="off"})+c("t-minimap","Minimap",{check:s("minimap","on")!=="off"})+p():"")+c("t-theme","Theme",{check:document.documentElement.dataset.theme??"dark"}):g==="export"?(e!==void 0?c("png","Export PNG")+(e.mode==="svg"?c("svg","Export SVG"):"")+p():"")+c("print","Print\u2026",{shortcut:`${i}P`}):c("guide","Keyboard shortcuts")+c("palette","Command center",{shortcut:`${i}K`})+p()+c("about","About this diagram"),h=()=>{for(let g of t.querySelectorAll("[data-menu]"))g.classList.toggle("open",g.dataset.menu===o)},d=()=>{n.hidden=!0,o=void 0,h()},m=g=>{o=g.dataset.menu,n.innerHTML=f(o),n.hidden=!1;let v=g.getBoundingClientRect();n.style.left="0px",n.style.top="0px",n.style.left=`${Math.min(v.left,innerWidth-n.offsetWidth-8)}px`,n.style.top=`${Math.min(v.bottom+6,innerHeight-n.offsetHeight-8)}px`,h()};for(let g of t.querySelectorAll("[data-menu]"))g.addEventListener("click",()=>{o===g.dataset.menu?d():m(g)}),g.addEventListener("mouseenter",()=>{o!==void 0&&o!==g.dataset.menu&&m(g)});n.addEventListener("click",g=>{let v=g.target.closest(".m-ctx-item");if(!v)return;let w=()=>{o!==void 0&&(n.innerHTML=f(o))},E=S=>{let y=["auto","on","off"];j(e,S,y[(y.indexOf(s(S,"auto"))+1)%y.length]),w()},x=S=>{j(e,S,s(S,"on")!=="off"?"off":"on"),w()};switch(v.dataset.act){case"fit":d(),e?.camera.fit(!0);break;case"zoom-in":d(),e&&G(e,1.35);break;case"zoom-out":d(),e&&G(e,1/1.35);break;case"t-labels":E("labels");break;case"t-ports":E("ports");break;case"t-motion":x("motion");break;case"t-minimap":x("minimap");break;case"t-theme":j(e,"theme",document.documentElement.dataset.theme==="light"?"dark":"light"),w();break;case"png":d(),e&&ge(e);break;case"svg":d(),e&&Z(new Blob([re(e)],{type:"image/svg+xml"}),`${Y(e)}.svg`);break;case"print":d(),window.print();break;case"guide":d(),ze();break;case"palette":d(),document.querySelector(".m-search-btn")?.click();break;case"about":d(),document.querySelector(".m-sidebar")?.classList.add("open");break}}),addEventListener("pointerdown",g=>{let v=g.target;!n.hidden&&!n.contains(v)&&!t.contains(v)&&d()},!0),addEventListener("keydown",g=>{g.key==="Escape"&&!n.hidden&&d()})}function Ye(e){let t=document.createElement("div");t.className="m-ctxmenu",t.hidden=!0,document.body.append(t);let n,o='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',a=(d,m)=>localStorage.getItem(`marrow-${d}`)??m,r=/Mac|iP(hone|ad|od)/.test(navigator.platform)?"\u2318":"Ctrl ",i=(d,m,g={})=>`<button class="m-ctx-item${g.disabled?" disabled":""}" data-act="${d}" ${g.disabled?"disabled":""}><span class="m-ctx-check">${g.check===!0?o:""}</span><span class="m-ctx-label">${A(m)}</span>`+(typeof g.check=="string"?`<kbd class="m-ctx-kbd">${A(g.check)}</kbd>`:g.shortcut!==void 0?`<kbd class="m-ctx-kbd">${A(g.shortcut)}</kbd>`:"")+"</button>",c=()=>'<div class="m-ctx-sep"></div>',p=()=>{if(n!==void 0){let d=e.deviceById.get(n);if(!d)return;let m=ie(e.data).includes(d.id)&&fe()!==`devices/${d.id}.html`;t.innerHTML=`<div class="m-ctx-title">${A(d.name)}<small>${A([d.mgmtIp,d.tier].filter(Boolean).join(" \xB7 ")||d.id)}</small></div>`+c()+i("open","Open details",{shortcut:"\u21B5"})+i("fly","Fly to device")+(m?i("page","Open device page"):"")+c()+i("copy-id","Copy device ID")+(d.mgmtIp!==void 0?i("copy-ip","Copy mgmt IP"):"")}else t.innerHTML=i("fit","Fit view",{shortcut:"F"})+i("zoom-in","Zoom in",{shortcut:`${r}+`})+i("zoom-out","Zoom out",{shortcut:`${r}\u2212`})+c()+i("t-labels","Device labels",{check:a("labels","auto")})+i("t-ports","Port labels",{check:a("ports","auto")})+i("t-motion","Link motion",{check:a("motion","on")!=="off"})+i("t-minimap","Minimap",{check:a("minimap","on")!=="off"})+c()+i("png","Export PNG")+(e.mode==="svg"?i("svg","Export SVG"):"")+c()+i("palette","Command center",{shortcut:`${r}K`})},f=()=>{t.hidden=!0,n=void 0},h=(d,m)=>{p(),t.hidden=!1,t.style.left="0px",t.style.top="0px";let g=t.offsetWidth,v=t.offsetHeight;t.style.left=`${Math.min(d,innerWidth-g-8)}px`,t.style.top=`${Math.min(m,innerHeight-v-8)}px`};e.stage.addEventListener("contextmenu",d=>{d.preventDefault(),e.mode==="svg"?n=d.target.closest(".m-node[data-node]")?.dataset.node:n=K(e,d)?.id,h(d.clientX,d.clientY)}),t.addEventListener("click",d=>{let m=d.target.closest(".m-ctx-item");if(!m||m.disabled)return;let g=n,v=E=>{let x=["auto","on","off"];j(e,E,x[(x.indexOf(a(E,"auto"))+1)%x.length]),p()},w=E=>{j(e,E,a(E,"on")!=="off"?"off":"on"),p()};switch(m.dataset.act){case"open":f(),g!==void 0&&V(e,g,!1);break;case"fly":f(),g!==void 0&&V(e,g);break;case"page":f(),g!==void 0&&(location.href=`${U()}devices/${encodeURIComponent(g)}.html#d=${encodeURIComponent(g)}`);break;case"copy-id":f(),g!==void 0&&navigator.clipboard?.writeText(g);break;case"copy-ip":f(),g!==void 0&&navigator.clipboard?.writeText(e.deviceById.get(g)?.mgmtIp??"");break;case"fit":f(),e.camera.fit(!0);break;case"zoom-in":f(),G(e,1.35);break;case"zoom-out":f(),G(e,1/1.35);break;case"t-labels":v("labels");break;case"t-ports":v("ports");break;case"t-motion":w("motion");break;case"t-minimap":w("minimap");break;case"png":f(),ge(e);break;case"svg":f(),Z(new Blob([re(e)],{type:"image/svg+xml"}),`${Y(e)}.svg`);break;case"palette":f(),document.querySelector(".m-search-btn")?.click();break}}),addEventListener("pointerdown",d=>{!t.hidden&&!t.contains(d.target)&&f()},!0),addEventListener("keydown",d=>{d.key==="Escape"&&!t.hidden&&f()}),e.stage.addEventListener("wheel",()=>f(),{passive:!0}),addEventListener("resize",()=>f())}function Ze(e){let t=document.querySelector(".m-tooltip");t&&(e.svg.addEventListener("pointermove",n=>{let o=n.target.closest("[data-edge]");if(!o){t.hidden=!0;return}let a=e.deviceById.get(o.dataset.from??"")?.name??o.dataset.from,s=e.deviceById.get(o.dataset.to??"")?.name??o.dataset.to,r=o.dataset.meta??"";t.innerHTML=`<strong>${A(a??"")} \u27F7 ${A(s??"")}</strong>${r?`<span>${A(r)}</span>`:""}`;let i=e.stage.getBoundingClientRect();t.style.left=`${n.clientX-i.left+14}px`,t.style.top=`${n.clientY-i.top+14}px`,t.hidden=!1}),e.svg.addEventListener("pointerleave",()=>{t.hidden=!0}))}function Je(e){document.querySelector(".m-ctl-fit")?.addEventListener("click",()=>e.camera.fit(!0)),document.querySelector(".m-ctl-in")?.addEventListener("click",()=>G(e,1.35)),document.querySelector(".m-ctl-out")?.addEventListener("click",()=>G(e,1/1.35))}function Y(e){return e.data.name.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"topology"}function re(e){let t=e.svg,n=Number(t.dataset.w)||100,o=Number(t.dataset.h)||100,a=document.documentElement.dataset.theme??"dark",s="";try{s=[...document.styleSheets].flatMap(i=>{try{return[...i.cssRules].map(c=>c.cssText)}catch{return[]}}).join(`
+`)}catch{}let r=t.cloneNode(!0);r.querySelector(".m-camera")?.removeAttribute("transform");for(let i of r.querySelectorAll(".is-selected, .is-focus, .is-adj, .is-path"))i.classList.remove("is-selected","is-focus","is-adj","is-path");return`<svg xmlns="http://www.w3.org/2000/svg" width="${n}" height="${o}" viewBox="0 0 ${n} ${o}" data-theme="${a}" class="settled"><style>${s}</style><rect width="${n}" height="${o}" style="fill: var(--bg)"/>`+r.innerHTML+"</svg>"}async function ge(e){if(e.mode==="canvas"){e.engine.exportBitmap().toBlob(s=>{s&&Z(s,`${Y(e)}.png`)},"image/png");return}let t=re(e),n=(Number(e.svg.dataset.w)||100)*2,o=(Number(e.svg.dataset.h)||100)*2,a=URL.createObjectURL(new Blob([t],{type:"image/svg+xml"}));try{let s=new Image;await new Promise((c,p)=>{s.onload=()=>c(),s.onerror=()=>p(new Error("svg rasterize failed")),s.src=a});let r=document.createElement("canvas");r.width=n,r.height=o,r.getContext("2d").drawImage(s,0,0,n,o),r.toBlob(c=>{c&&Z(c,`${Y(e)}.png`)},"image/png")}finally{URL.revokeObjectURL(a)}}function Z(e,t){let n=URL.createObjectURL(e),o=document.createElement("a");o.href=n,o.download=t,o.click(),setTimeout(()=>URL.revokeObjectURL(n),4e3)}function De(){let e=document.documentElement,t=matchMedia("(prefers-color-scheme: dark)"),n=()=>{e.dataset.themeMode==="auto"&&!localStorage.getItem("marrow-theme")&&(e.dataset.theme=t.matches?"dark":"light")},o=localStorage.getItem("marrow-theme");if(o==="dark"||o==="light"?e.dataset.theme=o:n(),t.addEventListener("change",n),addEventListener("message",a=>{let s=a.data;!s||s.type!=="marrow:theme"||(s.theme==="auto"?(e.dataset.themeMode="auto",n()):(s.theme==="dark"||s.theme==="light")&&(delete e.dataset.themeMode,e.dataset.theme=s.theme))}),window.parent!==window)try{window.parent.postMessage({type:"marrow:ready"},"*")}catch{}if(/Mac|iP(hone|ad|od)/.test(navigator.platform))for(let a of document.querySelectorAll(".m-searchpill kbd, .m-dock-hint kbd"))a.textContent="\u2318 K"}function Be(e){let t=document.querySelector(".m-sidebar"),n=document.querySelector(".m-sidebar-btn");if(!t||!n)return;let o=document.documentElement,a=r=>{t.classList.toggle("open",r),n.classList.toggle("on",r),localStorage.setItem("marrow-sidebar",r?"open":"closed")};a(localStorage.getItem("marrow-sidebar")==="open"),n.addEventListener("click",()=>a(!t.classList.contains("open"))),t.addEventListener("click",r=>{let i=r.target.closest(".m-side-group-head");if(!i)return;let c=i.parentElement;t.classList.contains("open")?c.classList.toggle("collapsed"):(a(!0),c.classList.remove("collapsed")),i.setAttribute("aria-expanded",String(!c.classList.contains("collapsed")))}),addEventListener("keydown",r=>{r.key==="b"&&(r.metaKey||r.ctrlKey)&&!ve()&&(r.preventDefault(),a(!t.classList.contains("open")))}),Qe(e,t);let s=(r,i)=>{for(let c of r.querySelectorAll("button"))c.classList.toggle("active",c.dataset.value===i)};for(let r of t.querySelectorAll(".m-seg")){let i=r.dataset.setting,c=i==="theme"?o.dataset.theme??"dark":localStorage.getItem(`marrow-${i}`)??"auto";s(r,c),W(e,i,c),r.addEventListener("click",p=>{let f=p.target.closest("button[data-value]");if(!f)return;let h=f.dataset.value;s(r,h),localStorage.setItem(`marrow-${i}`,h),W(e,i,h)})}for(let r of t.querySelectorAll(".m-switch")){let i=r.dataset.setting,c=localStorage.getItem(`marrow-${i}`)!=="off",p=()=>{r.setAttribute("aria-checked",String(c)),W(e,i,c?"on":"off")};p(),r.addEventListener("click",()=>{c=!c,localStorage.setItem(`marrow-${i}`,c?"on":"off"),p()})}}function Qe(e,t){let n=document.querySelector(".m-rail");if(!n)return;et(n);let o=(s,r,i)=>{let c=(s.dataset.title??"").split(":")[0];if(s.dataset.cycle!==void 0)s.dataset.title=`${c}: ${i}`,s.classList.toggle("on",i==="on"),s.classList.toggle("off",i==="off");else{let p=r==="theme"?i==="light":i!=="off";s.classList.toggle("on",r==="theme"?p:!1),s.classList.toggle("off",r!=="theme"&&!p)}},a=(s,r)=>{let i=t.querySelector(`.m-seg[data-setting="${s}"]`);if(i)for(let p of i.querySelectorAll("button"))p.classList.toggle("active",p.dataset.value===r);let c=t.querySelector(`.m-switch[data-setting="${s}"]`);c&&c.setAttribute("aria-checked",String(r!=="off"))};for(let s of n.querySelectorAll("[data-cycle]")){let r=s.dataset.cycle,i=["auto","on","off"];o(s,r,localStorage.getItem(`marrow-${r}`)??"auto"),s.addEventListener("click",()=>{let c=localStorage.getItem(`marrow-${r}`)??"auto",p=i[(i.indexOf(c)+1)%i.length];localStorage.setItem(`marrow-${r}`,p),W(e,r,p),o(s,r,p),a(r,p)})}for(let s of n.querySelectorAll("[data-action]")){let r=s.dataset.action,i=r==="theme"?document.documentElement.dataset.theme??"dark":localStorage.getItem(`marrow-${r}`)!=="off"?"on":"off";o(s,r,i),s.addEventListener("click",()=>{let c;r==="theme"?(c=document.documentElement.dataset.theme==="light"?"dark":"light",localStorage.setItem("marrow-theme",c)):(c=localStorage.getItem(`marrow-${r}`)!=="off"?"off":"on",localStorage.setItem(`marrow-${r}`,c)),W(e,r,c),o(s,r,c),a(r,c)})}}function et(e){let t=e.querySelector("[data-pin]"),n=e.parentElement;if(!t||!n)return;let o=i=>{t.classList.toggle("on",i),t.setAttribute("aria-pressed",String(i)),t.dataset.title=i?"Unpin dock":"Pin dock",e.classList.toggle("unpinned",!i),i&&e.classList.remove("reveal")};o(localStorage.getItem("marrow-rail-pin")!=="off"),t.addEventListener("click",()=>{let i=!t.classList.contains("on");localStorage.setItem("marrow-rail-pin",i?"on":"off"),o(i)});let a,s=()=>{clearTimeout(a),e.classList.add("reveal")},r=()=>{clearTimeout(a),a=window.setTimeout(()=>e.classList.remove("reveal"),350)};for(let i of[n.querySelector(".m-chip-btn"),document.querySelector(".m-rail-trigger"),e])i?.addEventListener("mouseenter",s),i?.addEventListener("mouseleave",r);n.addEventListener("focusin",s),n.addEventListener("focusout",i=>{n.contains(i.relatedTarget)||r()})}function j(e,t,n){localStorage.setItem(`marrow-${t}`,n),W(e,t,n);for(let o of document.querySelectorAll(`.m-seg[data-setting="${t}"] button`))o.classList.toggle("active",o.dataset.value===n)}function W(e,t,n){let o=document.documentElement;switch(t){case"theme":o.dataset.theme=n;break;case"labels":o.dataset.labels=n,e?.engine?.setLabelMode(n);break;case"ports":o.dataset.ports=n,e?.engine?.setPortMode(n);break;case"motion":o.dataset.motion=n,e?.engine?.setMotion(n!=="off");break;case"minimap":{let a=document.querySelector(".m-minimap");a&&(e?.data.devices.length??0)>=2&&(a.hidden=n==="off");break}}}function tt(e){if(!document.querySelector(".m-inventory"))return;let t=document.querySelector(".m-inspector");if(!t||e.devices.length===0)return;let n=new Map(e.devices.map(f=>[f.id,f])),o=new Map;for(let f of e.links)for(let h of[f.from.device,f.to.device])(o.get(h)??o.set(h,[]).get(h)).push(f);let a={deviceById:n,linksByDevice:o,devicePages:ie(e)},s=f=>{let h=n.get(f);h&&Pe(a,h,s)};t.querySelector(".m-inspector-close")?.addEventListener("click",()=>{t.hidden=!0}),addEventListener("keydown",f=>{f.key==="Escape"&&!t.hidden&&(t.hidden=!0)});let r=f=>f?.closest?.("tr.m-inv-row[data-id]")??null;document.addEventListener("click",f=>{if(f.target.closest("a"))return;let h=r(f.target);h&&s(h.dataset.id)});let i=document.createElement("div");i.className="m-ctxmenu",i.hidden=!0,document.body.append(i);let c,p=()=>{i.hidden=!0,c=void 0};document.addEventListener("contextmenu",f=>{let h=r(f.target);if(!h)return;f.preventDefault(),c=h.dataset.id;let d=n.get(c);if(!d)return;let m=(g,v)=>`<button class="m-ctx-item" data-act="${g}"><span class="m-ctx-check"></span><span class="m-ctx-label">${A(v)}</span></button>`;i.innerHTML=`<div class="m-ctx-title">${A(d.name)}<small>${A([d.mgmtIp,d.tier].filter(Boolean).join(" \xB7 ")||d.id)}</small></div><div class="m-ctx-sep"></div>`+m("details","View details")+m("diagram","See on diagram")+'<div class="m-ctx-sep"></div>'+m("copy-id","Copy device ID")+(d.mgmtIp!==void 0?m("copy-ip","Copy mgmt IP"):""),i.hidden=!1,i.style.left="0px",i.style.top="0px",i.style.left=`${Math.min(f.clientX,innerWidth-i.offsetWidth-8)}px`,i.style.top=`${Math.min(f.clientY,innerHeight-i.offsetHeight-8)}px`}),i.addEventListener("click",f=>{let h=f.target.closest(".m-ctx-item"),d=c;if(!(!h||d===void 0))switch(p(),h.dataset.act){case"details":s(d);break;case"diagram":{let m=document.querySelector(`tr.m-inv-row[data-id="${CSS.escape(d)}"] a`);m&&(location.href=m.href);break}case"copy-id":navigator.clipboard?.writeText(d);break;case"copy-ip":navigator.clipboard?.writeText(n.get(d)?.mgmtIp??"");break}}),addEventListener("pointerdown",f=>{let h=f.target;!i.hidden&&!i.contains(h)&&p(),!t.hidden&&!t.contains(h)&&!r(f.target)&&!i.contains(h)&&(t.hidden=!0)},!0),addEventListener("keydown",f=>{f.key==="Escape"&&!i.hidden&&p()})}function nt(){let e=[...document.querySelectorAll(".m-inventory")];if(e.length===0)return;let t=[...document.querySelectorAll(".m-inv-tabs .m-tab")],n=[...document.querySelectorAll(".m-inv-view")];for(let d of t)d.addEventListener("click",()=>{for(let m of t)m.classList.toggle("active",m===d);for(let m of n)m.hidden=m.dataset.view!==d.dataset.tab});let o=document.querySelector(".m-inv-filter"),a=d=>[...d.querySelectorAll("tr.m-inv-row, tbody > tr[data-search]")],s=()=>(o?.value??"").trim().toLowerCase(),r=d=>s()===""||(d.dataset.search??"").includes(s()),i=50,c=(d,m)=>{let g=E=>`<button type="button" class="m-page${E===m?" active":""}" data-p="${E}">${E+1}</button>`,v='<span class="m-page-ell">\u2026</span>',w="";if(d<=7)for(let E=0;E<d;E++)w+=g(E);else{w+=g(0),m>2&&(w+=v);for(let E=Math.max(1,m-1);E<=Math.min(d-2,m+1);E++)w+=g(E);m<d-3&&(w+=v),w+=g(d-1)}return`<button type="button" class="m-page m-page-nav" data-p="${m-1}" ${m===0?"disabled":""}>\u2039 Previous</button>`+w+`<button type="button" class="m-page m-page-nav" data-p="${m+1}" ${m===d-1?"disabled":""}>Next \u203A</button>`},p=new Map;for(let d of e){let m=d.closest(".m-inv-group"),g=m?.querySelector(".m-pagination")??d.closest(".m-inv-view")?.querySelector(".m-pagination")??null,v=0,w=()=>{let E=a(d),x=E.filter(r);for(let y of E)y.hidden=!0;let S=Math.max(1,Math.ceil(x.length/i));v=Math.min(v,S-1);for(let y of x.slice(v*i,(v+1)*i))y.hidden=!1;for(let y of d.tBodies){let b=y.querySelector("tr.m-inv-sub");b&&(b.hidden=!a(y).some(u=>!u.hidden))}m&&(m.hidden=x.length===0),g&&(g.innerHTML=S<=1?"":c(S,v))};g?.addEventListener("click",E=>{let x=E.target.closest(".m-page");!x||x.disabled||(v=Number(x.dataset.p),w())}),p.set(d,{refresh:w,reset:()=>{v=0}}),w()}o?.addEventListener("input",()=>{for(let d of p.values())d.reset(),d.refresh()});for(let d of e){let m=new Map;d.querySelectorAll("th[data-sort]").forEach((g,v)=>{g.addEventListener("click",()=>{let w=m.get(v)??1;m.set(v,w===1?-1:1);for(let E of d.tBodies){let x=a(E);x.sort((S,y)=>w*(S.cells[v]?.textContent??"").localeCompare(y.cells[v]?.textContent??"",void 0,{numeric:!0}));for(let S of x)E.append(S)}p.get(d)?.refresh()})})}let f=[...document.querySelectorAll(".m-rsz-handle")],h=()=>{for(let d of f){let m=d.previousElementSibling,g=d.nextElementSibling;d.hidden=!m||!g||m.hidden||g.hidden}};h(),o?.addEventListener("input",h);for(let d of f)d.addEventListener("pointerdown",m=>{let g=d.previousElementSibling?.querySelector(".m-inv-scroll"),v=d.nextElementSibling?.querySelector(".m-inv-scroll");if(!g||!v)return;m.preventDefault(),d.setPointerCapture(m.pointerId);let w=m.clientY,E=g.getBoundingClientRect().height,x=v.getBoundingClientRect().height,S=96,y=u=>{let k=Math.max(-(E-S),Math.min(x-S,u.clientY-w));g.style.maxHeight=`${E+k}px`,v.style.maxHeight=`${x-k}px`},b=()=>{d.removeEventListener("pointermove",y),d.removeEventListener("pointerup",b)};d.addEventListener("pointermove",y),d.addEventListener("pointerup",b)});for(let d of document.querySelectorAll(".m-rsz-v"))d.addEventListener("pointerdown",m=>{let g=d.previousElementSibling,v=d.nextElementSibling;if(!g||!v)return;m.preventDefault(),d.setPointerCapture(m.pointerId);let w=m.clientX,E=g.getBoundingClientRect().width,x=v.getBoundingClientRect().width,S=250,y=u=>{let k=Math.max(-(E-S),Math.min(x-S,u.clientX-w));g.style.flex=`0 0 ${E+k}px`,v.style.flex=`0 0 ${x-k}px`},b=()=>{d.removeEventListener("pointermove",y),d.removeEventListener("pointerup",b)};d.addEventListener("pointermove",y),d.addEventListener("pointerup",b)})}function G(e,t){let n=e.stage.getBoundingClientRect();e.camera.zoomAt(n.width/2,n.height/2,t)}function ot(e){addEventListener("keydown",t=>{if(!ve()){if((t.metaKey||t.ctrlKey)&&(t.key==="="||t.key==="+")){t.preventDefault(),G(e,1.35);return}if((t.metaKey||t.ctrlKey)&&t.key==="-"){t.preventDefault(),G(e,1/1.35);return}if((t.metaKey||t.ctrlKey)&&t.key==="0"){t.preventDefault(),e.camera.fit(!0);return}if(t.key==="f")e.camera.fit(!0);else if(t.key==="Escape"){let n=document.querySelector(".m-spotlight");n&&!n.hidden?n.hidden=!0:J(e)}else if(t.key==="+"||t.key==="=")G(e,1.35);else if(t.key==="-")G(e,1/1.35);else if(t.key.startsWith("Arrow")&&e.selected!==void 0){let n=it(e,e.selected,t.key);n!==void 0&&(t.preventDefault(),V(e,n))}else if((t.key==="Enter"||t.key===" ")&&e.mode==="svg"){let n=document.activeElement;if(n instanceof SVGElement){let o=n.closest("[data-node]");if(o){t.preventDefault();let a=o.dataset.href;a!==void 0?location.href=U()+a:V(e,o.dataset.node,!1)}}}}})}function it(e,t,n){let o=n==="ArrowUp"?{x:0,y:-1}:n==="ArrowDown"?{x:0,y:1}:n==="ArrowLeft"?{x:-1,y:0}:{x:1,y:0},a=me(e,t);if(!a)return;let s=a.x+a.w/2,r=a.y+a.h/2,i,c=.25;for(let p of e.neighborIds.get(t)??[]){let f=me(e,p);if(!f)continue;let h=f.x+f.w/2-s,d=f.y+f.h/2-r,m=Math.hypot(h,d);if(m===0)continue;let g=h/m*o.x+d/m*o.y;g>c&&(c=g,i=p)}return i}function st(e){if(e.mode==="canvas"){let a=e.engine.scene;return{sceneW:a.size.w,sceneH:a.size.h,zones:a.zones.map(s=>s.accent!==void 0?{box:s.box,accent:s.accent}:{box:s.box}),nodes:a.nodes.map(s=>({box:s.box,status:s.status}))}}let t=e.svg,n=[];for(let a of t.querySelectorAll(".m-zone[data-zone]")){let s=a.querySelector(".m-zone-panel");if(!s)continue;let r=/--m-zone-accent:\s*([^;"]+)/.exec(a.getAttribute("style")??"")?.[1],i={x:Number(s.getAttribute("x")),y:Number(s.getAttribute("y")),w:Number(s.getAttribute("width")),h:Number(s.getAttribute("height"))};n.push(r!==void 0?{box:i,accent:r}:{box:i})}let o=[];for(let[,a]of e.nodeEls){let s=a.getBBox(),r=[...a.classList].find(i=>i.startsWith("m-status-"))?.slice(9)??"";o.push({box:{x:s.x,y:s.y,w:s.width,h:s.height},status:r})}return{sceneW:Number(t.dataset.w)||1,sceneH:Number(t.dataset.h)||1,zones:n,nodes:o}}function rt(e,t){let n=document.querySelector(".m-minimap");if(!n||e.data.devices.length<2)return()=>{};n.hidden=!1;let o=st(e),a=184,s=130,r=7,i=Math.min((a-r*2)/o.sceneW,(s-r*2)/o.sceneH),c=Math.round(o.sceneW*i+r*2),p=Math.round(o.sceneH*i+r*2),f=`<rect class="m-mini-world" x="${r}" y="${r}" width="${(o.sceneW*i).toFixed(1)}" height="${(o.sceneH*i).toFixed(1)}" rx="5"/>`;for(let b of o.zones)f+=`<rect class="m-mini-zone" x="${(r+b.box.x*i).toFixed(1)}" y="${(r+b.box.y*i).toFixed(1)}" width="${(b.box.w*i).toFixed(1)}" height="${(b.box.h*i).toFixed(1)}" rx="3"${b.accent!==void 0?` style="--m-zone-accent:${b.accent}"`:""}/>`;let h=Math.max(1.4,Math.min(2.6,3.4-o.nodes.length/90));for(let b of o.nodes)f+=`<circle class="m-mini-dot m-status-${b.status}" cx="${(r+(b.box.x+b.box.w/2)*i).toFixed(1)}" cy="${(r+(b.box.y+b.box.h/2)*i).toFixed(1)}" r="${h}"/>`;n.innerHTML=`<button class="m-mini-toggle" type="button" aria-label="Toggle minimap"></button><svg viewBox="0 0 ${c} ${p}" width="${c}" height="${p}">${f}<rect class="m-mini-view" x="0" y="0" width="10" height="10" rx="2"/></svg>`;let d=n.querySelector("svg"),m=n.querySelector(".m-mini-view"),g=()=>{let b=e.camera.get();if(!(b.k>0))return;let u=t.getBoundingClientRect();m.setAttribute("x",String(r+-b.x/b.k*i)),m.setAttribute("y",String(r+-b.y/b.k*i)),m.setAttribute("width",String(Math.max(0,u.width/b.k*i))),m.setAttribute("height",String(Math.max(0,u.height/b.k*i)))},v=!1,w=(b,u)=>{let k=d.getBoundingClientRect(),l=(b.clientX-k.left-r)/i,L=(b.clientY-k.top-r)/i,C=e.camera.get(),$=t.getBoundingClientRect();e.camera.set({x:$.width/2-l*C.k,y:$.height/2-L*C.k},u)};d.addEventListener("pointerdown",b=>{v=!0,d.setPointerCapture(b.pointerId),w(b,!0)}),d.addEventListener("pointermove",b=>{v&&w(b,!1)}),d.addEventListener("pointerup",()=>{v=!1});let E='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"/><path d="M15 5.764v15"/><path d="M9 3.236v15"/></svg>',x='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>',S=n.querySelector(".m-mini-toggle"),y=b=>{n.classList.toggle("collapsed",b),S.innerHTML=b?E:x,S.setAttribute("aria-label",b?"Show minimap":"Hide minimap")};return y(localStorage.getItem("marrow-minimap")==="closed"),S.addEventListener("click",b=>{b.stopPropagation();let u=!n.classList.contains("collapsed");y(u),localStorage.setItem("marrow-minimap",u?"closed":"open")}),g(),g}function at(e){let t;return()=>{clearTimeout(t),t=setTimeout(()=>pe(e),250)}}function pe(e){let t={camera:e.camera.get()};e.selected!==void 0&&(t.device=e.selected),history.replaceState(null,"",Ce(t)||location.pathname)}function A(e){return e.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}function ct(e){let t=e.mode??(e.encap!==void 0?"tunnel":void 0);return`<svg class="m-swatch" viewBox="0 0 56 10" aria-hidden="true"><path class="${`m-edge m-status-${X(e.status)}`+(e.speed?` m-speed-${X(e.speed)}`:"")+(t?` m-mode-${X(t)}`:"")+(e.animated?" m-flow":"")}" d="M1 5H55"/></svg>`}function X(e){return e.toLowerCase().replace(/[^a-z0-9-]/g,"-")}function ve(){let e=document.activeElement;return e instanceof HTMLInputElement||e instanceof HTMLTextAreaElement}document.addEventListener("DOMContentLoaded",Fe);})();
+</script>
+</body>
+</html>

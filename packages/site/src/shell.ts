@@ -133,14 +133,24 @@ export function renderShell(o: ShellOptions): string {
 <button class="m-chip-btn m-sidebar-btn" type="button" data-title="Panel" aria-label="Toggle panel">${I.hamburger}</button>
 </div>`;
 
+  // `theme: auto` follows the viewer's OS scheme. Resolve it in a tiny head
+  // script BEFORE first paint (no flash), then the runtime keeps it live and
+  // lets an embedding host override it. Non-auto themes ship a fixed attribute.
+  const auto = o.theme === 'auto';
+  const themeAttr = auto ? 'dark' : esc(o.theme);
+  const modeAttr = auto ? ' data-theme-mode="auto"' : '';
+  const themeScript = auto
+    ? `<script>try{var r=document.documentElement,s=null;try{s=localStorage.getItem('marrow-theme')}catch(e){}if(s!=='dark'&&s!=='light')r.dataset.theme=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'}catch(e){}</script>`
+    : '';
+
   return `<!DOCTYPE html>
-<html lang="en" data-theme="${esc(o.theme)}" data-root="${esc(o.rootPrefix)}" data-page="${esc(o.page)}">
+<html lang="en" data-theme="${themeAttr}"${modeAttr} data-root="${esc(o.rootPrefix)}" data-page="${esc(o.page)}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="generator" content="marrow-v2">
 <title>${esc(o.title)} — Marrow</title>
-${css}
+${auto ? themeScript + '\n' : ''}${css}
 </head>
 <body${o.stage ? '' : ' class="m-doc-body"'}>
 ${backdrop}

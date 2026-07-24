@@ -39,6 +39,12 @@
               <SmartIcon name="lucide:arrow-right" class="ml-1" />
             </UiButton>
           </NuxtLinkLocale>
+          <NuxtLinkLocale to="/showcase">
+            <UiButton size="lg" variant="outline">
+              <SmartIcon name="lucide:layout-grid" class="mr-1" />
+              Showcase
+            </UiButton>
+          </NuxtLinkLocale>
           <NuxtLinkLocale to="/why">
             <UiButton size="lg" variant="outline">Why Marrow</UiButton>
           </NuxtLinkLocale>

@@ -1,5 +1,5 @@
 import { truncateToWidth } from '@marrow/metrics';
-import type { Scene, SceneEdge, SceneNode, ScenePortChip, SceneZone } from '@marrow/scene';
+import { linkPresentation, type Scene, type SceneEdge, type SceneNode, type ScenePortChip, type SceneZone } from '@marrow/scene';
 
 /**
  * @marrow/render-svg — the "lush tier" renderer: Scene → classed, data-attributed
@@ -136,28 +136,90 @@ function renderZoneTitle(z: SceneZone): string {
 
 function renderEdge(e: SceneEdge, leaf = false): string {
   const d = roundedPath(e.points);
+  const pres = linkPresentation(e);
   const speedClass = e.speed ? ` m-speed-${cssSafe(e.speed)}` : '';
   const animated = e.animated ? ' m-flow' : '';
   const leafClass = leaf ? ' m-leaf' : '';
-  const lag = e.lag !== undefined ? ` data-lag="${esc(e.lag)}"` : '';
-  const meta = [e.from.port, e.to.port, e.speed, e.kind].filter(Boolean).join(' · ');
-  const path =
-    `<path class="m-edge m-status-${cssSafe(e.status)}${speedClass}${animated}${leafClass}" pathLength="1" d="${d}" ` +
+  const modeClass = pres.mode ? ` m-mode-${cssSafe(pres.mode)}` : '';
+  const meta = [e.from.port, e.to.port, e.speed, e.kind, pres.mode, pres.chip].filter(Boolean).join(' · ');
+  const data =
     `data-edge="${esc(e.id)}" data-from="${esc(e.from.node)}" data-to="${esc(e.to.node)}"` +
     `${e.from.port !== undefined ? ` data-from-port="${esc(e.from.port)}"` : ''}` +
     `${e.to.port !== undefined ? ` data-to-port="${esc(e.to.port)}"` : ''}` +
     `${e.kind !== undefined ? ` data-kind="${esc(e.kind)}"` : ''}` +
     `${e.speed !== undefined ? ` data-speed="${esc(e.speed)}"` : ''}` +
-    `${lag} data-meta="${esc(meta)}"/>`;
+    `${pres.mode !== undefined ? ` data-mode="${esc(pres.mode)}"` : ''}` +
+    `${e.encap !== undefined ? ` data-encap="${esc(e.encap)}"` : ''}` +
+    `${e.protocol !== undefined ? ` data-protocol="${esc(e.protocol)}"` : ''}` +
+    `${e.vlans !== undefined ? ` data-vlans="${esc(e.vlans)}"` : ''}` +
+    `${e.lacp !== undefined ? ` data-lacp="${esc(e.lacp)}"` : ''}` +
+    `${e.lag !== undefined ? ` data-lag="${esc(e.lag)}"` : ''}`;
+  const path =
+    `<path class="m-edge m-status-${cssSafe(e.status)}${speedClass}${modeClass}${animated}${leafClass}" pathLength="1" d="${d}" ` +
+    `${data} data-meta="${esc(meta)}"/>`;
+  // trunk = double rail: a thin bg-coloured slot carved down the casing
+  const rail =
+    pres.pattern === 'double' ? `<path class="m-edge-rail${leafClass}" pathLength="1" d="${d}" data-edge="${esc(e.id)}"/>` : '';
   let extras = '';
   // aggregate labels ("×24") ride the midpoint of the polyline
-  if (e.label !== undefined && e.label.length <= 6) {
+  const hasAgg = e.label !== undefined && e.label.length <= 6;
+  if (hasAgg) {
     const mid = polylineMidpoint(e.points);
     extras +=
-      `<g class="m-edge-label"><rect x="${mid.x - e.label.length * 4 - 6}" y="${mid.y - 9}" width="${e.label.length * 8 + 12}" height="18" rx="9"/>` +
-      `<text x="${mid.x}" y="${mid.y + 4}" text-anchor="middle">${esc(e.label)}</text></g>`;
+      `<g class="m-edge-label"><rect x="${mid.x - e.label!.length * 4 - 6}" y="${mid.y - 9}" width="${e.label!.length * 8 + 12}" height="18" rx="9"/>` +
+      `<text x="${mid.x}" y="${mid.y + 4}" text-anchor="middle">${esc(e.label!)}</text></g>`;
   }
-  return path + extras;
+  // semantic chip (VLANs / encap / protocol / lag), with an optional glyph
+  if (pres.chip !== undefined) {
+    const mid = polylineMidpoint(e.points);
+    extras += edgeChip(mid.x, mid.y + (hasAgg ? 16 : 0), pres.chip, pres.glyph);
+  }
+  return path + rail + extras;
+}
+
+const n2 = (v: number): string => String(Math.round(v * 100) / 100);
+
+/** A midpoint pill carrying a link's semantics, with an optional left glyph. */
+function edgeChip(cx: number, cy: number, text: string, glyph?: string): string {
+  const hasGlyph = glyph === 'lock' || glyph === 'bundle';
+  const glyphW = hasGlyph ? 12 : 0;
+  const padX = 7;
+  const textW = Math.max(text.length * 6.3, 5);
+  const w = padX * 2 + glyphW + textW;
+  const h = 16;
+  const x = cx - w / 2;
+  const y = cy - h / 2;
+  const tx = x + padX + glyphW + textW / 2;
+  return (
+    `<g class="m-edge-chip"${glyph ? ` data-glyph="${esc(glyph)}"` : ''}>` +
+    `<rect x="${n2(x)}" y="${n2(y)}" width="${n2(w)}" height="${h}" rx="8"/>` +
+    (hasGlyph ? chipGlyph(glyph!, x + padX, cy) : '') +
+    `<text x="${n2(tx)}" y="${n2(cy + 3.6)}" text-anchor="middle">${esc(text)}</text>` +
+    `</g>`
+  );
+}
+
+/** Tiny inline glyphs drawn at (x, cy) spanning ~9px wide, vertically centred. */
+function chipGlyph(kind: string, x: number, cy: number): string {
+  if (kind === 'lock') {
+    // padlock: rounded body + shackle arc
+    const bx = x;
+    const by = cy - 1.5;
+    return (
+      `<g class="m-chip-glyph">` +
+      `<rect x="${n2(bx)}" y="${n2(by)}" width="9" height="6.5" rx="1.5"/>` +
+      `<path d="M${n2(bx + 1.7)} ${n2(by)} v-1.8 a2.8 2.8 0 0 1 5.6 0 v1.8" fill="none"/>` +
+      `</g>`
+    );
+  }
+  // bundle: three short parallel strands (aggregation)
+  const top = cy - 4;
+  const bot = cy + 4;
+  return (
+    `<g class="m-chip-glyph m-chip-glyph-stroke">` +
+    `<path d="M${n2(x)} ${n2(top)} V${n2(bot)} M${n2(x + 4)} ${n2(top)} V${n2(bot)} M${n2(x + 8)} ${n2(top)} V${n2(bot)}" fill="none"/>` +
+    `</g>`
+  );
 }
 
 /** Chips arrive pre-placed (collision-free) from layout; just draw the rects. */

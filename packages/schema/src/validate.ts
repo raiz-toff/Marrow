@@ -483,6 +483,57 @@ function semanticChecks(raw: RawTopology, ctx: SemanticCtx): void {
         hint: 'self-links are usually a typo in one endpoint',
       });
     }
+
+    // link semantics consistency (advisory): the logical attributes must match
+    // the declared mode. Presence of `encap` alone still means "tunnel" (the
+    // renderer derives it), so only a CONTRADICTORY mode is flagged.
+    const mode = link.mode;
+    if (link.encap !== undefined && mode !== undefined && mode !== 'tunnel') {
+      emit('MRW-W105', {
+        message: `Link #${i + 1} sets encap: ${link.encap} but mode: ${mode} — encapsulation applies to tunnels`,
+        path: formatPath(['links', i, 'encap']),
+        loc: at(['links', i, 'encap']),
+        hint: 'use mode: tunnel for VPN/overlay links, or drop encap',
+      });
+    }
+    if (link.protocol !== undefined && mode !== undefined && mode !== 'routed' && mode !== 'peering') {
+      emit('MRW-W105', {
+        message: `Link #${i + 1} sets protocol: ${link.protocol} but mode: ${mode} — a routing protocol applies to routed or peering links`,
+        path: formatPath(['links', i, 'protocol']),
+        loc: at(['links', i, 'protocol']),
+        hint: 'use mode: routed or mode: peering, or drop protocol',
+      });
+    }
+    if (
+      (link.vlans !== undefined || link.native_vlan !== undefined) &&
+      mode !== undefined &&
+      mode !== 'access' &&
+      mode !== 'trunk'
+    ) {
+      const which = link.vlans !== undefined ? 'vlans' : 'native_vlan';
+      emit('MRW-W105', {
+        message: `Link #${i + 1} sets ${which} but mode: ${mode} — VLANs apply to access or trunk links`,
+        path: formatPath(['links', i, which]),
+        loc: at(['links', i, which]),
+        hint: 'use mode: trunk (or access), or drop the VLAN fields',
+      });
+    }
+    if (link.native_vlan !== undefined && mode === 'access') {
+      emit('MRW-W105', {
+        message: `Link #${i + 1} sets native_vlan on an access port — a native VLAN is a trunk concept`,
+        path: formatPath(['links', i, 'native_vlan']),
+        loc: at(['links', i, 'native_vlan']),
+        hint: 'use mode: trunk with native_vlan, or set vlans for the access VLAN',
+      });
+    }
+    if (link.lacp !== undefined && link.lag === undefined) {
+      emit('MRW-W105', {
+        message: `Link #${i + 1} sets lacp: ${link.lacp} but has no lag — LACP negotiates a bundle`,
+        path: formatPath(['links', i, 'lacp']),
+        loc: at(['links', i, 'lacp']),
+        hint: 'give the bundle members a shared lag id, e.g. lag: po1',
+      });
+    }
   }
   for (const [key, uses] of portUsage) {
     // Count DISTINCT links: a self-link touching the same port on both ends

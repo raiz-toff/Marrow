@@ -5,6 +5,7 @@ import { describe, expect, test } from 'vitest';
 import { validateSource } from '@marrow/schema';
 import { classify, layoutTopology, sizeNode } from '@marrow/layout';
 import { lintScene } from '@marrow/lint';
+import { linkPresentation } from '@marrow/scene';
 import type { Topology } from '@marrow/model';
 
 const repoRoot = fileURLToPath(new URL('../../..', import.meta.url));
@@ -116,15 +117,38 @@ describe('layoutTopology', () => {
     expect(lintScene(scene).l1).toEqual([]);
   });
 
-  test('parallel links bundle onto one coincident path with a ×N label', async () => {
+  test('shared-lag members bundle onto one coincident path; the chip carries the lag id', async () => {
     // cable-tray discipline (tidy pass): same-pair parallels ride ONE stroke;
-    // each keeps its identity for hover/status, the representative carries ×N
+    // each keeps its identity for hover/status. A shared lag id suppresses the
+    // anonymous ×N pill — the presentation chip ("PO1") is the bundle identity.
     const t = topo('valid/campus-three-tier.yaml');
     const scene = await layoutTopology(t);
     const lagEdges = scene.edges.filter((e) => e.lag === 'po1');
     expect(lagEdges).toHaveLength(2);
     expect(JSON.stringify(lagEdges[0]!.points)).toBe(JSON.stringify(lagEdges[1]!.points));
-    expect(lagEdges.some((e) => e.label === '×2')).toBe(true);
+    expect(lagEdges.some((e) => e.label === '×2')).toBe(false);
+    const pres = linkPresentation(lagEdges[0]!);
+    expect(pres.chip).toBe('PO1');
+    expect(pres.glyph).toBe('bundle');
+  });
+
+  test('non-lag parallel links still collapse to one ×N pill', async () => {
+    const src = [
+      'marrow: 2',
+      'name: Parallels',
+      'devices:',
+      '  - { id: a, icon: cisco/switches/workgroup-switch }',
+      '  - { id: b, icon: cisco/switches/workgroup-switch }',
+      'links:',
+      '  - { from: a, to: b }',
+      '  - { from: a, to: b }',
+    ].join('\n');
+    const scene = await layoutTopology(validateSource(src).topology!);
+    const pair = scene.edges.filter(
+      (e) => (e.from.node === 'a' && e.to.node === 'b') || (e.from.node === 'b' && e.to.node === 'a'),
+    );
+    expect(pair).toHaveLength(2);
+    expect(pair.some((e) => e.label === '×2')).toBe(true);
   });
 
   test('empty topology yields an empty, clean scene', async () => {

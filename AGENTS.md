@@ -73,7 +73,7 @@ Exit codes: `0` valid · `1` validation errors · `2` usage or I/O error.
 ```yaml
 marrow: 2                      # required, the integer 2
 name: Acme HQ                  # required
-theme: dark                    # dark | light   (default dark)
+theme: dark                    # dark | light | auto   (default dark; auto follows the viewer's OS)
 hero: core-sw-01               # optional; device the camera features on open
 
 zones:
@@ -90,9 +90,19 @@ devices:
 links:
   - from: core-sw-01:Gi1/0/1   # "device-id:Port" — only the FIRST colon splits
     to: acc-sw-01:Gi0/48
-    kind: fiber                # copper | fiber | dac | wireless | virtual | wan | serial
+    kind: fiber                # PHYSICAL medium: copper|fiber|dac|wireless|virtual|wan|serial
     speed: 10G                 # 10M|100M|1G|2.5G|5G|10G|25G|40G|100G|400G
+    mode: trunk                # LOGICAL function: access|trunk|routed|tunnel|peering|stack
+    vlans: "10,20,30"          # trunk VLANs (or the access VLAN); native_vlan: N for the untagged one
+    # encap: ipsec|gre|vxlan|wireguard|dmvpn|mpls|l2tp|geneve|ssl   (mode: tunnel)
+    # protocol: ospf|ebgp|ibgp|bgp|eigrp|isis|rip|static           (mode: routed | peering)
+    # lag: po1 + lacp: active|passive|on|static|pagp               (aggregation, any mode)
 ```
+
+`kind` is the cable; `mode` is what it carries. They compose — declare both.
+Each `mode` renders a distinct symbol (trunk = double rail, tunnel = dashed + 🔒,
+peering = dotted, stack = thick bar); the exact VLANs/encap/protocol/lag ride a
+chip. See the [schema reference](docs/content/4.reference/1.schema.md#logical-link-modes).
 
 Any key prefixed `x-` is preserved and ignored. Unknown keys **without** that
 prefix are errors. Everything else — every optional key, every enum, the

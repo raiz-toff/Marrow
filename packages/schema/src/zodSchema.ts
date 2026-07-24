@@ -2,11 +2,15 @@ import { z } from 'zod';
 import {
   COLLAPSE_MODES,
   DEVICE_STATUSES,
+  LACP_MODES,
   LINK_KINDS,
+  LINK_MODES,
   LINK_SPEEDS,
   LINK_STATUSES,
+  ROUTING_PROTOCOLS,
   THEMES,
   TIERS,
+  TUNNEL_ENCAPS,
 } from '@marrow/model';
 
 const asEnum = <T extends string>(values: readonly T[]) => z.enum(values as unknown as [T, ...T[]]);
@@ -58,6 +62,12 @@ export const linkSchema = z.strictObject({
   kind: asEnum(LINK_KINDS).optional(),
   speed: asEnum(LINK_SPEEDS).optional(),
   lag: z.string().optional(),
+  mode: asEnum(LINK_MODES).optional(),
+  vlans: z.union([z.string(), z.number().int()]).optional(),
+  native_vlan: z.number().int().min(1).max(4094).optional(),
+  encap: asEnum(TUNNEL_ENCAPS).optional(),
+  protocol: asEnum(ROUTING_PROTOCOLS).optional(),
+  lacp: asEnum(LACP_MODES).optional(),
   status: asEnum(LINK_STATUSES).default('up'),
   animated: z.boolean().default(false),
   label: z.string().optional(),

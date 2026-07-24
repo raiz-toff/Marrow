@@ -1,3 +1,7 @@
+
+> marrow@0.0.1 marrow
+> node packages/cli/dist/index.js schema
+
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
@@ -17,7 +21,8 @@
       "type": "string",
       "enum": [
         "dark",
-        "light"
+        "light",
+        "auto"
       ]
     },
     "hero": {
@@ -252,6 +257,71 @@
           },
           "lag": {
             "type": "string"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "access",
+              "trunk",
+              "routed",
+              "tunnel",
+              "peering",
+              "stack"
+            ]
+          },
+          "vlans": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              }
+            ]
+          },
+          "native_vlan": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 4094
+          },
+          "encap": {
+            "type": "string",
+            "enum": [
+              "ipsec",
+              "gre",
+              "vxlan",
+              "wireguard",
+              "dmvpn",
+              "mpls",
+              "l2tp",
+              "geneve",
+              "ssl"
+            ]
+          },
+          "protocol": {
+            "type": "string",
+            "enum": [
+              "ospf",
+              "ebgp",
+              "ibgp",
+              "bgp",
+              "eigrp",
+              "isis",
+              "rip",
+              "static"
+            ]
+          },
+          "lacp": {
+            "type": "string",
+            "enum": [
+              "active",
+              "passive",
+              "on",
+              "static",
+              "pagp"
+            ]
           },
           "status": {
             "default": "up",

@@ -9,6 +9,19 @@ export type Tier = 'core' | 'distribution' | 'access' | 'edge' | 'endpoint' | 'm
 export type DeviceStatus = 'up' | 'down' | 'degraded' | 'planned' | 'unknown';
 export type LinkStatus = 'up' | 'down' | 'degraded' | 'planned';
 export type LinkKind = 'copper' | 'fiber' | 'dac' | 'wireless' | 'virtual' | 'wan' | 'serial';
+/**
+ * The link's LOGICAL function — what the cable carries — orthogonal to `kind`
+ * (the physical medium). Drives the edge's symbol: access = plain line,
+ * trunk = double rail, routed = L3 hop, peering = control-plane dots,
+ * tunnel = overlay dash + lock, stack = backplane bar.
+ */
+export type LinkMode = 'access' | 'trunk' | 'routed' | 'tunnel' | 'peering' | 'stack';
+/** Overlay/VPN encapsulation on a `tunnel` link. */
+export type TunnelEncap = 'ipsec' | 'gre' | 'vxlan' | 'wireguard' | 'dmvpn' | 'mpls' | 'l2tp' | 'geneve' | 'ssl';
+/** Routing / control-plane protocol on a `routed` or `peering` link. */
+export type RoutingProtocol = 'ospf' | 'ebgp' | 'ibgp' | 'bgp' | 'eigrp' | 'isis' | 'rip' | 'static';
+/** Aggregation control mode; pairs with `lag`. `on`/`static` = no protocol. */
+export type LacpMode = 'active' | 'passive' | 'on' | 'static' | 'pagp';
 export type LinkSpeed =
   | '10M'
   | '100M'
@@ -21,15 +34,20 @@ export type LinkSpeed =
   | '100G'
   | '400G';
 export type CollapseMode = 'auto' | 'open' | 'closed';
-export type Theme = 'dark' | 'light';
+/** `auto` follows the viewer's OS colour scheme (and lets a host drive it). */
+export type Theme = 'dark' | 'light' | 'auto';
 
 export const TIERS: readonly Tier[] = ['core', 'distribution', 'access', 'edge', 'endpoint', 'management'];
 export const DEVICE_STATUSES: readonly DeviceStatus[] = ['up', 'down', 'degraded', 'planned', 'unknown'];
 export const LINK_STATUSES: readonly LinkStatus[] = ['up', 'down', 'degraded', 'planned'];
 export const LINK_KINDS: readonly LinkKind[] = ['copper', 'fiber', 'dac', 'wireless', 'virtual', 'wan', 'serial'];
 export const LINK_SPEEDS: readonly LinkSpeed[] = ['10M', '100M', '1G', '2.5G', '5G', '10G', '25G', '40G', '100G', '400G'];
+export const LINK_MODES: readonly LinkMode[] = ['access', 'trunk', 'routed', 'tunnel', 'peering', 'stack'];
+export const TUNNEL_ENCAPS: readonly TunnelEncap[] = ['ipsec', 'gre', 'vxlan', 'wireguard', 'dmvpn', 'mpls', 'l2tp', 'geneve', 'ssl'];
+export const ROUTING_PROTOCOLS: readonly RoutingProtocol[] = ['ospf', 'ebgp', 'ibgp', 'bgp', 'eigrp', 'isis', 'rip', 'static'];
+export const LACP_MODES: readonly LacpMode[] = ['active', 'passive', 'on', 'static', 'pagp'];
 export const COLLAPSE_MODES: readonly CollapseMode[] = ['auto', 'open', 'closed'];
-export const THEMES: readonly Theme[] = ['dark', 'light'];
+export const THEMES: readonly Theme[] = ['dark', 'light', 'auto'];
 
 export interface Zone {
   id: string;
@@ -54,6 +72,18 @@ export interface Link {
   speed?: LinkSpeed;
   /** Links sharing a lag id between the same device pair render bundled. */
   lag?: string;
+  /** Logical function (access/trunk/routed/tunnel/peering/stack) — drives the symbol. */
+  mode?: LinkMode;
+  /** VLANs carried (trunk) or the access VLAN — free-form set/range, e.g. "10,20,30-39". */
+  vlans?: string;
+  /** Native (untagged) VLAN on a trunk. */
+  nativeVlan?: number;
+  /** Overlay/VPN encapsulation — marks the link as a tunnel. */
+  encap?: TunnelEncap;
+  /** Routing / control-plane protocol on a routed or peering link. */
+  protocol?: RoutingProtocol;
+  /** Aggregation control mode; pairs with `lag`. */
+  lacp?: LacpMode;
   status: LinkStatus;
   animated: boolean;
   label?: string;

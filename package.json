@@ -49,7 +49,8 @@
     "icons:pack": "node packages/icons/dist/generate-cli.js",
     "docs": "npm run dev -w @marrow/docs",
     "docs:build": "npm run generate -w @marrow/docs",
-    "demos": "node docs/scripts/build-demos.mjs"
+    "demos": "node docs/scripts/build-demos.mjs",
+    "build:npm": "npm run compile && node scripts/build-npm.mjs"
   },
   "devDependencies": {
     "@types/node": "^24.13.3",

@@ -31,6 +31,13 @@ export interface DataLink {
   kind?: string;
   speed?: string;
   lag?: string;
+  /** logical function — access | trunk | routed | tunnel | peering | stack */
+  mode?: string;
+  vlans?: string;
+  nativeVlan?: number;
+  encap?: string;
+  protocol?: string;
+  lacp?: string;
   status: string;
   /** flowing-dash effect — mirrored in the inspector's link swatch */
   animated?: boolean;

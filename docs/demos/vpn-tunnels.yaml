@@ -1,0 +1,27 @@
+marrow: 2
+name: VPN & Tunnels
+description: Site-to-site IPsec, a GRE tunnel, and a VXLAN overlay
+theme: dark
+hero: hq-fw
+
+zones:
+  - { id: hq, name: HQ, accent: "#7aa2ff" }
+  - { id: bra, name: Branch A, accent: "#4fc3a1" }
+  - { id: brb, name: Branch B, accent: "#4fc3a1" }
+  - { id: dc, name: Datacenter, accent: "#e0a458" }
+
+devices:
+  - { id: hq-fw, name: HQ Firewall, icon: cisco/security/firewall, tier: edge, zone: hq }
+  - { id: bra-fw, name: Branch A FW, icon: cisco/security/firewall, tier: edge, zone: bra }
+  - { id: brb-fw, name: Branch B FW, icon: cisco/security/firewall, tier: edge, zone: brb }
+  - { id: leaf-01, name: Leaf 1, icon: cisco/switches/layer-3-switch, tier: access, zone: dc }
+  - { id: leaf-02, name: Leaf 2, icon: cisco/switches/layer-3-switch, tier: access, zone: dc }
+
+links:
+  # site-to-site IPsec VPNs (dashed + padlock + IPsec chip)
+  - { from: hq-fw:tun1, to: bra-fw:tun1, mode: tunnel, encap: ipsec }
+  - { from: hq-fw:tun2, to: brb-fw:tun2, mode: tunnel, encap: ipsec }
+  # a GRE tunnel into the datacenter
+  - { from: hq-fw:gre0, to: leaf-01:gre0, mode: tunnel, encap: gre }
+  # a VXLAN overlay between two leaves
+  - { from: leaf-01:vx0, to: leaf-02:vx0, mode: tunnel, encap: vxlan }

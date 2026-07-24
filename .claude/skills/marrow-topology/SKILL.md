@@ -57,6 +57,40 @@ one (shown in the diagram's sidebar → About → Layout):
 | Ring | a single cycle of links |
 | Small dense fabric | a dense mesh of links |
 
+## Link semantics — declare what the cable carries
+
+A link has two axes: the **medium** (`kind`, `speed`) and the **logical
+function** (`mode`). Declare `mode` and the compiler draws a distinct symbol; the
+exact detail rides a chip. This is what lets a diagram show trunks, VPNs, LACP,
+and routing — network engineers need it.
+
+| `mode:` | Symbol | Companion keys | Example |
+| --- | --- | --- | --- |
+| `access` | plain line | `vlans` | `{ mode: access, vlans: "10" }` |
+| `trunk` | double rail | `vlans`, `native_vlan` | `{ mode: trunk, vlans: "10,20,30", native_vlan: 1 }` |
+| `routed` | solid + chip | `protocol` | `{ mode: routed, protocol: ospf }` |
+| `peering` | dotted | `protocol` | `{ mode: peering, protocol: ebgp, kind: wan }` |
+| `tunnel` | dashed + 🔒 | `encap` | `{ mode: tunnel, encap: ipsec }` |
+| `stack` | thick bar | — | `{ mode: stack, kind: dac }` |
+
+- `encap`: `ipsec | gre | vxlan | wireguard | dmvpn | mpls | l2tp | geneve | ssl`
+- `protocol`: `ospf | ebgp | ibgp | bgp | eigrp | isis | rip | static`
+- **Aggregation** is orthogonal: give members a shared `lag: po1` (+ optional
+  `lacp: active|passive|on|static|pagp`) and they bundle onto one strand chipped
+  with the lag id. A LAG can be a trunk, access, or routed port-channel.
+- Attributes that don't match the mode warn (`MRW-W105`) but don't block.
+
+```yaml
+links:
+  # LACP port-channel carrying a trunk
+  - { from: core-1:Te1/0/1, to: core-2:Te1/0/1, lag: po1, lacp: active, mode: trunk, kind: dac, speed: 40G }
+  - { from: core-1:Te1/0/2, to: core-2:Te1/0/2, lag: po1, lacp: active, mode: trunk, kind: dac, speed: 40G }
+  - { from: core-1:Gi1/0/1, to: acc-1:Gi0/48, mode: trunk, vlans: "10,20,30", native_vlan: 1, kind: fiber, speed: 10G }
+  - { from: acc-1:Gi0/1, to: pc-1:eth0, mode: access, vlans: "10" }
+  - { from: fw-a:tun0, to: fw-b:tun0, mode: tunnel, encap: ipsec }   # site-to-site VPN
+  - { from: edge-rt, to: isp-rt, mode: peering, protocol: ebgp, kind: wan }
+```
+
 ## Worked examples
 
 **Small tiered office** (→ layered top-down):

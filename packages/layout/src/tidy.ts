@@ -43,7 +43,10 @@ export function tidyEdges(nodes: readonly SceneNode[], edges: SceneEdge[]): void
       const pts = rep.points.map((p) => ({ x: p.x, y: p.y }));
       e.points = e.from.node === rep.from.node ? pts : pts.reverse();
     }
-    if (group.every((e) => e.label === undefined)) rep.label = `×${group.length}`;
+    // A shared lag id is the aggregation's identity — the presentation chip
+    // ("PO1") carries it, so skip the anonymous ×N pill for those bundles.
+    const sharedLag = rep.lag !== undefined && group.every((e) => e.lag === rep.lag);
+    if (!sharedLag && group.every((e) => e.label === undefined)) rep.label = `×${group.length}`;
   }
 
   // ── 2 · fan-out buses ─────────────────────────────────────────────────────

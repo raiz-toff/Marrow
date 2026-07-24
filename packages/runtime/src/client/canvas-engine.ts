@@ -1,4 +1,5 @@
 import type { CameraState } from './camera.js';
+import { linkDisplay } from './link.js';
 
 /**
  * The scale-tier renderer: immediate-mode Canvas 2D over the SAME scene the
@@ -33,6 +34,12 @@ export interface CScene {
     animated: boolean;
     speed?: string;
     kind?: string;
+    mode?: string;
+    vlans?: string;
+    nativeVlan?: number;
+    encap?: string;
+    protocol?: string;
+    lacp?: string;
     label?: string;
   }>;
   zones: Array<{ id: string; name: string; box: { x: number; y: number; w: number; h: number }; depth: number; accent?: string }>;
@@ -413,29 +420,53 @@ export class CanvasEngine {
               : e.animated
                 ? c.accent
                 : c.edge;
-      g.lineWidth = (e.speed === '40G' || e.speed === '100G' || e.speed === '400G' ? 4.5 : e.speed === '10G' || e.speed === '25G' ? 3 : 1.5) / Math.sqrt(k);
+      // logical function → symbol (mirror of @marrow/scene linkPresentation)
+      const disp = linkDisplay(e);
+      let lw = e.speed === '40G' || e.speed === '100G' || e.speed === '400G' ? 4.5 : e.speed === '10G' || e.speed === '25G' ? 3 : 1.5;
+      if (disp.pattern === 'thick') lw = Math.max(lw, 5);
+      else if (disp.pattern === 'double') lw = Math.max(lw, 4.5);
+      g.lineWidth = lw / Math.sqrt(k);
+      // status dash > flow > mode dash (tunnel/peering); mode never overrides an alarm
+      const modeDash = disp.pattern === 'dashed' ? [9, 6] : disp.pattern === 'dotted' ? [1.5, 5] : [];
       g.setLineDash(
-        e.status === 'degraded' ? [14, 7] : e.status === 'planned' ? [2, 7] : e.animated && animate ? [8, 6] : [],
+        e.status === 'degraded'
+          ? [14, 7]
+          : e.status === 'planned'
+            ? [2, 7]
+            : e.animated && animate
+              ? [8, 6]
+              : modeDash,
       );
       if (e.animated && animate) g.lineDashOffset = -flowPhase * 14;
       g.lineJoin = 'round';
-      g.lineCap = e.status === 'planned' ? 'round' : 'butt';
-      g.beginPath();
-      g.moveTo(first.x, first.y);
+      g.lineCap = e.status === 'planned' || disp.pattern === 'dotted' || disp.pattern === 'thick' ? 'round' : 'butt';
       // bends are filleted at the chrome's --radius (8), matching the SVG tier
-      for (let i = 1; i < e.points.length - 1; i++) {
-        const p = e.points[i]!;
-        const next = e.points[i + 1]!;
-        const prev = e.points[i - 1]!;
-        const r = Math.min(8, Math.hypot(p.x - prev.x, p.y - prev.y) / 2, Math.hypot(next.x - p.x, next.y - p.y) / 2);
-        if (r > 0.5) g.arcTo(p.x, p.y, next.x, next.y, r);
-        else g.lineTo(p.x, p.y);
-      }
-      if (e.points.length > 1) {
-        const last = e.points[e.points.length - 1]!;
-        g.lineTo(last.x, last.y);
-      }
+      const traceEdge = (): void => {
+        g.beginPath();
+        g.moveTo(first.x, first.y);
+        for (let i = 1; i < e.points.length - 1; i++) {
+          const p = e.points[i]!;
+          const next = e.points[i + 1]!;
+          const prev = e.points[i - 1]!;
+          const r = Math.min(8, Math.hypot(p.x - prev.x, p.y - prev.y) / 2, Math.hypot(next.x - p.x, next.y - p.y) / 2);
+          if (r > 0.5) g.arcTo(p.x, p.y, next.x, next.y, r);
+          else g.lineTo(p.x, p.y);
+        }
+        if (e.points.length > 1) {
+          const last = e.points[e.points.length - 1]!;
+          g.lineTo(last.x, last.y);
+        }
+      };
+      traceEdge();
       g.stroke();
+      // trunk = double rail: carve a thin bg-coloured slot down the casing
+      if (disp.pattern === 'double') {
+        g.setLineDash([]);
+        g.strokeStyle = c.bg;
+        g.lineWidth = 1.7 / Math.sqrt(k);
+        traceEdge();
+        g.stroke();
+      }
       g.setLineDash([]);
       g.lineDashOffset = 0;
       if (e.label && showLabels) {
@@ -451,6 +482,24 @@ export class CanvasEngine {
         g.fillStyle = c.inkDim;
         g.textAlign = 'center';
         g.fillText(e.label, mid.x, mid.y + 4);
+        g.textAlign = 'left';
+      }
+      // semantic chip (VLANs / encap / protocol / lag) — glyphs are dropped at
+      // this tier (illegible at scale); the text carries the meaning
+      if (disp.chip && showLabels) {
+        const mid = polyMidpoint(e.points);
+        const cy = mid.y + (e.label ? 17 : 0);
+        g.font = `600 10.5px system-ui, sans-serif`;
+        const w = g.measureText(disp.chip).width + 14;
+        g.fillStyle = c.bg;
+        g.strokeStyle = c.line;
+        g.lineWidth = 1 / k;
+        roundRect(g, mid.x - w / 2, cy - 8, w, 16, 8);
+        g.fill();
+        g.stroke();
+        g.fillStyle = c.ink;
+        g.textAlign = 'center';
+        g.fillText(disp.chip, mid.x, cy + 3.4);
         g.textAlign = 'left';
       }
     }
