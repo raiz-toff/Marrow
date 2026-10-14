@@ -160,3 +160,7 @@ legacy-v1/    archived Python v1 (reference only)
   or editing topology YAML. Workflow checklist, condensed schema, worked examples.
 - **`marrow-setup`** (`.claude/skills/marrow-setup/`) — load when the toolchain
   isn't working: fresh clone, missing `dist/`, or "icon pack is not installed".
+- **`technical-documentation`** (`.agents/skills/technical-documentation/`) — produce
+  enterprise networking guides, Cisco/Wireshark runbooks, ADRs, and TypeScript/Next.js
+  API references using the Diátaxis framework and strict anti-slop constraints.
+
