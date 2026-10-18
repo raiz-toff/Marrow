@@ -2,6 +2,7 @@ import type { Device, Topology } from '@marrow/model';
 import type { Rect, SceneZone, Vec } from '@marrow/scene';
 import { TIER_RANK } from './classify.js';
 import { elkLayout } from './elk.js';
+import type { LayoutMetrics } from './metrics.js';
 import type { NodeSizing } from './size.js';
 
 /**
@@ -37,7 +38,11 @@ interface ZoneLayout {
   minRank: number;
 }
 
-export async function composeZones(t: Topology, sizing: ReadonlyMap<string, NodeSizing>): Promise<ComposeResult> {
+export async function composeZones(
+  t: Topology,
+  sizing: ReadonlyMap<string, NodeSizing>,
+  metrics?: LayoutMetrics,
+): Promise<ComposeResult> {
   const devicesByZone = new Map<string, Device[]>();
   for (const d of t.devices) {
     const key = d.zone ?? '';
@@ -61,12 +66,12 @@ export async function composeZones(t: Topology, sizing: ReadonlyMap<string, Node
 
   const measure = async (zoneId: string): Promise<ZoneLayout> => {
     const own = devicesByZone.get(zoneId) ?? [];
-    const ownBoxes = own.length > 0 ? await layoutOwn(t, own, sizing) : new Map<string, Rect>();
+    const ownBoxes = own.length > 0 ? await layoutOwn(t, own, sizing, metrics) : new Map<string, Rect>();
     const children: ZoneLayout[] = [];
     for (const childId of (childZones.get(zoneId) ?? []).filter((c) => hasContent(c)).sort()) {
       children.push(await measure(childId));
     }
-    return finishZone(zoneId, own, ownBoxes, children);
+    return finishZone(zoneId, own, ownBoxes, children, metrics);
   };
 
   // Root items: top-level zones with content + a pseudo-unit for zoneless devices.
@@ -78,7 +83,7 @@ export async function composeZones(t: Topology, sizing: ReadonlyMap<string, Node
   }
   const zoneless = devicesByZone.get('') ?? [];
   if (zoneless.length > 0) {
-    const ownBoxes = await layoutOwn(t, zoneless, sizing);
+    const ownBoxes = await layoutOwn(t, zoneless, sizing, metrics);
     const bounds = boundsOf(ownBoxes);
     rootItems.push({
       id: undefined,
@@ -92,14 +97,17 @@ export async function composeZones(t: Topology, sizing: ReadonlyMap<string, Node
   }
 
   // Pack the root mosaic in story order (edge/core zones first).
+  const rootGap = metrics?.composeGap ?? GAP;
   rootItems.sort((a, b) => a.minRank - b.minRank || (a.id ?? '~').localeCompare(b.id ?? '~'));
   const rootPack = shelfPack(
     rootItems.map((z) => ({ id: z.id ?? '~unzoned', w: z.w, h: z.h })),
-    GAP,
+    rootGap,
   );
 
   const result: ComposeResult = { nodeBoxes: new Map(), zones: [] };
   const zoneMeta = new Map(t.zones.map((z) => [z.id, z]));
+  const padX = metrics?.zonePad ?? PAD_X;
+  const padTop = Math.round(padX * 1.64);
   const place = (zl: ZoneLayout, ox: number, oy: number, depth: number): void => {
     if (zl.id !== undefined) {
       const meta = zoneMeta.get(zl.id);
@@ -112,8 +120,8 @@ export async function composeZones(t: Topology, sizing: ReadonlyMap<string, Node
       if (meta?.accent !== undefined) zone.accent = meta.accent;
       result.zones.push(zone);
     }
-    const innerX = ox + (zl.id !== undefined ? PAD_X : 0);
-    const innerY = oy + (zl.id !== undefined ? PAD_TOP : 0);
+    const innerX = ox + (zl.id !== undefined ? padX : 0);
+    const innerY = oy + (zl.id !== undefined ? padTop : 0);
     const selfPos = zl.itemPos.get('self');
     if (selfPos) {
       for (const [deviceId, box] of zl.ownBoxes) {
@@ -143,6 +151,7 @@ async function layoutOwn(
   t: Topology,
   own: Device[],
   sizing: ReadonlyMap<string, NodeSizing>,
+  metrics?: LayoutMetrics,
 ): Promise<Map<string, Rect>> {
   const ids = new Set(own.map((d) => d.id));
   const sub: Topology = {
@@ -156,7 +165,7 @@ async function layoutOwn(
     ),
   };
   const archetype = own.every((d) => d.tier !== undefined) ? 'tiered' : 'flat';
-  const { nodeBoxes } = await elkLayout(sub, sizing, archetype);
+  const { nodeBoxes } = await elkLayout(sub, sizing, archetype, metrics);
   // strip ELK's own padding so zone chrome is applied exactly once
   let minX = Infinity;
   let minY = Infinity;
@@ -176,6 +185,7 @@ function finishZone(
   own: Device[],
   ownBoxes: Map<string, Rect>,
   children: ZoneLayout[],
+  metrics?: LayoutMetrics,
 ): ZoneLayout {
   interface Item {
     id: string;
@@ -192,11 +202,15 @@ function finishZone(
     items.push({ id: child.id ?? '~unzoned', w: child.w, h: child.h, rank: child.minRank });
   }
   items.sort((a, b) => a.rank - b.rank || a.id.localeCompare(b.id));
-  const packed = shelfPack(items, GAP);
+  const gap = metrics?.composeGap ?? GAP;
+  const packed = shelfPack(items, gap);
+  const padX = metrics?.zonePad ?? PAD_X;
+  const padTop = Math.round(padX * 1.64);
+  const padBottom = padX;
   return {
     id: zoneId,
-    w: packed.w + 2 * PAD_X,
-    h: packed.h + PAD_TOP + PAD_BOTTOM,
+    w: packed.w + 2 * padX,
+    h: packed.h + padTop + padBottom,
     ownBoxes,
     itemPos: packed.positions,
     children,

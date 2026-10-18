@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import {
   COLLAPSE_MODES,
+  DENSITIES,
   DEVICE_STATUSES,
   LACP_MODES,
   LINK_KINDS,
@@ -38,6 +39,16 @@ export const zoneSchema = z.strictObject({
   note: z.string().optional(),
 });
 
+export const customFieldsSchema = z.record(z.string(), z.union([z.string(), z.number(), z.boolean()]));
+
+export const customSectionContentSchema = z.union([
+  z.string(),
+  z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()])),
+  z.array(z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()]))),
+]);
+
+export const customSectionsSchema = z.record(z.string(), customSectionContentSchema);
+
 export const deviceSchema = z.strictObject({
   id: z.string(),
   name: z.string().optional(),
@@ -54,6 +65,8 @@ export const deviceSchema = z.strictObject({
   note: z.string().optional(),
   config: z.string().optional(),
   interfaces: z.array(interfaceSchema).default([]),
+  custom_fields: customFieldsSchema.optional(),
+  sections: customSectionsSchema.optional(),
 });
 
 export const linkSchema = z.strictObject({
@@ -72,13 +85,29 @@ export const linkSchema = z.strictObject({
   animated: z.boolean().default(false),
   label: z.string().optional(),
   note: z.string().optional(),
+  custom_fields: customFieldsSchema.optional(),
+  sections: customSectionsSchema.optional(),
+});
+
+export const titleBlockSchema = z.strictObject({
+  title: z.string().optional(),
+  author: z.string().optional(),
+  date: z.string().optional(),
+  revision: z.string().optional(),
+  logo: z.string().optional(),
 });
 
 export const topologySchema = z.strictObject({
   marrow: z.number(),
   name: z.string().min(1),
   description: z.string().optional(),
+  author: z.string().optional(),
+  revision: z.string().optional(),
+  date: z.string().optional(),
+  title_block: titleBlockSchema.optional(),
   theme: asEnum(THEMES).default('dark'),
+  density: asEnum(DENSITIES).default('standard'),
+  scale: z.number().min(0.4).max(2.5).default(1),
   hero: z.string().optional(),
   zones: z.array(zoneSchema).default([]),
   devices: z.array(deviceSchema).default([]),

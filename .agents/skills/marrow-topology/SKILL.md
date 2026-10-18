@@ -18,8 +18,8 @@ at the repo root — this skill is the working checklist.
 
 1. **Scope the network.** Identify devices, hierarchy/zones, links + ports, and
    the story. Ask only what you can't infer.
-2. **Pick real icons first** — `npm run marrow -- icons search <keyword>`. Never
-   invent an icon ID.
+2. **Pick real icons first** — `npm run marrow -- icons search "switch" "firewall" "router" --json`
+   (supports batch multi-term search in one command). Never invent an icon ID.
 3. **Write `input/<name>.yaml`.** Copy the closest example below and adapt.
 4. **Validate until clean** — `npm run marrow -- validate input/<name>.yaml`.
    Every error has a line, a hint, and suggestions. Fix them all. Read warnings.
@@ -29,6 +29,20 @@ at the repo root — this skill is the working checklist.
 6. **Preview live** (if the user wants it) — `npm run marrow -- serve input`,
    give them the URL; edits hot-reload.
 7. **Build** — `npm run marrow -- build input/<name>.yaml` → `output/`.
+
+## Updating existing diagrams (preserve human context)
+
+When updating an existing topology YAML file from new CLI outputs, discovery logs, or user instructions:
+- **Always edit in-place**: Never regenerate or wipe out the YAML file from scratch.
+- **Preserve human context**: Retain existing `tier`, `zone`, `ha_pair_with`, `hero`, `notes`, `config` snippets, custom labels, and visual accents (`style.accent`).
+- **Targeted edits**: Only append newly discovered devices/links, or update changed interface and IP mappings.
+
+## Authoring from Cisco IOS, Packet Tracer, or PCAP
+
+When the user provides Cisco `show running-config`, `show cdp neighbors detail`, Packet Tracer logs, or packet captures, follow:
+[references/cisco-cli-mapping.md](file:///home/coder/Production/Diagramming%20tool/Marrow/.agents/skills/marrow-topology/references/cisco-cli-mapping.md)
+
+It maps switchport modes, VLAN sets, Port-Channels (`lag:`/`lacp:`), point-to-point `/30` routed links, and VPN tunnels directly into Marrow schema keys.
 
 ## Icon packs — match the pack to the domain
 
@@ -136,16 +150,57 @@ branch routers each linked only to the hub, `kind: wan`.
 More references: `fixtures/valid/` and `fixtures/corpus/` are all validated
 examples — read them for patterns (HA pairs, LAGs, nested zones, statuses).
 
-## Branding the page (optional)
+## Density and scaling (optional)
 
-The diagram canvas renders inside a framed viewport; the page margin around it
-is an author-brandable area. Add a top-level `backdrop:` block when the user
-wants company branding or a confidentiality notice on the page:
+Adjust visual compactness and font sizing at the topology header:
 
 ```yaml
-backdrop:
-  text: Acme Networks               # brand line, top strip
-  note: Proprietary & Confidential  # footer line, bottom strip
+density: compact      # compact | standard | spacious (default: standard)
+scale: 0.9           # multiplier 0.4 to 2.5 (default: 1.0)
+```
+
+Use `compact` for dense spine-and-leaf topologies (50+ nodes). Use `spacious` for executive presentations or kiosk screens.
+
+## Custom fields and operational data
+
+Enrich device and link inspection drawers with structured facts, operational tables, and markdown:
+
+```yaml
+devices:
+  - id: core-01
+    icon: cisco/switches/layer-3-switch
+    tier: core
+    custom_fields:
+      Serial Number: "FOC2049102"
+      Model: "Cisco Catalyst 9500"
+      Management IP: "192.168.1.1"
+    sections:
+      BGP Neighbors:
+        - Peer: "192.168.1.2"
+          AS: 65001
+          Status: "Established"
+          Prefixes: 42
+      Interface State: |
+        | Interface | IP Address | Status |
+        | Te1/0/1   | 10.1.1.1   | Up     |
+```
+
+Links also accept `custom_fields:` and `sections:`. Clicking any link in the SVG viewer opens a dedicated link inspector drawer.
+
+## Branding (global configuration)
+
+Branding is global and configured in `marrow.config.yaml` at the repository root, not in individual topology files (see ADR-0003):
+
+```yaml [marrow.config.yaml]
+brand:
+  name: Acme Networks
+  note: Proprietary & Confidential
+theme:
+  dark:
+    accent: "#38bdf8"
+  links:
+    default_stroke: 1.5
+    ten_g_stroke: 2.5
 ```
 
 ## Rules
@@ -154,6 +209,8 @@ backdrop:
 - Search icons; never guess IDs.
 - Declare `tier`/`zone`/`ha_pair_with`; don't rely on name inference.
 - Edit `input/*.yaml` only — never `output/`, `icon-packs/**/svg/`, or `node_modules/`.
+- Use `density:` and `scale:` for layout compactness; never use `pin:` to reposition nodes.
+- Put inventory facts in `custom_fields:` and tables in `sections:`.
 - Bring legacy v1 files forward with `npm run marrow -- import <file>` (don't
   author against `legacy-v1/`).
 - Imported files may carry an `x-v1-config:` block (`engines:`/`layouts:`) —

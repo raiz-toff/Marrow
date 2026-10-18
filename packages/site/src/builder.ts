@@ -13,7 +13,8 @@ import { collapseEndpoints } from './collapse.js';
 import { indexZones, inventoryBody, overviewTopology, pageOf, zoneTopology, deviceTopology, type PageTopo, type ZoneIndex } from './pages.js';
 import { planSite, type SitePlan } from './planner.js';
 import { renderShell, type Crumb, type NavLink } from './shell.js';
-import { SITE_CSS } from './styles.js';
+import { buildStylesheet, SITE_CSS } from './styles.js';
+import type { ThemeConfig } from './tokens.js';
 
 /** SVG carries pages to this many rendered nodes; canvas takes over above. */
 export const SVG_NODE_LIMIT = 250;
@@ -27,6 +28,11 @@ export interface BuildOptions {
   forceRenderer?: 'svg' | 'canvas';
   /** Global branding from brand/brand.html — the single source for the mark. */
   brand?: Brand;
+  /** Global theme and design token overrides. */
+  themeConfig?: ThemeConfig;
+  /** Embed / kiosk modularity: 'minimal' hides topbar & dock, 'full' preserves all chrome. */
+  chrome?: 'full' | 'minimal';
+  embed?: boolean;
 }
 
 export interface BuildResult {
@@ -170,7 +176,7 @@ export function createSiteBuilder(
   defs.set('inventory.html', { kind: 'inventory' });
 
   const assetContent = (path: string): string | undefined => {
-    if (path === 'assets/styles.css') return SITE_CSS;
+    if (path === 'assets/styles.css') return options.themeConfig ? buildStylesheet(options.themeConfig) : SITE_CSS;
     if (path === 'assets/runtime.js') return getRuntimeSource();
     if (path === 'assets/search-data.js') return searchDataJs(topology, plan, zi);
     return undefined;
@@ -202,6 +208,9 @@ export function createSiteBuilder(
       stage: svg,
       ...(topology.description !== undefined ? { subtitle: topology.description } : {}),
       ...(options.brand !== undefined ? { brand: options.brand } : {}),
+      ...(options.themeConfig !== undefined ? { themeConfig: options.themeConfig } : {}),
+      ...(options.chrome !== undefined ? { chrome: options.chrome } : {}),
+      ...(options.embed !== undefined ? { embed: options.embed } : {}),
       dataJson: embeddedData(collapsed, {
         page: path,
         // devicePages omitted — derived client-side from the shared search index
@@ -225,6 +234,9 @@ export function createSiteBuilder(
       theme: topology.theme,
       body: inventoryBody(topology, plan, zi, (id) => iconSource(options.icons).svg(id)),
       ...(options.brand !== undefined ? { brand: options.brand } : {}),
+      ...(options.themeConfig !== undefined ? { themeConfig: options.themeConfig } : {}),
+      ...(options.chrome !== undefined ? { chrome: options.chrome } : {}),
+      ...(options.embed !== undefined ? { embed: options.embed } : {}),
       // full device+link payload: the inventory drawer shows device details in place
       // (devicePages omitted — derived client-side from the shared search index)
       dataJson: embeddedData(topology, { page: 'inventory.html' }),
@@ -368,6 +380,7 @@ export function embeddedData(
     name: t.name,
     ...(extra.scene !== undefined ? { scene: extra.scene } : {}),
     ...(t.description !== undefined ? { description: t.description } : {}),
+    ...(t.titleBlock !== undefined ? { titleBlock: t.titleBlock } : {}),
     theme: t.theme,
     page: extra.page,
     // The full device-page manifest is NOT embedded per page: the runtime derives
@@ -388,6 +401,8 @@ export function embeddedData(
       ...(d.note !== undefined ? { note: d.note } : {}),
       ...(d.config !== undefined ? { config: d.config } : {}),
       ...(d.stack !== undefined ? { stack: d.stack } : {}),
+      ...(d.customFields !== undefined ? { customFields: d.customFields } : {}),
+      ...(d.sections !== undefined ? { sections: d.sections } : {}),
       interfaces: d.interfaces,
     })),
     links: t.links.map((l) => ({
@@ -406,6 +421,9 @@ export function embeddedData(
       status: l.status,
       ...(l.animated ? { animated: true } : {}),
       ...(l.label !== undefined ? { label: l.label } : {}),
+      ...(l.note !== undefined ? { note: l.note } : {}),
+      ...(l.customFields !== undefined ? { customFields: l.customFields } : {}),
+      ...(l.sections !== undefined ? { sections: l.sections } : {}),
     })),
     zones: t.zones.map((z) => ({ id: z.id, name: z.name })),
   };

@@ -21,6 +21,22 @@ devices:
     tier: core
     zone: cisco-cdp-zone
     role: router
+    custom_fields:
+      Serial Number: "FOC2049102"
+      Model: "Cisco ISR 4451"
+      IOS Version: "17.9.4"
+      Management IP: "192.168.1.1"
+    sections:
+      BGP Neighbors:
+        - Peer: "192.168.1.2"
+          AS: 65001
+          Status: "Established"
+          Prefixes: 42
+      Interfaces Status: |
+        | Interface | IP Address | Status | Protocol |
+        | Et0/1     | 10.0.1.1   | Up     | Up       |
+        | Et0/2     | 10.0.2.1   | Up     | Up       |
+        | Et0/3     | 10.0.3.1   | Up     | Up       |
   - id: cisco-r2
     name: Cisco Router 2
     icon: cisco/routers/router
@@ -42,6 +58,11 @@ devices:
 links:
   - from: cisco-r1:Et0/2
     to: cisco-r2:Et0/2
+    custom_fields:
+      Link Type: "Core Backbone"
+      MTU: 9216
+    sections:
+      OSPF Metrics: "Area: 0 · Cost: 1 · State: Full"
   - from: cisco-r1:Et0/1
     to: cisco-sw1:Et0/1
   - from: cisco-r2:Et0/0

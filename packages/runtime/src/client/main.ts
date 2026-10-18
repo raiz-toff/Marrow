@@ -1,8 +1,8 @@
 import { Camera } from './camera.js';
 import { CanvasEngine, type CScene } from './canvas-engine.js';
 import { linkSemanticsWords } from './link.js';
-import { devicePageIds, globalSearchDocs, loadData, type DataDevice, type DataLink, type EmbeddedData } from './data.js';
-import { parseHash, serializeHash } from '../shared/hash.js';
+import { devicePageIds, globalSearchDocs, loadData, type DataDevice, type DataLink, type DataTitleBlock, type EmbeddedData } from './data.js';
+import { parseHash, parseModularParams, serializeHash } from '../shared/hash.js';
 import { searchDocs, type SearchDoc } from '../shared/search.js';
 
 /** The interactive shell. One chrome (inspector, spotlight, minimap, tooltip,
@@ -128,10 +128,13 @@ function boot(): void {
   setupSidebar(ctx);
   setupClickAway(ctx);
   const hashSyncSoon = setupHash(ctx);
+  syncModularParams(ctx);
+  addEventListener('hashchange', () => syncModularParams(ctx));
 
   // re-apply persisted view settings — the ⌘K palette reads AND writes these,
   // so what it displays must be what the page is actually doing
   for (const key of ['labels', 'ports', 'motion', 'minimap']) {
+    if (key === 'minimap' && document.documentElement.dataset['minimap'] === 'off') continue;
     const storedValue = localStorage.getItem(`marrow-${key}`);
     if (storedValue !== null) applySetting(ctx, key, storedValue);
   }
@@ -234,7 +237,7 @@ function setupPanZoom(ctx: Ctx, stage: HTMLElement): void {
   let moved = false;
   let last = { x: 0, y: 0 };
   stage.addEventListener('pointerdown', (ev) => {
-    if (ctx.mode === 'svg' && (ev.target as Element).closest('[data-node]')) return;
+    if (ctx.mode === 'svg' && (ev.target as Element).closest('.m-node[data-node], [data-edge]')) return;
     if (ctx.mode === 'canvas' && hitNode(ctx, ev)) return;
     dragging = true;
     moved = false;
@@ -265,19 +268,19 @@ function setupPanZoom(ctx: Ctx, stage: HTMLElement): void {
 function setupSvgPointer(ctx: Ctx): void {
   const root = document.documentElement;
   ctx.svg!.addEventListener('pointerover', (ev) => {
-    const nodeEl = (ev.target as Element).closest<SVGGElement>('[data-node]');
+    const nodeEl = (ev.target as Element).closest<SVGGElement>('.m-node[data-node]');
     if (!nodeEl) return;
     applyFocus(ctx, nodeEl.dataset['node']!);
     root.classList.add('focus-mode');
   });
   ctx.svg!.addEventListener('pointerout', (ev) => {
-    if (!(ev.target as Element).closest('[data-node]')) return;
+    if (!(ev.target as Element).closest('.m-node[data-node]')) return;
     root.classList.remove('focus-mode');
     clearFocus(ctx);
     if (ctx.selected) applyFocus(ctx, ctx.selected);
   });
   ctx.svg!.addEventListener('click', (ev) => {
-    const nodeEl = (ev.target as Element).closest<SVGGElement>('[data-node]');
+    const nodeEl = (ev.target as Element).closest<SVGGElement>('.m-node[data-node]');
     if (nodeEl) {
       const href = nodeEl.dataset['href'];
       if (href !== undefined) {
@@ -285,17 +288,41 @@ function setupSvgPointer(ctx: Ctx): void {
         return;
       }
       selectDevice(ctx, nodeEl.dataset['node']!, false);
-    } else deselect(ctx);
+      return;
+    }
+    const edgeEl = (ev.target as Element).closest<SVGElement>('[data-edge]');
+    if (edgeEl && document.documentElement.dataset['inspector'] !== 'off') {
+      const edgeId = edgeEl.getAttribute('data-edge');
+      const link = ctx.data.links.find((l) => l.id === edgeId);
+      if (link) {
+        clearFocus(ctx);
+        ctx.selected = undefined;
+        ctx.edgeEls.get(link.id)?.classList.add('is-path');
+        setChipsHot(ctx, link.id, true);
+        ctx.nodeEls.get(link.from.device)?.classList.add('is-adj');
+        ctx.nodeEls.get(link.to.device)?.classList.add('is-adj');
+        fillLinkInspector(
+          { deviceById: ctx.deviceById, linksByDevice: ctx.linksByDevice, devicePages: devicePageIds(ctx.data) },
+          link,
+          (id) => selectDevice(ctx, id, false),
+        );
+        return;
+      }
+    }
+    deselect(ctx);
   });
   // hovering an edge reveals its port chips even when the toggle is off
   ctx.svg!.addEventListener('pointerover', (ev) => {
-    const edgeEl = (ev.target as Element).closest<SVGElement>('.m-edge[data-edge]');
+    const edgeEl = (ev.target as Element).closest<SVGElement>('[data-edge]');
     if (edgeEl) setChipsHot(ctx, edgeEl.getAttribute('data-edge')!, true);
   });
   ctx.svg!.addEventListener('pointerout', (ev) => {
-    const edgeEl = (ev.target as Element).closest<SVGElement>('.m-edge[data-edge]');
-    if (!edgeEl || edgeEl.classList.contains('is-path')) return;
-    setChipsHot(ctx, edgeEl.getAttribute('data-edge')!, false);
+    const edgeEl = (ev.target as Element).closest<SVGElement>('[data-edge]');
+    if (!edgeEl) return;
+    const edgeId = edgeEl.getAttribute('data-edge')!;
+    const edgePath = ctx.edgeEls.get(edgeId);
+    if (edgePath && edgePath.classList.contains('is-path')) return;
+    setChipsHot(ctx, edgeId, false);
   });
   setupTooltipSvg(ctx);
 }
@@ -402,7 +429,7 @@ function setupClickAway(ctx: Ctx): void {
   document.addEventListener('pointerdown', (ev) => {
     if (ctx.selected === undefined) return;
     const target = ev.target as Element;
-    if (target.closest('.m-inspector, .m-controls, .m-minimap, .m-spotlight, .m-rail-wrap, .m-dock, .m-sidebar, [data-node]')) return;
+    if (target.closest('.m-inspector, .m-controls, .m-minimap, .m-spotlight, .m-rail-wrap, .m-dock, .m-sidebar, [data-node], [data-edge]')) return;
     if (ctx.mode === 'canvas' && hitNode(ctx, ev)) return; // canvas nodes aren't DOM
     deselect(ctx);
   });
@@ -416,6 +443,7 @@ interface DeviceMaps {
 }
 
 function renderInspector(ctx: Ctx, d: DataDevice): void {
+  if (document.documentElement.dataset['inspector'] === 'off') return;
   fillInspector(
     { deviceById: ctx.deviceById, linksByDevice: ctx.linksByDevice, devicePages: devicePageIds(ctx.data) },
     d,
@@ -426,7 +454,82 @@ function renderInspector(ctx: Ctx, d: DataDevice): void {
   );
 }
 
+function renderInlineMd(text: string): string {
+  return html(text)
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\n/g, '<br>');
+}
+
+function renderMarkdownTable(md: string): string {
+  const lines = md.trim().split('\n').map((l) => l.trim()).filter(Boolean);
+  const headerLine = lines[0];
+  const sepLine = lines[1];
+  if (headerLine && sepLine && headerLine.startsWith('|') && headerLine.endsWith('|')) {
+    const isSep = /^\|[\s\-:|]+\|$/.test(sepLine);
+    const dataLines = isSep ? lines.slice(2) : lines.slice(1);
+    const splitCells = (line: string): string[] =>
+      line.slice(1, -1).split('|').map((c) => c.trim());
+
+    const headers = splitCells(headerLine);
+    const rows = dataLines.filter((l) => l.startsWith('|')).map(splitCells);
+
+    const thead = `<thead><tr>${headers.map((hdr) => `<th>${renderInlineMd(hdr)}</th>`).join('')}</tr></thead>`;
+    const tbody = `<tbody>${rows
+      .map(
+        (row) =>
+          `<tr>${row.map((cell) => `<td>${renderInlineMd(cell)}</td>`).join('')}</tr>`,
+      )
+      .join('')}</tbody>`;
+    return `<div class="m-table-wrap"><table class="m-table">${thead}${tbody}</table></div>`;
+  }
+  return `<div class="m-note">${renderInlineMd(md)}</div>`;
+}
+
+function renderCustomSection(title: string, content: unknown): string {
+  if (content === null || content === undefined) return '';
+  let inner = '';
+
+  if (Array.isArray(content)) {
+    if (content.length === 0) return '';
+    const first = content[0];
+    if (typeof first === 'object' && first !== null) {
+      const keys = Object.keys(first);
+      const thead = `<thead><tr>${keys.map((k) => `<th>${html(k)}</th>`).join('')}</tr></thead>`;
+      const tbody = `<tbody>${content
+        .map(
+          (row: any) =>
+            `<tr>${keys.map((k) => `<td>${html(String(row?.[k] ?? ''))}</td>`).join('')}</tr>`,
+        )
+        .join('')}</tbody>`;
+      inner = `<div class="m-table-wrap"><table class="m-table">${thead}${tbody}</table></div>`;
+    } else {
+      inner = `<ul class="m-members">${content.map((item) => `<li>${html(String(item))}</li>`).join('')}</ul>`;
+    }
+  } else if (typeof content === 'object') {
+    const entries = Object.entries(content as Record<string, unknown>);
+    if (entries.length === 0) return '';
+    inner = `<dl class="m-facts">${entries
+      .map(([k, v]) => `<dt>${html(k)}</dt><dd>${html(String(v ?? ''))}</dd>`)
+      .join('')}</dl>`;
+  } else if (typeof content === 'string') {
+    inner = renderMarkdownTable(content);
+  } else {
+    inner = `<div class="m-note">${html(String(content))}</div>`;
+  }
+
+  return `<details class="m-inspector-section" open>
+    <summary>
+      <h3>${html(title)}</h3>
+      <svg class="m-section-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+    </summary>
+    <div class="m-section-body">${inner}</div>
+  </details>`;
+}
+
 function fillInspector(maps: DeviceMaps, d: DataDevice, onGoto: (id: string) => void): void {
+  if (document.documentElement.dataset['inspector'] === 'off') return;
   const panel = document.querySelector<HTMLElement>('.m-inspector');
   const body = document.querySelector<HTMLElement>('.m-inspector-body');
   const title = document.querySelector<HTMLElement>('.m-inspector-title');
@@ -484,11 +587,62 @@ function fillInspector(maps: DeviceMaps, d: DataDevice, onGoto: (id: string) => 
       : '',
     d.note ? `<h3>Note</h3><div class="m-note">${h(d.note)}</div>` : '',
     d.config ? `<h3>Config</h3><pre class="m-config">${h(d.config)}</pre>` : '',
+    d.customFields && Object.keys(d.customFields).length > 0
+      ? renderCustomSection('Custom Fields', d.customFields)
+      : '',
+    ...(d.sections
+      ? Object.entries(d.sections).map(([title, content]) =>
+          renderCustomSection(title, content),
+        )
+      : []),
   ].join('');
   panel.hidden = false;
   for (const btn of body.querySelectorAll<HTMLButtonElement>('[data-goto]')) {
     btn.addEventListener('click', () => onGoto(btn.dataset['goto']!));
   }
+}
+
+function fillLinkInspector(maps: DeviceMaps, l: DataLink, onGoto: (id: string) => void): void {
+  if (document.documentElement.dataset['inspector'] === 'off') return;
+  const panel = document.querySelector<HTMLElement>('.m-inspector');
+  const body = document.querySelector<HTMLElement>('.m-inspector-body');
+  const title = document.querySelector<HTMLElement>('.m-inspector-title');
+  if (!panel || !body || !title) return;
+  const fromName = maps.deviceById.get(l.from.device)?.name ?? l.from.device;
+  const toName = maps.deviceById.get(l.to.device)?.name ?? l.to.device;
+  title.textContent = `${fromName} ⟷ ${toName}`;
+  const desc = document.querySelector<HTMLElement>('.m-inspector-desc');
+  if (desc) desc.textContent = [l.kind, l.speed, l.mode].filter(Boolean).join(' · ');
+  const h = html;
+  const facts: Array<[string, string | undefined]> = [
+    ['From', `${fromName}${l.from.port ? ` (${l.from.port})` : ''}`],
+    ['To', `${toName}${l.to.port ? ` (${l.to.port})` : ''}`],
+    ['Kind', l.kind],
+    ['Speed', l.speed],
+    ['Mode', l.mode],
+    ['VLANs', l.vlans],
+    ['Native VLAN', l.nativeVlan !== undefined ? String(l.nativeVlan) : undefined],
+    ['LAG', l.lag],
+    ['LACP', l.lacp],
+    ['Protocol', l.protocol],
+    ['Encap', l.encap],
+    ['Status', l.status],
+  ];
+  body.innerHTML = [
+    `<div class="m-icon-badge">${linkSwatch(l)}<span class="m-status-pill m-status-${cssSafe(l.status)}">${h(l.status)}</span></div>`,
+    `<dl class="m-facts">${facts
+      .filter(([, v]) => v !== undefined)
+      .map(([k, v]) => `<dt>${h(k)}</dt><dd>${h(v!)}</dd>`)
+      .join('')}</dl>`,
+    l.note ? `<h3>Note</h3><div class="m-note">${h(l.note)}</div>` : '',
+    l.customFields && Object.keys(l.customFields).length > 0
+      ? renderCustomSection('Custom Fields', l.customFields)
+      : '',
+    ...(l.sections
+      ? Object.entries(l.sections).map(([t, c]) => renderCustomSection(t, c))
+      : []),
+  ].join('');
+  panel.hidden = false;
 }
 
 // ─── spotlight ──────────────────────────────────────────────────────────────
@@ -1072,15 +1226,19 @@ function setupTooltipSvg(ctx: Ctx): void {
   const tip = document.querySelector<HTMLElement>('.m-tooltip');
   if (!tip) return;
   ctx.svg!.addEventListener('pointermove', (ev) => {
-    const edge = (ev.target as Element).closest<SVGPathElement>('[data-edge]');
+    const edge = (ev.target as Element).closest<SVGElement>('[data-edge]');
     if (!edge) {
       tip.hidden = true;
       return;
     }
-    const from = ctx.deviceById.get(edge.dataset['from'] ?? '')?.name ?? edge.dataset['from'];
-    const to = ctx.deviceById.get(edge.dataset['to'] ?? '')?.name ?? edge.dataset['to'];
-    const meta = edge.dataset['meta'] ?? '';
-    tip.innerHTML = `<strong>${html(from ?? '')} ⟷ ${html(to ?? '')}</strong>${meta ? `<span>${html(meta)}</span>` : ''}`;
+    const edgeId = edge.getAttribute('data-edge');
+    const link = ctx.data.links.find((l) => l.id === edgeId);
+    const from = (link ? ctx.deviceById.get(link.from.device)?.name ?? link.from.device : edge.dataset['from']) ?? '';
+    const to = (link ? ctx.deviceById.get(link.to.device)?.name ?? link.to.device : edge.dataset['to']) ?? '';
+    const meta = link
+      ? [link.from.port, link.to.port, link.speed, link.kind, link.mode].filter(Boolean).join(' · ')
+      : edge.dataset['meta'] ?? '';
+    tip.innerHTML = `<strong>${html(from)} ⟷ ${html(to)}</strong>${meta ? `<span>${html(meta)}</span>` : ''}`;
     const rect = ctx.stage.getBoundingClientRect();
     tip.style.left = `${ev.clientX - rect.left + 14}px`;
     tip.style.top = `${ev.clientY - rect.top + 14}px`;
@@ -1101,16 +1259,145 @@ function setupControls(ctx: Ctx): void {
 
 // ─── export (reached via the ⌘K command center) ─────────────────────────────
 
+export interface ExportOptions {
+  titleBlock?: boolean;
+  legend?: boolean;
+  forcePorts?: boolean;
+}
+
 function fileStem(ctx: Ctx): string {
   return ctx.data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'topology';
 }
 
-/** Rebuild the diagram as a self-contained SVG document (styles inlined). */
-function standaloneSvg(ctx: Ctx): string {
+function renderTitleBlock(
+  tb: DataTitleBlock,
+  x: number,
+  y: number,
+  w: number = 320,
+  h: number = 74,
+): string {
+  const title = tb.title || 'Network Architecture';
+  const author = tb.author || 'Marrow Studio';
+  const revision = tb.revision || 'v2.0';
+  const date = tb.date || new Date().toISOString().slice(0, 10);
+  const logo = tb.logo
+    ? `<text x="${x + 12}" y="${y + 15}" font-size="10" font-weight="700" fill="var(--m-accent, #f43f5e)" font-family="ui-sans-serif, system-ui, sans-serif" letter-spacing="0.08em">${html(tb.logo.toUpperCase())}</text>`
+    : '';
+
+  return (
+    `<g class="m-blueprint-titleblock">` +
+    `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="6" fill="var(--bg-raise, #161a22)" stroke="var(--line-strong, #30363d)" stroke-width="1.25"/>` +
+    `<path d="M ${x} ${y + 24} h ${w}" stroke="var(--line, #21262d)" stroke-width="1"/>` +
+    `<rect x="${x + 1}" y="${y + 1}" width="${w - 2}" height="22" rx="5" fill="var(--surface, #0d1117)" opacity="0.6"/>` +
+    (logo || `<text x="${x + 10}" y="${y + 16}" font-size="10" font-weight="700" fill="var(--ink, #c9d1d9)" font-family="ui-sans-serif, system-ui, sans-serif" letter-spacing="0.06em">MARROW ENGINEERING BLUEPRINT</text>`) +
+    `<path d="M ${x + Math.round(w * 0.58)} ${y + 24} v ${h - 24}" stroke="var(--line, #21262d)" stroke-width="1"/>` +
+    `<path d="M ${x} ${y + 49} h ${w}" stroke="var(--line, #21262d)" stroke-width="1"/>` +
+    `<text x="${x + 10}" y="${y + 35}" font-size="7.5" font-weight="600" fill="var(--ink-dim, #8b949e)" font-family="ui-monospace, monospace" letter-spacing="0.05em">TITLE</text>` +
+    `<text x="${x + 10}" y="${y + 46}" font-size="10.5" font-weight="600" fill="var(--ink, #f0f6fc)" font-family="ui-sans-serif, system-ui, sans-serif">${html(title)}</text>` +
+    `<text x="${x + Math.round(w * 0.58) + 8}" y="${y + 35}" font-size="7.5" font-weight="600" fill="var(--ink-dim, #8b949e)" font-family="ui-monospace, monospace" letter-spacing="0.05em">DATE</text>` +
+    `<text x="${x + Math.round(w * 0.58) + 8}" y="${y + 46}" font-size="9.5" fill="var(--ink, #f0f6fc)" font-family="ui-monospace, monospace">${html(date)}</text>` +
+    `<text x="${x + 10}" y="${y + 60}" font-size="7.5" font-weight="600" fill="var(--ink-dim, #8b949e)" font-family="ui-monospace, monospace" letter-spacing="0.05em">AUTHOR</text>` +
+    `<text x="${x + 10}" y="${y + 70}" font-size="9.5" fill="var(--ink, #f0f6fc)" font-family="ui-sans-serif, system-ui, sans-serif">${html(author)}</text>` +
+    `<text x="${x + Math.round(w * 0.58) + 8}" y="${y + 60}" font-size="7.5" font-weight="600" fill="var(--ink-dim, #8b949e)" font-family="ui-monospace, monospace" letter-spacing="0.05em">REV</text>` +
+    `<text x="${x + Math.round(w * 0.58) + 8}" y="${y + 70}" font-size="9.5" font-weight="700" fill="var(--m-accent, #f43f5e)" font-family="ui-monospace, monospace">${html(revision)}</text>` +
+    `</g>`
+  );
+}
+
+function renderAutoLegend(
+  links: DataLink[],
+  x: number,
+  y: number,
+  maxW: number,
+): { svg: string; width: number; height: number } {
+  if (!links.length) return { svg: '', width: 0, height: 0 };
+
+  interface LegendEntry {
+    label: string;
+    mode?: string;
+    kind?: string;
+    speed?: string;
+    status: string;
+  }
+  const seen = new Set<string>();
+  const entries: LegendEntry[] = [];
+
+  for (const l of links) {
+    const mode = l.mode ?? (l.encap !== undefined ? 'tunnel' : undefined);
+    const key = `${mode ?? 'default'}:${l.kind ?? ''}:${l.speed ?? ''}:${l.status}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      const parts = [
+        mode ? (mode.charAt(0).toUpperCase() + mode.slice(1)) : undefined,
+        l.speed,
+        l.kind ? (l.kind.charAt(0).toUpperCase() + l.kind.slice(1)) : undefined,
+      ].filter(Boolean);
+      entries.push({
+        label: parts.length > 0 ? parts.join(' · ') : 'Standard Link',
+        mode,
+        kind: l.kind,
+        speed: l.speed,
+        status: l.status,
+      });
+    }
+  }
+
+  const displayEntries = entries.slice(0, 6);
+  const cols = displayEntries.length > 3 ? 2 : 1;
+  const colW = Math.min(220, Math.floor((maxW - 30) / cols));
+  const rowH = 18;
+  const rows = Math.ceil(displayEntries.length / cols);
+  const legendW = cols * colW + 24;
+  const legendH = 26 + rows * rowH + 8;
+
+  let content =
+    `<g class="m-blueprint-legend">` +
+    `<rect x="${x}" y="${y}" width="${legendW}" height="${legendH}" rx="6" fill="var(--bg-raise, #161a22)" stroke="var(--line-strong, #30363d)" stroke-width="1.25"/>` +
+    `<text x="${x + 10}" y="${y + 16}" font-size="9" font-weight="700" fill="var(--ink-dim, #8b949e)" font-family="ui-monospace, monospace" letter-spacing="0.06em">TOPOLOGY LEGEND</text>`;
+
+  displayEntries.forEach((entry, idx) => {
+    const col = idx % cols;
+    const row = Math.floor(idx / cols);
+    const ex = x + 12 + col * colW;
+    const ey = y + 26 + row * rowH + 8;
+
+    const mode = entry.mode;
+    const speedClass = entry.speed ? ` m-speed-${cssSafe(entry.speed)}` : '';
+    const modeClass = mode ? ` m-mode-${cssSafe(mode)}` : '';
+    const statusClass = ` m-status-${cssSafe(entry.status)}`;
+    const lineX1 = ex;
+    const lineX2 = ex + 32;
+
+    const baseLine = `<line x1="${lineX1}" y1="${ey}" x2="${lineX2}" y2="${ey}" class="m-edge${speedClass}${modeClass}${statusClass}"/>`;
+    const railLine = mode === 'trunk' ? `<line x1="${lineX1}" y1="${ey}" x2="${lineX2}" y2="${ey}" class="m-edge-rail"/>` : '';
+
+    content +=
+      baseLine +
+      railLine +
+      `<text x="${lineX2 + 8}" y="${ey + 3.5}" font-size="9.5" fill="var(--ink, #c9d1d9)" font-family="ui-sans-serif, system-ui, sans-serif">${html(entry.label)}</text>`;
+  });
+
+  content += `</g>`;
+  return { svg: content, width: legendW, height: legendH };
+}
+
+/** Rebuild the diagram as a self-contained SVG document with modular blueprint chrome. */
+function standaloneSvg(ctx: Ctx, options?: ExportOptions): string {
   const svg = ctx.svg!;
-  const w = Number(svg.dataset['w']) || 100;
-  const h = Number(svg.dataset['h']) || 100;
+  const origW = Number(svg.dataset['w']) || 100;
+  const origH = Number(svg.dataset['h']) || 100;
   const theme = document.documentElement.dataset['theme'] ?? 'dark';
+
+  const modular = parseModularParams(location.search, location.hash);
+  const showTitle = options?.titleBlock ?? (modular.exportTitle !== 'off');
+  const showLegend = options?.legend ?? (modular.exportLegend !== 'off');
+  const forcePorts = options?.forcePorts ?? (modular.exportPorts !== 'off');
+
+  const hasBlueprint = showTitle || (showLegend && ctx.data.links.length > 0);
+  const blueprintMargin = hasBlueprint ? 110 : 0;
+  const totalW = Math.max(origW, hasBlueprint ? 720 : origW);
+  const totalH = origH + blueprintMargin;
+
   let css = '';
   try {
     css = [...document.styleSheets]
@@ -1125,6 +1412,11 @@ function standaloneSvg(ctx: Ctx): string {
   } catch {
     /* stylesheet unavailable — export still renders with UA defaults */
   }
+
+  if (forcePorts) {
+    css += '\n.m-portlabel { opacity: 1 !important; }\n';
+  }
+
   // Clone and neutralize the live camera transform — export shows the WHOLE
   // scene at world coordinates (0..w, 0..h), not the current pan/zoom viewport.
   const clone = svg.cloneNode(true) as SVGSVGElement;
@@ -1133,24 +1425,54 @@ function standaloneSvg(ctx: Ctx): string {
   for (const el of clone.querySelectorAll('.is-selected, .is-focus, .is-adj, .is-path')) {
     el.classList.remove('is-selected', 'is-focus', 'is-adj', 'is-path');
   }
+
+  let blueprintOverlays = '';
+  if (hasBlueprint) {
+    // Dividing hairline
+    blueprintOverlays += `<line x1="20" y1="${origH + 8}" x2="${totalW - 20}" y2="${origH + 8}" stroke="var(--line-strong, #30363d)" stroke-width="1" stroke-dasharray="4 4" opacity="0.6"/>`;
+
+    // Title Block on right
+    if (showTitle) {
+      const tb: DataTitleBlock = ctx.data.titleBlock ?? {
+        title: ctx.data.name,
+      };
+      blueprintOverlays += renderTitleBlock(tb, totalW - 340, origH + 18, 320, 76);
+    }
+
+    // Auto-Legend on left
+    if (showLegend && ctx.data.links.length > 0) {
+      const legendRes = renderAutoLegend(ctx.data.links, 20, origH + 18, totalW - 380);
+      blueprintOverlays += legendRes.svg;
+    }
+  }
+
   return (
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" data-theme="${theme}" class="settled">` +
-    `<style>${css}</style><rect width="${w}" height="${h}" style="fill: var(--bg)"/>` +
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${totalW}" height="${totalH}" viewBox="0 0 ${totalW} ${totalH}" data-theme="${theme}" class="settled">` +
+    `<style>${css}</style><rect width="${totalW}" height="${totalH}" style="fill: var(--bg)"/>` +
     clone.innerHTML +
+    blueprintOverlays +
     `</svg>`
   );
 }
 
-async function exportPng(ctx: Ctx): Promise<void> {
+async function exportPng(ctx: Ctx, options?: ExportOptions): Promise<void> {
   if (ctx.mode === 'canvas') {
     ctx.engine!.exportBitmap().toBlob((blob) => {
       if (blob) download(blob, `${fileStem(ctx)}.png`);
     }, 'image/png');
     return;
   }
-  const svgText = standaloneSvg(ctx);
-  const w = (Number(ctx.svg!.dataset['w']) || 100) * 2;
-  const h = (Number(ctx.svg!.dataset['h']) || 100) * 2;
+  const svgText = standaloneSvg(ctx, options);
+  const modular = parseModularParams(location.search, location.hash);
+  const showTitle = options?.titleBlock ?? (modular.exportTitle !== 'off');
+  const showLegend = options?.legend ?? (modular.exportLegend !== 'off');
+  const hasBlueprint = showTitle || (showLegend && ctx.data.links.length > 0);
+  const origW = Number(ctx.svg!.dataset['w']) || 100;
+  const origH = Number(ctx.svg!.dataset['h']) || 100;
+  const totalW = Math.max(origW, hasBlueprint ? 720 : origW);
+  const totalH = origH + (hasBlueprint ? 110 : 0);
+  const w = totalW * 2;
+  const h = totalH * 2;
   const url = URL.createObjectURL(new Blob([svgText], { type: 'image/svg+xml' }));
   try {
     const img = new Image();
@@ -1181,6 +1503,39 @@ function download(blob: Blob, filename: string): void {
   setTimeout(() => URL.revokeObjectURL(url), 4000);
 }
 
+function syncModularParams(ctx?: Ctx): void {
+  const root = document.documentElement;
+  const opts = parseModularParams(location.search, location.hash);
+
+  if (opts.chrome === 'minimal') {
+    root.dataset['chrome'] = 'minimal';
+  } else if (opts.chrome === 'full') {
+    delete root.dataset['chrome'];
+  }
+
+  if (opts.inspector === 'off') {
+    root.dataset['inspector'] = 'off';
+    const panel = document.querySelector<HTMLElement>('.m-inspector');
+    if (panel) panel.hidden = true;
+  } else if (opts.inspector === 'on') {
+    delete root.dataset['inspector'];
+  }
+
+  if (opts.minimap === 'off') {
+    root.dataset['minimap'] = 'off';
+    const wrap = document.querySelector<HTMLElement>('.m-minimap');
+    if (wrap) wrap.hidden = true;
+  } else if (opts.minimap === 'on') {
+    delete root.dataset['minimap'];
+    const wrap = document.querySelector<HTMLElement>('.m-minimap');
+    if (wrap && (ctx?.data.devices.length ?? 0) >= 2) wrap.hidden = false;
+  }
+
+  if (opts.theme) {
+    root.dataset['theme'] = opts.theme;
+  }
+}
+
 function setupTheme(): void {
   const root = document.documentElement;
   const mql = matchMedia('(prefers-color-scheme: dark)');
@@ -1192,9 +1547,17 @@ function setupTheme(): void {
       root.dataset['theme'] = mql.matches ? 'dark' : 'light';
     }
   };
-  const stored = localStorage.getItem('marrow-theme');
-  if (stored === 'dark' || stored === 'light') root.dataset['theme'] = stored;
-  else applyAuto();
+  const q = new URLSearchParams(location.search);
+  const h = location.hash.slice(1);
+  const hp = new URLSearchParams(h.includes(';') ? h.replace(/;/g, '&') : h);
+  const urlTheme = q.get('theme') || hp.get('theme');
+  if (urlTheme === 'dark' || urlTheme === 'light') {
+    root.dataset['theme'] = urlTheme;
+  } else {
+    const stored = localStorage.getItem('marrow-theme');
+    if (stored === 'dark' || stored === 'light') root.dataset['theme'] = stored;
+    else applyAuto();
+  }
   mql.addEventListener('change', applyAuto);
 
   // Embed API: a host page (docs site, blog, app) owns the surrounding UI, so

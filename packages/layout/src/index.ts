@@ -9,9 +9,11 @@ import { placePortChips } from './portchips.js';
 import { tidyEdges } from './tidy.js';
 import { CHIP, LABEL_GAP, sizeNode, type NodeSizing } from './size.js';
 import { zoneHulls } from './zones.js';
+import { resolveLayoutMetrics, type LayoutMetrics } from './metrics.js';
 
 export { classify, findHubs, TIER_RANK, type Archetype } from './classify.js';
 export { CHIP, LABEL_GAP, LABEL_SIZE, MAX_LABEL_W, sizeNode, type NodeSizing } from './size.js';
+export { resolveLayoutMetrics, type LayoutMetrics } from './metrics.js';
 export { routeEdges, type RoutableEdge, type RouteStyle } from './router.js';
 export { placeCircle, placePolar } from './presets.js';
 
@@ -32,6 +34,8 @@ export interface LayoutOptions {
   routing?: 'libavoid' | 'elk';
   /** Presentation annotations per device id (ghost stubs, page links, badges). */
   nodeMeta?: ReadonlyMap<string, NodeMeta>;
+  /** Optional layout metrics override. */
+  metrics?: LayoutMetrics;
 }
 
 /**
@@ -43,9 +47,10 @@ export interface LayoutOptions {
 export async function layoutTopology(t: Topology, options: LayoutOptions = {}): Promise<Scene> {
   const archetype: Archetype = classify(t);
   const routing = options.routing ?? 'libavoid';
+  const metrics = options.metrics ?? resolveLayoutMetrics(t.density, t.scale);
 
   const sizing = new Map<string, NodeSizing>();
-  for (const d of t.devices) sizing.set(d.id, sizeNode(d));
+  for (const d of t.devices) sizing.set(d.id, sizeNode(d, metrics));
 
   let nodeBoxes: Map<string, Rect>;
   let edgePoints: Map<string, Vec[]>;
@@ -59,7 +64,7 @@ export async function layoutTopology(t: Topology, options: LayoutOptions = {}): 
     // Per-zone ELK layouts packed into a mosaic; libavoid routes everything
     // against the final fixed geometry (zone boxes cannot overlap foreign
     // devices by construction).
-    const composed = await composeZones(t, sizing);
+    const composed = await composeZones(t, sizing, metrics);
     nodeBoxes = composed.nodeBoxes;
     composedZones = composed.zones;
     edgePoints = await routeEdges(nodeBoxes, routable);
@@ -68,12 +73,12 @@ export async function layoutTopology(t: Topology, options: LayoutOptions = {}): 
     // channels look wrong on circles)
     nodeBoxes =
       archetype === 'hub-spoke'
-        ? placePolar(t, sizing, findHubs(t))
-        : placeCircle(t, sizing, archetype === 'ring');
+        ? placePolar(t, sizing, findHubs(t), metrics)
+        : placeCircle(t, sizing, archetype === 'ring', metrics);
     const style: RouteStyle = 'polyline';
     edgePoints = await routeEdges(nodeBoxes, routable, style);
   } else {
-    ({ nodeBoxes, edgePoints } = await elkLayout(t, sizing, archetype));
+    ({ nodeBoxes, edgePoints } = await elkLayout(t, sizing, archetype, metrics));
     if (routing === 'libavoid') {
       const routed = await routeEdges(nodeBoxes, routable);
       for (const [id, points] of routed) edgePoints.set(id, points);
@@ -85,10 +90,11 @@ export async function layoutTopology(t: Topology, options: LayoutOptions = {}): 
     const box = nodeBoxes.get(d.id);
     const s = sizing.get(d.id);
     if (!box || !s) continue;
-    const chip: Rect = { x: box.x + (box.w - CHIP) / 2, y: box.y, w: CHIP, h: CHIP };
+    const chipW = s.chipSize;
+    const chip: Rect = { x: box.x + (box.w - chipW) / 2, y: box.y, w: chipW, h: chipW };
     const labelBox: Rect = {
       x: box.x + (box.w - s.labelW) / 2,
-      y: box.y + CHIP + LABEL_GAP,
+      y: box.y + chipW + s.labelGap,
       w: s.labelW,
       h: s.labelH,
     };
@@ -101,6 +107,7 @@ export async function layoutTopology(t: Topology, options: LayoutOptions = {}): 
       icon: d.icon,
       status: d.status,
       hero: d.hero,
+      labelSize: s.labelSize,
     };
     if (s.labelFull !== undefined) node.title = s.labelFull;
     if (d.tier !== undefined) node.tier = d.tier;
@@ -147,7 +154,7 @@ export async function layoutTopology(t: Topology, options: LayoutOptions = {}): 
     tidyEdges(nodes, edges);
   }
 
-  const zones = composedZones ?? zoneHulls(t, nodeBoxes);
+  const zones = composedZones ?? zoneHulls(t, nodeBoxes, metrics);
 
   // Nested zone padding can push hulls to negative coordinates — translate
   // the whole scene so everything sits inside the canvas with a margin.
@@ -172,7 +179,16 @@ export async function layoutTopology(t: Topology, options: LayoutOptions = {}): 
     }
   }
   if (!Number.isFinite(minX)) {
-    return { size: { w: 2 * SCENE_MARGIN, h: 2 * SCENE_MARGIN }, nodes, edges, zones, portChips: [], archetype };
+    return {
+      size: { w: 2 * SCENE_MARGIN, h: 2 * SCENE_MARGIN },
+      nodes,
+      edges,
+      zones,
+      portChips: [],
+      archetype,
+      density: metrics.density,
+      scale: metrics.scale,
+    };
   }
   const dx = SCENE_MARGIN - minX;
   const dy = SCENE_MARGIN - minY;
@@ -198,8 +214,10 @@ export async function layoutTopology(t: Topology, options: LayoutOptions = {}): 
     nodes,
     edges,
     zones,
-    portChips: placePortChips(nodes, edges),
+    portChips: placePortChips(nodes, edges, metrics),
     archetype,
+    density: metrics.density,
+    scale: metrics.scale,
   };
 }
 

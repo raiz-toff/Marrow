@@ -160,27 +160,28 @@ function renderEdge(e: SceneEdge, leaf = false): string {
   // trunk = double rail: a thin bg-coloured slot carved down the casing
   const rail =
     pres.pattern === 'double' ? `<path class="m-edge-rail${leafClass}" pathLength="1" d="${d}" data-edge="${esc(e.id)}"/>` : '';
+  const hit = `<path class="m-edge-hit" pathLength="1" d="${d}" data-edge="${esc(e.id)}"/>`;
   let extras = '';
   // aggregate labels ("×24") ride the midpoint of the polyline
   const hasAgg = e.label !== undefined && e.label.length <= 6;
   if (hasAgg) {
     const mid = polylineMidpoint(e.points);
     extras +=
-      `<g class="m-edge-label"><rect x="${mid.x - e.label!.length * 4 - 6}" y="${mid.y - 9}" width="${e.label!.length * 8 + 12}" height="18" rx="9"/>` +
+      `<g class="m-edge-label" data-edge="${esc(e.id)}"><rect x="${mid.x - e.label!.length * 4 - 6}" y="${mid.y - 9}" width="${e.label!.length * 8 + 12}" height="18" rx="9"/>` +
       `<text x="${mid.x}" y="${mid.y + 4}" text-anchor="middle">${esc(e.label!)}</text></g>`;
   }
   // semantic chip (VLANs / encap / protocol / lag), with an optional glyph
   if (pres.chip !== undefined) {
     const mid = polylineMidpoint(e.points);
-    extras += edgeChip(mid.x, mid.y + (hasAgg ? 16 : 0), pres.chip, pres.glyph);
+    extras += edgeChip(mid.x, mid.y + (hasAgg ? 16 : 0), pres.chip, pres.glyph, e.id);
   }
-  return path + rail + extras;
+  return path + rail + hit + extras;
 }
 
 const n2 = (v: number): string => String(Math.round(v * 100) / 100);
 
 /** A midpoint pill carrying a link's semantics, with an optional left glyph. */
-function edgeChip(cx: number, cy: number, text: string, glyph?: string): string {
+function edgeChip(cx: number, cy: number, text: string, glyph?: string, edgeId?: string): string {
   const hasGlyph = glyph === 'lock' || glyph === 'bundle';
   const glyphW = hasGlyph ? 12 : 0;
   const padX = 7;
@@ -191,7 +192,7 @@ function edgeChip(cx: number, cy: number, text: string, glyph?: string): string 
   const y = cy - h / 2;
   const tx = x + padX + glyphW + textW / 2;
   return (
-    `<g class="m-edge-chip"${glyph ? ` data-glyph="${esc(glyph)}"` : ''}>` +
+    `<g class="m-edge-chip"${glyph ? ` data-glyph="${esc(glyph)}"` : ''}${edgeId !== undefined ? ` data-edge="${esc(edgeId)}"` : ''}>` +
     `<rect x="${n2(x)}" y="${n2(y)}" width="${n2(w)}" height="${h}" rx="8"/>` +
     (hasGlyph ? chipGlyph(glyph!, x + padX, cy) : '') +
     `<text x="${n2(tx)}" y="${n2(cy + 3.6)}" text-anchor="middle">${esc(text)}</text>` +
@@ -261,16 +262,24 @@ function renderNode(
   const hero = n.hero ? ' m-hero' : '';
   const ghost = n.ghost ? ' m-ghost' : '';
   const accent = n.accent ? ` style="--d:${delay}s;--m-accent:${esc(n.accent)}"` : ` style="--d:${delay}s"`;
+  const rx = Math.round(n.chip.w * (13 / 64));
+  const iconInset = Math.round(n.chip.w * (8 / 64));
+  const iconW = n.chip.w - 2 * iconInset;
+  const iconH = n.chip.h - 2 * iconInset;
+  const cornerArc = Math.round(rx * (1 - 1 / Math.SQRT2) * 10) / 10;
+  const ledR = Math.max(2.5, Math.round(n.chip.w * (4.2 / 64) * 10) / 10);
+
   const symbol = symbolOf(n.icon);
   const iconMarkup = symbol
-    ? `<use href="#${symbol}" x="${n.chip.x + 8}" y="${n.chip.y + 8}" width="${n.chip.w - 16}" height="${n.chip.h - 16}"/>`
+    ? `<use href="#${symbol}" x="${n.chip.x + iconInset}" y="${n.chip.y + iconInset}" width="${iconW}" height="${iconH}"/>`
     : `<text x="${n.chip.x + n.chip.w / 2}" y="${n.chip.y + n.chip.h / 2 + 5}" text-anchor="middle" class="m-icon-fallback">${esc(
         n.label.slice(0, 2).toUpperCase(),
       )}</text>`;
   const badgeW = n.badge ? Math.max(17, n.badge.length * 7 + 12) : 0;
   const badge = n.badge
-    ? `<g class="m-badge"><rect x="${n.chip.x + n.chip.w - 3.8 + 8.5 - badgeW}" y="${n.chip.y + n.chip.h - 12.3}" width="${badgeW}" height="17" rx="8.5"/><text x="${n.chip.x + n.chip.w - 3.8 + 8.5 - badgeW / 2}" y="${n.chip.y + n.chip.h + 0.2}" text-anchor="middle">${esc(n.badge)}</text></g>`
+    ? `<g class="m-badge"><rect x="${n.chip.x + n.chip.w - cornerArc + 8.5 - badgeW}" y="${n.chip.y + n.chip.h - 12.3}" width="${badgeW}" height="17" rx="8.5"/><text x="${n.chip.x + n.chip.w - cornerArc + 8.5 - badgeW / 2}" y="${n.chip.y + n.chip.h + 0.2}" text-anchor="middle">${esc(n.badge)}</text></g>`
     : '';
+  const labelStyle = n.labelSize && n.labelSize !== 12 ? ` style="font-size:${n.labelSize}px"` : '';
   return (
     `<g class="m-node m-status-${cssSafe(n.status)}${hero}${ghost}" data-node="${esc(n.id)}"` +
     `${n.tier !== undefined ? ` data-tier="${esc(n.tier)}"` : ''}` +
@@ -278,15 +287,15 @@ function renderNode(
     `${n.href !== undefined ? ` data-href="${esc(n.href)}"` : ''}${accent} tabindex="0" role="button" aria-label="${esc(n.title ?? n.label)}">` +
     `${n.title !== undefined ? `<title>${esc(n.title)}</title>` : ''}` +
     `<g class="m-node-inner m-enter-node">` +
-    `<rect class="m-chip" x="${n.chip.x}" y="${n.chip.y}" width="${n.chip.w}" height="${n.chip.h}" rx="13"/>` +
+    `<rect class="m-chip" x="${n.chip.x}" y="${n.chip.y}" width="${n.chip.w}" height="${n.chip.h}" rx="${rx}"/>` +
     iconMarkup +
-    `<circle class="m-led" cx="${n.chip.x + n.chip.w - 3.8}" cy="${n.chip.y + 3.8}" r="4.2"/>` +
+    `<circle class="m-led" cx="${n.chip.x + n.chip.w - cornerArc}" cy="${n.chip.y + cornerArc}" r="${ledR}"/>` +
     badge +
     // textLength pins the client's font to the width layout reserved — the
     // label cannot overflow its box no matter which system font renders it.
     // Not for emoji labels: the metrics table counts each codepoint of a
     // ZWJ sequence, so pinning would visibly stretch the single drawn glyph.
-    `<text class="m-label" x="${n.labelBox.x + n.labelBox.w / 2}" y="${n.labelBox.y + n.labelBox.h - 4}" text-anchor="middle"${
+    `<text class="m-label"${labelStyle} x="${n.labelBox.x + n.labelBox.w / 2}" y="${n.labelBox.y + n.labelBox.h - 4}" text-anchor="middle"${
       /[\u200d\ufe0f]|\p{Extended_Pictographic}/u.test(n.label)
         ? ''
         : ` textLength="${n.labelBox.w}" lengthAdjust="spacingAndGlyphs"`
@@ -310,9 +319,9 @@ function buildSprite(scene: Scene, icons: IconSource): Sprite {
   for (const id of ids) {
     const raw = icons.svg(id);
     if (raw === undefined) continue;
-    const extracted = extractSvg(raw);
-    if (!extracted) continue;
     const symbolId = 'ic-' + cssSafe(id);
+    const extracted = extractSvg(raw, symbolId);
+    if (!extracted) continue;
     symbols.push(`<symbol id="${symbolId}" viewBox="${esc(extracted.viewBox)}">${extracted.inner}</symbol>`);
     map.set(id, symbolId);
   }
@@ -356,8 +365,64 @@ export function roundedPath(points: ReadonlyArray<{ x: number; y: number }>, rad
   return d;
 }
 
-/** Pull viewBox + inner markup out of a standalone SVG file. */
-export function extractSvg(raw: string): { viewBox: string; inner: string } | undefined {
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/** Prefix internal IDs, url references, and CSS classes to avoid collisions in a shared sprite. */
+export function namespaceSvgInner(inner: string, prefix: string): string {
+  const idRegex = /\bid=["']([^"']+)["']/g;
+  const ids = new Set<string>();
+  let match: RegExpExecArray | null;
+  while ((match = idRegex.exec(inner)) !== null) {
+    if (match[1]) ids.add(match[1]);
+  }
+
+  let result = inner;
+  for (const oldId of ids) {
+    const newId = `${prefix}-${oldId}`;
+    result = result.replace(new RegExp(`\\bid=(["'])${escapeRegex(oldId)}\\1`, 'g'), `id=$1${newId}$1`);
+    result = result.replace(new RegExp(`url\\((["']?)#${escapeRegex(oldId)}\\1\\)`, 'g'), `url($1#${newId}$1)`);
+    result = result.replace(new RegExp(`\\b((?:xlink:)?href)=(["'])#${escapeRegex(oldId)}\\2`, 'g'), `$1=$2#${newId}$2`);
+    result = result.replace(new RegExp(`(#)${escapeRegex(oldId)}(?![a-zA-Z0-9_-])`, 'g'), `$1${newId}`);
+  }
+
+  // Find all class names declared in <style> blocks
+  const classNames = new Set<string>();
+  const styleMatches = inner.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/gi);
+  for (const sm of styleMatches) {
+    const styleContent = sm[1];
+    if (!styleContent) continue;
+    const classRegex = /\.([a-zA-Z0-9_-]+)(?=[^}]*\{)/g;
+    let cm: RegExpExecArray | null;
+    while ((cm = classRegex.exec(styleContent)) !== null) {
+      if (cm[1]) classNames.add(cm[1]);
+    }
+  }
+
+  if (classNames.size > 0) {
+    result = result.replace(/<style\b[^>]*>([\s\S]*?)<\/style>/gi, (_, styleContent: string) => {
+      let scopedStyle = styleContent;
+      for (const cls of classNames) {
+        scopedStyle = scopedStyle.replace(new RegExp(`\\.${escapeRegex(cls)}(?![a-zA-Z0-9_-])`, 'g'), `.${prefix}-${cls}`);
+      }
+      return `<style>${scopedStyle}</style>`;
+    });
+
+    result = result.replace(/\bclass=(["'])([^"']*)\1/g, (_, q, classList: string) => {
+      const rewritten = classList
+        .split(/(\s+)/)
+        .map((token) => (classNames.has(token) ? `${prefix}-${token}` : token))
+        .join('');
+      return `class=${q}${rewritten}${q}`;
+    });
+  }
+
+  return result;
+}
+
+/** Pull viewBox + inner markup out of a standalone SVG file, optionally namespacing internal IDs. */
+export function extractSvg(raw: string, symbolPrefix?: string): { viewBox: string; inner: string } | undefined {
   const cleaned = raw
     .replace(/<\?xml[\s\S]*?\?>/g, '')
     .replace(/<!DOCTYPE[\s\S]*?>/g, '')
@@ -367,8 +432,23 @@ export function extractSvg(raw: string): { viewBox: string; inner: string } | un
   if (!open) return undefined;
   const closeIdx = cleaned.lastIndexOf('</svg>');
   if (closeIdx === -1) return undefined;
-  const inner = cleaned.slice((open.index ?? 0) + open[0].length, closeIdx).trim();
-  const viewBox = /viewBox="([^"]+)"/i.exec(open[0])?.[1] ?? '0 0 100 100';
+  let inner = cleaned.slice((open.index ?? 0) + open[0].length, closeIdx).trim();
+
+  let viewBox = /viewBox="([^"]+)"/i.exec(open[0])?.[1];
+  if (!viewBox) {
+    const w = /width="([^"]+)"/i.exec(open[0])?.[1]?.replace(/px$/i, '');
+    const h = /height="([^"]+)"/i.exec(open[0])?.[1]?.replace(/px$/i, '');
+    if (w && h && !Number.isNaN(Number(w)) && !Number.isNaN(Number(h))) {
+      viewBox = `0 0 ${w} ${h}`;
+    } else {
+      viewBox = '0 0 100 100';
+    }
+  }
+
+  if (symbolPrefix) {
+    inner = namespaceSvgInner(inner, symbolPrefix);
+  }
+
   return { viewBox, inner };
 }
 

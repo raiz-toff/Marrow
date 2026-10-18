@@ -1,0 +1,229 @@
+marrow: 2
+name: Enterprise Multi-Zone Fabric
+description: Vertical tier progression (Core → Distribution → Access) with clustered zones and spline edge routing
+density: spacious
+scale: 1.15
+
+author: NetOps Architecture Team
+revision: v2.1
+date: "2026-10-18"
+
+title_block:
+  title: Enterprise Multi-Zone Fabric
+  author: NetOps Architecture Team
+  revision: v2.1
+  date: "2026-10-18"
+
+zones:
+  - id: production
+    name: Production
+    accent: "#10b981"
+    note: Change-freeze until Friday
+  - id: lab
+    name: Lab
+    accent: "#8b5cf6"
+    note: Staging & Automation Sandbox
+
+devices:
+  # ── Edge / WAN ──
+  - id: edge-fw
+    name: Edge Firewall
+    icon: cisco/security/firewall
+    tier: edge
+    role: firewall
+    status: up
+    mgmt_ip: 198.51.100.1
+    note: Perimeter inspection and WAN gateway
+    custom_fields:
+      Model: Cisco Secure Firewall 3100
+      Throughput: 15 Gbps
+
+  # ── Core Layer ──
+  - id: core-lab
+    name: Core Lab
+    icon: cisco/switches/layer-3-switch
+    tier: core
+    zone: lab
+    role: core
+    status: up
+    mgmt_ip: 10.10.0.1
+    custom_fields:
+      BGP AS: 65100
+
+  - id: core-prod
+    name: Core Prod
+    icon: cisco/switches/layer-3-switch
+    tier: core
+    zone: production
+    role: core
+    status: up
+    mgmt_ip: 10.20.0.1
+    custom_fields:
+      BGP AS: 65200
+
+  # ── Distribution Layer ──
+  - id: dist-lab
+    name: Dist Lab
+    icon: cisco/switches/layer-3-switch
+    tier: distribution
+    zone: lab
+    role: distribution
+    status: up
+    mgmt_ip: 10.10.1.1
+
+  - id: dist-prod-01
+    name: Dist Prod 01
+    icon: cisco/switches/layer-3-switch
+    tier: distribution
+    zone: production
+    role: distribution
+    status: up
+    mgmt_ip: 10.20.1.1
+    ha_pair_with: dist-prod-02
+
+  - id: dist-prod-02
+    name: Dist Prod 02
+    icon: cisco/switches/layer-3-switch
+    tier: distribution
+    zone: production
+    role: distribution
+    status: up
+    mgmt_ip: 10.20.1.2
+    ha_pair_with: dist-prod-01
+
+  # ── Access Layer ──
+  - id: acc-lab
+    name: Access Lab
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: lab
+    role: access
+    status: up
+    mgmt_ip: 10.10.2.1
+
+  - id: acc-prod
+    name: Access Prod
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: production
+    role: access
+    status: up
+    mgmt_ip: 10.20.2.1
+
+  # ── Workload / Endpoint Layer ──
+  - id: lab-runner
+    name: CI Runner
+    icon: cisco/servers/standard-host
+    tier: endpoint
+    zone: lab
+    role: server
+    status: up
+
+  - id: app-srv
+    name: App Cluster
+    icon: cisco/servers/standard-host
+    tier: endpoint
+    zone: production
+    role: server
+    status: up
+
+  - id: db-srv
+    name: DB Primary
+    icon: cisco/servers/standard-host
+    tier: endpoint
+    zone: production
+    role: database
+    status: up
+
+links:
+  # Edge to Cores
+  - from: edge-fw:Te0/0
+    to: core-lab:Te1/1/1
+    kind: fiber
+    speed: 10G
+    mode: routed
+    protocol: ospf
+
+  - from: edge-fw:Te0/1
+    to: core-prod:Te1/1/1
+    kind: fiber
+    speed: 10G
+    mode: routed
+    protocol: ospf
+
+  # Inter-Core Backbone
+  - from: core-lab:Te1/0/1
+    to: core-prod:Te1/0/1
+    kind: fiber
+    speed: 40G
+    mode: trunk
+    lag: PO1
+    lacp: active
+    vlans: "10,20,30,100"
+
+  - from: core-lab:Te1/0/2
+    to: core-prod:Te1/0/2
+    kind: fiber
+    speed: 40G
+    mode: trunk
+    lag: PO1
+    lacp: active
+    vlans: "10,20,30,100"
+
+  # Lab Core to Dist to Access to Server
+  - from: core-lab:Gi1/0/1
+    to: dist-lab:Gi0/1
+    kind: fiber
+    speed: 10G
+    mode: trunk
+
+  - from: dist-lab:Gi1/0/24
+    to: acc-lab:Gi0/1
+    kind: copper
+    speed: 1G
+    mode: trunk
+
+  - from: acc-lab:Gi0/10
+    to: lab-runner:eth0
+    kind: copper
+    speed: 1G
+    mode: access
+
+  # Production Core to HA Distribution Pair
+  - from: core-prod:Gi1/0/1
+    to: dist-prod-01:Gi0/1
+    kind: fiber
+    speed: 10G
+    mode: trunk
+
+  - from: core-prod:Gi1/0/2
+    to: dist-prod-02:Gi0/1
+    kind: fiber
+    speed: 10G
+    mode: trunk
+
+  # Distribution to Access
+  - from: dist-prod-01:Gi1/0/24
+    to: acc-prod:Gi0/1
+    kind: fiber
+    speed: 10G
+    mode: trunk
+
+  - from: dist-prod-02:Gi1/0/24
+    to: acc-prod:Gi0/2
+    kind: fiber
+    speed: 10G
+    mode: trunk
+
+  # Access to Production Servers
+  - from: acc-prod:Gi0/10
+    to: app-srv:eth0
+    kind: copper
+    speed: 10G
+    mode: access
+
+  - from: acc-prod:Gi0/11
+    to: db-srv:eth0
+    kind: copper
+    speed: 10G
+    mode: access

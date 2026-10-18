@@ -1,5 +1,6 @@
 import { measureText, truncateToWidth } from '@marrow/metrics';
 import type { Device } from '@marrow/model';
+import type { LayoutMetrics } from './metrics.js';
 
 /** Visual constants shared with the (future) renderers. */
 export const CHIP = 64;
@@ -16,6 +17,9 @@ export interface NodeSizing {
   labelText: string;
   labelW: number;
   labelH: number;
+  chipSize: number;
+  labelSize: number;
+  labelGap: number;
   /** Untruncated name, present only when labelText lost characters. */
   labelFull?: string;
 }
@@ -24,21 +28,29 @@ export interface NodeSizing {
  * Nodes are sized from their CONTENT — v1's hardcoded device_size constants
  * are exactly how labels ended up colliding.
  */
-export function sizeNode(device: Device): NodeSizing {
+export function sizeNode(device: Device, metrics?: LayoutMetrics): NodeSizing {
+  const chip = metrics?.chip ?? CHIP;
+  const labelSize = metrics?.labelSize ?? LABEL_SIZE;
+  const labelGap = metrics?.labelGap ?? LABEL_GAP;
+  const maxLabelW = metrics?.maxLabelW ?? MAX_LABEL_W;
+
   // Collapse whitespace the way SVG rendering will (newlines/tabs in YAML
   // names would otherwise desync measurement from drawing); never let a
   // blank name produce an unlabeled node.
   const name = device.name.replace(/\s+/g, ' ').trim() || device.id;
-  const labelText = truncateToWidth(name, LABEL_SIZE, MAX_LABEL_W);
-  const measured = measureText(labelText, LABEL_SIZE);
-  const w = Math.max(CHIP, Math.ceil(measured.w));
-  const h = CHIP + LABEL_GAP + Math.ceil(measured.h);
+  const labelText = truncateToWidth(name, labelSize, maxLabelW);
+  const measured = measureText(labelText, labelSize);
+  const w = Math.max(chip, Math.ceil(measured.w));
+  const h = chip + labelGap + Math.ceil(measured.h);
   const sizing: NodeSizing = {
     w,
     h,
     labelText,
     labelW: Math.ceil(measured.w),
     labelH: Math.ceil(measured.h),
+    chipSize: chip,
+    labelSize,
+    labelGap,
   };
   if (labelText !== name) sizing.labelFull = name;
   return sizing;

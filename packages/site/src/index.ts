@@ -28,6 +28,20 @@ export {
   type SiteBuilder,
   type SiteCache,
 } from './builder.js';
+export { buildStylesheet, SITE_CSS } from './styles.js';
+export {
+  generateThemeCss,
+  DEFAULT_DARK_PALETTE,
+  DEFAULT_LIGHT_PALETTE,
+  DEFAULT_DARK_STATUS,
+  DEFAULT_LIGHT_STATUS,
+  DEFAULT_LINK_TOKENS,
+  type ThemeConfig,
+  type PaletteTokens,
+  type StatusTokens,
+  type LinkStyleTokens,
+} from './tokens.js';
+export { renderShell, type ShellOptions } from './shell.js';
 
 /** Compile ONE self-contained page (small networks / forced single mode). */
 export async function buildSingleFile(topology: Topology, options: BuildOptions): Promise<BuildResult> {
@@ -43,6 +57,9 @@ export async function buildSingleFile(topology: Topology, options: BuildOptions)
     stage: svg,
     ...(t.description !== undefined ? { subtitle: t.description } : {}),
     ...(options.brand !== undefined ? { brand: options.brand } : {}),
+    ...(options.themeConfig !== undefined ? { themeConfig: options.themeConfig } : {}),
+    ...(options.chrome !== undefined ? { chrome: options.chrome } : {}),
+    ...(options.embed !== undefined ? { embed: options.embed } : {}),
     dataJson: embeddedData(t, { page: 'index.html', devicePages: [], scene: tier === 'canvas' ? scene : undefined }),
     assets: { mode: 'inline', runtime: getRuntimeSource() },
     about: { layout: archetypeLabel(scene.archetype), renderer: rendererLabel(tier) },

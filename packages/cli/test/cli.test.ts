@@ -111,3 +111,26 @@ describe('schema export', () => {
     expect(device.required).not.toContain('hero');
   });
 });
+
+describe('marrow icons CLI commands', () => {
+  test('multi-query search returns dictionary with matches and empty arrays for misses', () => {
+    const res = run(['icons', 'search', 'switch', 'firewall', 'totallyunknowndevicexyz', '--json']);
+    expect(res.status).toBe(0);
+    const parsed = JSON.parse(res.stdout);
+    expect(parsed).toHaveProperty('switch');
+    expect(parsed).toHaveProperty('firewall');
+    expect(parsed).toHaveProperty('totallyunknowndevicexyz');
+    expect(Array.isArray(parsed.switch)).toBe(true);
+    expect(parsed.switch.length).toBeGreaterThan(0);
+    expect(parsed.totallyunknowndevicexyz).toEqual([]);
+  });
+
+  test('single-query search returns array for backward compatibility', () => {
+    const res = run(['icons', 'search', 'firewall', '--json']);
+    expect(res.status).toBe(0);
+    const parsed = JSON.parse(res.stdout);
+    expect(Array.isArray(parsed)).toBe(true);
+    expect(parsed.length).toBeGreaterThan(0);
+  });
+});
+

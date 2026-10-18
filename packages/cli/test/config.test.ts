@@ -91,6 +91,76 @@ describe('parseConfig', () => {
     expect(parseConfig('brand:\n  name: [unclosed', dir).problems.length).toBeGreaterThan(0);
     expect(parseConfig('- just\n- a list', dir).problems.join()).toContain('mapping');
   });
+
+  test('parses theme overrides for dark, light and links', () => {
+    const yaml = `
+theme:
+  dark:
+    bg: "#101216"
+    panel: "#1b1e24"
+    accent_hover: "#38bdf8"
+    up: "#4ade80"
+  light:
+    bg: "#ffffff"
+    accent: "#0284c7"
+  links:
+    default_stroke: 2
+    ten_g_stroke: 3.5
+`;
+    const { theme, problems } = parseConfig(yaml, dir);
+    expect(problems).toEqual([]);
+    expect(theme?.dark?.bg).toBe('#101216');
+    expect(theme?.dark?.panel).toBe('#1b1e24');
+    expect(theme?.dark?.accentHover).toBe('#38bdf8');
+    expect(theme?.dark?.up).toBe('#4ade80');
+    expect(theme?.light?.bg).toBe('#ffffff');
+    expect(theme?.light?.accent).toBe('#0284c7');
+    expect(theme?.links?.defaultStrokeWidth).toBe(2);
+    expect(theme?.links?.tenGStrokeWidth).toBe(3.5);
+  });
+
+  test('validates theme colors against CSS injection and stroke widths', () => {
+    const yaml = `
+theme:
+  dark:
+    bg: "red; } evil { display: none; }"
+    panel: "#222"
+  links:
+    default_stroke: -4
+    trunk_stroke: "not-a-number"
+`;
+    const { theme, problems } = parseConfig(yaml, dir);
+    expect(theme?.dark?.panel).toBe('#222');
+    expect(theme?.dark?.bg).toBeUndefined();
+    expect(theme?.links?.defaultStrokeWidth).toBeUndefined();
+    expect(problems.some((p) => p.includes('theme.dark.bg: invalid color'))).toBe(true);
+    expect(problems.some((p) => p.includes('theme.links.default_stroke: must be a positive number'))).toBe(true);
+  });
+
+  test('parses layout density and scale from config', () => {
+    const yaml = `
+layout:
+  density: compact
+  scale: 1.2
+`;
+    const { layout, problems } = parseConfig(yaml, dir);
+    expect(problems).toEqual([]);
+    expect(layout?.density).toBe('compact');
+    expect(layout?.scale).toBe(1.2);
+  });
+
+  test('warns on invalid layout density or out-of-range scale', () => {
+    const yaml = `
+layout:
+  density: ultra-wide
+  scale: 50
+`;
+    const { layout, problems } = parseConfig(yaml, dir);
+    expect(layout?.density).toBeUndefined();
+    expect(layout?.scale).toBeUndefined();
+    expect(problems.some((p) => p.includes('layout.density'))).toBe(true);
+    expect(problems.some((p) => p.includes('layout.scale'))).toBe(true);
+  });
 });
 
 describe('loadConfig', () => {

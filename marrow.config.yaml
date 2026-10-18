@@ -28,3 +28,12 @@ brand:
   # still render fully offline and nothing is fetched unless someone clicks.
   # link: https://your-company.example.com     # the logo + name link here
   github: https://github.com/raiz-toff/Marrow  # small source mark beside the brand
+
+theme:
+  dark:
+    accent: "#f43f5e"        # Electric violet (active buttons, selection ring, search highlight)
+    up: "#10b981"            # Emerald green status LEDs
+  links:
+    default_stroke: 3.5      # Bold 3.5px links across the entire topology (default is 1.5px)
+    ten_g_stroke: 5.0        # Heavy 5px for high-speed lines
+

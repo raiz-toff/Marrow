@@ -1,6 +1,16 @@
 marrow: 2
 name: Feature Showcase
 description: Status rings · tags · badges · callouts · zone notes · anchored annotations
+density: spacious
+scale: 1.15
+author: NetOps Architecture Team
+revision: v2.4
+date: "2026-10-18"
+title_block:
+  title: Enterprise Edge & Core Fabric
+  author: NetOps Architecture Team
+  revision: v2.4
+  date: "2026-10-18"
 zones:
   - id: production
     name: Production
@@ -22,6 +32,18 @@ devices:
       Failover pair with EDGE_FW_2.
       Purpose: Perimeter security + NAT
       Location: DC-1 / Rack A1
+    custom_fields:
+      Serial Number: "FOC21345678"
+      Rack Location: "DC-1 / Rack A1"
+      Firmware: "ASA 9.18(3)"
+      Failover Mode: "Active / Standby"
+    sections:
+      Firewall Policies: |
+        | Rule | Protocol | Port | Action | Direction |
+        | 10   | TCP      | 443  | Allow  | Inbound   |
+        | 20   | TCP      | 80   | Allow  | Inbound   |
+        | 30   | UDP      | 53   | Allow  | Outbound  |
+        | 99   | IP       | Any  | Deny   | Inbound   |
     x-v1-tags:
       - 203.0.113.1
       - asa-9.18
@@ -38,6 +60,20 @@ devices:
     zone: production
     role: core
     status: up
+    custom_fields:
+      Serial Number: "FOC98765432"
+      BGP ASN: 65001
+      Software: "IOS-XE 17.9.4a"
+    sections:
+      BGP Neighbors:
+        - Peer: "10.0.0.3"
+          AS: 65001
+          Uptime: "45d 12h"
+          State: "Established"
+        - Peer: "203.0.113.1"
+          AS: 65000
+          Uptime: "128d 4h"
+          State: "Established"
     x-v1-tags:
       - 10.0.0.2
       - hsrp-active
@@ -106,6 +142,12 @@ links:
   - from: edge-fw:Te0/0
     to: core-a:Te1/1/1
     kind: fiber
+    speed: 10G
+    custom_fields:
+      Transceiver: "10GBASE-LR"
+      Serial: "SFP-990812"
+    sections:
+      Optical Power: "Tx: -2.1 dBm · Rx: -3.4 dBm (Normal)"
   - from: edge-fw:Te0/1
     to: core-b:Te1/1/1
     kind: fiber

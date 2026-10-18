@@ -38,6 +38,12 @@ export class IconCatalog {
     return this.byId.has(id);
   }
 
+  hasSvg(id: string): boolean {
+    const entry = this.byId.get(id);
+    if (!entry) return false;
+    return existsSync(join(entry.packDir, entry.file));
+  }
+
   get(id: string): CatalogEntry | undefined {
     return this.byId.get(id);
   }

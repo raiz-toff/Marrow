@@ -1,5 +1,6 @@
 import type { Brand } from './brand.js';
-import { SITE_CSS } from './styles.js';
+import { buildStylesheet, SITE_CSS } from './styles.js';
+import type { ThemeConfig } from './tokens.js';
 
 /** Breadcrumb segment; no href = current page. */
 export interface Crumb {
@@ -39,6 +40,11 @@ export interface ShellOptions {
   navLinks?: NavLink[];
   /** About block content: layout preset + renderer tier */
   about?: { layout?: string; renderer?: string };
+  /** Global theme and design token overrides. */
+  themeConfig?: ThemeConfig;
+  /** Embed / kiosk modularity: 'minimal' hides topbar & dock, 'full' preserves all chrome. */
+  chrome?: 'full' | 'minimal';
+  embed?: boolean;
 }
 
 /** One icon language for all chrome: Lucide geometry — a 24-unit grid,
@@ -101,7 +107,7 @@ const NAV_ICON: Record<string, string> = {
 export function renderShell(o: ShellOptions): string {
   const css =
     o.assets.mode === 'inline'
-      ? `<style>${SITE_CSS}</style>`
+      ? `<style>${o.themeConfig ? buildStylesheet(o.themeConfig) : SITE_CSS}</style>`
       : `<link rel="stylesheet" href="${o.rootPrefix}assets/styles.css">`;
   const scripts =
     o.assets.mode === 'inline'
@@ -139,18 +145,21 @@ export function renderShell(o: ShellOptions): string {
   const auto = o.theme === 'auto';
   const themeAttr = auto ? 'dark' : esc(o.theme);
   const modeAttr = auto ? ' data-theme-mode="auto"' : '';
-  const themeScript = auto
-    ? `<script>try{var r=document.documentElement,s=null;try{s=localStorage.getItem('marrow-theme')}catch(e){}if(s!=='dark'&&s!=='light')r.dataset.theme=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'}catch(e){}</script>`
-    : '';
+  const isMinimal = o.chrome === 'minimal' || o.embed === true;
+  const chromeAttr = isMinimal ? ' data-chrome="minimal"' : '';
+
+  // Modular pre-boot script: resolves URL query and hash parameters (#embed=true, ?chrome=minimal, ?inspector=off, ?minimap=off, ?theme=light)
+  const headScript = `<script>try{var r=document.documentElement,q=new URLSearchParams(location.search),h=location.hash.slice(1),hp=new URLSearchParams(h.indexOf(';')>=0?h.replace(/;/g,'&'):h),g=function(k){return q.get(k)||hp.get(k)};if(g('embed')==='true'||g('embed')==='1'||g('chrome')==='minimal')r.dataset.chrome='minimal';if(g('inspector')==='off'||g('inspector')==='false')r.dataset.inspector='off';if(g('minimap')==='off'||g('minimap')==='false')r.dataset.minimap='off';var t=g('theme');if(t==='light'||t==='dark')r.dataset.theme=t;else if(${auto}){var s=null;try{s=localStorage.getItem('marrow-theme')}catch(e){}if(s!=='dark'&&s!=='light')r.dataset.theme=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'}}catch(e){}</script>`;
 
   return `<!DOCTYPE html>
-<html lang="en" data-theme="${themeAttr}"${modeAttr} data-root="${esc(o.rootPrefix)}" data-page="${esc(o.page)}">
+<html lang="en" data-theme="${themeAttr}"${modeAttr}${chromeAttr} data-root="${esc(o.rootPrefix)}" data-page="${esc(o.page)}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="generator" content="marrow-v2">
 <title>${esc(o.title)} — Marrow</title>
-${auto ? themeScript + '\n' : ''}${css}
+${headScript}
+${css}
 </head>
 <body${o.stage ? '' : ' class="m-doc-body"'}>
 ${backdrop}

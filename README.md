@@ -31,9 +31,8 @@ Marrow is different on two axes:
   anywhere. No account required to *view* it — unlike hosted tools that trap the
   interactive version behind their platform.
 
-You can author the YAML **by hand**, or drive the whole loop from an AI coding
-agent (Marrow ships a [Claude Code](https://claude.com/claude-code) skill — see
-[AGENTS.md](AGENTS.md)).
+You can author the YAML directly, or drive the compile loop via an AI coding
+agent (see [AGENTS.md](AGENTS.md)).
 
 ## Quick start
 
@@ -45,11 +44,9 @@ cd Marrow
 npm run setup
 ```
 
-`npm run setup` installs dependencies, compiles the toolchain, optionally
-downloads the aws/azure/gcp icon packs, and then offers to **make it yours** —
-your organization's name and footer note, a default theme and accent color, and
-a drop-in icon pack for your own logos. It finishes by building a sample diagram
-so you know the whole pipeline works. It's safe to re-run after every `git pull`.
+`npm run setup` installs dependencies, compiles the toolchain, and optionally
+fetches the vendor icon packs (`aws`, `azure`, `gcp`). It verifies the pipeline
+by compiling a sample diagram to `output/`.
 
 Then:
 

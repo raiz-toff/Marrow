@@ -128,7 +128,19 @@ export function overviewTopology(t: Topology, plan: SitePlan, zi: ZoneIndex): Pa
       return link;
     });
 
-  return { topology: { version: 2, name: t.name, theme: t.theme, zones: [], devices, links }, nodeMeta };
+  return {
+    topology: {
+      version: 2,
+      name: t.name,
+      theme: t.theme,
+      ...(t.density ? { density: t.density } : {}),
+      ...(t.scale !== undefined ? { scale: t.scale } : {}),
+      zones: [],
+      devices,
+      links,
+    },
+    nodeMeta,
+  };
 }
 
 /** A zone page: the zone's subtree + ghost "door" stubs grouped by neighbor zone. */
@@ -189,7 +201,16 @@ export function zoneTopology(t: Topology, zoneId: string, plan: SitePlan, zi: Zo
   ];
 
   return {
-    topology: { version: 2, name: t.name, theme: t.theme, zones, devices: [...inside, ...ghosts], links },
+    topology: {
+      version: 2,
+      name: t.name,
+      theme: t.theme,
+      ...(t.density ? { density: t.density } : {}),
+      ...(t.scale !== undefined ? { scale: t.scale } : {}),
+      zones,
+      devices: [...inside, ...ghosts],
+      links,
+    },
     nodeMeta,
   };
 }
@@ -226,7 +247,16 @@ export function deviceTopology(t: Topology, deviceId: string, plan: SitePlan, zi
   const hero: Device = { ...device, zone: undefined as never, hero: true };
   delete (hero as { zone?: string }).zone;
   return {
-    topology: { version: 2, name: t.name, theme: t.theme, zones: [], devices: [hero, ...neighbors], links },
+    topology: {
+      version: 2,
+      name: t.name,
+      theme: t.theme,
+      ...(t.density ? { density: t.density } : {}),
+      ...(t.scale !== undefined ? { scale: t.scale } : {}),
+      zones: [],
+      devices: [hero, ...neighbors],
+      links,
+    },
     nodeMeta,
   };
 }

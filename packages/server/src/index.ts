@@ -9,6 +9,7 @@ import {
   createSiteBuilder,
   planSite,
   type Brand,
+  type ThemeConfig,
   type BuildResult,
   type SiteBuilder,
   type SiteCache,
@@ -39,6 +40,16 @@ export interface ServeOptions {
   host?: string;
   /** Global branding from brand/brand.html, applied to every previewed page. */
   brand?: Brand;
+  themeConfig?: ThemeConfig;
+  /** Optional config file to watch for real-time brand & theme reloading. */
+  configFile?: string;
+  layout?: { density?: 'compact' | 'standard' | 'spacious'; scale?: number };
+  /** Dynamic loader called on config file changes to reload brand & theme without server restarts. */
+  configLoader?: () => {
+    brand?: Brand;
+    themeConfig?: ThemeConfig;
+    layout?: { density?: 'compact' | 'standard' | 'spacious'; scale?: number };
+  };
 }
 
 export interface RunningServer {
@@ -57,6 +68,9 @@ interface State {
   diagnostics: Diagnostic[];
   valid: boolean;
   mode: 'single' | 'site';
+  brand?: Brand;
+  themeConfig?: ThemeConfig;
+  layout?: { density?: 'compact' | 'standard' | 'spacious'; scale?: number };
   /** single mode */
   build?: BuildResult;
   lastGoodHtml?: string;
@@ -86,6 +100,9 @@ export async function serve(options: ServeOptions): Promise<RunningServer> {
     diagnostics: [],
     valid: false,
     mode: 'single',
+    brand: options.brand,
+    themeConfig: options.themeConfig,
+    layout: options.layout,
     cache: new Map(),
     lastChanged: 0,
     lastRebuildMs: 0,
@@ -112,6 +129,12 @@ export async function serve(options: ServeOptions): Promise<RunningServer> {
   const rebuild = (): Promise<void> =>
     enqueue(async () => {
       const started = performance.now();
+      if (options.configLoader) {
+        const dynamicCfg = options.configLoader();
+        state.brand = dynamicCfg.brand;
+        state.themeConfig = dynamicCfg.themeConfig;
+        state.layout = dynamicCfg.layout;
+      }
       let source: string;
       try {
         source = readFileSync(state.current, 'utf8');
@@ -135,13 +158,21 @@ export async function serve(options: ServeOptions): Promise<RunningServer> {
         return;
       }
 
+      if (state.layout?.density && !result.topology.density) {
+        result.topology.density = state.layout.density;
+      }
+      if (state.layout?.scale !== undefined && result.topology.scale === undefined) {
+        result.topology.scale = state.layout.scale;
+      }
+
       const prevShape = state.mode === 'site' ? state.builder?.shapeHash : 'single';
       const plan = planSite(result.topology);
       try {
         if (plan.mode === 'single') {
           const built = await buildSingleFile(result.topology, {
             icons: options.icons,
-            ...(options.brand !== undefined ? { brand: options.brand } : {}),
+            ...(state.brand !== undefined ? { brand: state.brand } : {}),
+            ...(state.themeConfig !== undefined ? { themeConfig: state.themeConfig } : {}),
           });
           state.mode = 'single';
           state.build = built;
@@ -151,7 +182,11 @@ export async function serve(options: ServeOptions): Promise<RunningServer> {
         } else {
           const builder = createSiteBuilder(
             result.topology,
-            { icons: options.icons, ...(options.brand !== undefined ? { brand: options.brand } : {}) },
+            {
+              icons: options.icons,
+              ...(state.brand !== undefined ? { brand: state.brand } : {}),
+              ...(state.themeConfig !== undefined ? { themeConfig: state.themeConfig } : {}),
+            },
             state.cache,
           );
           const changed = builder.changedPages();
@@ -196,6 +231,24 @@ export async function serve(options: ServeOptions): Promise<RunningServer> {
       }, 90),
     );
   });
+
+  let configWatcher: FSWatcher | undefined;
+  if (options.configFile) {
+    const configPath = resolve(options.configFile);
+    if (existsSync(configPath)) {
+      configWatcher = watch(configPath, () => {
+        clearTimeout(timers.get(configPath));
+        timers.set(
+          configPath,
+          setTimeout(() => {
+            timers.delete(configPath);
+            state.cache.clear();
+            void rebuild();
+          }, 90),
+        );
+      });
+    }
+  }
 
   const server: Server = createServer((req, res) => {
     void (async () => {
@@ -359,6 +412,7 @@ export async function serve(options: ServeOptions): Promise<RunningServer> {
     mode: () => state.mode,
     close: async () => {
       watcher.close();
+      configWatcher?.close();
       for (const res of sseClients) res.end();
       sseClients.clear();
       await new Promise<void>((r) => server.close(() => r()));

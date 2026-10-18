@@ -232,7 +232,7 @@ if (skipBrand) {
   );
 
   if (await confirm('Set up your branding now?', true)) {
-    brand.org = await ask('Organization / brand name (shown along the top):', 'Acme Networks');
+    brand.org = await ask('Organization / brand name (shown along the top):', 'Marrow');
     brand.note = await ask('Footer note (shown along the bottom):', 'Proprietary & Confidential');
 
     const theme = (await ask('Default theme — dark or light:', 'dark')).toLowerCase();
@@ -287,7 +287,7 @@ if (skipBrand) {
         const v = await ask(question, '');
         if (!v) return '';
         if (/^https?:\/\/\S+$/i.test(v)) return v;
-        warn('Needs to be a full http(s) URL, e.g. https://acme.com');
+        warn('Needs to be a full http(s) URL, e.g. https://marrow.network');
       }
     };
     const siteUrl = await askUrl('Company website the logo links to (optional):');

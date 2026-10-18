@@ -13,6 +13,8 @@ import { rectsOverlap, type Rect, type SceneEdge, type SceneNode, type ScenePort
  * chip width comes from the same per-char estimate the renderers use.
  */
 
+import type { LayoutMetrics } from './metrics.js';
+
 /** Chip geometry — must match .m-portlabel CSS and the canvas port pass. */
 export const PORT_CHIP_H = 16;
 export const PORT_CHIP_CHAR = 5.6; // 9px ui-monospace advance estimate
@@ -21,8 +23,8 @@ const BASE_D = 26; // preferred distance from the attachment point
 const STEP = 10; // walk increment while colliding
 const MIN_D = 12; // closer than this reads as part of the node
 
-export function chipWidth(label: string): number {
-  return [...label].length * PORT_CHIP_CHAR + PORT_CHIP_PAD;
+export function chipWidth(label: string, charAdvance = PORT_CHIP_CHAR, pad = PORT_CHIP_PAD): number {
+  return [...label].length * charAdvance + pad;
 }
 
 interface Want {
@@ -35,7 +37,15 @@ interface Want {
   group: string;
 }
 
-export function placePortChips(nodes: readonly SceneNode[], edges: readonly SceneEdge[]): ScenePortChip[] {
+export function placePortChips(
+  nodes: readonly SceneNode[],
+  edges: readonly SceneEdge[],
+  metrics?: LayoutMetrics,
+): ScenePortChip[] {
+  const charAdvance = metrics?.portChipChar ?? PORT_CHIP_CHAR;
+  const chipPad = metrics?.portChipPad ?? PORT_CHIP_PAD;
+  const chipH = metrics?.portChipH ?? PORT_CHIP_H;
+
   const wants: Want[] = [];
   for (const e of edges) {
     if (e.points.length < 2) continue;
@@ -53,8 +63,8 @@ export function placePortChips(nodes: readonly SceneNode[], edges: readonly Scen
   const dropped = new Map<string, { node: string; pts: Vec[]; count: number }>();
 
   for (const want of wants) {
-    const w = chipWidth(want.label);
-    const box = findSpot(want.pts, w, obstacles);
+    const w = chipWidth(want.label, charAdvance, chipPad);
+    const box = findSpot(want.pts, w, obstacles, chipH);
     if (box === undefined) {
       const d = dropped.get(want.group) ?? { node: want.node, pts: want.pts, count: 0 };
       d.count++;
@@ -69,7 +79,7 @@ export function placePortChips(nodes: readonly SceneNode[], edges: readonly Scen
   // one "+N" per crowded node side, competing for space like any other chip
   for (const [, d] of [...dropped.entries()].sort(([a], [b]) => (a < b ? -1 : 1))) {
     const label = `+${d.count}`;
-    const box = findSpot(d.pts, chipWidth(label), obstacles);
+    const box = findSpot(d.pts, chipWidth(label, charAdvance, chipPad), obstacles, chipH);
     if (box === undefined) continue; // genuinely no room — inspector still has it
     obstacles.push(box);
     placed.push({ box, label, node: d.node, summary: true });
@@ -79,12 +89,12 @@ export function placePortChips(nodes: readonly SceneNode[], edges: readonly Scen
 
 /** Walk outward along the polyline until the chip clears every obstacle.
  *  Never passes the midpoint — beyond it the chip would annotate the far end. */
-function findSpot(pts: Vec[], w: number, obstacles: readonly Rect[]): Rect | undefined {
+function findSpot(pts: Vec[], w: number, obstacles: readonly Rect[], chipH = PORT_CHIP_H): Rect | undefined {
   const maxD = polyLength(pts) / 2;
   if (maxD < MIN_D) return undefined;
   for (let d = Math.min(BASE_D, maxD); d <= maxD; d += STEP) {
     const p = pointAlong(pts, d);
-    const box: Rect = { x: p.x - w / 2, y: p.y - PORT_CHIP_H / 2, w, h: PORT_CHIP_H };
+    const box: Rect = { x: p.x - w / 2, y: p.y - chipH / 2, w, h: chipH };
     if (!obstacles.some((o) => rectsOverlap(box, o))) return box;
   }
   return undefined;

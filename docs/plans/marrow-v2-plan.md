@@ -13,15 +13,16 @@ final judged merge. Sources and raw research are preserved separately.
 
 ## 1. What we are building
 
-An agent tool that turns a YAML description of a network into a **folder** —
-a small, beautiful, self-contained website for that one network. The user
-double-clicks `index.html` and gets a stunning interactive diagram that works
-with zero internet, zero installs. Small networks get one gorgeous page. Big
-networks get an interlinked site — overview, zone pages, device pages,
-inventory, search — that can grow to 100+ pages without falling apart.
+An agent tool that compiles a declarative network topology YAML description into
+a self-contained, offline HTML network diagram. The user opens `index.html`
+directly in any browser with zero network access and zero local runtime installs.
+Small topologies compile to a single self-contained HTML file. Larger topologies
+compile to an interlinked static site comprising overview, zone-specific, and
+device-specific pages, inventory tables, and pre-indexed search.
 
-The agent is the only author. No GUI editor. The agent writes YAML, the
-compiler does everything else, and the agent can *see* the result and fix it.
+The agent is the sole author. There is no GUI editor. The agent writes YAML,
+the compiler handles layout and asset generation, and the agent inspects the
+rendered output via headless snapshot to verify correctness.
 
 ```
  user describes            agent writes           compiler builds         user opens
@@ -32,35 +33,35 @@ compiler does everything else, and the agent can *see* the result and fix it.
 
 ---
 
-## 2. Why v1 cannot be patched (the 60-second autopsy)
+## 2. Why v1 cannot be patched: technical debt and failure modes
 
-The research agent read every layout engine in v1. The headline findings:
+An analysis of all five layout engines in v1 revealed critical architectural limitations:
 
-- **Four of the five layout engines are broken by design.** One literally
-  overlaps nodes on purpose ("overlap slightly for density") and is *exempted*
-  from the overlap-fixer. Another places nothing at all if the network doesn't
-  have a specific shape, and silently borrows coordinates from a different
-  engine. Magic numbers everywhere; nothing accounts for label width.
-- **Edges are drawn blind.** Lines are drawn straight through nodes because
-  routing happens in the browser with zero awareness of what's in the way.
-- **The same YAML can produce different diagrams on different machines**
-  (layout depends on whether Node.js happens to be installed).
-- **We pay for a 682 KB graph library and then bypass it.** vis-network is
-  used only for pan/zoom; every visible line is hand-drawn on top of it.
-- **A 2,067-line JavaScript blob lives inside an HTML template** — untestable,
-  unlintable.
-- **"Offline" isn't.** The output secretly loads fonts from Google's servers.
-- **Icons are embedded once per node**, so ten identical switches embed the
-  same image ten times (~1 MB HTML for a 30-node network).
+- **Four of the five layout engines have fundamental design flaws.** One engine
+  intentionally overlaps nodes for density and is exempt from overlap validation.
+  Another fails to place nodes when networks deviate from expected shapes, silently
+  falling back to coordinates from an unrelated engine. Layout coordinates rely on
+  arbitrary constants without accounting for rendered text label widths.
+- **Edge routing lacks obstacle avoidance.** Lines cross directly through intermediate
+  nodes because routing executes client-side in the browser without bounding-box awareness.
+- **Non-deterministic layout across environments.** Output varies depending on whether
+  Node.js is locally present in the environment.
+- **Underutilized graph library overhead:** vis-network introduces 682 KB of bundle
+  size while serving only pan/zoom interaction; all visible lines are hand-rendered over it.
+- **Monolithic embedded runtime:** A 2,067-line JavaScript block is embedded directly
+  within an HTML template, preventing unit testing and static linting.
+- **External font leak:** The v1 output attempts to load external web fonts from Google
+  Fonts, breaking air-gapped and strict offline requirements.
+- **Redundant icon inlining:** Icons are inlined separately for every node instance.
+  Ten identical switches duplicate the SVG payload ten times (~1 MB HTML payload for
+  a 30-node network).
 
-What v1 got *right* (concepts we keep, code we don't): the agent-first loop
-(validate → live preview → build), hint-rich machine-readable validation
-errors, determinism discipline, the cable/role vocabulary catalog, semantic
-zoom ambitions, and the single shareable HTML artifact.
+Concepts retained from v1: the agent-first feedback loop (validate → preview → snapshot → build),
+structured diagnostic error hints, deterministic build discipline, cable/role vocabulary
+registries, semantic zoom capabilities, and self-contained HTML output artifacts.
 
-**Lesson #1 of the rewrite: one great layout pipeline beats five half-built
-ones, and quality must be *measured* (a build fails if anything overlaps),
-not promised.**
+**Core design principle for v2: A single validated layout pipeline replaces multiple
+partial engines, enforced by automated geometric quality gates (build fails on node overlaps).**
 
 ---
 
@@ -94,18 +95,19 @@ compiler, it is not part of it.
 
 ### Decision 2 — Layout is computed at build time, never in the browser
 
-The diagram's positions and every edge's path are calculated once, by the
-compiler, and baked into the HTML as data. The browser only *draws*.
+Diagram node positions and edge routes are computed once by the compiler at build
+time and embedded into the HTML document as static scene data. The browser runtime
+serves solely as a renderer.
 
-Why this matters:
-- The diagram opens instantly and identically every time — no physics
-  wobble/settling animation (v1's most amateur-looking trait).
-- Same YAML in → pixel-identical diagram out, on any machine. This is
-  enforced by an automated check that builds twice and compares bytes.
-- The layout engines can be as big and slow as we like — they never ship to
-  the user.
+Advantages of build-time layout:
+- Instant and deterministic initial paint without runtime force-directed physics
+  settling movements.
+- Identical rendering across environments: identical input YAML generates byte-identical
+  diagram data across all host operating systems, verified by automated double-build tests.
+- Zero client bundle bloat: layout compilation engines (ELK, libavoid) execute headlessly
+  during compilation and are excluded from client payloads.
 
-### Decision 3 — One layout pipeline: ELK places, libavoid routes, we polish
+### Decision 3 — Unified layout pipeline: ELK placement, libavoid routing, post-process refinement
 
 ```
         ┌────────────┐   ┌────────────┐   ┌────────────┐   ┌────────────┐
@@ -117,71 +119,65 @@ YAML ─► │  classify  │─► │   place    │─► │   route    │
         └────────────┘   └────────────┘   └────────────┘   └────────────┘
 ```
 
-- **ELK (Eclipse Layout Kernel)** — the only mature open engine with all
-  three things network diagrams need: layered hierarchy (core / distribution
-  / access as real layers), **per-port connection points** (uplinks leave the
-  top of a switch, downlinks the bottom), and orthogonal (right-angled) edge
-  routing. Actively maintained, license-safe. It runs headless at build time.
-- **libavoid** — a dedicated industrial edge router (same engine family
-  Inkscape uses). After placement, it routes every edge *around* obstacles
-  with proper lane spacing. It's LGPL, which is fine because it runs only at
-  build time — nothing of it ships in the output.
-- **Graphviz (WASM)** — a secondary placer used only for special shapes:
-  radial hub-and-spoke and organic meshes, where layered layout looks wrong.
-- **Shape presets** — the classifier picks a preset per page:
-  three-tier hierarchy · zoned campus · hub-and-spoke · mesh · mixed.
-  Explicit YAML declarations (`tier:`, `ha_pair_with:`) always win over
-  guessing; v1's guess-from-device-names trick is banned.
-- **The geometry linter is the star.** After layout, an automated inspector
-  checks the actual pixels:
-  - **Level 1 (build fails):** any node/label overlap, any edge passing
-    through a node, any detached port.
-  - **Level 2 (auto-repair):** nudge labels, reroute a segment, then re-check.
-  - **Level 3 (warnings):** excessive crossings, awkward aspect ratio.
+- **ELK (Eclipse Layout Kernel)** — Provides hierarchical layered layout
+  (core, distribution, and access tiers), **per-port attachment coordinates**
+  (uplinks top, downlinks bottom), and orthogonal edge routing. Executes headless
+  at build time under safe open licenses.
+- **libavoid** — Dedicated geometric edge router. Routes edges around obstacles
+  with defined lane spacing. Executes headless at build time (LGPL compliant; no
+  library code is bundled into client output).
+- **Graphviz (WASM)** — Secondary layout engine utilized for specialized topologies
+  (radial hub-and-spoke and organic mesh configurations).
+- **Topology archetypes** — The topology classifier selects a layout preset per page:
+  hierarchical three-tier, zoned campus, hub-and-spoke, or mesh. Explicit YAML
+  declarations (`tier:`, `ha_pair_with:`, `zone:`) take precedence over heuristic
+  inference.
+- **Automated geometry linting:** Post-layout geometric inspection validates coordinates:
+  - **Level 1 (build failure):** Any node/label collision, edge crossing through a node body,
+    or unattached port.
+  - **Level 2 (automated correction):** Label displacement adjustments, edge segment rerouting.
+  - **Level 3 (advisory warnings):** Elevated edge-crossing counts, unbalanced canvas aspect ratios.
 
-  v1 *promised* no overlaps; v2 *refuses to ship* overlaps.
+  Zero-overlap invariant: Level-1 geometry errors halt the build.
 
-Research estimate worth remembering: ~60% of final layout quality comes from
-our own polish passes (grid snapping, symmetric ordering of twin devices,
-bundling parallel cables into buses, label placement) — the engines are the
-foundation, not the finish.
+Post-processing pipeline: Custom post-layout passes (grid alignment, symmetric paired-device
+positioning, parallel link bus routing, deterministic label placement) provide the final
+visual refinement beyond raw engine coordinates.
 
-### Decision 4 — Two renderers, chosen per page by scale
+### Decision 4 — Scale-dependent dual rendering pipeline (SVG / WebGL)
 
-There is no single drawing technology that is both gorgeous at 10 nodes and
-smooth at 1,000 — so the compiler picks per page, and the user never knows:
+No single browser rendering engine satisfies both maximum visual fidelity at low node
+counts and 60 FPS performance at 1,000 nodes. The compiler selects the rendering engine
+per page based on active element count:
 
 ```
- rendered elements on the page          renderer                  character
+ Rendered elements on page              Renderer                  Capabilities
  ──────────────────────────────         ────────────────────      ─────────────────────
- up to ~60                              SVG (vector graphics)     lush: glow, entrance
-                                                                  animation, animated
-                                                                  link flows, crisp at
-                                                                  any zoom
- ~60 – 250 (max ~600 edges)             same SVG renderer,        still beautiful,
-                                        effects gated by zoom     disciplined
- ~250 – 1,500                           WebGL (graphics card),    fast and smooth,
-                                        via Sigma.js              icons intact
- more than ~1,500                       never one page — the      overview + drill-down
-                                        site splits it up         pages (each lands back
-                                                                  in a pretty tier)
+ up to ~60                              SVG (vector graphics)     Node glow, tier cascade
+                                                                  animations, animated link
+                                                                  flows, infinite resolution
+ ~60 – 250 (max ~600 edges)             SVG renderer              Level-of-detail gating on
+                                                                  complex visual effects
+ ~250 – 1,500                           WebGL (via Sigma.js)      Hardware-accelerated
+                                                                  rendering, intact icons
+ more than ~1,500                       Multi-page site split     Partitioned into overview
+                                                                  and drill-down sub-pages
 ```
 
-Three details that make this work:
+Architectural invariants:
 
-- The decision counts **what's actually drawn** (after clusters collapse),
-  not raw device count — a 500-device network whose access switches collapse
-  into stacks may render as 80 elements and get the gorgeous SVG treatment.
-- Both renderers read the **same scene data** and share the **same controls**
-  (search, inspector, minimap, themes, keyboard) — only the drawing code
-  differs. Zone drill-down pages of a huge network still get the lush tier.
-- The thresholds are single config constants guarded by automated
-  frame-rate tests — if real hardware sustains more, we raise them in one
-  commit.
+- Threshold evaluation is based on **active rendered elements** (post cluster-collapse)
+  rather than raw device count. A 500-device network whose access switches collapse into
+  stack nodes renders as ~80 visual elements, qualifying for SVG vector rendering.
+- Both renderers consume the **identical scene data format** and share the **identical
+  UI controls** (search, inspector panel, minimap, themes, keyboard shortcuts). Only the
+  underlying drawing implementation differs. Zone drill-down pages in large networks retain
+  the SVG vector pipeline.
+- Threshold limits are defined via configuration constants guarded by automated
+  frame-rate regression tests.
 
-Rejected alternatives, for the record: vis-network (feature-frozen, the
-source of v1's look), one-library-for-everything G6 (400 KB in every file,
-capped polish exactly where we differentiate), tldraw (watermark/license),
+Rejected alternatives: vis-network (deprecated, unmaintained), G6 (400 KB runtime footprint,
+limited layout customization), tldraw (commercial licensing restrictions).
 paid libraries (can't redistribute freely).
 
 ### Decision 5 — The output is a folder: a mini-website per diagram
@@ -237,10 +233,10 @@ output/acme-hq/
   disagreed).
 - **Meaning is declared, never guessed:** `tier:`, `ha_pair_with:`, `lag:`,
   `link.ports:` are schema fields. Inference can *suggest*, never decide.
-- **Presentation is part of the schema** — because wow must be authorable:
-  `hero:` (what the camera features), `animated:` on links, `style.accent`,
-  `collapse: auto|open|closed` on groups, `note:`/`config:` payloads that
-  become device-page content.
+- **Visual styling and camera control declared in schema:**
+  `hero:` (camera focus target), `animated:` (link traffic flow indicator), `style.accent`,
+  `collapse: auto|open|closed` on groups, `note:`/`config:` payloads rendered
+  into device inspector and sub-pages.
 - A JSON Schema artifact is generated from the same source and embedded in
   the agent's authoring skill — schema docs can never drift from the code.
 
@@ -291,8 +287,8 @@ touching anything else.
 │  site           page planner (what pages exist), site compiler,   │
 │                 search-index builder, single-file exporter        │
 ├────────────────────────────────────────────────────────────────────┤
-│  render-svg     the "lush" renderer (small/medium pages)          │
-│  render-gl      the "fast" renderer (large pages, Sigma.js)       │
+│  render-svg     SVG vector renderer (small/medium pages)          │
+│  render-gl      WebGL renderer (large pages, Sigma.js)            │
 │  runtime-core   shared: camera, ⌘K search, inspector panel,       │
 │                 minimap, themes, keyboard nav, deep links         │
 │                 (UI chrome built as Preact components — a 4 KB    │
@@ -327,47 +323,45 @@ look like one family.
 
 ---
 
-## 5. The experience spec (the wow, made concrete)
+## 5. Visual experience and interaction specification
 
-**Opening a diagram (first 1.5 seconds):** background and frame paint
-instantly (<100 ms) → camera starts slightly wide and settles into a
-perfectly framed fit → zones fade in → nodes cascade in by tier (core first,
-then distribution, then access, ~30 ms stagger) → edges draw themselves in.
-All cosmetic — positions are final from the first frame; nothing shifts.
-Honors reduced-motion settings; skippable with a click.
+**Initial load sequence (<1.5 s):** Background and container frame paint
+instantly (<100 ms) → camera settles into bounded viewport fit → zones fade in →
+nodes cascade by tier (core first, distribution second, access third, ~30 ms stagger) →
+edges render. Geometry is computed prior to render; node coordinates do not shift during
+load. Honors user `prefers-reduced-motion` settings and is skippable via click.
 
-**Semantic zoom — each zoom level is designed, not just scaled:**
+**Semantic zoom — defined levels of detail:**
 
 ```
  zoomed out  ─────────────────────────────────────────────►  zoomed in
 
  SITE               ZONE                DEVICE              INTERFACE
- zone cards +       device icons +      full labels, IPs,   port-level
- counts + health;   names; links;      status badges,      attachment,
- fat bundled        VLAN colors        link speeds         cable IDs,
- trunks                                                    per-link notes
+ Zone bounding      Device icons,       Full labels, IPs,   Port-level
+ boxes, aggregate   names, primary      status badges,      attachment,
+ counts, bundled    inter-zone links,   link speeds         cable IDs,
+ trunks             VLAN colors                             per-link notes
 ```
 
-Labels fade in/out over zoom ranges (never pop). Edge bundles split into
-member links as you cross a threshold.
+Labels transition opacity across zoom thresholds without abrupt pop-in. Edge
+bundles resolve into individual member links across defined zoom scales.
 
-**Interacting:**
-- Hover a device → its neighborhood lights up, everything else dims.
-- Click → right-side inspector panel: identity header, tabs for interfaces /
-  VLANs / config / notes, neighbor links. "Open full page →" for the
+**Interaction model:**
+- Hover device: highlights immediate 1-hop topology neighborhood and dims unlinked nodes.
+- Click node: opens inspector side panel displaying device attributes, interface
+  tables, VLAN associations, configuration snippets, and operational notes, with link to
   device-360 page.
-- Ctrl/⌘-K → spotlight search; picking a result flies the camera there and
-  dims everything else.
-- Groups with 8+ leaf members pre-collapse into stack nodes ("×24" edges,
-  worst-status badge); click to expand in place.
-- Minimap appears automatically above ~30 nodes.
-- Every view state is a shareable `#deep-link` (camera + selection).
-- Full keyboard navigation; statuses always encoded as color *plus* shape.
+- Ctrl/⌘-K: executes spotlight search index; selecting a search hit moves camera viewport
+  to target element.
+- Automatic stack collapse: groups containing 8+ leaf devices collapse into stack summary
+  nodes with count badges; expandable on demand.
+- Minimap: renders automatically for topologies exceeding ~30 nodes.
+- URL hash fragments: camera viewport and selected node state persist in shareable deep links.
+- Keyboard navigation: fully accessible via keyboard; operational states encode color and geometric shape.
 
-**Themes:** dark "ops" theme by default (near-black blue canvas, dotted
-grid, translucent zone panels, glow on selection — the screenshot-worthy
-one) and a clean light "print/doc" theme with a real print stylesheet.
-Both are first-class; the viewer toggles freely.
+**Themes:** Dark "ops" theme by default (high-contrast dark canvas, dotted grid,
+translucent zone boundaries, selection glow) and light "print/doc" theme with dedicated
+CSS print styles. Both themes are built-in and switchable at runtime.
 
 **Dropped/deferred consciously:** isometric 3D-ish mode (later, it's a
 render-time transform), in-browser YAML editing (the agent is the editor),
@@ -391,8 +385,8 @@ Every one of these is a CI check that blocks a release, not a hope:
    unique payload per page; runtime ≤ 60 KB (SVG tier) / 120 KB (GL tier).
 7. **Speed budgets** — first paint < 100 ms; 500-node site fully rendered
    < 1.5 s; panning at 60 fps; save-to-repainted < 500 ms.
-8. **The wow gate** — the entrance animation itself is frame-time tested
-   (median frame < 18 ms). Polish as a tested invariant, not taste.
+8. **Animation performance gate** — entrance animations are benchmarked for
+   frame timing (median frame time < 18 ms, targeting 60 FPS).
 9. **The agent gate** — a scripted end-to-end eval: agent authors a topology
    from a text brief, hits injected errors, repairs them using only the
    diagnostics, and ships a linter-clean site. If an AI can't drive it
@@ -409,14 +403,14 @@ start until it passes.
 |---|---|---|
 | **P0 Contracts** | schema, validator, diagnostics, model, icon manifest | the scripted agent-repair eval passes on validation alone |
 | **P1 Geometry** | layout pipeline, router, linter, metrics, determinism | 40-fixture corpus: linter-clean, byte-identical double builds |
-| **P2 Hero renderer** | SVG renderer, runtime-core, themes, single-file export | a 30-node network is genuinely beautiful; wow gate + offline gate pass |
+| **P2 SVG vector renderer** | SVG renderer, runtime-core, themes, single-file export | 30-node network passes visual regression, animation frame-rate gate (<18 ms), and offline gate |
 | **P3 Agent loop** | dev server, live reload, `/api/*`, `marrow snapshot` | agent authors → sees → repairs a diagram end-to-end, unaided |
 | **P4 Scale** | WebGL renderer, collapse/clustering, page planner, multi-page site, search | a 500-node network ships as a readable, searchable site meeting all budgets |
 | **P5 Breadth** | hub-spoke/mesh presets, second icon pack, PNG/SVG export, print, accessibility pass, morph-reload polish, re-port discovery & Draw.io ingestors onto the new model | feature parity with v1's inputs, exceeding it everywhere else |
 
-The deliberate ordering bet: **the agent loop (P3) lands before scale (P4)**
-— a tool the agent can drive perfectly at 30 nodes is worth more than one
-that handles 1,000 nodes blind.
+Strategic ordering rationale: **the agent loop (P3) precedes large-scale graph handling (P4)**
+— ensuring an agent can reliably author, inspect, and self-heal topologies up to 30 nodes
+is prioritized before multi-page scale and WebGL rendering.
 
 ---
 

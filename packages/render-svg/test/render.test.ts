@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import type { Scene } from '@marrow/scene';
-import { extractSvg, renderScene } from '@marrow/render-svg';
+import { extractSvg, renderScene } from '../src/index.js';
 
 const scene: Scene = {
   size: { w: 400, h: 300 },
@@ -92,5 +92,21 @@ describe('extractSvg', () => {
   test('defaults missing viewBox; rejects non-svg', () => {
     expect(extractSvg('<svg><rect/></svg>')?.viewBox).toBe('0 0 100 100');
     expect(extractSvg('not svg at all')).toBeUndefined();
+  });
+
+  test('namespaces internal IDs, url references, and CSS classes when prefix is provided', () => {
+    const raw = `<svg viewBox="0 0 50 50">
+      <defs>
+        <linearGradient id="g1"><stop stop-color="#fff"/></linearGradient>
+      </defs>
+      <style>.cls-1 { fill: url(#g1); }</style>
+      <rect class="cls-1" fill="url(#g1)" id="r1"/>
+    </svg>`;
+    const out = extractSvg(raw, 'ic-test-icon');
+    expect(out?.inner).toContain('id="ic-test-icon-g1"');
+    expect(out?.inner).toContain('url(#ic-test-icon-g1)');
+    expect(out?.inner).toContain('.ic-test-icon-cls-1');
+    expect(out?.inner).toContain('class="ic-test-icon-cls-1"');
+    expect(out?.inner).toContain('id="ic-test-icon-r1"');
   });
 });

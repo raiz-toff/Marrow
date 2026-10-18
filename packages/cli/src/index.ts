@@ -5,8 +5,8 @@ import { basename, dirname, join } from 'node:path';
 import { parseArgs } from 'node:util';
 import { formatPretty, toJsonReport, type JsonReport } from '@marrow/diagnostics';
 import { topologyJsonSchema, validateSource } from '@marrow/schema';
-import { buildSingleFile, buildSite, planSite, type Brand } from '@marrow/site';
-import { loadConfig } from './config.js';
+import { buildSingleFile, buildSite, planSite, type Brand, type ThemeConfig } from '@marrow/site';
+import { loadConfig, type LayoutConfig } from './config.js';
 import { importV1 } from './import-v1.js';
 import { loadIconCatalog } from './packs.js';
 
@@ -21,15 +21,20 @@ usage:
   marrow icons search <query...> [--json] [--max <n>] [--packs <dir>]
   marrow icons packs [--packs <dir>]
   marrow icons fetch [pack...] [--yes] [--packs <dir>]
+  marrow icons index [pack] [--packs <dir>]
   marrow schema
 
 exit codes: 0 valid · 1 validation errors · 2 usage or I/O error`;
 
 /** Global settings from marrow.config.yaml; --config points elsewhere. */
-function globalBrand(explicit?: string): { brand?: Brand } {
-  const { brand, problems } = loadConfig(explicit);
+function globalConfig(explicit?: string): { brand?: Brand; themeConfig?: ThemeConfig; layout?: LayoutConfig } {
+  const { brand, theme, layout, problems } = loadConfig(explicit);
   for (const problem of problems) console.error(`warning: ${problem}`);
-  return brand !== undefined ? { brand } : {};
+  return {
+    ...(brand !== undefined ? { brand } : {}),
+    ...(theme !== undefined ? { themeConfig: theme } : {}),
+    ...(layout !== undefined ? { layout } : {}),
+  };
 }
 
 function main(argv: string[]): number | Promise<number> {
@@ -190,12 +195,23 @@ async function cmdBuild(rest: string[]): Promise<number> {
   }
 
   const baseName = basename(file).replace(/\.ya?ml$/i, '');
-  const brand = globalBrand(values.config);
+  const config = globalConfig(values.config);
+  if (config.layout?.density && !result.topology.density) {
+    result.topology.density = config.layout.density;
+  }
+  if (config.layout?.scale !== undefined && result.topology.scale === undefined) {
+    result.topology.scale = config.layout.scale;
+  }
   const plan = planSite(result.topology);
+  const buildOpts: import('@marrow/site').BuildOptions = {
+    icons: packs.catalog,
+    ...(config.brand ? { brand: config.brand } : {}),
+    ...(config.themeConfig ? { themeConfig: config.themeConfig } : {}),
+  };
   try {
     if (plan.mode === 'site' && !values.single) {
       const outDir = values.out ?? join('output', `${baseName}-site`);
-      const site = await buildSite(result.topology, { icons: packs.catalog, ...brand });
+      const site = await buildSite(result.topology, buildOpts);
       let bytes = 0;
       for (const [rel, content] of site.files) {
         const full = join(outDir, rel);
@@ -212,7 +228,7 @@ async function cmdBuild(rest: string[]): Promise<number> {
       return 0;
     }
     const outPath = values.out ?? join('output', `${baseName}.html`);
-    const built = await buildSingleFile(result.topology, { icons: packs.catalog, ...brand });
+    const built = await buildSingleFile(result.topology, buildOpts);
     mkdirSync(dirname(outPath), { recursive: true });
     writeFileSync(outPath, built.html);
     const kb = Math.round(Buffer.byteLength(built.html) / 1024);
@@ -259,11 +275,14 @@ async function cmdServe(rest: string[]): Promise<number> {
   }
   for (const problem of packs.catalog.problems) console.error(`warning: ${problem}`);
   const { serve } = await import('@marrow/server');
+  const configFile = values.config ?? (existsSync('marrow.config.yaml') ? 'marrow.config.yaml' : undefined);
   try {
     const running = await serve({
       input,
       icons: packs.catalog,
-      ...globalBrand(values.config),
+      configFile,
+      configLoader: () => globalConfig(configFile),
+      ...globalConfig(configFile),
       port: Number(values.port) || 5200,
       host: values.host ?? '127.0.0.1',
     });
@@ -383,7 +402,18 @@ async function cmdSnapshot(rest: string[]): Promise<number> {
   }
 
   try {
-    const built = await buildSingleFile(result.topology, { icons: packs.catalog, ...globalBrand(values.config) });
+    const config = globalConfig(values.config);
+    if (config.layout?.density && !result.topology.density) {
+      result.topology.density = config.layout.density;
+    }
+    if (config.layout?.scale !== undefined && result.topology.scale === undefined) {
+      result.topology.scale = config.layout.scale;
+    }
+    const built = await buildSingleFile(result.topology, {
+      icons: packs.catalog,
+      ...(config.brand ? { brand: config.brand } : {}),
+      ...(config.themeConfig ? { themeConfig: config.themeConfig } : {}),
+    });
     const tmpHtml = join(tmpdir(), `marrow-snapshot-${process.pid}.html`);
     writeFileSync(tmpHtml, built.html);
     const outPath = values.out ?? join('output', basename(file).replace(/\.ya?ml$/i, '') + '.png');
@@ -433,11 +463,12 @@ async function cmdIcons(rest: string[]): Promise<number> {
     }),
   );
   if (!parsed.ok) {
-    console.error(`${parsed.message}\n\nusage: marrow icons <search|packs|fetch> [--json] [--max <n>] [--yes] [--packs <dir>]`);
+    console.error(`${parsed.message}\n\nusage: marrow icons <search|packs|fetch|index> [--json] [--max <n>] [--yes] [--packs <dir>]`);
     return 2;
   }
   const { values, positionals } = parsed.args;
   if (sub === 'fetch') return cmdIconsFetch(positionals, values.yes ?? false, values.packs);
+  if (sub === 'index') return cmdIconsIndex(positionals, values.packs);
   const packs = loadIconCatalog(values.packs);
   if (packs.error) {
     console.error(packs.error);
@@ -449,13 +480,38 @@ async function cmdIcons(rest: string[]): Promise<number> {
   const catalog = packs.catalog;
   switch (sub) {
     case 'search': {
-      const query = positionals.join(' ').trim();
-      if (!query) {
-        console.error('usage: marrow icons search <query...>');
+      if (positionals.length === 0) {
+        console.error('usage: marrow icons search <query...> [--json] [--max <n>]');
         return 2;
       }
       const max = Number.parseInt(values.max ?? '20', 10);
-      const results = catalog.search(query, Number.isNaN(max) || max <= 0 ? 20 : max);
+      const limit = Number.isNaN(max) || max <= 0 ? 20 : max;
+
+      const isMultiQuery = positionals.length > 1 && (values.json || positionals.some((p) => /\s/.test(p)));
+      if (isMultiQuery) {
+        const batchResults: Record<string, import('@marrow/icons').SearchResult[]> = {};
+        for (const q of positionals) {
+          const trimmed = q.trim();
+          if (!trimmed) continue;
+          batchResults[trimmed] = catalog.search(trimmed, limit);
+        }
+        if (values.json) {
+          console.log(JSON.stringify(batchResults, null, 2));
+        } else {
+          for (const [q, hits] of Object.entries(batchResults)) {
+            console.log(`\n# Results for "${q}" (${hits.length} matches):`);
+            if (hits.length === 0) {
+              console.log('  (no matching icons)');
+            } else {
+              for (const r of hits) console.log(`  ${r.id}  —  ${r.title} (${r.category})`);
+            }
+          }
+        }
+        return 0;
+      }
+
+      const query = positionals.join(' ').trim();
+      const results = catalog.search(query, limit);
       if (values.json) {
         console.log(JSON.stringify(results, null, 2));
       } else if (results.length === 0) {
@@ -471,9 +527,24 @@ async function cmdIcons(rest: string[]): Promise<number> {
       return 0;
     }
     default:
-      console.error('usage: marrow icons <search|packs|fetch>');
+      console.error('usage: marrow icons <search|packs|fetch|index>');
       return 2;
   }
+}
+
+async function cmdIconsIndex(positionals: string[], packsFlag: string | undefined): Promise<number> {
+  const { indexIconPacks } = await import('@marrow/icons');
+  const packsRoot = resolvePacksRoot(packsFlag);
+  const targetPack = positionals[0];
+  const results = indexIconPacks(packsRoot, targetPack);
+  if (results.length === 0) {
+    console.error(`no icon packs with svg/ directory found in ${packsRoot}`);
+    return 1;
+  }
+  for (const r of results) {
+    console.log(`indexed pack "${r.pack}" (${r.count} icons) → ${r.manifestPath}`);
+  }
+  return 0;
 }
 
 /**

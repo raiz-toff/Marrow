@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" data-root="" data-page="index.html">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="marrow-v2">
+<title>Spatial HUD &amp; Infinite Canvas Architecture Preview — Marrow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ── Marrow Design Token System (Defect 1 Standard) ── */
+:root {
+  --bg: #09090b; --bg-raise: #18181b; --panel: rgba(24, 24, 27, 0.82); --panel-solid: #18181b;
+  --line: rgba(255, 255, 255, 0.08); --line-strong: rgba(255, 255, 255, 0.18);
+  --ink: #fafafa; --ink-dim: #a1a1aa; --ink-faint: #71717a;
+  --chip: #18181b; --chip-line: #3f3f46; --grid-dot: rgba(255, 255, 255, 0.08);
+  --m-accent: #3b82f6; --ring: #3b82f6; --zone: #71717a;
+  --up: #22c55e; --down: #ef4444; --degraded: #f59e0b; --planned: #71717a; --unknown: #71717a;
+  --edge: #d4d4d8;
+  --sidebar: oklch(0.205 0 0); --sidebar-fg: #fafafa;
+  --sidebar-accent: oklch(0.269 0 0); --sidebar-border: rgb(255 255 255 / .1);
+  --radius-sm: 6px; --radius: 8px; --radius-lg: 14px; --radius-pill: 9999px;
+  --shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.6), 0 4px 12px rgba(0, 0, 0, 0.35);
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / .4);
+  --inspector-w: 380px;
+}
+:root[data-theme="light"] {
+  --bg: #f8fafc; --bg-raise: #f1f5f9; --panel: rgba(255, 255, 255, 0.86); --panel-solid: #ffffff;
+  --line: rgba(0, 0, 0, 0.08); --line-strong: rgba(0, 0, 0, 0.18);
+  --ink: #0f172a; --ink-dim: #64748b; --ink-faint: #94a3b8;
+  --chip: #ffffff; --chip-line: #cbd5e1; --grid-dot: rgba(0, 0, 0, 0.06);
+  --m-accent: #2563eb; --ring: #2563eb; --zone: #64748b;
+  --up: #16a34a; --down: #dc2626; --degraded: #d97706; --planned: #94a3b8; --unknown: #94a3b8;
+  --edge: #64748b;
+  --sidebar: oklch(0.985 0 0); --sidebar-fg: #0f172a;
+  --sidebar-accent: oklch(0.97 0 0); --sidebar-border: oklch(0.922 0 0);
+  --shadow: 0 16px 32px -8px rgba(15, 23, 42, 0.12), 0 4px 12px rgba(15, 23, 42, 0.06);
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / .05);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+[hidden] { display: none !important; }
+html, body { height: 100%; width: 100%; overflow: hidden; }
+body {
+  background: var(--bg); color: var(--ink);
+  font: 14px/1.45 'Inter', -apple-system, system-ui, sans-serif;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-mono {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Container Query Root ── */
+#marrow-app {
+  position: fixed; inset: 0; width: 100%; height: 100%;
+  container-type: size;
+}
+
+/* ── 1. The Core Spatial Law: 100% Canvas Stage (No Frame Margins) ── */
+.m-stage {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  cursor: grab; background: var(--bg);
+  overflow: hidden; z-index: 1;
+}
+.m-stage.m-grabbing { cursor: grabbing; }
+.m-svg { width: 100%; height: 100%; display: block; }
+.m-grid-dot { fill: var(--grid-dot); }
+
+/* ── 2. Floating Heads-Up Display (HUD) Pointer Layer ── */
+.m-hud-layer {
+  position: fixed; inset: 0;
+  pointer-events: none; z-index: 20;
+}
+.m-hud-layer * { pointer-events: auto; }
+
+/* ── 3. Top-Left (Corner 1): Identity & Breadcrumbs Pill ── */
+.m-breadcrumbs {
+  position: absolute; top: 16px; left: 16px; height: 42px;
+  background: var(--panel);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid var(--line); border-radius: var(--radius-pill);
+  box-shadow: var(--shadow);
+  display: flex; align-items: center; gap: 8px;
+  padding: 0 16px 0 12px; font-size: 13px;
+  transition: all .25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.m-breadcrumbs:hover { border-color: var(--line-strong); }
+.m-brand-mark {
+  display: flex; align-items: center; gap: 8px; font-weight: 700;
+  color: var(--ink); font-size: 13px; margin-right: 4px;
+}
+.m-brand-mark svg { width: 18px; height: 18px; color: var(--m-accent); }
+.m-breadcrumbs a { color: var(--ink-dim); text-decoration: none; font-weight: 500; transition: color .15s; }
+.m-breadcrumbs a:hover { color: var(--ink); }
+.m-breadcrumbs .m-crumb-here { color: var(--ink); font-weight: 600; }
+.m-breadcrumbs .m-crumb-sep { display: grid; place-items: center; color: var(--ink-faint); opacity: 0.6; }
+.m-breadcrumbs .m-crumb-sep svg { width: 13px; height: 13px; }
+
+/* Sidebar rail button integrated seamlessly beside breadcrumbs */
+.m-sidebar-trigger {
+  width: 28px; height: 28px; border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  border: 1px solid var(--line); color: var(--ink-dim);
+  display: grid; place-items: center; cursor: pointer;
+  transition: all .15s; margin-right: 2px;
+}
+.m-sidebar-trigger:hover { background: var(--bg-raise); color: var(--ink); }
+
+/* ── 4. Top-Right (Corner 2): Global Actions Pill (Search, Theme, Export) ── */
+.m-dock {
+  position: absolute; top: 16px; right: 16px; height: 42px;
+  background: var(--panel);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid var(--line); border-radius: var(--radius-pill);
+  box-shadow: var(--shadow);
+  display: flex; align-items: center; gap: 8px;
+  padding: 0 6px 0 12px;
+  transition: all .25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.m-dock:hover { border-color: var(--line-strong); }
+.m-searchpill {
+  background: none; border: none; font: inherit; font-size: 13px;
+  color: var(--ink-dim); display: flex; align-items: center; gap: 8px;
+  cursor: pointer; padding: 6px 8px; border-radius: var(--radius-sm);
+  transition: background .15s, color .15s;
+}
+.m-searchpill:hover { background: color-mix(in srgb, var(--ink) 6%, transparent); color: var(--ink); }
+.m-searchpill kbd {
+  font-family: inherit; font-size: 10px; font-weight: 600;
+  padding: 2px 6px; border-radius: 4px; border: 1px solid var(--line);
+  background: var(--bg-raise); color: var(--ink-faint);
+}
+.m-dock-sep { width: 1px; height: 18px; background: var(--line); }
+.m-theme-toggle, .m-export-btn {
+  background: none; border: none; color: var(--ink-dim);
+  width: 32px; height: 32px; border-radius: 50%;
+  display: grid; place-items: center; cursor: pointer;
+  transition: all .15s;
+}
+.m-theme-toggle:hover, .m-export-btn:hover {
+  background: color-mix(in srgb, var(--ink) 8%, transparent); color: var(--ink);
+}
+.m-export-pill-btn {
+  background: color-mix(in srgb, var(--m-accent) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--m-accent) 35%, transparent);
+  color: var(--m-accent); font-weight: 600; font-size: 12px;
+  padding: 6px 12px; border-radius: var(--radius-pill); cursor: pointer;
+  display: flex; align-items: center; gap: 6px; transition: all .15s;
+}
+.m-export-pill-btn:hover {
+  background: var(--m-accent); color: #ffffff;
+  box-shadow: 0 0 14px color-mix(in srgb, var(--m-accent) 45%, transparent);
+}
+
+/* ── 5. Bottom-Center (Corner 3): Camera Dock (-, 100%, Fit, +) ── */
+.m-controls {
+  position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+  height: 40px; background: var(--panel);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid var(--line); border-radius: var(--radius-pill);
+  box-shadow: var(--shadow);
+  display: flex; align-items: center; gap: 2px; padding: 0 6px;
+  transition: all .25s ease;
+}
+.m-controls:hover { border-color: var(--line-strong); }
+.m-controls .m-btn {
+  width: 30px; height: 30px; border: none; border-radius: var(--radius-sm);
+  background: none; color: var(--ink-dim); display: grid; place-items: center;
+  cursor: pointer; font-size: 14px; font-weight: 600; transition: background .15s, color .15s;
+}
+.m-controls .m-btn:hover { background: var(--bg-raise); color: var(--ink); }
+.m-zoom-pill {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 12px; font-weight: 600; color: var(--ink);
+  min-width: 54px; text-align: center; padding: 4px 8px;
+  border-radius: var(--radius-sm); cursor: pointer; transition: background .15s;
+}
+.m-zoom-pill:hover { background: color-mix(in srgb, var(--ink) 8%, transparent); }
+
+/* ── 6. Bottom-Right (Corner 4): Minimap with 396px Coordinated Slide ── */
+.m-minimap {
+  position: absolute; bottom: 20px; right: 20px;
+  width: 180px; height: 120px;
+  background: var(--panel);
+  backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid var(--line); border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  transition: transform .35s cubic-bezier(0.16, 1, 0.3, 1), opacity .25s;
+}
+.has-selection .m-minimap {
+  transform: translateX(-396px); /* Smoothly slides left so 380px inspector never covers it! */
+}
+.m-mini-head {
+  height: 24px; padding: 0 10px; display: flex; align-items: center;
+  justify-content: space-between; border-bottom: 1px solid var(--line);
+  font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em;
+  color: var(--ink-faint);
+}
+.m-mini-body {
+  width: 100%; height: 96px; position: relative;
+  background: color-mix(in srgb, var(--bg) 60%, transparent);
+}
+.m-mini-view-indicator {
+  position: absolute; border: 1.5px solid var(--m-accent);
+  background: color-mix(in srgb, var(--m-accent) 15%, transparent);
+  border-radius: 3px; pointer-events: none; transition: all 0.1s ease-out;
+}
+
+/* ── 7. Bottom-Left (Corner 5): Interactive Legend / Filter Pill ── */
+.m-legend-corner {
+  position: absolute; bottom: 20px; left: 20px;
+  display: flex; flex-direction: column-reverse; gap: 8px;
+}
+.m-legend-chip {
+  height: 38px; padding: 0 14px;
+  background: var(--panel); backdrop-filter: blur(16px);
+  border: 1px solid var(--line); border-radius: var(--radius-pill);
+  box-shadow: var(--shadow);
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 600; color: var(--ink-dim);
+  cursor: pointer; transition: all .15s;
+}
+.m-legend-chip:hover { color: var(--ink); border-color: var(--line-strong); }
+.m-legend-popover {
+  width: 270px; background: var(--panel);
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--line); border-radius: var(--radius-lg);
+  box-shadow: var(--shadow); padding: 14px;
+  display: none; flex-direction: column; gap: 10px;
+  animation: mPopIn .2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.m-legend-popover.open { display: flex; }
+@keyframes mPopIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+.m-legend-title {
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+  color: var(--ink-faint); display: flex; justify-content: space-between; align-items: center;
+}
+.m-legend-item {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 12px; color: var(--ink-dim); padding: 5px 8px;
+  border-radius: var(--radius-sm); cursor: pointer; transition: background .15s;
+}
+.m-legend-item:hover { background: color-mix(in srgb, var(--ink) 6%, transparent); color: var(--ink); }
+.m-legend-swatch { display: flex; align-items: center; gap: 8px; }
+.m-swatch-line { width: 24px; height: 0; border-top-width: 2px; border-top-style: solid; }
+.m-swatch-trunk { border-top-width: 4px; border-top-style: double; }
+.m-swatch-tunnel { border-top-width: 2px; border-top-style: dashed; }
+.m-swatch-peering { border-top-width: 2px; border-top-style: dotted; }
+
+/* ── 8. Inspector Drawer (Desktop Floating Card vs Mobile Bottom Sheet) ── */
+.m-inspector {
+  position: absolute; top: 68px; right: 16px; bottom: 16px;
+  width: var(--inspector-w); background: var(--panel);
+  backdrop-filter: blur(24px) saturate(200%);
+  -webkit-backdrop-filter: blur(24px) saturate(200%);
+  border: 1px solid var(--line); border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  display: flex; flex-direction: column;
+  transform: translateX(calc(100% + 32px));
+  transition: transform .35s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden; z-index: 30;
+}
+.has-selection .m-inspector {
+  transform: translateX(0);
+}
+.m-inspector-head {
+  padding: 16px 20px; display: flex; align-items: center;
+  justify-content: space-between; border-bottom: 1px solid var(--line);
+}
+.m-inspector-id { display: flex; align-items: center; gap: 10px; }
+.m-status-dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--up); box-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
+}
+.m-inspector-title { font-size: 16px; font-weight: 700; letter-spacing: -.01em; color: var(--ink); }
+.m-inspector-desc { font-size: 12px; color: var(--ink-dim); }
+.m-inspector-close {
+  width: 30px; height: 30px; border-radius: var(--radius-sm);
+  background: none; border: 0; color: var(--ink-dim);
+  display: grid; place-items: center; cursor: pointer; transition: all .15s;
+}
+.m-inspector-close:hover { background: var(--bg-raise); color: var(--ink); }
+.m-inspector-body {
+  overflow-y: auto; padding: 20px; flex: 1; display: flex; flex-direction: column; gap: 18px;
+}
+.m-inspector-section {
+  background: color-mix(in srgb, var(--bg) 40%, transparent);
+  border: 1px solid var(--line); border-radius: var(--radius-md);
+  padding: 14px;
+}
+.m-inspector-section summary {
+  cursor: pointer; list-style: none; font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .06em; color: var(--ink-faint);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.m-table {
+  width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px;
+}
+.m-table th {
+  text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line);
+  color: var(--ink-faint); font-weight: 600;
+}
+.m-table td {
+  padding: 6px 8px; border-bottom: 1px solid color-mix(in srgb, var(--line) 40%, transparent);
+  color: var(--ink-dim);
+}
+.m-table tr:hover td { color: var(--ink); background: color-mix(in srgb, var(--ink) 4%, transparent); }
+.m-drawer-foot {
+  display: flex; align-items: center; gap: 8px; padding: 12px 20px; flex: none;
+  border-top: 1px solid var(--line); font-size: 11px; font-weight: 600;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--ink-faint);
+}
+
+/* ── 9. Interactive Screen Simulator Toolbar ── */
+.m-sim-bar {
+  position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
+  height: 42px; padding: 0 10px; gap: 6px;
+  background: var(--panel-solid); border: 1px solid var(--m-accent);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--m-accent) 25%, transparent);
+  border-radius: var(--radius-pill); display: flex; align-items: center;
+}
+.m-sim-title {
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
+  color: var(--m-accent); padding-right: 8px; border-right: 1px solid var(--line);
+}
+.m-sim-btn {
+  background: transparent; border: 1px solid var(--line); color: var(--ink-dim);
+  font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: var(--radius-sm);
+  cursor: pointer; transition: all .15s;
+}
+.m-sim-btn:hover { background: color-mix(in srgb, var(--m-accent) 15%, transparent); color: var(--m-accent); border-color: var(--m-accent); }
+.m-sim-btn.active { background: var(--m-accent); color: #ffffff; border-color: var(--m-accent); }
+
+/* ── 10. Container Query Responsive Tiers (The 4 Specs) ── */
+
+/* Tier 2: Laptop / Split-Screen (768px - 1280px) */
+@container (max-width: 1280px) {
+  .m-breadcrumbs a { display: none; }
+  .m-breadcrumbs .m-crumb-sep { display: none; }
+  .m-minimap { width: 140px; height: 96px; }
+  .m-inspector { width: 340px; }
+  .has-selection .m-minimap { transform: translateX(-356px); }
+}
+
+/* Tier 3: Mobile / Tablet (< 768px) -> Bottom Sheet */
+@container (max-width: 768px) {
+  .m-breadcrumbs { left: 12px; top: 12px; height: 38px; padding: 0 12px; }
+  .m-dock { right: 12px; top: 12px; height: 38px; }
+  .m-searchpill span, .m-searchpill kbd, .m-export-pill-btn span { display: none; }
+  .m-minimap { display: none; } /* Hide minimap on mobile screens */
+  .m-controls { bottom: 12px; }
+  .m-legend-corner { bottom: 12px; left: 12px; }
+  
+  /* Mobile Bottom Sheet */
+  .m-inspector {
+    top: auto; right: 0; bottom: 0; left: 0;
+    width: 100%; height: 55vh;
+    border-radius: 20px 20px 0 0; border-left: none; border-top: 1px solid var(--line);
+    transform: translateY(100%);
+  }
+  .has-selection .m-inspector {
+    transform: translateY(0);
+  }
+}
+
+/* Tier 4: Blog / Docs Embed (< 600px OR html[data-chrome="minimal"]) */
+@container (max-width: 600px) {
+  .m-breadcrumbs { border-radius: var(--radius-sm); height: 32px; font-size: 11px; }
+  .m-dock { display: none; }
+  .m-controls { left: auto; right: 12px; transform: none; bottom: 12px; height: 32px; }
+  .m-legend-corner { display: none; }
+  .m-minimap { display: none; }
+}
+
+html[data-chrome="minimal"] .m-breadcrumbs { border-radius: var(--radius-sm); height: 32px; font-size: 11px; }
+html[data-chrome="minimal"] .m-dock { display: none; }
+html[data-chrome="minimal"] .m-controls { left: auto; right: 12px; transform: none; bottom: 12px; height: 32px; }
+html[data-chrome="minimal"] .m-legend-corner { display: none; }
+html[data-chrome="minimal"] .m-minimap { display: none; }
+
+/* ── 11. Target Node in Viewport (Demonstrating Center Pan & Halos) ── */
+.m-target-node {
+  cursor: pointer; transition: transform .2s ease;
+}
+.m-target-node:hover { transform: translateY(-3px); }
+.m-node-rect {
+  fill: var(--panel-solid); stroke: var(--line-strong); stroke-width: 1.5; rx: 12;
+}
+.has-selection .m-node-rect {
+  stroke: var(--m-accent); stroke-width: 2.5;
+  filter: drop-shadow(0 0 16px color-mix(in srgb, var(--m-accent) 40%, transparent));
+}
+.m-crossing-halo {
+  fill: none; stroke: var(--bg); stroke-width: 7px; stroke-linejoin: round;
+}
+</style>
+</head>
+<body>
+
+<div id="marrow-app">
+  <!-- ── 1. 100% Canvas Stage ── -->
+  <main class="m-stage" id="stage">
+    <svg class="m-svg" id="canvas-svg">
+      <defs>
+        <!-- Background dot grid -->
+        <pattern id="dot-grid" width="32" height="32" patternUnits="userSpaceOnUse">
+          <circle cx="2" cy="2" r="1.2" class="m-grid-dot"/>
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#dot-grid)"/>
+
+      <!-- World Camera Container -->
+      <g id="camera-group" transform="matrix(1 0 0 1 0 0)">
+        
+        <!-- Safe Inset Framing Zone (Shows clearance around 72px top, 68px bottom, 40px sides) -->
+        <rect id="safe-rect" x="40" y="72" width="1120" height="680" fill="none" stroke="var(--line)" stroke-dasharray="6 6" rx="16" opacity="0.4"/>
+        <text x="60" y="98" fill="var(--ink-faint)" font-size="12" font-weight="600" letter-spacing="0.06em">SAFE VIEWPORT ZONE (DIAGRAM CLEARS ALL 5 FLOATING HUDS)</text>
+
+        <!-- Crossing Links Demo with 4px Knockout Halo -->
+        <path d="M 280 360 L 920 360" stroke="var(--up)" stroke-width="3" fill="none"/>
+        <path d="M 600 160 L 600 560" class="m-crossing-halo"/>
+        <path d="M 600 160 L 600 560" stroke="var(--m-accent)" stroke-width="3" fill="none"/>
+
+        <!-- Interactive Center Target: core-sw-01 -->
+        <g class="m-target-node" id="target-node" transform="translate(530, 300)" onclick="toggleSelection()">
+          <rect class="m-node-rect" width="140" height="110"/>
+          <circle cx="24" cy="26" r="5" fill="var(--up)"/>
+          <text x="36" y="30" fill="var(--ink)" font-size="13" font-weight="700">core-sw-01</text>
+          <text x="24" y="54" fill="var(--ink-dim)" font-size="11" font-weight="500">Cisco Catalyst 9500</text>
+          
+          <!-- IP Chip (Tabular Monospace font) -->
+          <rect x="18" y="70" width="104" height="22" rx="4" fill="color-mix(in srgb, var(--ink) 8%, transparent)"/>
+          <text x="70" y="85" text-anchor="middle" fill="var(--ink)" font-size="11" class="font-mono">10.255.0.1</text>
+        </g>
+
+        <!-- Helper hint -->
+        <text x="600" y="440" text-anchor="middle" fill="var(--ink-faint)" font-size="12" font-weight="500">
+          Click node to open Inspector Drawer &amp; test camera offset + minimap slide
+        </text>
+
+      </g>
+    </svg>
+  </main>
+
+  <!-- ── 2. Floating Heads-Up Display (HUD) Layer ── -->
+  <div class="m-hud-layer">
+
+    <!-- Top-Left: Identity & Breadcrumbs Pill -->
+    <nav class="m-breadcrumbs" aria-label="Breadcrumb">
+      <button class="m-sidebar-trigger" type="button" aria-label="Toggle Sidebar" onclick="alert('Sidebar drawer toggled!')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <div class="m-brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 20V10a4 4 0 0 1 4-4" stroke-width="2.4"/>
+          <path d="M13 20V10" stroke-width="2.4"/>
+          <path d="M13 10a4 4 0 0 1 4-4h2" stroke-width="2.4"/>
+          <path d="m17.2 4.2 1.8 1.8-1.8 1.8" stroke-width="2.4"/>
+        </svg>
+        <span>Marrow</span>
+      </div>
+      <span class="m-crumb-sep"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></span>
+      <a href="#">Global Enterprise</a>
+      <span class="m-crumb-sep"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></span>
+      <span class="m-crumb-here">HQ Campus</span>
+    </nav>
+
+    <!-- Simulation Tester Toolbar (Floating Center Top) -->
+    <div class="m-sim-bar">
+      <span class="m-sim-title">Test Tiers</span>
+      <button class="m-sim-btn active" onclick="setTier('desktop')">Desktop (>1280)</button>
+      <button class="m-sim-btn" onclick="setTier('laptop')">Laptop (1024)</button>
+      <button class="m-sim-btn" onclick="setTier('mobile')">Mobile (<768)</button>
+      <button class="m-sim-btn" onclick="setTier('embed')">Embed (#embed)</button>
+    </div>
+
+    <!-- Top-Right: Global Actions Pill -->
+    <div class="m-dock">
+      <button class="m-searchpill" type="button" aria-label="Search" onclick="alert('Command Center (⌘K) triggered!')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <span>Search devices…</span>
+        <kbd>Ctrl K</kbd>
+      </button>
+
+      <div class="m-dock-sep"></div>
+
+      <!-- Theme Switcher -->
+      <button class="m-theme-toggle" type="button" aria-label="Toggle Theme" onclick="toggleTheme()" title="Toggle Theme">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </button>
+
+      <!-- Blueprint Export -->
+      <button class="m-export-pill-btn" type="button" onclick="alert('Exporting high-resolution CAD Blueprint with Title Block & Auto-Legend!')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+        <span>Export</span>
+      </button>
+    </div>
+
+    <!-- Bottom-Center: Camera Dock -->
+    <div class="m-controls">
+      <button class="m-btn" type="button" onclick="zoomDelta(-0.2)" title="Zoom Out">−</button>
+      <div class="m-zoom-pill font-mono" id="zoom-readout" onclick="resetZoom()" title="Click to reset to 100%">100%</div>
+      <button class="m-btn" type="button" onclick="fitView()" title="Fit View with Safe Insets">Fit</button>
+      <button class="m-btn" type="button" onclick="zoomDelta(0.2)" title="Zoom In">+</button>
+    </div>
+
+    <!-- Bottom-Right: Minimap with 396px Coordinated Slide -->
+    <div class="m-minimap" id="minimap">
+      <div class="m-mini-head">
+        <span>Minimap</span>
+        <span class="font-mono text-[9px]">Live Track</span>
+      </div>
+      <div class="m-mini-body">
+        <div style="position: absolute; left: 80px; top: 40px; width: 18px; height: 14px; background: var(--m-accent); border-radius: 3px;"></div>
+        <div class="m-mini-view-indicator" id="mini-tracker" style="left: 20px; top: 20px; width: 140px; height: 56px;"></div>
+      </div>
+    </div>
+
+    <!-- Bottom-Left: Interactive Link Legend Pill -->
+    <div class="m-legend-corner">
+      <div class="m-legend-popover" id="legend-box">
+        <div class="m-legend-title">
+          <span>Active Topology Links</span>
+          <span class="font-mono text-[10px]">3 Types</span>
+        </div>
+        <div class="m-legend-item">
+          <div class="m-legend-swatch">
+            <span class="m-swatch-line" style="border-color: var(--m-accent);"></span>
+            <span>100G Inter-Core</span>
+          </div>
+          <span class="font-mono text-[11px]">Fiber</span>
+        </div>
+        <div class="m-legend-item">
+          <div class="m-legend-swatch">
+            <span class="m-swatch-line m-swatch-trunk" style="border-color: var(--up);"></span>
+            <span>40G MLAG Trunk</span>
+          </div>
+          <span class="font-mono text-[11px]">VLAN 10,20</span>
+        </div>
+        <div class="m-legend-item">
+          <div class="m-legend-swatch">
+            <span class="m-swatch-line m-swatch-tunnel" style="border-color: #a855f7;"></span>
+            <span>IPsec VPN</span>
+          </div>
+          <span class="font-mono text-[11px]">Encrypted</span>
+        </div>
+      </div>
+      <button class="m-legend-chip" type="button" onclick="toggleLegend()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20v-6M6 20V10M18 20V4"/></svg>
+        <span>Legend &amp; Links</span>
+      </button>
+    </div>
+
+    <!-- Inspector Drawer (Desktop Floating Card vs Mobile Bottom Sheet) -->
+    <aside class="m-inspector" id="inspector">
+      <div class="m-inspector-head">
+        <div class="m-inspector-id">
+          <span class="m-status-dot"></span>
+          <div>
+            <div class="m-inspector-title">core-sw-01</div>
+            <div class="m-inspector-desc">Cisco Catalyst 9500-48Y4C</div>
+          </div>
+        </div>
+        <button class="m-inspector-close" type="button" aria-label="Close" onclick="toggleSelection()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div class="m-inspector-body">
+        <div class="m-inspector-section">
+          <summary>Hardware Telemetry</summary>
+          <table class="m-table">
+            <tr><th>Property</th><th>Value</th></tr>
+            <tr><td>Serial Number</td><td class="font-mono">FOC2241091</td></tr>
+            <tr><td>Management IP</td><td class="font-mono">10.255.0.1</td></tr>
+            <tr><td>BGP Autonomous System</td><td class="font-mono">65001</td></tr>
+            <tr><td>Software Version</td><td>IOS-XE 17.9.4a</td></tr>
+          </table>
+        </div>
+
+        <div class="m-inspector-section">
+          <summary>Optical Transceiver Metrics</summary>
+          <table class="m-table font-mono">
+            <tr><th>Port</th><th>Tx Power</th><th>Rx Power</th><th>State</th></tr>
+            <tr><td>Te1/0/1</td><td>-1.2 dBm</td><td>-2.4 dBm</td><td style="color:var(--up)">Optimal</td></tr>
+            <tr><td>Te1/0/2</td><td>-1.1 dBm</td><td>-2.2 dBm</td><td style="color:var(--up)">Optimal</td></tr>
+            <tr><td>Te1/0/48</td><td>-1.5 dBm</td><td>-3.1 dBm</td><td style="color:var(--up)">Optimal</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <div class="m-drawer-foot">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 20V10a4 4 0 0 1 4-4" stroke-width="2.4"/>
+          <path d="M13 20V10" stroke-width="2.4"/>
+          <path d="M13 10a4 4 0 0 1 4-4h2" stroke-width="2.4"/>
+          <path d="m17.2 4.2 1.8 1.8-1.8 1.8" stroke-width="2.4"/>
+        </svg>
+        <span>Marrow Engineering</span>
+      </div>
+    </aside>
+
+  </div>
+</div>
+
+<script>
+// State
+let scale = 1.0;
+let panX = 0;
+let panY = 0;
+let isPanning = false;
+let startX = 0;
+let startY = 0;
+let hasSelection = true;
+
+const stage = document.getElementById('stage');
+const cameraGroup = document.getElementById('camera-group');
+const zoomReadout = document.getElementById('zoom-readout');
+const app = document.getElementById('marrow-app');
+const legendBox = document.getElementById('legend-box');
+const miniTracker = document.getElementById('mini-tracker');
+
+function updateCamera() {
+  cameraGroup.setAttribute('transform', `matrix(${scale} 0 0 ${scale} ${panX} ${panY})`);
+  zoomReadout.textContent = `${Math.round(scale * 100)}%`;
+  
+  // Update minimap tracker box
+  const normX = Math.max(5, Math.min(60, 40 - (panX / 30)));
+  const normY = Math.max(5, Math.min(40, 25 - (panY / 30)));
+  const normW = Math.max(40, Math.min(160, 140 / scale));
+  const normH = Math.max(30, Math.min(80, 56 / scale));
+  miniTracker.style.left = `${normX}px`;
+  miniTracker.style.top = `${normY}px`;
+  miniTracker.style.width = `${normW}px`;
+  miniTracker.style.height = `${normH}px`;
+}
+
+// Pan Gestures
+stage.addEventListener('mousedown', (e) => {
+  if (e.target.closest('.m-target-node')) return;
+  isPanning = true;
+  stage.classList.add('m-grabbing');
+  startX = e.clientX - panX;
+  startY = e.clientY - panY;
+});
+
+window.addEventListener('mousemove', (e) => {
+  if (!isPanning) return;
+  panX = e.clientX - startX;
+  panY = e.clientY - startY;
+  updateCamera();
+});
+
+window.addEventListener('mouseup', () => {
+  isPanning = false;
+  stage.classList.remove('m-grabbing');
+});
+
+// Wheel Zoom towards cursor
+stage.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const factor = e.deltaY < 0 ? 1.1 : 0.9;
+  const newScale = Math.max(0.3, Math.min(3.0, scale * factor));
+  
+  const rect = stage.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  
+  panX = mx - (mx - panX) * (newScale / scale);
+  panY = my - (my - panY) * (newScale / scale);
+  scale = newScale;
+  
+  updateCamera();
+}, { passive: false });
+
+function zoomDelta(d) {
+  scale = Math.max(0.3, Math.min(3.0, scale + d));
+  updateCamera();
+}
+
+function resetZoom() {
+  scale = 1.0;
+  panX = 0;
+  panY = 0;
+  updateCamera();
+}
+
+// Safe Viewport Auto-Fit (HUD clearance)
+function fitView() {
+  const isMobile = window.innerWidth < 768;
+  const rightInset = (!isMobile && hasSelection) ? 420 : 60;
+  const topInset = 80;
+  const bottomInset = (isMobile && hasSelection) ? 300 : 80;
+  const leftInset = 60;
+
+  const availW = window.innerWidth - leftInset - rightInset;
+  const availH = window.innerHeight - topInset - bottomInset;
+
+  const sceneW = 800;
+  const sceneH = 300;
+
+  scale = Math.min(availW / sceneW, availH / sceneH, 1.2);
+  
+  panX = leftInset + (availW - sceneW * scale) / 2 - 200 * scale;
+  panY = topInset + (availH - sceneH * scale) / 2 - 150 * scale;
+
+  updateCamera();
+}
+
+// Inspector Toggle + Camera Center Shift Math
+function toggleSelection() {
+  hasSelection = !hasSelection;
+  if (hasSelection) {
+    document.body.classList.add('has-selection');
+    // Design Rule: Camera centers item in remaining visible area by panning -190px
+    if (window.innerWidth >= 768) {
+      panX -= 190;
+      updateCamera();
+    }
+  } else {
+    document.body.classList.remove('has-selection');
+    if (window.innerWidth >= 768) {
+      panX += 190;
+      updateCamera();
+    }
+  }
+}
+
+function toggleLegend() {
+  legendBox.classList.toggle('open');
+}
+
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute('data-theme');
+  document.documentElement.setAttribute('data-theme', cur === 'dark' ? 'light' : 'dark');
+}
+
+// Interactive Screen Simulator
+function setTier(t) {
+  document.querySelectorAll('.m-sim-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  document.documentElement.removeAttribute('data-chrome');
+
+  if (t === 'desktop') {
+    app.style.maxWidth = '100vw';
+  } else if (t === 'laptop') {
+    app.style.maxWidth = '1024px';
+  } else if (t === 'mobile') {
+    app.style.maxWidth = '680px';
+  } else if (t === 'embed') {
+    app.style.maxWidth = '550px';
+    document.documentElement.setAttribute('data-chrome', 'minimal');
+  }
+  fitView();
+}
+
+// Initialize
+document.body.classList.add('has-selection');
+fitView();
+</script>
+</body>
+</html>

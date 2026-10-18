@@ -7,7 +7,23 @@
 
 export type DataPath = ReadonlyArray<string | number>;
 
-export const ROOT_KEYS = ['marrow', 'name', 'description', 'theme', 'hero', 'zones', 'devices', 'links'] as const;
+export const ROOT_KEYS = [
+  'marrow',
+  'name',
+  'description',
+  'theme',
+  'density',
+  'scale',
+  'hero',
+  'author',
+  'revision',
+  'date',
+  'title_block',
+  'zones',
+  'devices',
+  'links',
+] as const;
+export const TITLE_BLOCK_KEYS = ['title', 'author', 'date', 'revision', 'logo'] as const;
 export const ZONE_KEYS = ['id', 'name', 'parent', 'collapse', 'accent', 'note'] as const;
 export const DEVICE_KEYS = [
   'id',
@@ -25,6 +41,8 @@ export const DEVICE_KEYS = [
   'note',
   'config',
   'interfaces',
+  'custom_fields',
+  'sections',
 ] as const;
 export const LINK_KEYS = [
   'from',
@@ -42,6 +60,8 @@ export const LINK_KEYS = [
   'animated',
   'label',
   'note',
+  'custom_fields',
+  'sections',
 ] as const;
 export const INTERFACE_KEYS = ['name', 'description', 'vlan', 'ip'] as const;
 export const PIN_KEYS = ['x', 'y'] as const;
@@ -70,7 +90,7 @@ export function normalizePath(pathStr: string): string {
 }
 
 const FIELD_HINTS: Record<string, string> = {
-  'name': 'give the topology a name, e.g. name: Acme HQ',
+  'name': 'give the topology a name, e.g. name: Marrow HQ',
   'zones[].id': 'every zone needs a short id, e.g. id: campus-a',
   'devices[].id': 'every device needs a short id, e.g. id: core-sw-01',
   'devices[].icon':

@@ -2,6 +2,8 @@ import type { Topology } from '@marrow/model';
 import { union, type Rect } from '@marrow/scene';
 import type { SceneZone } from '@marrow/scene';
 
+import type { LayoutMetrics } from './metrics.js';
+
 const ZONE_PAD = 28;
 
 /**
@@ -10,7 +12,11 @@ const ZONE_PAD = 28;
  * (packing each zone's subgraph separately) is the P4 compose step; hulls
  * keep zones visible until then.
  */
-export function zoneHulls(t: Topology, nodeBoxes: ReadonlyMap<string, Rect>): SceneZone[] {
+export function zoneHulls(
+  t: Topology,
+  nodeBoxes: ReadonlyMap<string, Rect>,
+  metrics?: LayoutMetrics,
+): SceneZone[] {
   const childrenOf = new Map<string, string[]>();
   for (const z of t.zones) {
     if (z.parent === undefined) continue;
@@ -48,8 +54,9 @@ export function zoneHulls(t: Topology, nodeBoxes: ReadonlyMap<string, Rect>): Sc
       if (childHull) hull = hull ? union(hull, childHull) : childHull;
     }
     stack.delete(zoneId);
+    const pad = metrics?.zonePad ?? ZONE_PAD;
     const padded = hull
-      ? { x: hull.x - ZONE_PAD, y: hull.y - ZONE_PAD, w: hull.w + 2 * ZONE_PAD, h: hull.h + 2 * ZONE_PAD }
+      ? { x: hull.x - pad, y: hull.y - pad, w: hull.w + 2 * pad, h: hull.h + 2 * pad }
       : undefined;
     hullOf.set(zoneId, padded);
     return padded;

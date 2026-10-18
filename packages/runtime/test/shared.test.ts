@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { parseHash, serializeHash } from '../src/shared/hash.js';
+import { parseHash, parseModularParams, serializeHash } from '../src/shared/hash.js';
 import { searchDocs, type SearchDoc } from '../src/shared/search.js';
 
 describe('hash deep links', () => {
@@ -21,6 +21,38 @@ describe('hash deep links', () => {
   test('encodes device ids safely', () => {
     const parsed = parseHash(serializeHash({ device: 'a;b=c' }));
     expect(parsed.device).toBe('a;b=c');
+  });
+});
+
+describe('modular UI options (Defect 3)', () => {
+  test('parses query and hash parameters for embed & modular chrome', () => {
+    expect(parseModularParams('?chrome=minimal&inspector=off', '')).toEqual({
+      chrome: 'minimal',
+      inspector: 'off',
+    });
+
+    expect(parseModularParams('', '#embed=true;minimap=off;theme=light')).toEqual({
+      chrome: 'minimal',
+      minimap: 'off',
+      theme: 'light',
+    });
+
+    expect(parseModularParams('?theme=dark', '#d=core-01;embed=1;inspector=off')).toEqual({
+      chrome: 'minimal',
+      inspector: 'off',
+      theme: 'dark',
+    });
+
+    expect(parseModularParams('?chrome=full&minimap=on', '')).toEqual({
+      chrome: 'full',
+      minimap: 'on',
+    });
+
+    expect(parseModularParams('?export_title=on&export_legend=off&export_ports=off', '')).toEqual({
+      exportTitle: 'on',
+      exportLegend: 'off',
+      exportPorts: 'off',
+    });
   });
 });
 

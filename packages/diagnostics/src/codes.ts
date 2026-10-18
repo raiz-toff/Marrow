@@ -27,6 +27,7 @@ export const DIAGNOSTIC_CODES = {
   'MRW-W103': 'Isolated device',
   'MRW-W104': 'Self-link',
   'MRW-W105': 'Link semantics mismatch',
+  'MRW-W106': 'Icon asset not fetched or missing',
 } as const;
 
 export type DiagnosticCode = keyof typeof DIAGNOSTIC_CODES;

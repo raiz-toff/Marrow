@@ -41,6 +41,8 @@ export interface SceneNode {
   href?: string;
   /** Small chip badge, e.g. a device count on an aggregate node. */
   badge?: string;
+  /** Scaled label font size in px. */
+  labelSize?: number;
 }
 
 export interface SceneEdgeEnd {
@@ -223,6 +225,10 @@ export interface Scene {
   portChips?: ScenePortChip[];
   /** Which layout preset produced this scene (informational). */
   archetype?: string;
+  /** Active layout density preset (compact | standard | spacious). */
+  density?: string;
+  /** Active layout scale multiplier. */
+  scale?: number;
 }
 
 // ─── geometry helpers (shared by layout and lint) ───────────────────────────

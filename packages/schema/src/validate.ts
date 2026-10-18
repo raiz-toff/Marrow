@@ -23,6 +23,7 @@ import { rawToTopology } from './normalize.js';
 export interface IconLookup {
   has(id: string): boolean;
   suggest(id: string, max?: number): string[];
+  hasSvg?(id: string): boolean;
 }
 
 export interface ValidateOptions {
@@ -420,6 +421,19 @@ function semanticChecks(raw: RawTopology, ctx: SemanticCtx): void {
         hint: packMissing
           ? `the "${pack}" icon pack is not installed — download it from the vendor with \`marrow icons fetch ${pack}\``
           : 'browse the catalog with `marrow icons search <keyword>`',
+      });
+    } else if (icons && icons.hasSvg && !icons.hasSvg(device.icon)) {
+      const pack = device.icon.split('/')[0]!;
+      const isFetchable = FETCHABLE_ICON_PACKS.includes(pack);
+      emit('MRW-W106', {
+        message: isFetchable
+          ? `Icon "${device.icon}" is valid, but the "${pack}" icon pack artwork is not downloaded yet`
+          : `Icon "${device.icon}" is registered in manifest, but its SVG asset is missing on disk`,
+        path: formatPath(['devices', i, 'icon']),
+        loc: at(['devices', i, 'icon']),
+        hint: isFetchable
+          ? `download vendor icon pack with \`marrow icons fetch ${pack}\``
+          : `check file on disk or rebuild manifest with \`marrow icons index\``,
       });
     }
   }

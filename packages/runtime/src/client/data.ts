@@ -19,6 +19,8 @@ export interface DataDevice {
   haPairWith?: string;
   note?: string;
   config?: string;
+  customFields?: Record<string, string | number | boolean>;
+  sections?: Record<string, unknown>;
   interfaces: DataInterface[];
   /** Present on collapse stand-ins: the device ids this node represents. */
   stack?: { members: string[]; worstStatus: string };
@@ -42,6 +44,9 @@ export interface DataLink {
   /** flowing-dash effect — mirrored in the inspector's link swatch */
   animated?: boolean;
   label?: string;
+  note?: string;
+  customFields?: Record<string, string | number | boolean>;
+  sections?: Record<string, unknown>;
 }
 
 export interface DataZone {
@@ -49,10 +54,19 @@ export interface DataZone {
   name: string;
 }
 
+export interface DataTitleBlock {
+  title?: string;
+  author?: string;
+  date?: string;
+  revision?: string;
+  logo?: string;
+}
+
 export interface EmbeddedData {
   name: string;
   description?: string;
   theme: string;
+  titleBlock?: DataTitleBlock;
   /** site-root-relative path of this page ('index.html' for single files) */
   page?: string;
   /** device ids that have dedicated device-360 pages (site mode) */

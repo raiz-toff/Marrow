@@ -36,6 +36,7 @@ export type LinkSpeed =
 export type CollapseMode = 'auto' | 'open' | 'closed';
 /** `auto` follows the viewer's OS colour scheme (and lets a host drive it). */
 export type Theme = 'dark' | 'light' | 'auto';
+export type Density = 'compact' | 'standard' | 'spacious';
 
 export const TIERS: readonly Tier[] = ['core', 'distribution', 'access', 'edge', 'endpoint', 'management'];
 export const DEVICE_STATUSES: readonly DeviceStatus[] = ['up', 'down', 'degraded', 'planned', 'unknown'];
@@ -48,6 +49,7 @@ export const ROUTING_PROTOCOLS: readonly RoutingProtocol[] = ['ospf', 'ebgp', 'i
 export const LACP_MODES: readonly LacpMode[] = ['active', 'passive', 'on', 'static', 'pagp'];
 export const COLLAPSE_MODES: readonly CollapseMode[] = ['auto', 'open', 'closed'];
 export const THEMES: readonly Theme[] = ['dark', 'light', 'auto'];
+export const DENSITIES: readonly Density[] = ['compact', 'standard', 'spacious'];
 
 export interface Zone {
   id: string;
@@ -88,7 +90,17 @@ export interface Link {
   animated: boolean;
   label?: string;
   note?: string;
+  customFields?: CustomFieldMap;
+  sections?: CustomSectionMap;
 }
+
+export type CustomFieldValue = string | number | boolean;
+export type CustomFieldMap = Record<string, CustomFieldValue>;
+export type CustomSectionContent =
+  | string
+  | Record<string, CustomFieldValue>
+  | Array<Record<string, CustomFieldValue>>;
+export type CustomSectionMap = Record<string, CustomSectionContent>;
 
 export interface DeviceInterface {
   name: string;
@@ -113,8 +125,18 @@ export interface Device {
   note?: string;
   config?: string;
   interfaces: DeviceInterface[];
+  customFields?: CustomFieldMap;
+  sections?: CustomSectionMap;
   /** Synthetic collapse artifacts (never authored): the members this node stands in for. */
   stack?: { members: string[]; worstStatus: DeviceStatus };
+}
+
+export interface TitleBlock {
+  title?: string;
+  author?: string;
+  date?: string;
+  revision?: string;
+  logo?: string;
 }
 
 export interface Topology {
@@ -122,7 +144,13 @@ export interface Topology {
   name: string;
   description?: string;
   theme: Theme;
+  density?: Density;
+  scale?: number;
   hero?: string;
+  author?: string;
+  revision?: string;
+  date?: string;
+  titleBlock?: TitleBlock;
   zones: Zone[];
   devices: Device[];
   links: Link[];

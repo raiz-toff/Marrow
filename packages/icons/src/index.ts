@@ -11,7 +11,7 @@ export {
   type CatalogEntry,
   type SearchResult,
 } from './catalog.js';
-export { generateManifestFromSvgDir, kebab } from './generate.js';
+export { generateManifestFromSvgDir, indexIconPacks, type IndexPackResult, kebab } from './generate.js';
 export {
   EXTRACTORS,
   FETCHABLE_PACKS,

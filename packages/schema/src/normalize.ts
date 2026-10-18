@@ -40,6 +40,8 @@ export function rawToTopology(raw: RawTopology): Topology {
     if (d.accent !== undefined) device.accent = d.accent;
     if (d.note !== undefined) device.note = d.note;
     if (d.config !== undefined) device.config = d.config;
+    if (d.custom_fields !== undefined) device.customFields = d.custom_fields;
+    if (d.sections !== undefined) device.sections = d.sections as any;
     return device;
   });
 
@@ -68,6 +70,8 @@ export function rawToTopology(raw: RawTopology): Topology {
     if (l.lacp !== undefined) link.lacp = l.lacp;
     if (l.label !== undefined) link.label = l.label;
     if (l.note !== undefined) link.note = l.note;
+    if (l.custom_fields !== undefined) link.customFields = l.custom_fields;
+    if (l.sections !== undefined) link.sections = l.sections as any;
     return link;
   });
 
@@ -75,12 +79,33 @@ export function rawToTopology(raw: RawTopology): Topology {
     version: 2,
     name: raw.name,
     theme: raw.theme,
+    density: raw.density,
+    scale: raw.scale,
     zones,
     devices,
     links,
   };
   if (raw.description !== undefined) topology.description = raw.description;
   if (raw.hero !== undefined) topology.hero = raw.hero;
+  if (raw.author !== undefined) topology.author = raw.author;
+  if (raw.revision !== undefined) topology.revision = raw.revision;
+  if (raw.date !== undefined) topology.date = raw.date;
+  if (raw.title_block !== undefined) {
+    topology.titleBlock = {
+      title: raw.title_block.title ?? raw.name,
+      author: raw.title_block.author ?? raw.author,
+      date: raw.title_block.date ?? raw.date,
+      revision: raw.title_block.revision ?? raw.revision,
+      ...(raw.title_block.logo !== undefined ? { logo: raw.title_block.logo } : {}),
+    };
+  } else if (raw.author !== undefined || raw.revision !== undefined || raw.date !== undefined) {
+    topology.titleBlock = {
+      title: raw.name,
+      ...(raw.author !== undefined ? { author: raw.author } : {}),
+      ...(raw.date !== undefined ? { date: raw.date } : {}),
+      ...(raw.revision !== undefined ? { revision: raw.revision } : {}),
+    };
+  }
   return topology;
 }
 

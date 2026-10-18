@@ -24,6 +24,7 @@ export interface CScene {
     badge?: string;
     accent?: string;
     tier?: string;
+    labelSize?: number;
   }>;
   edges: Array<{
     id: string;
@@ -66,6 +67,7 @@ interface ThemeColors {
   unknown: string;
   edge: string;
   accent: string;
+  accentInk: string;
   chip: string;
   chipLine: string;
   ink: string;
@@ -74,6 +76,14 @@ interface ThemeColors {
   zone: string;
   bgRaise: string;
   line: string;
+  edgeWidthDefault: number;
+  edgeWidth10g: number;
+  edgeWidth40g: number;
+  edgeWidthTrunk: number;
+  edgeWidthSlot: number;
+  edgeWidthStack: number;
+  dashDegraded: number[];
+  dashPlanned: number[];
 }
 
 function statusColor(c: ThemeColors, status: string): string {
@@ -91,25 +101,53 @@ function statusColor(c: ThemeColors, status: string): string {
   }
 }
 
+export function parsePx(value: string | undefined, fallback: number): number {
+  if (!value) return fallback;
+  const match = /^([\d.]+)px$/i.exec(value.trim());
+  if (match && match[1]) {
+    const n = parseFloat(match[1]);
+    return Number.isFinite(n) && n > 0 ? n : fallback;
+  }
+  const n = parseFloat(value.trim());
+  return Number.isFinite(n) && n > 0 ? n : fallback;
+}
+
+export function parseDash(value: string | undefined, fallback: number[]): number[] {
+  if (!value) return fallback;
+  const parts = value.trim().split(/[\s,]+/).map(Number).filter((n) => Number.isFinite(n) && n >= 0);
+  return parts.length >= 2 ? parts : fallback;
+}
+
 function themeColors(): ThemeColors {
   const cs = getComputedStyle(document.documentElement);
   const v = (name: string, fallback: string): string => cs.getPropertyValue(name).trim() || fallback;
+  const n = (name: string, fallback: number): number => parsePx(cs.getPropertyValue(name), fallback);
+  const d = (name: string, fallback: number[]): number[] => parseDash(cs.getPropertyValue(name), fallback);
   return {
-    up: v('--up', '#30d158'),
-    down: v('--down', '#e5484d'),
-    degraded: v('--degraded', '#f5a524'),
-    planned: v('--planned', '#5a6478'),
-    unknown: v('--unknown', '#8a93a6'),
-    edge: v('--edge', '#4c7ab0'),
-    accent: v('--m-accent', '#7aa2ff'),
-    chip: v('--chip', '#151d2b'),
-    chipLine: v('--chip-line', '#2a3a52'),
-    ink: v('--ink', '#dbe2ee'),
-    inkDim: v('--ink-dim', '#8a93a6'),
-    bg: v('--bg', '#0b0e14'),
-    zone: v('--zone', '#3d5a80'),
-    bgRaise: v('--bg-raise', '#10151f'),
-    line: v('--line', '#223047'),
+    up: v('--up', '#22c55e'),
+    down: v('--down', '#ef4444'),
+    degraded: v('--degraded', '#f59e0b'),
+    planned: v('--planned', '#71717a'),
+    unknown: v('--unknown', '#71717a'),
+    edge: v('--edge', '#d4d4d8'),
+    accent: v('--m-accent', '#3b82f6'),
+    accentInk: v('--m-accent-ink', '#ffffff'),
+    chip: v('--chip', '#18181b'),
+    chipLine: v('--chip-line', '#3f3f46'),
+    ink: v('--ink', '#fafafa'),
+    inkDim: v('--ink-dim', '#a1a1aa'),
+    bg: v('--bg', '#09090b'),
+    zone: v('--zone', '#71717a'),
+    bgRaise: v('--bg-raise', '#27272a'),
+    line: v('--line', '#27272a'),
+    edgeWidthDefault: n('--edge-width-default', 1.5),
+    edgeWidth10g: n('--edge-width-10g', 3),
+    edgeWidth40g: n('--edge-width-40g', 4.5),
+    edgeWidthTrunk: n('--edge-width-trunk', 4.5),
+    edgeWidthSlot: n('--edge-width-slot', 1.7),
+    edgeWidthStack: n('--edge-width-stack', 5),
+    dashDegraded: d('--dash-degraded', [14, 7]),
+    dashPlanned: d('--dash-planned', [2, 7]),
   };
 }
 
@@ -422,17 +460,22 @@ export class CanvasEngine {
                 : c.edge;
       // logical function → symbol (mirror of @marrow/scene linkPresentation)
       const disp = linkDisplay(e);
-      let lw = e.speed === '40G' || e.speed === '100G' || e.speed === '400G' ? 4.5 : e.speed === '10G' || e.speed === '25G' ? 3 : 1.5;
-      if (disp.pattern === 'thick') lw = Math.max(lw, 5);
-      else if (disp.pattern === 'double') lw = Math.max(lw, 4.5);
+      let lw =
+        e.speed === '40G' || e.speed === '100G' || e.speed === '400G'
+          ? c.edgeWidth40g
+          : e.speed === '10G' || e.speed === '25G'
+            ? c.edgeWidth10g
+            : c.edgeWidthDefault;
+      if (disp.pattern === 'thick') lw = Math.max(lw, c.edgeWidthStack);
+      else if (disp.pattern === 'double') lw = Math.max(lw, c.edgeWidthTrunk);
       g.lineWidth = lw / Math.sqrt(k);
       // status dash > flow > mode dash (tunnel/peering); mode never overrides an alarm
       const modeDash = disp.pattern === 'dashed' ? [9, 6] : disp.pattern === 'dotted' ? [1.5, 5] : [];
       g.setLineDash(
         e.status === 'degraded'
-          ? [14, 7]
+          ? c.dashDegraded
           : e.status === 'planned'
-            ? [2, 7]
+            ? c.dashPlanned
             : e.animated && animate
               ? [8, 6]
               : modeDash,
@@ -559,53 +602,57 @@ export class CanvasEngine {
       g.strokeStyle = ring ? accent : isFocus ? c.inkDim : c.chipLine;
       g.lineWidth = (isSel ? 2 : n.hero ? 1.5 : 1.25) / Math.sqrt(k);
       if (n.ghost) g.setLineDash([4, 3]);
-      roundRect(g, n.chip.x, n.chip.y, n.chip.w, n.chip.h, 13);
+      const rx = Math.round(n.chip.w * (13 / 64));
+      const iconInset = Math.round(n.chip.w * (8 / 64));
+      const cornerArc = Math.round(rx * (1 - 1 / Math.SQRT2) * 10) / 10;
+      const ledR = Math.max(2.5, Math.round(n.chip.w * (4.2 / 64) * 10) / 10);
+
+      roundRect(g, n.chip.x, n.chip.y, n.chip.w, n.chip.h, rx);
       g.fill();
       g.stroke();
       g.setLineDash([]);
 
       const icon = this.icons.get(n.icon);
       if (icon) {
-        g.drawImage(icon, n.chip.x + 8, n.chip.y + 8, n.chip.w - 16, n.chip.h - 16);
+        g.drawImage(icon, n.chip.x + iconInset, n.chip.y + iconInset, n.chip.w - 2 * iconInset, n.chip.h - 2 * iconInset);
       } else {
         g.fillStyle = c.inkDim;
-        g.font = '700 18px system-ui, sans-serif';
+        g.font = `700 ${Math.round(18 * (n.chip.w / 64))}px system-ui, sans-serif`;
         g.textAlign = 'center';
         g.fillText(n.label.slice(0, 2).toUpperCase(), n.chip.x + n.chip.w / 2, n.chip.y + n.chip.h / 2 + 6);
         g.textAlign = 'left';
       }
 
-      // status LED — centered on the chip's corner arc (13 · (1 − 1/√2) ≈ 3.8)
-      // so it straddles the border symmetrically instead of grazing it
+      // status LED — centered on the chip's corner arc
       g.fillStyle = statusColor(c, n.status);
       g.strokeStyle = c.bg;
       g.lineWidth = 2;
       g.beginPath();
-      g.arc(n.chip.x + n.chip.w - 3.8, n.chip.y + 3.8, 4.2, 0, Math.PI * 2);
+      g.arc(n.chip.x + n.chip.w - cornerArc, n.chip.y + cornerArc, ledR, 0, Math.PI * 2);
       g.fill();
       g.stroke();
 
       if (n.badge) {
-        // badge — mirrors the LED: right cap centered on the bottom-right
-        // corner arc (3.8 = 13 · (1 − 1/√2)), bg halo punches it out
+        // badge — mirrors the LED: right cap centered on the bottom-right corner arc
         g.font = '700 11px system-ui, sans-serif';
         const bw = Math.max(17, g.measureText(n.badge).width + 12);
-        const bcx = n.chip.x + n.chip.w - 3.8;
-        const bcy = n.chip.y + n.chip.h - 3.8;
+        const bcx = n.chip.x + n.chip.w - cornerArc;
+        const bcy = n.chip.y + n.chip.h - cornerArc;
         g.fillStyle = accent;
         g.strokeStyle = c.bg;
         g.lineWidth = 2;
         roundRect(g, bcx + 8.5 - bw, bcy - 8.5, bw, 17, 8.5);
         g.fill();
         g.stroke();
-        g.fillStyle = '#fff';
+        g.fillStyle = c.accentInk;
         g.textAlign = 'center';
         g.fillText(n.badge, bcx + 8.5 - bw / 2, bcy + 4);
         g.textAlign = 'left';
       }
 
       if (showLabels) {
-        g.font = '12px system-ui, sans-serif';
+        const labelSize = n.labelSize ?? 12;
+        g.font = `${labelSize}px system-ui, sans-serif`;
         // layout reserved labelBox from a deterministic glyph table; the
         // platform font may run wider — condense so it can never overflow
         let tw = this.labelWidths.get(n.label);

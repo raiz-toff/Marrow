@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, test } from 'vitest';
 import { loadCatalog } from '@marrow/icons';
 import { validateSource } from '@marrow/schema';
-import { buildSingleFile } from '@marrow/site';
+import { buildSingleFile } from '../src/index.js';
 
 const repoRoot = fileURLToPath(new URL('../../..', import.meta.url));
 const catalog = loadCatalog(join(repoRoot, 'icon-packs'));
@@ -105,5 +105,45 @@ describe('buildSingleFile', () => {
     const a = await build('valid/campus-three-tier.yaml');
     const b = await build('valid/campus-three-tier.yaml');
     expect(a.html).toBe(b.html);
+  });
+
+  test('modular chrome embed support (Defect 3)', async () => {
+    const source = readFileSync(join(repoRoot, 'fixtures', 'valid', 'small-office.yaml'), 'utf8');
+    const t = validateSource(source, { icons: catalog }).topology!;
+    const buildFull = await buildSingleFile(t, { icons: catalog });
+    // URL param modular script is always injected in head
+    expect(buildFull.html).toContain('g(\'embed\')===\'true\'');
+    expect(buildFull.html).toContain('g(\'inspector\')===\'off\'');
+    expect(buildFull.html).toContain('g(\'minimap\')===\'off\'');
+
+    // Build-time minimal chrome option
+    const buildMinimal = await buildSingleFile(t, { icons: catalog, chrome: 'minimal' });
+    expect(buildMinimal.html).toContain('data-chrome="minimal"');
+  });
+
+  test('serializes custom_fields and sections in embedded data (Defect 4)', async () => {
+    const source = [
+      'marrow: 2',
+      'name: Custom Test',
+      'devices:',
+      '  - id: dev-1',
+      '    icon: cisco/switches/layer-3-switch',
+      '    custom_fields:',
+      '      rack: "Rack 5"',
+      '    sections:',
+      '      bgp: "Peer 1.1.1.1"',
+      'links:',
+      '  - from: dev-1',
+      '    to: dev-1:loop',
+      '    custom_fields:',
+      '      tested: true',
+    ].join('\n');
+    const validated = validateSource(source, { icons: catalog });
+    const { html } = await buildSingleFile(validated.topology!, { icons: catalog });
+    const dataBlock = /<script type="application\/json" id="marrow-data">([\s\S]*?)<\/script>/.exec(html)![1]!;
+    const parsed = JSON.parse(dataBlock);
+    expect(parsed.devices[0].customFields).toEqual({ rack: 'Rack 5' });
+    expect(parsed.devices[0].sections).toEqual({ bgp: 'Peer 1.1.1.1' });
+    expect(parsed.links[0].customFields).toEqual({ tested: true });
   });
 });

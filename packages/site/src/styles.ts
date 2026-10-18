@@ -16,38 +16,15 @@
  *   z       stage 0 · watermark 4 · hud 20 · inspector 25 · drawer 26 ·
  *           topbar/dock 30 · rail 31 · spotlight 40
  */
-export const SITE_CSS = `
-:root {
-  --bg: #09090b; --bg-raise: #27272a; --panel: #18181b;
-  --line: #27272a; --line-strong: #3f3f46;
-  --ink: #fafafa; --ink-dim: #a1a1aa; --ink-faint: #71717a;
-  --chip: #18181b; --chip-line: #3f3f46; --grid-dot: #1c1c1f;
-  --m-accent: #3b82f6; --ring: #3b82f6; --zone: #71717a;
-  --up: #22c55e; --down: #ef4444; --degraded: #f59e0b; --planned: #71717a; --unknown: #71717a;
-  --edge: #d4d4d8;
-  /* shadcn sidebar layer (ported literals from shadcn/ui new-york-v4) */
-  --sidebar: oklch(0.205 0 0); --sidebar-fg: #fafafa;
-  --sidebar-accent: oklch(0.269 0 0); --sidebar-border: rgb(255 255 255 / .1);
-  --radius-sm: 6px; --radius: 8px; --radius-lg: 12px;
-  --frame-top: 52px; --frame-x: 20px; --frame-bottom: 20px; --frame-left: 20px;
-  --shadow: 0 10px 30px -12px rgb(0 0 0 / .55), 0 4px 10px -6px rgb(0 0 0 / .45);
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / .4);
-  --inspector-w: 356px;
-}
-:root[data-theme="light"] {
-  --bg: #fafafa; --bg-raise: #f4f4f5; --panel: #ffffff;
-  --line: #e4e4e7; --line-strong: #d4d4d8;
-  --ink: #18181b; --ink-dim: #71717a; --ink-faint: #a1a1aa;
-  --chip: #ffffff; --chip-line: #d4d4d8; --grid-dot: #e4e4e7;
-  --m-accent: #2563eb; --ring: #2563eb; --zone: #71717a;
-  --up: #16a34a; --down: #dc2626; --degraded: #d97706; --planned: #a1a1aa; --unknown: #a1a1aa;
-  --edge: #71717a;
-  --sidebar: oklch(0.985 0 0); --sidebar-fg: #18181b;
-  --sidebar-accent: oklch(0.97 0 0); --sidebar-border: oklch(0.922 0 0);
-  --shadow: 0 10px 24px -8px rgb(0 0 0 / .10), 0 4px 8px -4px rgb(0 0 0 / .06);
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / .05);
+import { generateThemeCss, type ThemeConfig } from './tokens.js';
+
+export function buildStylesheet(config?: ThemeConfig): string {
+  return `${generateThemeCss(config)}
+
+${BASE_CSS}`;
 }
 
+const BASE_CSS = `
 * { box-sizing: border-box; margin: 0; }
 [hidden] { display: none !important; }
 html, body { height: 100%; }
@@ -112,26 +89,24 @@ kbd {
 
 /* ── edges ── */
 .m-edge {
-  fill: none; stroke: var(--edge); stroke-width: 1.5; stroke-linejoin: round;
+  fill: none; stroke: var(--edge); stroke-width: var(--edge-width-default, 1.5px); stroke-linejoin: round;
   opacity: .92; transition: opacity .25s, stroke .25s; cursor: pointer;
 }
-.m-edge.m-speed-10g, .m-edge.m-speed-25g { stroke-width: 3; }
-.m-edge.m-speed-40g, .m-edge.m-speed-100g, .m-edge.m-speed-400g { stroke-width: 4.5; }
+.m-edge.m-speed-10g, .m-edge.m-speed-25g { stroke-width: var(--edge-width-10g, 3px); }
+.m-edge.m-speed-40g, .m-edge.m-speed-100g, .m-edge.m-speed-400g { stroke-width: var(--edge-width-40g, 4.5px); }
 /* ── logical link modes: the stroke pattern says WHAT the cable carries.
       Placed before the status rules so a degraded/planned colour still wins.
       Dash values are in pathLength units (edges carry pathLength="1", so px
       dashes are swallowed) — a tunnel shows ~the same dash count at any length. */
-:root { --dash-tunnel: 0.02 0.014; --dash-peering: 0.004 0.011; }
-.m-edge.m-mode-trunk { stroke-width: 4.5; }                 /* casing for the double rail */
-.m-edge.m-mode-stack { stroke-width: 5; stroke-linecap: round; }
+.m-edge.m-mode-trunk { stroke-width: var(--edge-width-trunk, 4.5px); }                 /* casing for the double rail */
+.m-edge.m-mode-stack { stroke-width: var(--edge-width-stack, 5px); stroke-linecap: round; }
 .m-edge.m-mode-tunnel { stroke-dasharray: var(--dash-tunnel); }
 .m-edge.m-mode-peering { stroke-dasharray: var(--dash-peering); stroke-linecap: round; opacity: .82; }
 /* the bg-coloured slot carved down the trunk casing → two parallel rails */
-.m-edge-rail { fill: none; stroke: var(--bg); stroke-width: 1.7; stroke-linejoin: round; opacity: .92; }
+.m-edge-rail { fill: none; stroke: var(--bg); stroke-width: var(--edge-width-slot, 1.7px); stroke-linejoin: round; opacity: .92; cursor: pointer; }
+.m-edge-hit { fill: none; stroke: transparent; stroke-width: 16px; stroke-linejoin: round; cursor: pointer; pointer-events: stroke; }
 /* traffic reads as accent; status colors below still win */
 .m-edge.m-flow { stroke: var(--m-accent); }
-/* dash vocabulary — one source of truth, reused by the inspector swatch */
-:root { --dash-degraded: 14 7; --dash-planned: 2 7; }
 .m-edge.m-status-down { stroke: var(--down); }
 .m-edge.m-status-degraded { stroke: var(--degraded); stroke-dasharray: var(--dash-degraded); }
 .m-edge.m-status-planned { stroke: var(--planned); stroke-dasharray: var(--dash-planned); stroke-linecap: round; }
@@ -153,7 +128,7 @@ kbd {
 .m-status-degraded .m-led { fill: var(--degraded); }
 .m-status-planned .m-led { fill: var(--planned); }
 .m-status-unknown .m-led { fill: var(--unknown); }
-.m-label { fill: var(--ink); font-size: 12px; paint-order: stroke; stroke: var(--bg); stroke-width: 3px; transition: opacity .3s; }
+.m-label { fill: var(--ink); font-size: var(--m-label-size, 12px); paint-order: stroke; stroke: var(--bg); stroke-width: 3px; transition: opacity .3s; }
 .m-icon-fallback { fill: var(--ink-dim); font-size: 18px; font-weight: 600; }
 
 /* ghost "door" nodes: dimmed stubs that navigate to their own page */
@@ -166,10 +141,12 @@ kbd {
 .m-badge text { fill: #fff; font-size: 11px; font-weight: 700; }
 
 /* edge aggregate labels (×24) */
+.m-edge-label { cursor: pointer; }
 .m-edge-label rect { fill: var(--bg); stroke: var(--line-strong); stroke-width: 1; rx: 10px; }
 .m-edge-label text { fill: var(--ink); font-size: 11px; font-weight: 700; }
 
 /* semantic link chips — VLANs / encap / protocol / lag, with an optional glyph */
+.m-edge-chip { cursor: pointer; }
 .m-edge-chip > rect { fill: var(--bg); stroke: var(--line-strong); stroke-width: 1; }
 .m-edge-chip > text { fill: var(--ink); font-size: 10.5px; font-weight: 600; letter-spacing: .01em; }
 .m-chip-glyph { fill: var(--ink-dim); }
@@ -221,17 +198,18 @@ kbd {
   transition: left .3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .m-chip-btn {
-  width: 32px; height: 32px; flex: none; border: 0; border-radius: var(--radius);
-  background: var(--ink); color: var(--bg);
+  width: 32px; height: 32px; flex: none; border: 1px solid var(--line); border-radius: var(--radius);
+  background: color-mix(in srgb, var(--panel) 85%, transparent); color: var(--ink-dim);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
   display: grid; place-items: center; cursor: pointer; pointer-events: auto;
   box-shadow: var(--shadow-sm);
-  transition: background .15s, color .15s, transform .15s;
+  transition: background .15s, color .15s, border-color .15s, transform .15s;
 }
-.m-chip-btn:hover { background: color-mix(in srgb, var(--ink) 86%, var(--bg)); }
+.m-chip-btn:hover { background: var(--bg-raise); color: var(--ink); border-color: var(--line-strong); }
 .m-chip-btn:active { transform: scale(.94); }
 /* like shadcn's ghost SidebarTrigger, the chip stays neutral — the sidebar
    itself is the open/closed signal */
-.m-chip-btn.on { background: var(--ink); color: var(--bg); }
+.m-chip-btn.on { background: var(--bg-raise); color: var(--ink); border-color: var(--line-strong); }
 
 /* ── top dock (hides above the edge, a Search tab peeks out;
       hover or keyboard focus slides it down) ── */
@@ -532,11 +510,11 @@ a.m-side-row.active i, a.m-side-row.active em { color: var(--sidebar-fg); }
 :root[data-motion="off"] .m-edge.m-flow { animation: none !important; stroke-dasharray: none; }
 
 /* ── port label chips (LOD: near zoom, or forced via setting) ── */
-.m-portlabel { opacity: 0; transition: opacity .25s; pointer-events: none; }
-:root[data-zoom="near"] .m-portlabel, :root[data-ports="on"] .m-portlabel { opacity: 1; }
-:root[data-ports="off"] .m-portlabel { opacity: 0 !important; }
+.m-portlabel { opacity: 0; transition: opacity .25s; pointer-events: none; cursor: pointer; }
+:root[data-zoom="near"] .m-portlabel, :root[data-ports="on"] .m-portlabel { opacity: 1; pointer-events: auto; }
+:root[data-ports="off"] .m-portlabel:not(.is-hot) { opacity: 0 !important; pointer-events: none !important; }
 /* hovering/focusing an edge reveals its chips regardless of the toggle */
-.m-portlabel.is-hot { opacity: 1 !important; }
+.m-portlabel.is-hot { opacity: 1 !important; pointer-events: auto; }
 .m-portlabel rect { fill: var(--bg); stroke: var(--line-strong); stroke-width: 1; rx: 9px; }
 .m-portlabel text { fill: var(--ink); font: 500 9px ui-monospace, monospace; }
 .m-portlabel.is-hot rect { stroke: var(--m-accent); }
@@ -645,6 +623,62 @@ a.m-side-row.active i, a.m-side-row.active em { color: var(--sidebar-fg); }
 }
 .m-drawer-foot svg { flex: none; width: 14px; height: 14px; }
 .m-inspector-body h3 { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; font-weight: 600; color: var(--ink-faint); margin: 20px 0 8px; }
+.m-inspector-section {
+  margin-top: 16px;
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+.m-inspector-section summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+.m-inspector-section summary::-webkit-details-marker {
+  display: none;
+}
+.m-inspector-section summary h3 {
+  margin: 0;
+}
+.m-section-chevron {
+  color: var(--ink-faint);
+  transition: transform .2s ease;
+}
+.m-inspector-section[open] .m-section-chevron {
+  transform: rotate(180deg);
+}
+.m-section-body {
+  margin-top: 10px;
+}
+.m-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+}
+.m-inspector-body .m-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.m-inspector-body .m-table th {
+  background: var(--bg-raise);
+  color: var(--ink-dim);
+  font-weight: 600;
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--line);
+}
+.m-inspector-body .m-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent);
+  color: var(--ink);
+}
+.m-inspector-body .m-table tr:last-child td {
+  border-bottom: none;
+}
 .m-icon-badge { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
 /* direct child only — the "Open page" link's arrow must not inherit this */
 .m-icon-badge > svg { width: 44px; height: 44px; background: var(--bg-raise); border: 1px solid var(--line); border-radius: var(--radius); padding: 6px; }
@@ -942,6 +976,24 @@ a.m-side-row.active i, a.m-side-row.active em { color: var(--sidebar-fg); }
 .m-full-link:hover { text-decoration: underline; }
 .m-members { list-style: none; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 3px 10px; font-size: 12px; color: var(--ink-dim); }
 
+/* ── embed & modular UI chrome (minimal/kiosk) ── */
+html[data-chrome="minimal"] .m-breadcrumbs,
+html[data-chrome="minimal"] .m-dock,
+html[data-chrome="minimal"] .m-dock-hint,
+html[data-chrome="minimal"] .m-rail-wrap,
+html[data-chrome="minimal"] .m-backdrop,
+html[data-chrome="minimal"] .m-sidebar {
+  display: none !important;
+}
+
+html[data-inspector="off"] .m-inspector {
+  display: none !important;
+}
+
+html[data-minimap="off"] .m-minimap {
+  display: none !important;
+}
+
 /* ── reduced motion: kill choreography and chrome slides ── */
 @media (prefers-reduced-motion: reduce) {
   .m-enter-zone, .m-enter-node { animation: none !important; }
@@ -950,10 +1002,19 @@ a.m-side-row.active i, a.m-side-row.active em { color: var(--sidebar-fg); }
   .m-controls, .m-minimap, .m-chip-btn { transition: none !important; animation: none !important; }
 }
 
+/* ── blueprint static export chrome ── */
+.m-blueprint-titleblock text, .m-blueprint-legend text {
+  user-select: none;
+}
+
 /* ── print ── */
 @media print {
   .m-sidebar, .m-rail-wrap, .m-dock, .m-breadcrumbs, .m-controls, .m-minimap, .m-inspector, .m-spotlight, .m-tooltip, .m-backdrop { display: none !important; }
   .m-stage { position: static; inset: auto; border: none; box-shadow: none; }
   body { overflow: visible; background: #fff; }
+  .m-portlabel { opacity: 1 !important; }
+  .m-edge, .m-edge.m-flow { animation: none !important; }
 }
 `;
+
+export const SITE_CSS = buildStylesheet();

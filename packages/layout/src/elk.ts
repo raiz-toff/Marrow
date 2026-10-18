@@ -49,12 +49,24 @@ export interface ElkResult {
  * topology yields the same graph regardless of construction order; ELK
  * layered is deterministic for a fixed input.
  */
+import type { LayoutMetrics } from './metrics.js';
+
 export async function elkLayout(
   t: Topology,
   sizing: ReadonlyMap<string, NodeSizing>,
   archetype: Archetype,
+  metrics?: LayoutMetrics,
 ): Promise<ElkResult> {
   const tiered = archetype === 'tiered';
+  const layerSpacing = metrics?.layerSpacing ?? 88;
+  const nodeSpacing = metrics?.nodeSpacing ?? 48;
+  const componentSpacing = metrics?.componentSpacing ?? 56;
+  const padding = metrics?.padding ?? 48;
+  const edgeNode = Math.round(nodeSpacing / 2);
+  const edgeEdge = Math.round(nodeSpacing * 0.3);
+  const edgeNodeLayers = Math.round(layerSpacing * 0.32);
+  const edgeEdgeLayers = Math.round(layerSpacing * 0.16);
+
   const children: ElkChildIn[] = [...t.devices]
     .sort((a, b) => a.id.localeCompare(b.id))
     .map((d) => {
@@ -78,18 +90,18 @@ export async function elkLayout(
       'elk.algorithm': 'layered',
       'elk.direction': 'DOWN',
       'elk.edgeRouting': 'ORTHOGONAL',
-      'elk.layered.spacing.nodeNodeBetweenLayers': '88',
-      'elk.spacing.nodeNode': '48',
+      'elk.layered.spacing.nodeNodeBetweenLayers': String(layerSpacing),
+      'elk.spacing.nodeNode': String(nodeSpacing),
       // Disconnected components (e.g. devices whose only links leave their
       // zone) default to 20px apart — too tight for the router's buffer.
-      'elk.spacing.componentComponent': '56',
-      'elk.spacing.edgeNode': '24',
-      'elk.spacing.edgeEdge': '14',
-      'elk.layered.spacing.edgeNodeBetweenLayers': '28',
-      'elk.layered.spacing.edgeEdgeBetweenLayers': '14',
+      'elk.spacing.componentComponent': String(componentSpacing),
+      'elk.spacing.edgeNode': String(edgeNode),
+      'elk.spacing.edgeEdge': String(edgeEdge),
+      'elk.layered.spacing.edgeNodeBetweenLayers': String(edgeNodeLayers),
+      'elk.layered.spacing.edgeEdgeBetweenLayers': String(edgeEdgeLayers),
       'elk.layered.nodePlacement.strategy': 'BRANDES_KOEPF',
       'elk.layered.crossingMinimization.strategy': 'LAYER_SWEEP',
-      'elk.padding': '[top=48,left=48,bottom=48,right=48]',
+      'elk.padding': `[top=${padding},left=${padding},bottom=${padding},right=${padding}]`,
       ...(tiered ? { 'elk.partitioning.activate': 'true' } : {}),
     },
     children,

@@ -119,6 +119,41 @@ describe('marrow serve', () => {
       (s) => s.valid === true,
     );
   });
+
+  test('editing the watched config file triggers a live reload with updated brand and theme', async () => {
+    const cfgPath = join(dir, 'test-config.yaml');
+    let brandName = 'Initial Brand';
+    let accentColor = '#3b82f6';
+    writeFileSync(cfgPath, `brand:\n  name: ${brandName}`);
+
+    const cfgServer = await serve({
+      input: dir,
+      icons: catalog,
+      port: 0,
+      configFile: cfgPath,
+      configLoader: () => ({
+        brand: { name: brandName },
+        themeConfig: { dark: { accent: accentColor } },
+      }),
+    });
+    try {
+      const beforeHtml = await (await fetch(cfgServer.url)).text();
+      expect(beforeHtml).toContain('Initial Brand');
+
+      brandName = 'Live Updated Brand';
+      accentColor = '#8b5cf6';
+      writeFileSync(cfgPath, `brand:\n  name: ${brandName}`);
+
+      const afterHtml = await until(
+        async () => (await fetch(cfgServer.url)).text(),
+        (html) => html.includes('Live Updated Brand') && html.includes('#8b5cf6'),
+      );
+      expect(afterHtml).toContain('Live Updated Brand');
+      expect(afterHtml).toContain('#8b5cf6');
+    } finally {
+      await cfgServer.close();
+    }
+  });
 });
 
 describe('marrow serve — site mode (large topology)', () => {

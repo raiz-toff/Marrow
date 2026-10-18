@@ -10,6 +10,8 @@ import type { NodeSizing } from './size.js';
  * on radial shapes).
  */
 
+import type { LayoutMetrics } from './metrics.js';
+
 const RING_GAP = 48;
 const MIN_RADIUS = 200;
 const HUB_GAP = 72;
@@ -19,25 +21,30 @@ export function placePolar(
   t: Topology,
   sizing: ReadonlyMap<string, NodeSizing>,
   hubs: readonly string[],
+  metrics?: LayoutMetrics,
 ): Map<string, Rect> {
+  const ringGap = metrics?.ringGap ?? RING_GAP;
+  const minRadius = metrics?.minRadius ?? MIN_RADIUS;
+  const hubGap = metrics?.hubGap ?? HUB_GAP;
+
   const boxes = new Map<string, Rect>();
   const hubSet = new Set(hubs);
   const spokes = t.devices.filter((d) => !hubSet.has(d.id)).sort((a, b) => a.id.localeCompare(b.id));
 
   // hubs at the centre, side by side
   const hubSizes = hubs.map((id) => sizing.get(id)!);
-  const hubsW = hubSizes.reduce((s, z) => s + z.w, 0) + (hubs.length - 1) * HUB_GAP;
+  const hubsW = hubSizes.reduce((s, z) => s + z.w, 0) + (hubs.length - 1) * hubGap;
   const maxHubH = Math.max(...hubSizes.map((z) => z.h), 0);
 
   // ring radius from the space the spokes actually need
-  const needed = spokes.reduce((s, d) => s + sizing.get(d.id)!.w + RING_GAP, 0);
-  const radius = Math.max(MIN_RADIUS, needed / (2 * Math.PI), hubsW * 0.9, maxHubH * 1.6);
+  const needed = spokes.reduce((s, d) => s + sizing.get(d.id)!.w + ringGap, 0);
+  const radius = Math.max(minRadius, needed / (2 * Math.PI), hubsW * 0.9, maxHubH * 1.6);
 
   let x = -hubsW / 2;
   for (const id of hubs) {
     const s = sizing.get(id)!;
     boxes.set(id, { x, y: -s.h / 2, w: s.w, h: s.h });
-    x += s.w + HUB_GAP;
+    x += s.w + hubGap;
   }
 
   // allocate arc per spoke proportional to its width (start at 12 o'clock)
@@ -45,7 +52,7 @@ export function placePolar(
   const total = needed;
   for (const d of spokes) {
     const s = sizing.get(d.id)!;
-    const arc = ((s.w + RING_GAP) / total) * 2 * Math.PI;
+    const arc = ((s.w + ringGap) / total) * 2 * Math.PI;
     const mid = angle + arc / 2;
     boxes.set(d.id, {
       x: Math.cos(mid) * radius - s.w / 2,
@@ -60,11 +67,18 @@ export function placePolar(
 
 /** Everyone on one circle — rings and small meshes. Ring order follows the
  *  cycle when one exists so neighbors sit adjacent. */
-export function placeCircle(t: Topology, sizing: ReadonlyMap<string, NodeSizing>, followCycle: boolean): Map<string, Rect> {
+export function placeCircle(
+  t: Topology,
+  sizing: ReadonlyMap<string, NodeSizing>,
+  followCycle: boolean,
+  metrics?: LayoutMetrics,
+): Map<string, Rect> {
+  const ringGap = metrics?.ringGap ?? RING_GAP;
+  const minRadius = metrics?.minRadius ?? MIN_RADIUS;
   const order = followCycle ? cycleOrder(t) : [...t.devices.map((d) => d.id)].sort();
   const boxes = new Map<string, Rect>();
-  const needed = order.reduce((s, id) => s + (sizing.get(id)?.w ?? 64) + RING_GAP, 0);
-  const radius = Math.max(MIN_RADIUS, needed / (2 * Math.PI));
+  const needed = order.reduce((s, id) => s + (sizing.get(id)?.w ?? 64) + ringGap, 0);
+  const radius = Math.max(minRadius, needed / (2 * Math.PI));
   let angle = -Math.PI / 2;
   for (const id of order) {
     const s = sizing.get(id);
