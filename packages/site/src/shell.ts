@@ -133,11 +133,89 @@ export function renderShell(o: ShellOptions): string {
   const backdrop = o.stage
     ? `<div class="m-backdrop" aria-hidden="true"><span class="m-backdrop-text">${brandLine}</span>${note !== undefined ? `<span class="m-backdrop-note">${esc(note)}</span>` : ''}</div>`
     : '';
-  /* one chrome for every page: floating SidebarTrigger chip, fixed
-     breadcrumb bar, hover search dock (view settings live in ⌘K) */
-  const rail = `<div class="m-rail-wrap">
-<button class="m-chip-btn m-sidebar-btn" type="button" data-title="Panel" aria-label="Toggle panel">${I.hamburger}</button>
-</div>`;
+  /* one chrome for every page: unified command bar, workspace row,
+     sidebar, inspector with tabs, status bar, and mobile bottom nav */
+  const isSingle = !o.navLinks || o.navLinks.length === 0;
+
+  const commandBar = `<header class="m-command-bar">
+  <div class="m-header-left">
+    <button class="m-icon-btn m-sidebar-btn" type="button" aria-label="Toggle navigation" title="Toggle navigation (Ctrl+B)">
+      ${I.hamburger}
+      <span class="m-desk-only">Navigation</span>
+      <kbd class="m-desk-only">Ctrl B</kbd>
+    </button>
+    <div class="m-brand-mark">${brandLogo(o)}<span>${brandName(o)}</span></div>
+    <nav class="m-breadcrumbs" aria-label="Breadcrumb">${crumbs}</nav>
+  </div>
+  <div class="m-header-right">
+    <button class="m-icon-btn m-search-btn m-desk-only" type="button" aria-label="Search" title="Search devices, IPs, interfaces (Ctrl+K)">
+      ${I.magnifier}<span>Search devices…</span><kbd>Ctrl K</kbd>
+    </button>
+    ${o.stats ? `<span class="m-stats-chip m-desk-only">${esc(o.stats)}</span>` : ''}
+    <button class="m-icon-btn m-theme-btn m-desk-only" type="button" aria-label="Toggle theme" title="Toggle theme">
+      ${I.moon}
+    </button>
+    <button class="m-icon-btn m-export-btn m-desk-only" type="button" aria-label="Export" title="Export diagram">
+      ${I.image}<span>Export</span>
+    </button>
+    <button class="m-icon-btn m-search-btn m-mob-only" type="button" aria-label="Search">
+      ${I.magnifier}
+    </button>
+    <button class="m-icon-btn m-theme-btn m-mob-only" type="button" aria-label="Toggle theme">
+      ${I.moon}
+    </button>
+  </div>
+</header>`;
+
+  const inspector = `<aside class="m-inspector" data-sheet-snap="half" hidden>
+  <div class="m-sheet-drag-handle" title="Drag or tap to expand"></div>
+  <div class="m-inspector-head">
+    <div class="m-inspector-id">
+      <span class="m-inspector-title"></span>
+      <small class="m-inspector-desc"></small>
+    </div>
+    <button class="m-inspector-close" type="button" aria-label="Close">${I.x}</button>
+  </div>
+  <div class="m-inspector-tabs" role="tablist">
+    <button class="m-tab-btn active" data-tab="overview" type="button" role="tab">Overview</button>
+    <button class="m-tab-btn" data-tab="interfaces" type="button" role="tab">Interfaces</button>
+    <button class="m-tab-btn" data-tab="neighbors" type="button" role="tab">Neighbors</button>
+    <button class="m-tab-btn" data-tab="metadata" type="button" role="tab">Custom Fields</button>
+    <button class="m-tab-btn" data-tab="config" type="button" role="tab">Config</button>
+  </div>
+  <div class="m-inspector-body">
+    <div class="m-inspector-pane active" id="m-pane-overview"></div>
+    <div class="m-inspector-pane" id="m-pane-interfaces" hidden></div>
+    <div class="m-inspector-pane" id="m-pane-neighbors" hidden></div>
+    <div class="m-inspector-pane" id="m-pane-metadata" hidden></div>
+    <div class="m-inspector-pane" id="m-pane-config" hidden></div>
+  </div>
+  <div class="m-drawer-foot">${brandFoot(o)}</div>
+</aside>`;
+
+  const statusBar = `<footer class="m-status-bar">
+  <div class="m-status-left">
+    <span class="m-status-node">Ready</span>
+  </div>
+  <div class="m-status-center">
+    ${o.stage ? `<div class="m-status-camera">
+      <button class="m-btn m-ctl-out" type="button" title="Zoom out" aria-label="Zoom out">${I.minus}</button>
+      <span class="m-zoom-readout font-mono">100%</span>
+      <button class="m-btn m-ctl-in" type="button" title="Zoom in" aria-label="Zoom in">${I.plus}</button>
+      <button class="m-btn m-ctl-fit" type="button" title="Fit view" aria-label="Fit view">${I.maximize}<span>Fit</span></button>
+    </div>` : ''}
+  </div>
+  <div class="m-status-right">
+    ${o.stage ? `<button class="m-btn m-minimap-btn" type="button" title="Toggle minimap" aria-label="Toggle minimap">${I.map}<span>Minimap</span></button>` : ''}
+  </div>
+</footer>`;
+
+  const mobileNav = `<nav class="m-mobile-nav" aria-label="Mobile navigation">
+  <button class="m-mob-btn active" data-action="canvas" type="button"><i>${I.vector}</i><span>Canvas</span></button>
+  <button class="m-mob-btn" data-action="search" type="button"><i>${I.magnifier}</i><span>Search</span></button>
+  <button class="m-mob-btn" data-action="pages" type="button"><i>${I.building}</i><span>Pages</span></button>
+  <button class="m-mob-btn" data-action="details" type="button"><i>${I.list}</i><span>Details</span></button>
+</nav>`;
 
   // `theme: auto` follows the viewer's OS scheme. Resolve it in a tiny head
   // script BEFORE first paint (no flash), then the runtime keeps it live and
@@ -155,36 +233,26 @@ export function renderShell(o: ShellOptions): string {
 <html lang="en" data-theme="${themeAttr}"${modeAttr}${chromeAttr} data-root="${esc(o.rootPrefix)}" data-page="${esc(o.page)}">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="generator" content="marrow-v2">
 <title>${esc(o.title)} — Marrow</title>
 ${headScript}
 ${css}
 </head>
 <body${o.stage ? '' : ' class="m-doc-body"'}>
+<div id="marrow-shell" data-single-file="${isSingle ? 'true' : 'false'}" data-view-mode="default">
 ${backdrop}
-${rail}
-<nav class="m-breadcrumbs" aria-label="Breadcrumb">${crumbs}</nav>
-<div class="m-dock">
-  <button class="m-searchpill m-search-btn" type="button" aria-label="Search">
-    ${I.magnifier}<span>Search devices…</span><kbd>Ctrl K</kbd>
-  </button>
-  <button class="m-dock-hint m-search-btn" type="button" aria-label="Search">${I.magnifier}<span>Search</span><kbd>Ctrl K</kbd></button>
-</div>
+${commandBar}
+<div class="m-workspace">
 ${sidebar(o)}
 ${main}
 ${watermark}
-<aside class="m-inspector" hidden>
-  <div class="m-inspector-head">
-    <div class="m-inspector-id">
-      <span class="m-inspector-title"></span>
-      <small class="m-inspector-desc"></small>
-    </div>
-    <button class="m-inspector-close" type="button" aria-label="Close">${I.x}</button>
-  </div>
-  <div class="m-inspector-body"></div>
-  <div class="m-drawer-foot">${brandFoot(o)}</div>
-</aside>
+${o.stage ? `<div class="m-minimap" hidden><div class="m-minimap-head"><span>Minimap</span></div><div class="m-minimap-body"></div></div>\n<div class="m-controls" hidden>\n  <button class="m-btn m-ctl-in" type="button" title="Zoom in" aria-label="Zoom in">${I.plus}</button>\n  <button class="m-btn m-ctl-out" type="button" title="Zoom out" aria-label="Zoom out">${I.minus}</button>\n  <button class="m-btn m-ctl-fit" type="button" title="Fit view" aria-label="Fit view">${I.maximize}</button>\n  <span class="m-ctl-sep"></span>\n  <button class="m-btn m-ctl-cmd m-search-btn" type="button" title="Command center" aria-label="Open command center">${I.command}</button>\n</div>` : ''}
+${inspector}
+</div>
+${statusBar}
+${mobileNav}
+</div>
 <div class="m-shortcuts" hidden>
   <div class="m-shortcuts-box">
     <div class="m-shortcuts-head">
@@ -220,7 +288,6 @@ ${watermark}
     </div>
   </div>
 </div>
-${o.stage ? `<div class="m-minimap" hidden></div>\n<div class="m-controls">\n  <button class="m-btn m-ctl-in" type="button" title="Zoom in" aria-label="Zoom in">${I.plus}</button>\n  <button class="m-btn m-ctl-out" type="button" title="Zoom out" aria-label="Zoom out">${I.minus}</button>\n  <button class="m-btn m-ctl-fit" type="button" title="Fit view" aria-label="Fit view">${I.maximize}</button>\n  <span class="m-ctl-sep"></span>\n  <button class="m-btn m-ctl-cmd m-search-btn" type="button" title="Command center" aria-label="Open command center">${I.command}</button>\n</div>` : ''}
 <script type="application/json" id="marrow-data">${o.dataJson}</script>
 ${scripts}
 </body>
@@ -321,15 +388,16 @@ function sidebar(o: ShellOptions): string {
      two logos in one panel reads as clutter */
   const header = `<div class="m-side-header">
   <div class="m-side-id"><strong>${esc(o.title)}</strong><small>${esc(o.stats)}</small></div>
+  <button class="m-icon-btn m-sidebar-close" type="button" aria-label="Close sidebar">${I.x}</button>
 </div>`;
   const pages =
     o.navLinks && o.navLinks.length > 0
-      ? `<section><h4>Browse</h4><nav class="m-side-nav">${groupedNav(o.navLinks, o)}</nav></section>`
+      ? `<section class="m-side-section"><h4>Browse</h4><nav class="m-side-nav">${groupedNav(o.navLinks, o)}</nav></section>`
       : '';
   // quick settings live ONLY on the rail (stage pages); doc pages get a
   // theme control here since they have no rail
   const view = o.stage
-    ? `<section><h4>Legend</h4>
+    ? `<section class="m-side-section"><h4>Legend</h4>
   <ul class="m-legend">
     <li><i class="m-dot" style="background:var(--up)"></i>up</li>
     <li><i class="m-dot" style="background:var(--degraded)"></i>degraded</li>
@@ -339,7 +407,7 @@ function sidebar(o: ShellOptions): string {
     <li><i class="m-line m-line-dash"></i>degraded / planned</li>
   </ul>
 </section>`
-    : `<section><h4>View</h4>
+    : `<section class="m-side-section"><h4>View</h4>
   <div class="m-field"><span>Theme</span><div class="m-seg" data-setting="theme"><button data-value="dark" type="button">Dark</button><button data-value="light" type="button">Light</button></div></div>
 </section>`;
   const aboutRows = [
@@ -348,7 +416,7 @@ function sidebar(o: ShellOptions): string {
   ];
   const about =
     aboutRows.length > 0
-      ? `<section><h4>About</h4><div class="m-side-nav">${aboutRows
+      ? `<section class="m-side-section"><h4>About</h4><div class="m-side-nav">${aboutRows
           .map(
             ([k, v]) =>
               `<div class="m-side-row m-side-static"><span>${esc(String(k))}</span><em>${esc(String(v))}</em></div>`,
@@ -356,12 +424,13 @@ function sidebar(o: ShellOptions): string {
           .join('')}</div></section>`
       : '';
   const hasNav = o.navLinks !== undefined && o.navLinks.length > 0;
+  const isSingle = !hasNav;
   const menubar = `<nav class="m-menubar" role="menubar" aria-label="Application menu">
   <button type="button" data-menu="view" role="menuitem">View</button>
   <button type="button" data-menu="export" role="menuitem">Export</button>
   <button type="button" data-menu="help" role="menuitem">Help</button>
 </nav>`;
-  return `<aside class="m-sidebar${hasNav ? ' m-nav' : ''}">
+  return `<aside class="m-sidebar${hasNav ? ' m-nav' : ''}${isSingle ? ' is-collapsed' : ''}" id="m-sidebar">
 <div class="m-sidebar-inner">
 ${header}
 ${menubar}
