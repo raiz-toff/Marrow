@@ -82,7 +82,7 @@ Bundled icon packs: **cisco, affinity, generic, k8s** (~2,000 icons). The
 **aws / azure / gcp** packs are fetched on demand with \`marrow icons fetch\`
 (vendor terms forbid redistribution).
 
-Full documentation: **https://marrow-docs.vercel.app**
+Full documentation: **https://marrowdiagram.vercel.app**
 
 MIT © Marrow
 `;
@@ -158,7 +158,7 @@ writeFileSync(
         'documentation',
       ],
       license: 'MIT',
-      homepage: 'https://marrow-docs.vercel.app',
+      homepage: 'https://marrowdiagram.vercel.app',
       repository: { type: 'git', url: 'git+https://github.com/raiz-toff/Marrow.git' },
       bugs: { url: 'https://github.com/raiz-toff/Marrow/issues' },
     },

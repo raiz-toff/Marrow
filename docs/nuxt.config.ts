@@ -5,7 +5,7 @@ export default defineNuxtConfig({
 
   site: {
     // Absolute URL is required for OG images. Override with NUXT_SITE_URL.
-    url: 'https://marrow-docs.vercel.app',
+    url: 'https://marrowdiagram.vercel.app',
     name: 'Marrow',
   },
 
@@ -17,7 +17,7 @@ export default defineNuxtConfig({
       link: [
         // favicon.svg recolours itself per the OS theme; .ico is the fallback.
         { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
-        { rel: 'alternate icon', type: 'image/x-icon', href: '/favicon.ico' },
+        { rel: 'shortcut icon', type: 'image/x-icon', href: '/favicon.ico' },
       ],
     },
   },

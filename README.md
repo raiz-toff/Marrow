@@ -3,151 +3,175 @@
   <img src="docs/public/wordmark.svg" alt="Marrow" width="232" height="48">
 </picture>
 
-**Turn a description of your network into an interactive diagram that lives on your own site — no login wall, no SaaS lock-in.**
-
-Marrow compiles topology YAML into a **self-contained, offline, interactive
-HTML** network diagram (a single file, or a multi-page site for large networks).
-The output has pan/zoom, an inspector, search, a minimap, and PNG/SVG export
-baked in — and it's just files you can drop into any docs site, wiki, or static
-host.
+**Use any AI agent locally to compile declarative network topologies into self-contained, interactive, offline HTML, SVG, and PNG network diagrams.**
 
 [![CI](https://github.com/raiz-toff/Marrow/actions/workflows/ci.yml/badge.svg)](https://github.com/raiz-toff/Marrow/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![npm version](https://img.shields.io/badge/npm-marrow--cli-blue.svg)](https://www.npmjs.com/package/marrow-cli)
 
-📖 **[Full documentation](https://marrow-docs.vercel.app)** — schema, CLI, guides, and the reasoning behind the design.
+📖 **[Full documentation](https://marrowdiagram.vercel.app)** · 🎯 **[Live Showcase](https://marrowdiagram.vercel.app/showcase)** · ⚡ **[Quickstart](https://marrowdiagram.vercel.app/getting-started/quickstart)**
 
 ---
 
-## Why Marrow
+## Why this exists
 
-Most network-diagram tools make you either **draw by hand** (draw.io, Lucidchart)
-or **hand-code a DSL that emits a static image** (Graphviz, Mermaid, `diagrams`).
-Marrow is different on two axes:
+> *"I got tired of spending hours dragging boxes and fixing bent lines by hand every time I built a new network lab.*
+>
+> *There are plenty of diagramming tools out there if you want to draw everything manually, and plenty of AI tools that spit out messy flowcharts—but nothing where I could just drop my configs or talk through a lab with an agent and get a diagram I actually wanted to look at.*
+>
+> *So I built Marrow. You describe the topology (or hand your agent the configs), the compiler figures out the layout and routing, and it outputs a single offline `.html` file. It holds the actual interface, VLAN, and config details inside it, looks clean in docs, and you can send the file to anyone without needing a server or an account.*
+>
+> *I built it for my own labs and documentation. Putting it out there in case it saves you some time too."*
 
-- **You declare structure, not layout.** You state what things *are* — `tier`,
-  `zone`, `ha_pair_with` — and Marrow computes one correct layout for you
-  (layered, zoned mosaic, hub-and-spoke, ring, mesh). No dragging boxes.
-- **The output is interactive and yours.** One HTML file, works offline, embeds
-  anywhere. No account required to *view* it — unlike hosted tools that trap the
-  interactive version behind their platform.
+---
 
-You can author the YAML directly, or drive the compile loop via an AI coding
-agent (see [AGENTS.md](AGENTS.md)).
+## What makes Marrow different
+
+* **You declare structure — the engine computes the layout**: You declare what devices *are* (`tier: core`, `zone: datacenter`, `ha_pair_with: core-02`) and how they connect. Marrow calculates optimal hierarchical placement, zone clustering, and collision-free curved spline routing. Zero coordinates in YAML.
+* **Network-native link semantics**: Real 802.1Q double-rail trunks with VLAN chips (`10,20,30`), LACP port-channel bundles, IPsec / GRE / VXLAN overlay padlocks, and per-interface access chips.
+* **Self-contained, offline interactive HTML**: Everything—vendor icons, layout styles, and the lightweight runtime—is embedded into a single `.html` file. It works offline on a plane, needs no server, and respects your privacy.
+* **Configurable Blueprint & Static Export**: Export clean, publication-ready SVGs or high-resolution 2x Retina PNGs with engineering CAD title blocks, dynamic vector auto-legends, and visible interface port labels.
+* **Modular UI Chrome**: Run in full workstation mode with command bar, search palette (`Ctrl+K`), and device inspector, or embed in docs/kiosks with `#embed=true` or `?chrome=minimal`.
+* **Agent-native compiler**: Built specifically for pair-programming with AI coding agents (Claude Code, Cursor, Cline, Antigravity, Windsurf, Aider). Structured JSON diagnostics (`--json`) and autonomous self-healing for minor update regressions.
+
+---
 
 ## Quick start
 
-Requires **Node.js ≥ 24**.
+### Option A: Install globally via npm
+
+```bash
+npm i -g marrow-cli
+
+marrow validate net.yaml            # Verify syntax & reference integrity
+marrow build net.yaml               # Compile to a self-contained net.html
+marrow serve input/                 # Live preview with instant hot-reloading
+marrow snapshot net.yaml -o out.png # High-res static PNG export
+marrow icons search switch firewall # Find real vendor icon IDs
+```
+
+### Option B: Clone & run from source (Node.js ≥ 20)
 
 ```bash
 git clone https://github.com/raiz-toff/Marrow.git
 cd Marrow
-npm run setup
+npm run setup                       # Install dependencies, compile toolchain, fetch icon packs
 ```
 
-`npm run setup` installs dependencies, compiles the toolchain, and optionally
-fetches the vendor icon packs (`aws`, `azure`, `gcp`). It verifies the pipeline
-by compiling a sample diagram to `output/`.
-
-Then:
+Run from repository root:
 
 ```bash
 npm run validate fixtures/valid/small-office.yaml
-npm run build    fixtures/valid/small-office.yaml
-open output/small-office.html              # a single, shareable file
+npm run build fixtures/valid/small-office.yaml
+open output/small-office.html
 ```
 
-## A tiny topology
+---
+
+## A minimal topology
 
 ```yaml
 marrow: 2
 name: Small Office
 theme: dark
+density: standard                   # compact | standard | spacious
 
 zones:
   - id: office
     name: Office LAN
+    accent: "#3b82f6"
 
 devices:
-  - id: core-sw-01
+  - id: core-sw
     name: Core Switch
-    icon: affinity/tile/switch-multilayer   # search real ids: marrow icons search switch
+    icon: cisco/switches/layer-3-switch
     tier: core
     zone: office
+    status: up
+    mgmt_ip: 10.0.0.1
+    custom_fields:
+      Model: Catalyst 9300
+      Serial: FOC2419012A
+
+  - id: acc-sw
+    name: Access Switch
+    icon: cisco/switches/workgroup-switch
+    tier: access
+    zone: office
+
   - id: srv-01
     name: File Server
-    icon: affinity/tile/server
+    icon: cisco/servers/server
     tier: endpoint
     zone: office
 
 links:
-  - from: core-sw-01:Gi1/0/1
-    to: srv-01:eno1
+  - from: core-sw:Te1/0/1
+    to: acc-sw:Te1/0/48
+    mode: trunk
+    vlans: "10,20,30"
     speed: 10G
+    kind: fiber
+
+  - from: acc-sw:Gi1/0/1
+    to: srv-01:eth0
+    mode: access
+    vlans: "10"
+    speed: 1G
 ```
 
-`validate` catches every reference/typo with a line number, a fix hint, and
-"did you mean" suggestions. `build` turns it into HTML.
+---
 
-## Commands
+## Command reference
 
-```
-npm run dev                                 # live preview of input/, hot reload
-npm run dev:lan                             # same, reachable from the LAN
-npm run validate <file...>                  # schema + reference check
-npm run build    <file>                     # single file or site folder
-npm run snapshot <file>                     # render to an image
-npm run icons search <keyword>              # find real icon ids
-npm run marrow  import <v1-file>            # bring legacy YAML forward
+| Command | Purpose |
+| :--- | :--- |
+| `npm run dev` | Live hot-reloading preview server (`http://127.0.0.1:5200`) |
+| `npm run dev:lan` | Bind dev server to `0.0.0.0` for local network access |
+| `npm run validate <file...>` | Schema verification & reference check (exit code `0` required) |
+| `npm run build <file> [-o OUT]` | Compile standalone HTML or multi-page site above ~150 devices |
+| `npm run snapshot <file> [-o OUT.png]` | Headless visual verification & 2x Retina PNG export |
+| `npm run icons search <query...>` | Batch search verified icon catalog (Cisco, AWS, Azure, GCP, K8s) |
+| `npm run icons fetch [pack...]` | Fetch vendor icon packs (`aws`, `azure`, `gcp`) under vendor terms |
+| `npm run marrow import <v1-file>` | Automatically migrate legacy v1 topology files forward to v2 |
+| `npm test` | Run full test suite with Vitest (29 suites, 293 unit & layout tests) |
+| `npm run compile` | Rebuild TypeScript compiler packages and runtime bundle |
 
-# Flags need a `--` separator — npm strips flag names otherwise:
-npm run build -- input/net.yaml --single -o out.html
-npm run icons -- fetch --yes                # install aws/azure/gcp
-```
+*Note: Flags passed to npm scripts require the `--` separator (e.g. `npm run validate -- input/net.yaml --json`).*
 
-Full flag reference: **[docs → CLI](https://marrow-docs.vercel.app/reference/cli)**.
+---
 
-## Documentation
+## Verified icon catalog
 
-The complete manual lives in [`docs/`](docs/) and is published as a site.
+Marrow bundles **cisco** (Apache-2.0), **affinity** (MIT), **k8s** (CC-BY-4.0), and **generic** (MIT) in the repository (~1,120 icons immediately available).
 
-| | |
-| --- | --- |
-| [Getting started](https://marrow-docs.vercel.app/getting-started/installation) | Install, first diagram, live preview |
-| [Guides](https://marrow-docs.vercel.app/guides/authoring) | Authoring, zones & tiers, layout, icons, branding, output, embedding |
-| [Reference](https://marrow-docs.vercel.app/reference/schema) | Every key, flag, and diagnostic code |
-| [For agents](https://marrow-docs.vercel.app/agents/golden-loop) | The golden loop and the rules |
-| [Decisions](https://marrow-docs.vercel.app/decisions/overview) | Why the tool is shaped the way it is |
-| [Glossary](https://marrow-docs.vercel.app/glossary) | The precise vocabulary |
-
-Run it locally with `npm run docs`.
-
-## Icons
-
-Marrow ships `cisco` (Apache-2.0), `affinity` (MIT), `k8s` (CC-BY-4.0), and
-`generic` (MIT) in-repo — about 1,120 icons that work on a fresh clone. The
-`aws`, `azure`, and `gcp` packs are **fetched from the vendors**, whose terms
-permit use in diagrams but not redistribution:
+The **aws**, **azure**, and **gcp** packs are fetched on demand under vendor terms forbidding redistribution:
 
 ```bash
 npm run marrow -- icons fetch --yes
 ```
 
-The `cisco` pack is jgraph's Apache-2.0 [draw.io](https://github.com/jgraph/drawio)
-stencils — Cisco-*style* shapes redrawn from scratch, not Cisco's own artwork.
-It carries one restriction the rest of Marrow doesn't: it may not be used in
-Atlassian marketplace products. See
-[icon-packs/LICENSES.md](icon-packs/LICENSES.md).
+Never guess icon identifiers. Query the verified catalog directly:
 
-Details: [docs → Icon packs](https://marrow-docs.vercel.app/reference/icon-packs).
+```bash
+npm run marrow -- icons search switch router firewall server
+```
 
-## Contributing
+---
 
-Issues and PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md), our
-[Code of Conduct](CODE_OF_CONDUCT.md), and the
-[architecture notes](https://marrow-docs.vercel.app/contributing/architecture).
-Run the suite with `npm test` (244 tests).
+## Documentation
+
+Full documentation lives in [`docs/`](docs/) and is published at **[https://marrowdiagram.vercel.app](https://marrowdiagram.vercel.app)**:
+
+* **[Quickstart](https://marrowdiagram.vercel.app/getting-started/quickstart)** — Five-minute introduction to compiling your first diagram.
+* **[Authoring Guide](https://marrowdiagram.vercel.app/guides/authoring)** — Device hierarchy, link semantics, custom fields, and blueprint title blocks.
+* **[Zones & Tiers](https://marrowdiagram.vercel.app/guides/zones-and-tiers)** — Spatial clustering, boundary containers, and tier ordering.
+* **[Embedding & Kiosk Modes](https://marrowdiagram.vercel.app/guides/embedding)** — Embedding minimal diagrams in Notion, MkDocs, iframe hubs, or NOC monitors.
+* **[Agent Workflow & Self-Healing](https://marrowdiagram.vercel.app/agents/updates-and-self-healing)** — Operating router, update verification, and autonomous repair loops.
+* **[Architecture Decisions (ADRs)](https://marrowdiagram.vercel.app/decisions/overview)** — Design token contracts, density scaling, and CAD blueprint export specifications.
+
+---
 
 ## License
 
-[MIT](LICENSE) © 2026 rajkumar. Icon packs are licensed by their respective
-owners — see [icon-packs/LICENSES.md](icon-packs/LICENSES.md).
+[MIT](LICENSE) © 2026 rajkumar. Icon packs are licensed by their respective vendors — see [icon-packs/LICENSES.md](icon-packs/LICENSES.md).
