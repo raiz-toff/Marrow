@@ -70,6 +70,16 @@ const I = {
     '<rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>',
   ),
   vector: ic('<circle cx="19" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><path d="M5 17A12 12 0 0 1 17 5"/>'),
+  network: ic(
+    '<rect x="16" y="16" width="6" height="6" rx="1"/><rect x="2" y="16" width="6" height="6" rx="1"/><rect x="9" y="2" width="6" height="6" rx="1"/><path d="m5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3"/><path d="M12 12V8"/>',
+    18,
+  ),
+  layers: ic(
+    '<path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/>',
+    18,
+  ),
+  panelRight: ic('<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M15 3v18"/>', 18),
+  magnifier18: ic('<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>', 18),
   home: ic(
     '<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
   ),
@@ -139,10 +149,8 @@ export function renderShell(o: ShellOptions): string {
 
   const commandBar = `<header class="m-command-bar">
   <div class="m-header-left">
-    <button class="m-icon-btn m-sidebar-btn" type="button" aria-label="Toggle navigation" title="Toggle navigation (Ctrl+B)">
+    <button class="m-icon-btn m-sidebar-btn" type="button" aria-label="Toggle navigation (Ctrl+B)" title="Toggle navigation (Ctrl+B)">
       ${I.hamburger}
-      <span class="m-desk-only">Navigation</span>
-      <kbd class="m-desk-only">Ctrl B</kbd>
     </button>
     <div class="m-brand-mark">${brandLogo(o)}<span>${brandName(o)}</span></div>
     <nav class="m-breadcrumbs" aria-label="Breadcrumb">${crumbs}</nav>
@@ -154,9 +162,6 @@ export function renderShell(o: ShellOptions): string {
     ${o.stats ? `<span class="m-stats-chip m-desk-only">${esc(o.stats)}</span>` : ''}
     <button class="m-icon-btn m-theme-btn m-desk-only" type="button" aria-label="Toggle theme" title="Toggle theme">
       ${I.moon}
-    </button>
-    <button class="m-icon-btn m-export-btn m-desk-only" type="button" aria-label="Export" title="Export diagram">
-      ${I.image}<span>Export</span>
     </button>
     <button class="m-icon-btn m-search-btn m-mob-only" type="button" aria-label="Search">
       ${I.magnifier}
@@ -177,45 +182,31 @@ export function renderShell(o: ShellOptions): string {
     <button class="m-inspector-close" type="button" aria-label="Close">${I.x}</button>
   </div>
   <div class="m-inspector-tabs" role="tablist">
-    <button class="m-tab-btn active" data-tab="overview" type="button" role="tab">Overview</button>
-    <button class="m-tab-btn" data-tab="interfaces" type="button" role="tab">Interfaces</button>
-    <button class="m-tab-btn" data-tab="neighbors" type="button" role="tab">Neighbors</button>
-    <button class="m-tab-btn" data-tab="metadata" type="button" role="tab">Custom Fields</button>
-    <button class="m-tab-btn" data-tab="config" type="button" role="tab">Config</button>
+    <button class="m-tab-btn active" data-tab="overview" type="button" role="tab" aria-selected="true">Overview</button>
+    <button class="m-tab-btn" data-tab="interfaces" type="button" role="tab" aria-selected="false">Interfaces</button>
+    <button class="m-tab-btn" data-tab="neighbors" type="button" role="tab" aria-selected="false">Neighbors</button>
+    <button class="m-tab-btn" data-tab="metadata" type="button" role="tab" aria-selected="false">Custom Fields</button>
+    <button class="m-tab-btn" data-tab="config" type="button" role="tab" aria-selected="false">Config</button>
   </div>
   <div class="m-inspector-body">
-    <div class="m-inspector-pane active" id="m-pane-overview"></div>
-    <div class="m-inspector-pane" id="m-pane-interfaces" hidden></div>
-    <div class="m-inspector-pane" id="m-pane-neighbors" hidden></div>
-    <div class="m-inspector-pane" id="m-pane-metadata" hidden></div>
-    <div class="m-inspector-pane" id="m-pane-config" hidden></div>
+    <div id="m-pane-overview" class="m-inspector-pane active"></div>
+    <div id="m-pane-interfaces" class="m-inspector-pane" hidden></div>
+    <div id="m-pane-neighbors" class="m-inspector-pane" hidden></div>
+    <div id="m-pane-metadata" class="m-inspector-pane" hidden></div>
+    <div id="m-pane-config" class="m-inspector-pane" hidden></div>
   </div>
   <div class="m-drawer-foot">${brandFoot(o)}</div>
 </aside>`;
 
-  const statusBar = `<footer class="m-status-bar">
-  <div class="m-status-left">
-    <span class="m-status-node">Ready</span>
-  </div>
-  <div class="m-status-center">
-    ${o.stage ? `<div class="m-status-camera">
-      <button class="m-btn m-ctl-out" type="button" title="Zoom out" aria-label="Zoom out">${I.minus}</button>
-      <span class="m-zoom-readout font-mono">100%</span>
-      <button class="m-btn m-ctl-in" type="button" title="Zoom in" aria-label="Zoom in">${I.plus}</button>
-      <button class="m-btn m-ctl-fit" type="button" title="Fit view" aria-label="Fit view">${I.maximize}<span>Fit</span></button>
-    </div>` : ''}
-  </div>
-  <div class="m-status-right">
-    ${o.stage ? `<button class="m-btn m-minimap-btn" type="button" title="Toggle minimap" aria-label="Toggle minimap">${I.map}<span>Minimap</span></button>` : ''}
-  </div>
-</footer>`;
-
-  const mobileNav = `<nav class="m-mobile-nav" aria-label="Mobile navigation">
-  <button class="m-mob-btn active" data-action="canvas" type="button"><i>${I.vector}</i><span>Canvas</span></button>
-  <button class="m-mob-btn" data-action="search" type="button"><i>${I.magnifier}</i><span>Search</span></button>
-  <button class="m-mob-btn" data-action="pages" type="button"><i>${I.building}</i><span>Pages</span></button>
-  <button class="m-mob-btn" data-action="details" type="button"><i>${I.list}</i><span>Details</span></button>
-</nav>`;
+  const controls = o.stage
+    ? `<div class="m-controls" aria-label="Camera controls">
+  <button class="m-btn m-ctl-in" type="button" title="Zoom in (+)" aria-label="Zoom in">${I.plus}</button>
+  <button class="m-btn m-ctl-out" type="button" title="Zoom out (−)" aria-label="Zoom out">${I.minus}</button>
+  <button class="m-btn m-ctl-fit" type="button" title="Fit view (F)" aria-label="Fit view">${I.maximize}</button>
+  <span class="m-ctl-sep"></span>
+  <button class="m-btn m-ctl-cmd m-search-btn" type="button" title="Command center (Ctrl+K)" aria-label="Open command center">${I.command}</button>
+</div>`
+    : '';
 
   // `theme: auto` follows the viewer's OS scheme. Resolve it in a tiny head
   // script BEFORE first paint (no flash), then the runtime keeps it live and
@@ -247,11 +238,34 @@ ${commandBar}
 ${sidebar(o)}
 ${main}
 ${watermark}
-${o.stage ? `<div class="m-minimap" hidden><div class="m-minimap-head"><span>Minimap</span></div><div class="m-minimap-body"></div></div>\n<div class="m-controls" hidden>\n  <button class="m-btn m-ctl-in" type="button" title="Zoom in" aria-label="Zoom in">${I.plus}</button>\n  <button class="m-btn m-ctl-out" type="button" title="Zoom out" aria-label="Zoom out">${I.minus}</button>\n  <button class="m-btn m-ctl-fit" type="button" title="Fit view" aria-label="Fit view">${I.maximize}</button>\n  <span class="m-ctl-sep"></span>\n  <button class="m-btn m-ctl-cmd m-search-btn" type="button" title="Command center" aria-label="Open command center">${I.command}</button>\n</div>` : ''}
+${o.stage ? `<div class="m-minimap" hidden></div>` : ''}
+${controls}
 ${inspector}
 </div>
-${statusBar}
-${mobileNav}
+</div>
+<div class="m-about-dialog" hidden>
+  <div class="m-about-box" role="dialog" aria-modal="true" aria-labelledby="m-about-title">
+    <div class="m-about-watermark" aria-hidden="true">
+      <svg class="m-about-wm-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 20V10a4 4 0 0 1 4-4"/><path d="M13 20V10"/><path d="M13 10a4 4 0 0 1 4-4h2"/><path d="m17.2 4.2 1.8 1.8-1.8 1.8"/>
+      </svg>
+      <span>MARROW</span>
+    </div>
+    <div class="m-about-head">
+      <div class="m-about-title-wrap">
+        <h3 class="m-about-title" id="m-about-title"></h3>
+        <p class="m-about-desc"></p>
+      </div>
+      <button class="m-about-close" type="button" aria-label="Close dialog">${I.x}</button>
+    </div>
+    <div class="m-about-body"></div>
+    <div class="m-about-foot">
+      <div class="m-about-credit">
+        <span class="m-about-credit-mark">${I.logo}</span>
+        <span>Engineered with <strong>Marrow</strong> · Declarative Network Topology Compiler</span>
+      </div>
+    </div>
+  </div>
 </div>
 <div class="m-shortcuts" hidden>
   <div class="m-shortcuts-box">
@@ -426,9 +440,9 @@ function sidebar(o: ShellOptions): string {
   const hasNav = o.navLinks !== undefined && o.navLinks.length > 0;
   const isSingle = !hasNav;
   const menubar = `<nav class="m-menubar" role="menubar" aria-label="Application menu">
-  <button type="button" data-menu="view" role="menuitem">View</button>
-  <button type="button" data-menu="export" role="menuitem">Export</button>
-  <button type="button" data-menu="help" role="menuitem">Help</button>
+  <button class="m-tab-btn" type="button" data-menu="view" role="menuitem">View</button>
+  <button class="m-tab-btn" type="button" data-menu="export" role="menuitem">Export</button>
+  <button class="m-tab-btn" type="button" data-menu="help" role="menuitem">Help</button>
 </nav>`;
   return `<aside class="m-sidebar${hasNav ? ' m-nav' : ''}${isSingle ? ' is-collapsed' : ''}" id="m-sidebar">
 <div class="m-sidebar-inner">

@@ -62,15 +62,32 @@ export interface DataTitleBlock {
   logo?: string;
 }
 
+export interface InspectorTabConfig {
+  id: string;
+  label: string;
+  target?: 'device' | 'edge' | 'both';
+  field?: string;
+  fields?: string[];
+  template?: string;
+}
+
 export interface EmbeddedData {
   name: string;
   description?: string;
+  author?: string;
+  revision?: string;
+  date?: string;
+  about?: unknown;
+  zonesCount?: number;
   theme: string;
   titleBlock?: DataTitleBlock;
   /** site-root-relative path of this page ('index.html' for single files) */
   page?: string;
   /** device ids that have dedicated device-360 pages (site mode) */
   devicePages?: string[];
+  inspector?: {
+    tabs?: InspectorTabConfig[];
+  };
   devices: DataDevice[];
   links: DataLink[];
   zones: DataZone[];

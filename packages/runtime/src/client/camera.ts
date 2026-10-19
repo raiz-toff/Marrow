@@ -13,6 +13,13 @@ export interface WorldRect {
   h: number;
 }
 
+export interface ViewportInsets {
+  top: number;
+  right: number;
+  bottom: number;
+  left: number;
+}
+
 const MIN_K = 0.06;
 const MAX_K = 4;
 
@@ -26,10 +33,21 @@ export class Camera {
     private readonly viewport: () => { w: number; h: number },
     private readonly sceneSize: { w: number; h: number },
     private readonly onChange: (state: CameraState) => void,
+    private readonly insets: () => ViewportInsets = () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
   ) {}
 
   get(): CameraState {
     return { ...this.state };
+  }
+
+  private visibleArea(): { x: number; y: number; w: number; h: number } {
+    const vp = this.viewport();
+    const ins = this.insets();
+    const x = ins.left;
+    const y = ins.top;
+    const w = Math.max(10, vp.w - ins.left - ins.right);
+    const h = Math.max(10, vp.h - ins.top - ins.bottom);
+    return { x, y, w, h };
   }
 
   set(next: Partial<CameraState>, animate = false): void {
@@ -48,16 +66,16 @@ export class Camera {
   }
 
   fitState(scale = 1): CameraState {
-    const vp = this.viewport();
-    const pad = 28;
+    const vis = this.visibleArea();
+    const pad = vis.w < 500 ? 12 : 28;
     const k = clamp(
-      Math.min((vp.w - pad * 2) / this.sceneSize.w, (vp.h - pad * 2) / this.sceneSize.h, 1.4) * scale,
+      Math.min((vis.w - pad * 2) / this.sceneSize.w, (vis.h - pad * 2) / this.sceneSize.h, 1.4) * scale,
       MIN_K,
       MAX_K,
     );
     return {
-      x: (vp.w - this.sceneSize.w * k) / 2,
-      y: (vp.h - this.sceneSize.h * k) / 2,
+      x: vis.x + (vis.w - this.sceneSize.w * k) / 2,
+      y: vis.y + (vis.h - this.sceneSize.h * k) / 2,
       k,
     };
   }
@@ -68,15 +86,21 @@ export class Camera {
 
   /** Frame a world rect at a comfortable zoom. */
   flyTo(rect: WorldRect): void {
-    const vp = this.viewport();
-    const k = clamp(Math.min(vp.w / (rect.w * 6), vp.h / (rect.h * 5), 1.35), 0.5, MAX_K);
+    const vis = this.visibleArea();
+    const k = clamp(
+      vis.w < 500
+        ? Math.min((vis.w - 32) / (rect.w * 2.2), (vis.h - 32) / (rect.h * 2.4), 1.25)
+        : Math.min(vis.w / (rect.w * 4.5), vis.h / (rect.h * 4), 1.35),
+      0.65,
+      MAX_K,
+    );
     this.animateTo(
       {
-        x: vp.w / 2 - (rect.x + rect.w / 2) * k,
-        y: vp.h / 2 - (rect.y + rect.h / 2) * k,
+        x: vis.x + vis.w / 2 - (rect.x + rect.w / 2) * k,
+        y: vis.y + vis.h / 2 - (rect.y + rect.h / 2) * k,
         k,
       },
-      620,
+      520,
     );
   }
 

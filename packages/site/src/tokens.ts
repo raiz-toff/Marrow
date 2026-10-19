@@ -166,10 +166,16 @@ export function generateThemeCss(config?: ThemeConfig): string {
   --sidebar: ${darkPal.sidebar}; --sidebar-fg: ${darkPal.sidebarFg};
   --sidebar-accent: ${darkPal.sidebarAccent}; --sidebar-border: ${darkPal.sidebarBorder};
   --radius-sm: 6px; --radius: 8px; --radius-lg: 12px;
+  --topbar-height: 48px;
+  --statusbar-height: 28px;
+  --sidebar-width: 260px;
+  --inspector-width: 380px;
+  --inspector-offset: 0px;
+  --mobile-nav-height: 56px;
   --frame-top: 52px; --frame-x: 20px; --frame-bottom: 20px; --frame-left: 20px;
   --shadow: ${darkPal.shadow};
   --shadow-sm: ${darkPal.shadowSm};
-  --inspector-w: 356px;
+  --inspector-w: 380px;
 }
 :root[data-theme="light"] {
   --bg: ${lightPal.bg}; --bg-raise: ${lightPal.bgRaise}; --panel: ${lightPal.panel};

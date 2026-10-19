@@ -380,9 +380,15 @@ export function embeddedData(
     name: t.name,
     ...(extra.scene !== undefined ? { scene: extra.scene } : {}),
     ...(t.description !== undefined ? { description: t.description } : {}),
+    ...(t.author !== undefined ? { author: t.author } : {}),
+    ...(t.revision !== undefined ? { revision: t.revision } : {}),
+    ...(t.date !== undefined ? { date: t.date } : {}),
+    ...(t.about !== undefined ? { about: t.about } : {}),
     ...(t.titleBlock !== undefined ? { titleBlock: t.titleBlock } : {}),
+    zonesCount: t.zones.length,
     theme: t.theme,
     page: extra.page,
+    ...(t.inspector !== undefined ? { inspector: t.inspector } : {}),
     // The full device-page manifest is NOT embedded per page: the runtime derives
     // it from the shared search index (see devicePageIds). Emitted only when a
     // caller has no search asset to fall back on.

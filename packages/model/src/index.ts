@@ -139,6 +139,19 @@ export interface TitleBlock {
   logo?: string;
 }
 
+export interface InspectorTabConfig {
+  id: string;
+  label: string;
+  target?: 'device' | 'edge' | 'both';
+  field?: string;
+  fields?: string[];
+  template?: string;
+}
+
+export interface InspectorConfig {
+  tabs?: InspectorTabConfig[];
+}
+
 export interface Topology {
   version: 2;
   name: string;
@@ -150,7 +163,9 @@ export interface Topology {
   author?: string;
   revision?: string;
   date?: string;
+  about?: unknown;
   titleBlock?: TitleBlock;
+  inspector?: InspectorConfig;
   zones: Zone[];
   devices: Device[];
   links: Link[];

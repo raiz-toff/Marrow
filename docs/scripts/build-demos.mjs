@@ -30,10 +30,12 @@ if (demos.length === 0) {
 for (const file of demos) {
   const src = join(docs, 'demos', file);
   const dest = join(out, file.replace(/\.yaml$/, '.html'));
+  const destEmbed = join(out, file.replace(/\.yaml$/, '-embed.html'));
 
   // never ship a demo that does not validate
   execFileSync('node', [cli, 'validate', src], { stdio: 'inherit' });
   execFileSync('node', [cli, 'build', src, '--single', '-o', dest], { stdio: 'inherit' });
+  execFileSync('node', [cli, 'build', src, '--single', '--embed', '-o', destEmbed], { stdio: 'inherit' });
 }
 
-console.log(`\n${demos.length} demo diagram(s) written to docs/public/demo/`);
+console.log(`\n${demos.length} demo diagram(s) (full and embed) written to docs/public/demo/`);

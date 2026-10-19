@@ -54,21 +54,44 @@ kbd {
 *::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 999px; }
 *::-webkit-scrollbar-track { background: transparent; }
 
-/* ── stage & svg: the canvas lives inside a boxed viewport (v1-style shell) —
-      an inset framed panel; chrome (rail, dock) floats outside it ── */
+/* ── shell root & workspace: CAD / NOC viewport architecture ── */
+:root {
+  --frame-top: 54px;
+  --frame-x: 14px;
+  --frame-bottom: 14px;
+  --frame-left: 14px;
+  --frame-right: 14px;
+  --topbar-height: 48px;
+  --inspector-w: 380px;
+}
+body:has(.m-sidebar.open) { --frame-left: 274px; }
+body:has(.m-sidebar.m-nav:not(.open)) { --frame-left: 64px; }
+body:has(.m-inspector:not([hidden])) { --frame-right: calc(var(--inspector-w) + 14px); }
+:root.has-selection { --frame-right: calc(var(--inspector-w) + 14px); }
+
+#marrow-shell {
+  position: fixed; inset: 0;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  background: var(--bg); color: var(--ink);
+}
+.m-workspace {
+  position: relative; flex: 1; display: flex; overflow: hidden; width: 100%;
+}
 .m-stage {
   position: fixed;
-  inset: var(--frame-top) var(--frame-x) var(--frame-bottom) var(--frame-left);
-  cursor: grab;
-  background: var(--bg);
-  border: 1px solid var(--line); border-radius: var(--radius-lg);
+  inset: var(--frame-top) var(--frame-right) var(--frame-bottom) var(--frame-left);
+  cursor: grab; background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg, 10px);
   box-shadow: var(--shadow);
   overflow: hidden;
-  transition: left .3s cubic-bezier(0.16, 1, 0.3, 1);
+  touch-action: none; user-select: none; -webkit-user-select: none;
+  transition: left .3s cubic-bezier(0.16, 1, 0.3, 1), right .3s cubic-bezier(0.16, 1, 0.3, 1), inset .3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .m-stage.m-grabbing { cursor: grabbing; }
-.m-svg { width: 100%; height: 100%; display: block; }
-.m-canvas { width: 100%; height: 100%; display: block; }
+.m-svg { width: 100%; height: 100%; display: block; touch-action: none; }
+.m-canvas { width: 100%; height: 100%; display: block; touch-action: none; }
 .m-sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
 .m-grid-dot { fill: var(--grid-dot); }
 .m-grid { pointer-events: none; }
@@ -241,30 +264,60 @@ kbd {
   opacity: 0; transform: translateX(-50%) translateY(-10px); pointer-events: none;
 }
 
-/* ── breadcrumbs: shadcn Breadcrumb, persistent in the top strip — muted
-      links, chevron separators, current page in the foreground color.
-      Anchored to the stage's left edge so it moves with the sidebar. ── */
+/* ── unified command bar: 48px desktop / 44px mobile ── */
+.m-command-bar {
+  height: var(--topbar-height);
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 14px;
+  z-index: 30;
+  flex-shrink: 0;
+}
+.m-header-left, .m-header-right {
+  display: flex; align-items: center; gap: 10px;
+}
+.m-brand-mark {
+  display: flex; align-items: center; gap: 8px;
+  font-weight: 600; font-size: 13px; letter-spacing: .05em;
+  color: var(--ink);
+}
+.m-icon-btn {
+  background: transparent; border: 1px solid var(--line);
+  color: var(--ink-dim); height: 32px; padding: 0 8px;
+  border-radius: var(--radius-sm);
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  font-size: 12px; cursor: pointer; transition: all .15s; flex-shrink: 0;
+}
+.m-icon-btn:hover {
+  background: var(--bg-raise); color: var(--ink); border-color: var(--line-strong);
+}
+.m-sidebar-btn, .m-theme-btn {
+  width: 32px; height: 32px; padding: 0;
+}
+.m-stats-chip {
+  font-size: 12px; color: var(--ink-dim);
+  background: var(--bg-raise); padding: 4px 8px;
+  border-radius: var(--radius-xs, 4px); border: 1px solid var(--line);
+}
+.m-mob-only { display: none !important; }
+
+/* ── breadcrumbs: integrated into the command bar ── */
 .m-breadcrumbs {
-  /* floor of 56px keeps it clear of the floating trigger chip on single-file pages */
-  position: fixed; top: 0; left: max(calc(var(--frame-left) + 2px), 56px); height: var(--frame-top);
-  z-index: 20; display: flex; align-items: center; gap: 6px;
-  font-size: 14px; white-space: nowrap;
-  /* never run under the centered search dock */
-  max-width: calc(50vw - var(--frame-left) - 120px); overflow: hidden;
-  transition: left .3s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex; align-items: center; gap: 6px;
+  font-size: 13px; font-weight: 500; white-space: nowrap;
 }
 .m-breadcrumbs a { color: var(--ink-dim); text-decoration: none; transition: color .15s; }
 .m-breadcrumbs a:hover { color: var(--ink); }
-.m-breadcrumbs .m-crumb-here { color: var(--ink); overflow: hidden; text-overflow: ellipsis; }
+.m-breadcrumbs .m-crumb-here { color: var(--ink); font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
 .m-breadcrumbs .m-crumb-sep { display: grid; place-items: center; color: var(--ink-faint); }
-/* breadcrumb separator: full icon size (the shell bakes 12px, scale it up) */
-.m-crumb-sep svg { width: 16px; height: 16px; }
+.m-crumb-sep svg { width: 14px; height: 14px; }
 
-/* ── watermark: sits inside the boxed viewport, clipped at its edges ── */
+/* ── watermark: sits inside the viewport, clipped at its edges ── */
 .m-watermark {
-  position: fixed; left: calc(var(--frame-left) + 16px); bottom: calc(var(--frame-bottom) + 4px); z-index: 4;
+  position: absolute; left: 16px; bottom: 16px; z-index: 4;
   pointer-events: none; user-select: none; line-height: .88;
-  max-width: calc(100vw - var(--frame-left) - var(--frame-x) - 32px); overflow: hidden;
+  max-width: calc(100vw - 32px); overflow: hidden;
 }
 .m-watermark span {
   display: block; white-space: nowrap;
@@ -277,59 +330,36 @@ kbd {
   color: color-mix(in srgb, var(--ink) 11%, transparent);
 }
 
-/* ── backdrop: author-branded margin around the boxed viewport (backdrop: in
-      the YAML) — brand line in the top strip, note in the bottom strip ── */
+/* ── backdrop: author-branded margin around the boxed viewport ── */
 .m-backdrop { position: fixed; inset: 0; z-index: 0; pointer-events: none; user-select: none; }
 .m-backdrop-text {
-  position: absolute; top: 0; right: 24px; height: var(--frame-top);
+  position: absolute; top: 0; right: 24px; height: var(--topbar-height);
   display: flex; align-items: center; gap: 8px;
   font-size: 12px; font-weight: 600; letter-spacing: .22em; text-transform: uppercase;
   color: color-mix(in srgb, var(--ink) 38%, transparent);
 }
 .m-backdrop-text svg { flex: none; }
 .m-backdrop-note {
-  position: absolute; bottom: 0; left: 0; right: 0; height: var(--frame-bottom);
+  position: absolute; bottom: 0; left: 0; right: 0; height: var(--statusbar-height);
   display: flex; align-items: center; justify-content: center;
   font-size: 10px; font-weight: 500; letter-spacing: .18em; text-transform: uppercase;
   color: color-mix(in srgb, var(--ink) 26%, transparent);
 }
 
-/* ── crumbs ── */
-.m-crumbs { display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; white-space: nowrap; }
-.m-crumbs a { color: var(--ink-dim); text-decoration: none; transition: color .15s; }
-.m-crumbs a:hover { color: var(--ink); }
-.m-crumb-here { color: var(--ink); }
-.m-crumb-sep { display: grid; place-items: center; color: var(--ink-faint); }
-.m-searchpill {
-  display: inline-flex; align-items: center; gap: 8px;
-  border: 1px solid var(--line); background: var(--bg-raise); color: var(--ink-dim);
-  border-radius: var(--radius); padding: 6px 8px 6px 12px; font: inherit; font-size: 13px;
-  cursor: pointer; transition: border-color .15s, background .15s;
-}
-.m-searchpill:hover { border-color: var(--line-strong); }
-.m-searchpill span { color: var(--ink-dim); }
-
-/* ── sidebar: shadcn Sidebar, "sidebar" variant — a full-height panel docked
-      flush to the left edge (header / grouped content / footer), toggled by
-      the menu chip (SidebarTrigger). Opening it pushes the stage right and
-      tucks the icon rail away. ── */
+/* ── sidebar: left site navigation drawer / panel ── */
 .m-sidebar {
-  position: fixed; top: 0; bottom: 0; left: 0; width: 256px; z-index: 26; /* SIDEBAR_WIDTH = 16rem */
-  transform: translateX(-100%);
-  transition: transform .3s cubic-bezier(0.16, 1, 0.3, 1), width .2s linear; /* shadcn: duration-200 ease-linear */
-  pointer-events: none;
+  width: var(--sidebar-width); height: 100%;
+  background: var(--panel); border-right: 1px solid var(--line);
+  display: flex; flex-direction: column; z-index: 25; flex-shrink: 0;
+  transition: margin-left .25s cubic-bezier(0.16, 1, 0.3, 1), transform .25s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.m-sidebar.open { transform: translateX(0); pointer-events: auto; }
-/* collapsible="icon": with nav rows present, collapsed = a 3rem icon strip
-   (SIDEBAR_WIDTH_ICON), never fully hidden — matching the shadcn sidebar.
-   Pages without nav (single-file diagrams) keep the offcanvas hide above. */
-.m-sidebar.m-nav:not(.open) {
-  width: 48px; transform: translateX(0); pointer-events: auto;
+.m-sidebar.is-collapsed { margin-left: calc(-1 * var(--sidebar-width)); }
+.m-sidebar.open { margin-left: 0; }
+.m-sidebar-header {
+  padding: 10px 14px; border-bottom: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: space-between;
 }
-/* the open/strip sidebar claims the layout: stage shifts, the rail reacts */
-body:has(.m-sidebar.open) { --frame-left: 272px; }
-body:has(.m-sidebar.m-nav:not(.open)) { --frame-left: 64px; }
-body:has(.m-sidebar.m-nav:not(.open)) .m-doc { padding-left: 72px; }
+.m-sidebar-close { border: none; padding: 4px; }
 
 /* icon-strip internals: logo only in the header, square icon rows with
    flyout labels, non-nav groups collapsed away */
@@ -400,14 +430,53 @@ body:has(.m-rail-wrap) .m-sidebar:not(.open) .m-sidebar-inner { padding-top: 52p
   height: 14px; max-width: 80px;
 }
 .m-backdrop-text .m-brand-logo svg, .m-backdrop-text .m-brand-logo img { height: 16px; max-width: 140px; }
-/* shadcn Menubar: a compact trigger row under the sidebar header; its
-   popovers reuse the DropdownMenu/ContextMenu content style */
-.m-menubar { display: flex; gap: 2px; padding: 0 8px 6px; border-bottom: 1px solid var(--sidebar-border); margin-bottom: 4px; }
-.m-menubar button {
-  border: 0; background: none; color: var(--sidebar-fg); font: inherit; font-size: 13px; font-weight: 500;
-  padding: 4px 10px; border-radius: var(--radius-sm); cursor: pointer; transition: background .1s;
+/* shadcn Menubar: compact trigger row styled matching inspector tabs (TabsList + TabsTrigger) */
+.m-menubar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin: 10px 14px 8px;
+  padding: 3px;
+  background: var(--bg-raise);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md, 8px);
+  flex-shrink: 0;
 }
-.m-menubar button:hover, .m-menubar button.open { background: var(--sidebar-accent); }
+.m-menubar button {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--ink-dim);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 5px 12px;
+  border-radius: calc(var(--radius-md, 8px) - 2px);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all .15s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+.m-menubar button:hover {
+  color: var(--ink);
+}
+.m-menubar button:focus-visible {
+  outline: 2px solid var(--ring, var(--ink));
+  outline-offset: 1px;
+}
+.m-menubar button.active,
+.m-menubar button.is-active,
+.m-menubar button.open {
+  background: var(--panel);
+  color: var(--ink);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 0 0 1px var(--line);
+}
 .m-sidebar:not(.open) .m-menubar { display: none; }
 
 /* SidebarGroupLabel: h-8 px-2 text-xs font-medium fg/70 — no uppercase */
@@ -446,22 +515,23 @@ body:has(.m-rail-wrap) .m-sidebar:not(.open) .m-sidebar-inner { padding-top: 52p
 .m-line-dash { border-top-style: dashed; }
 /* SidebarHeader card + SidebarMenuButton rows: [icon] label ······ badge */
 .m-side-header {
-  display: flex; align-items: center; gap: 8px;
-  padding: 8px; border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px; border-bottom: 1px solid var(--line);
+  background: var(--panel); gap: 8px; flex-shrink: 0;
 }
-/* stage pages: reserve the 48px strip so the floating trigger chip at (8,10)
-   never overlaps the sidebar title */
-body:has(.m-rail-wrap) .m-side-header { padding: 10px 8px 8px 48px; }
-/* with a nav sidebar, the trigger chip tucks inside the 48px strip column */
-body:has(.m-sidebar.m-nav) .m-rail-wrap { left: 8px; top: 10px; }
-/* open: the trigger rides along to the panel's top-right corner, clear of the
-   title. 216px = SIDEBAR_WIDTH(256) - chip(32) - gutter(8). */
-body:has(.m-sidebar.open) .m-rail-wrap { left: 216px; top: 10px; }
-/* …so the title reclaims the left gutter and instead keeps clear on the right */
-body:has(.m-sidebar.open) .m-side-header { padding: 10px 44px 8px 8px; }
-.m-side-id { min-width: 0; }
+.m-side-id { flex: 1; min-width: 0; }
 .m-side-id strong { display: block; font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .m-side-id small { display: block; font-size: 11px; color: color-mix(in srgb, var(--sidebar-fg) 60%, transparent); margin-top: 1px; }
+.m-sidebar-close {
+  display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: var(--radius-sm);
+  background: transparent; border: 1px solid transparent; color: var(--ink-dim);
+  cursor: pointer; padding: 0; flex-shrink: 0; margin-left: auto;
+  transition: all .15s;
+}
+.m-sidebar-close:hover {
+  background: var(--bg-raise); color: var(--ink); border-color: var(--line);
+}
 .m-side-nav { display: flex; flex-direction: column; gap: 1px; }
 /* SidebarMenuButton: h-8 gap-2 rounded-md p-2 text-sm; icons size-4 */
 .m-side-row {
@@ -529,30 +599,17 @@ a.m-side-row.active i, a.m-side-row.active em { color: var(--sidebar-fg); }
 .m-btn:active { background: color-mix(in srgb, var(--ink) 10%, transparent); }
 .m-kbd { color: var(--ink-faint); font-size: 11px; border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; margin-left: 6px; }
 
-/* ── zoom controls: one joined card, matching the rail's language ── */
-.m-controls {
-  position: fixed; right: calc(var(--frame-x) + 12px); bottom: calc(var(--frame-bottom) + 12px); z-index: 20;
-  display: flex; flex-direction: column; gap: 2px; padding: 4px;
-  background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-lg);
-  box-shadow: var(--shadow);
-  transition: right .25s ease;
-}
-/* the open inspector must never bury the controls or the minimap */
-:root.has-selection .m-controls { right: calc(var(--inspector-w) + 24px); }
-:root.has-selection .m-minimap { right: calc(var(--inspector-w) + 70px); }
-.m-controls .m-btn {
-  width: 30px; height: 30px; padding: 0; border: 1px solid transparent; border-radius: var(--radius);
-  display: grid; place-items: center;
-  background: none; box-shadow: none; color: var(--ink-dim);
-}
-.m-controls .m-btn:hover { background: var(--bg-raise); border-color: var(--line); color: var(--ink); }
-.m-ctl-sep { height: 1px; background: var(--line); margin: 2px 4px; }
-
 /* ── minimap ── */
 .m-minimap {
-  position: fixed; right: calc(var(--frame-x) + 58px); bottom: calc(var(--frame-bottom) + 12px); z-index: 20; /* beside the zoom controls */
-  background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-lg);
-  padding: 5px; box-shadow: var(--shadow);
+  position: fixed;
+  right: calc(var(--frame-x) + 58px);
+  bottom: calc(var(--frame-bottom) + 12px);
+  z-index: 20;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 5px;
+  box-shadow: var(--shadow);
   transition: right .25s ease, border-color .15s;
 }
 .m-minimap:hover { border-color: var(--line-strong); }
@@ -565,16 +622,19 @@ a.m-side-row.active i, a.m-side-row.active em { color: var(--sidebar-fg); }
   cursor: pointer; padding: 0; opacity: 0;
   transition: opacity .15s, background .15s, color .15s;
 }
+.m-mini-toggle svg { width: 14px; height: 14px; display: block; }
 .m-minimap:hover .m-mini-toggle { opacity: 1; }
 .m-mini-toggle:hover { background: var(--bg-raise); color: var(--ink); }
 /* collapsed: an icon card matching the zoom controls */
-.m-minimap.collapsed { padding: 4px; }
+.m-minimap.collapsed { padding: 4px; border-radius: var(--radius); }
 .m-minimap.collapsed > svg { display: none; }
 .m-minimap.collapsed .m-mini-toggle {
   position: static; opacity: 1;
-  width: 30px; height: 30px; border-radius: var(--radius);
+  width: 30px; height: 30px; border-radius: var(--radius-sm);
   background: none; border: 1px solid transparent; color: var(--ink-dim);
+  display: grid; place-items: center;
 }
+.m-minimap.collapsed .m-mini-toggle svg { width: 16px; height: 16px; display: block; }
 .m-minimap.collapsed .m-mini-toggle:hover { background: var(--bg-raise); border-color: var(--line); color: var(--ink); }
 .m-mini-world { fill: color-mix(in srgb, var(--ink) 5%, transparent); stroke: color-mix(in srgb, var(--line) 70%, transparent); stroke-width: 1; }
 .m-mini-zone {
@@ -589,24 +649,285 @@ a.m-side-row.active i, a.m-side-row.active em { color: var(--sidebar-fg); }
 .m-mini-dot.m-status-planned { fill: var(--planned); }
 .m-mini-view { fill: color-mix(in srgb, var(--m-accent) 13%, transparent); stroke: var(--m-accent); stroke-width: 1.3; }
 
-/* ── inspector: shadcn Drawer (right edge) — full-height, flush, border-left;
-      slides in from the edge like DrawerContent ── */
+/* ── inspector: shadcn Drawer docked to the RIGHT edge (desktop) ── */
 .m-inspector {
-  position: fixed; top: 0; right: 0; bottom: 0; width: var(--inspector-w); z-index: 25;
-  background: var(--panel); border-left: 1px solid var(--line);
-  box-shadow: var(--shadow);
-  display: flex; flex-direction: column;
+  position: fixed;
+  top: var(--topbar-height);
+  right: 0;
+  bottom: 0;
+  width: var(--inspector-w, 380px);
+  background: var(--panel);
+  border-left: 1px solid var(--line);
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.5);
+  z-index: 25;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
   animation: mSlideIn .3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform .25s cubic-bezier(0.16, 1, 0.3, 1);
 }
-@keyframes mSlideIn { from { translate: 100% 0; } }
+@keyframes mSlideIn { from { transform: translateX(100%); } }
+.m-sheet-drag-handle { display: none; }
 .m-inspector-head {
-  display: flex; align-items: center; padding: 14px 16px; gap: 10px;
+  display: flex; align-items: center; padding: 12px 16px; gap: 10px;
   border-bottom: 1px solid var(--line); flex: none;
 }
 .m-inspector-id { flex: 1; min-width: 0; display: grid; gap: 1px; }
 .m-inspector-title { font-size: 15px; font-weight: 600; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .m-inspector-desc { font-size: 12px; color: var(--ink-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .m-inspector-desc:empty { display: none; }
+.m-inspector-close {
+  width: 28px; height: 28px; border-radius: var(--radius-sm); background: none; border: 0;
+  color: var(--ink-dim); cursor: pointer; display: grid; place-items: center;
+  transition: background .15s, color .15s;
+}
+.m-inspector-close:hover { background: var(--bg-raise); color: var(--ink); }
+
+/* ── inspector schema tabs: shadcn TabsList + TabsTrigger ── */
+.m-inspector-tabs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin: 10px 16px 8px;
+  padding: 3px;
+  background: var(--bg-raise);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md, 8px);
+  overflow-x: auto;
+  flex-shrink: 0;
+  scrollbar-width: none;
+}
+.m-inspector-tabs::-webkit-scrollbar {
+  display: none;
+}
+.m-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--ink-dim);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 5px 12px;
+  border-radius: calc(var(--radius-md, 8px) - 2px);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all .15s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+.m-tab-btn:hover {
+  color: var(--ink);
+}
+.m-tab-btn:focus-visible {
+  outline: 2px solid var(--ring, var(--ink));
+  outline-offset: 1px;
+}
+.m-tab-btn.active,
+.m-tab-btn.is-active {
+  background: var(--panel);
+  color: var(--ink);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 0 0 1px var(--line);
+}
+.m-inspector-pane { display: flex; flex-direction: column; gap: 12px; }
+.m-inspector-pane[hidden] { display: none !important; }
+
+/* ── zoom controls: one joined vertical pill (shadcn design) ── */
+.m-controls {
+  position: fixed;
+  right: calc(var(--frame-x) + 12px);
+  bottom: calc(var(--frame-bottom) + 12px);
+  z-index: 25;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg, 10px);
+  box-shadow: var(--shadow);
+  transition: right .25s ease, bottom .25s ease;
+}
+:root.has-selection .m-controls {
+  right: calc(var(--inspector-w) + 24px);
+}
+:root.has-selection .m-minimap {
+  right: calc(var(--inspector-w) + 70px);
+}
+.m-controls .m-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm, 6px);
+  display: grid;
+  place-items: center;
+  background: none;
+  box-shadow: none;
+  color: var(--ink-dim);
+  cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s;
+}
+.m-controls .m-btn:hover {
+  background: var(--bg-raise);
+  border-color: var(--line);
+  color: var(--ink);
+}
+.m-controls .m-btn:active {
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
+}
+.m-ctl-sep {
+  height: 1px;
+  background: var(--line);
+  margin: 2px 4px;
+}
+
+/* ── minimap: docked beside the zoom controls ── */
+.m-minimap {
+  position: fixed;
+  right: calc(var(--frame-x) + 58px);
+  bottom: calc(var(--frame-bottom) + 12px);
+  z-index: 25;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg, 10px);
+  padding: 5px;
+  box-shadow: var(--shadow);
+  transition: right .25s ease, border-color .15s;
+}
+.m-minimap:hover {
+  border-color: var(--line-strong);
+}
+.m-minimap.collapsed {
+  padding: 0;
+}
+.m-minimap.collapsed svg {
+  display: none;
+}
+.m-minimap .m-mini-toggle {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--ink-dim);
+  cursor: pointer;
+  border-radius: var(--radius-sm, 6px);
+  transition: background .15s, color .15s;
+}
+.m-minimap .m-mini-toggle:hover {
+  background: var(--bg-raise);
+  color: var(--ink);
+}
+.m-minimap svg {
+  display: block;
+  cursor: crosshair;
+}
+
+/* ── mobile responsive overrides (< 768px) ── */
+@media (max-width: 767px) {
+  :root {
+    --frame-top: 48px;
+    --frame-x: 6px;
+    --frame-bottom: 6px;
+    --frame-left: 6px;
+    --frame-right: 6px;
+  }
+  body:has(.m-sidebar.open) { --frame-left: 6px; }
+  body:has(.m-sidebar.m-nav:not(.open)) { --frame-left: 6px; }
+  body:has(.m-inspector:not([hidden])),
+  :root.has-selection {
+    --frame-right: 6px;
+  }
+
+  .m-desk-only { display: none !important; }
+  .m-mob-only { display: inline-flex !important; }
+  .m-minimap { display: none !important; }
+
+  .m-command-bar {
+    height: 44px;
+    padding: 0 10px;
+  }
+  .m-header-left {
+    flex: 1; min-width: 0; overflow: hidden;
+  }
+  .m-breadcrumbs {
+    display: none;
+  }
+  .m-brand-mark {
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13px; font-weight: 600;
+  }
+  .m-brand-mark span {
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+
+  .m-controls {
+    right: 12px;
+    bottom: 12px;
+  }
+  :root.has-selection .m-controls {
+    right: 12px;
+    bottom: calc(50vh + 12px);
+  }
+  :root.has-selection body:has(.m-inspector[data-sheet="peek"]) .m-controls,
+  :root.has-selection body:has(.m-inspector[data-sheet-snap="peek"]) .m-controls {
+    bottom: calc(84px + 12px);
+  }
+  :root.has-selection body:has(.m-inspector[data-sheet="full"]) .m-controls,
+  :root.has-selection body:has(.m-inspector[data-sheet-snap="full"]) .m-controls {
+    display: none !important;
+  }
+
+  /* shadcn Drawer for Mobile Navigation */
+  .m-sidebar {
+    position: fixed;
+    top: 0; bottom: 0; left: 0;
+    width: 280px; max-width: 85vw;
+    background: var(--panel);
+    border-right: 1px solid var(--line);
+    box-shadow: var(--shadow);
+    z-index: 60;
+    transform: translateX(-100%);
+    margin-left: 0 !important;
+    transition: transform .3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .m-sidebar.open {
+    transform: translateX(0);
+  }
+
+  /* shadcn Drawer / Bottom Sheet for Inspector */
+  .m-inspector {
+    position: fixed;
+    top: auto; left: 0; right: 0; bottom: 0;
+    width: 100%;
+    border-left: none;
+    border-top: 1px solid var(--line-strong);
+    border-radius: 16px 16px 0 0;
+    background: var(--panel);
+    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.6);
+    transform: translateY(100%);
+    z-index: 55;
+    margin-right: 0 !important;
+    transition: transform .3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .m-sheet-drag-handle {
+    display: block; width: 36px; height: 4px;
+    background: var(--line-strong); border-radius: 999px;
+    margin: 8px auto 4px; cursor: pointer; flex-shrink: 0;
+  }
+  .m-inspector[data-sheet-snap="peek"], .m-inspector[data-sheet="peek"] { transform: translateY(0); height: 84px; overflow: hidden; }
+  .m-inspector[data-sheet-snap="half"], .m-inspector[data-sheet="half"] { transform: translateY(0); height: 50vh; }
+  .m-inspector[data-sheet-snap="full"], .m-inspector[data-sheet="full"] { transform: translateY(0); height: 92vh; }
+  .m-inspector[data-sheet-snap="closed"], .m-inspector[data-sheet="closed"] { transform: translateY(100%); }
+}
+.m-pane-empty {
+  padding: 24px 16px; text-align: center; color: var(--ink-dim); font-size: 13px; font-style: italic;
+}
 .m-inspector-close {
   width: 28px; height: 28px; border-radius: var(--radius-sm); background: none; border: 0;
   color: var(--ink-dim); cursor: pointer; display: grid; place-items: center;
@@ -807,6 +1128,92 @@ a.m-side-row.active i, a.m-side-row.active em { color: var(--sidebar-fg); }
 .m-ctx-kbd { margin-left: auto; flex: none; }
 .m-ctx-sep { height: 1px; background: var(--line); margin: 4px -4px; }
 
+/* ── about diagram dialog (shadcn Dialog / CAD blueprint document) ── */
+.m-about-dialog {
+  position: fixed; inset: 0; z-index: 47; background: rgb(0 0 0 / .6);
+  backdrop-filter: blur(4px);
+  display: flex; align-items: flex-start; justify-content: center; padding-top: 8vh;
+}
+.m-about-box {
+  position: relative; width: min(640px, 94vw); max-height: 84vh; display: flex; flex-direction: column;
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-lg);
+  box-shadow: var(--shadow); overflow: hidden;
+  animation: mPop .15s cubic-bezier(.22,.7,.28,1);
+}
+.m-about-watermark {
+  position: absolute; right: 8px; bottom: 44px; z-index: 0; pointer-events: none; user-select: none;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  opacity: 0.04; color: var(--ink);
+}
+.m-about-wm-svg {
+  width: 220px; height: 220px;
+}
+.m-about-watermark span {
+  font-size: 26px; font-weight: 900; letter-spacing: .25em; margin-top: -12px;
+}
+.m-about-head {
+  position: relative; z-index: 1; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+  padding: 20px 24px 16px; border-bottom: 1px solid var(--line); flex: none;
+  background: var(--panel);
+}
+.m-about-title-wrap { flex: 1; min-width: 0; }
+.m-about-title { font-size: 18px; font-weight: 700; letter-spacing: -.02em; margin: 0 0 4px; color: var(--ink); }
+.m-about-desc { font-size: 13px; color: var(--ink-dim); margin: 0; line-height: 1.45; }
+.m-about-close {
+  width: 28px; height: 28px; border-radius: var(--radius-sm); background: none; border: 0;
+  color: var(--ink-dim); cursor: pointer; display: grid; place-items: center; flex: none;
+  transition: background .15s, color .15s;
+}
+.m-about-close:hover { background: var(--bg-raise); color: var(--ink); }
+.m-about-body {
+  position: relative; z-index: 1; overflow-y: auto; padding: 18px 24px;
+  display: flex; flex-direction: column; gap: 16px;
+}
+.m-about-meta {
+  display: flex; flex-wrap: wrap; gap: 8px;
+}
+.m-about-pill {
+  display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 9999px;
+  font-size: 12px; color: var(--ink-dim);
+}
+.m-about-pill strong { color: var(--ink); font-weight: 600; }
+.m-about-content {
+  font-size: 13.5px; line-height: 1.6; color: var(--ink);
+}
+.m-about-content h1, .m-about-content h2, .m-about-content h3 {
+  margin: 16px 0 8px; font-size: 14px; font-weight: 600; color: var(--ink);
+}
+.m-about-content p { margin: 0 0 10px; }
+.m-about-sections {
+  display: flex; flex-direction: column; gap: 12px;
+}
+.m-about-hint {
+  display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px;
+  background: color-mix(in srgb, var(--m-accent) 8%, var(--surface));
+  border: 1px dashed color-mix(in srgb, var(--m-accent) 30%, var(--line));
+  border-radius: var(--radius); font-size: 12.5px; color: var(--ink-dim); line-height: 1.45;
+}
+.m-about-hint svg { flex: none; margin-top: 2px; color: var(--m-accent); }
+.m-about-hint strong { color: var(--ink); }
+.m-about-hint code {
+  font-family: var(--font-mono, monospace); font-size: 11.5px; padding: 1px 4px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm);
+  color: var(--m-accent);
+}
+.m-about-foot {
+  position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 24px; border-top: 1px solid var(--line);
+  background: color-mix(in srgb, var(--panel) 92%, var(--line)); flex: none;
+}
+.m-about-credit {
+  display: inline-flex; align-items: center; gap: 8px; font-size: 12px;
+  color: var(--ink-dim); text-decoration: none; transition: color .15s;
+}
+.m-about-credit:hover { color: var(--m-accent); }
+.m-about-credit-mark { display: inline-flex; align-items: center; color: var(--m-accent); }
+.m-about-credit strong { color: var(--ink); font-weight: 600; }
+
 /* ── keyboard-shortcuts guide (shadcn Dialog) ── */
 .m-shortcuts {
   position: fixed; inset: 0; z-index: 46; background: rgb(0 0 0 / .6);
@@ -977,11 +1384,31 @@ a.m-side-row.active i, a.m-side-row.active em { color: var(--sidebar-fg); }
 .m-members { list-style: none; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 3px 10px; font-size: 12px; color: var(--ink-dim); }
 
 /* ── embed & modular UI chrome (minimal/kiosk) ── */
+html[data-chrome="minimal"] {
+  --topbar-height: 0px;
+  --frame-top: 0px;
+  --frame-bottom: 0px;
+  --frame-left: 0px;
+  --frame-right: 0px;
+  --frame-x: 0px;
+}
+html[data-chrome="minimal"] .m-stage {
+  inset: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+html[data-chrome="minimal"] .m-command-bar,
+html[data-chrome="minimal"] .m-status-bar,
+html[data-chrome="minimal"] .m-mobile-nav,
 html[data-chrome="minimal"] .m-breadcrumbs,
 html[data-chrome="minimal"] .m-dock,
 html[data-chrome="minimal"] .m-dock-hint,
 html[data-chrome="minimal"] .m-rail-wrap,
 html[data-chrome="minimal"] .m-backdrop,
+html[data-chrome="minimal"] .m-watermark,
+html[data-chrome="minimal"]:not([data-controls="on"]) .m-controls,
+html[data-chrome="minimal"] .m-minimap,
 html[data-chrome="minimal"] .m-sidebar {
   display: none !important;
 }
@@ -991,6 +1418,14 @@ html[data-inspector="off"] .m-inspector {
 }
 
 html[data-minimap="off"] .m-minimap {
+  display: none !important;
+}
+
+html[data-controls="off"] .m-controls {
+  display: none !important;
+}
+
+html[data-watermark="off"] .m-watermark {
   display: none !important;
 }
 

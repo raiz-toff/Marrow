@@ -18,12 +18,16 @@ export const ROOT_KEYS = [
   'author',
   'revision',
   'date',
+  'about',
   'title_block',
+  'inspector',
   'zones',
   'devices',
   'links',
 ] as const;
 export const TITLE_BLOCK_KEYS = ['title', 'author', 'date', 'revision', 'logo'] as const;
+export const INSPECTOR_KEYS = ['tabs'] as const;
+export const INSPECTOR_TAB_KEYS = ['id', 'label', 'target', 'field', 'fields', 'template'] as const;
 export const ZONE_KEYS = ['id', 'name', 'parent', 'collapse', 'accent', 'note'] as const;
 export const DEVICE_KEYS = [
   'id',

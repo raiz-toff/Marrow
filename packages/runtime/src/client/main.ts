@@ -42,8 +42,10 @@ function boot(): void {
     setupSpotlight(undefined, data);
     setupMenubar(undefined);
     setupShortcutsDialog();
+    setupAboutDialog(undefined);
     setupInventory();
     setupInventoryDetails(data);
+    setupMobileNav(undefined);
     return;
   }
 
@@ -92,6 +94,29 @@ function boot(): void {
       engine?.applyCamera(s);
       minimapSync();
       hashSyncSoon();
+      const zoomPct = `${Math.round(s.k * 100)}%`;
+      for (const el of document.querySelectorAll('.m-zoom-readout')) {
+        el.textContent = zoomPct;
+      }
+    },
+    () => {
+      const insets = { top: 0, right: 0, bottom: 0, left: 0 };
+      const inspector = document.querySelector<HTMLElement>('.m-inspector');
+      if (inspector && !inspector.hidden && inspector.dataset['sheet'] !== 'closed') {
+        if (window.innerWidth < 768) {
+          const snap = inspector.dataset['sheet'] || inspector.dataset['sheetSnap'] || 'half';
+          const sheetH =
+            snap === 'full'
+              ? Math.round(window.innerHeight * 0.90)
+              : snap === 'peek'
+                ? 84
+                : Math.round(window.innerHeight * 0.50);
+          insets.bottom = Math.max(0, sheetH - 6);
+        } else {
+          insets.right = inspector.offsetWidth || 380;
+        }
+      }
+      return insets;
     },
   );
 
@@ -116,7 +141,9 @@ function boot(): void {
   } else {
     setupCanvasPointer(ctx);
   }
-  document.querySelector('.m-inspector-close')?.addEventListener('click', () => deselect(ctx));
+  setupInspector(ctx);
+  registerYamlTabs(data);
+  exposePublicApi(ctx);
   setupSpotlight(ctx, data);
   setupControls(ctx);
   setupTheme();
@@ -124,9 +151,11 @@ function boot(): void {
   setupContextMenu(ctx);
   setupMenubar(ctx);
   setupShortcutsDialog();
+  setupAboutDialog(ctx);
   const minimapSync = setupMinimap(ctx, stage);
   setupSidebar(ctx);
   setupClickAway(ctx);
+  setupMobileNav(ctx);
   const hashSyncSoon = setupHash(ctx);
   syncModularParams(ctx);
   addEventListener('hashchange', () => syncModularParams(ctx));
@@ -139,24 +168,34 @@ function boot(): void {
     if (storedValue !== null) applySetting(ctx, key, storedValue);
   }
 
-  // Entrance: restore deep link if present, else fit-and-settle.
+  // Entrance: fit to page on all layouts on load and refresh.
+  const navEntry = performance.getEntriesByType?.('navigation')?.[0] as PerformanceNavigationTiming | undefined;
+  const isReload = navEntry?.type === 'reload' || (performance as any).navigation?.type === 1;
+
+  if (isReload && location.hash && (location.hash.includes('d=') || location.hash.includes('c='))) {
+    history.replaceState(null, '', location.pathname + location.search);
+  }
+
   const initial = parseHash(location.hash);
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (initial.camera) {
-    camera.set(initial.camera);
-  } else {
-    camera.set(camera.fitState(1.08));
-    if (reduced) camera.fit();
-    else setTimeout(() => camera.fit(true), 120);
+
+  camera.fit(false);
+  if (!reduced) {
+    setTimeout(() => camera.fit(true), 120);
   }
-  const wanted = initial.device ?? (data as { hero?: string }).hero;
+
+  window.addEventListener('resize', () => {
+    if (window.innerWidth < 768 && !ctx.selected) {
+      camera.fit(false);
+    }
+  });
+  const wanted = !isReload ? (initial.device ?? (data as { hero?: string }).hero) : undefined;
   if (wanted !== undefined) {
     const resolved = resolveNodeFor(ctx, wanted);
     if (resolved !== undefined) selectDevice(ctx, resolved, false);
   }
   const settle = (): void => document.documentElement.classList.add('settled');
-  // restoring a deep link (incl. live-reload) skips the entrance choreography
-  setTimeout(settle, reduced || initial.camera ? 0 : 1900);
+  setTimeout(settle, reduced ? 0 : 1900);
   addEventListener('pointerdown', settle, { once: true });
 }
 
@@ -172,6 +211,42 @@ function nodeWorldBox(ctx: Ctx, id: string): { x: number; y: number; w: number; 
   if (!el) return undefined;
   const b = (el as SVGGraphicsElement).getBBox();
   return { x: b.x, y: b.y, w: b.width, h: b.height };
+}
+
+function linkWorldBox(ctx: Ctx, link: DataLink): { x: number; y: number; w: number; h: number } | undefined {
+  if (ctx.mode === 'svg') {
+    const el = ctx.edgeEls.get(link.id);
+    if (el) {
+      try {
+        const b = (el as SVGGraphicsElement).getBBox();
+        if (b && (b.width > 0 || b.height > 0)) {
+          return {
+            x: b.x,
+            y: b.y,
+            w: Math.max(b.width, 40),
+            h: Math.max(b.height, 40),
+          };
+        }
+      } catch {
+        // Fallback below
+      }
+    }
+  }
+  const b1 = nodeWorldBox(ctx, link.from.device);
+  const b2 = nodeWorldBox(ctx, link.to.device);
+  if (!b1 && !b2) return undefined;
+  if (!b1) return b2;
+  if (!b2) return b1;
+  const minX = Math.min(b1.x, b2.x);
+  const minY = Math.min(b1.y, b2.y);
+  const maxX = Math.max(b1.x + b1.w, b2.x + b2.w);
+  const maxY = Math.max(b1.y + b1.h, b2.y + b2.h);
+  return {
+    x: minX,
+    y: minY,
+    w: Math.max(maxX - minX, 40),
+    h: Math.max(maxY - minY, 40),
+  };
 }
 
 function applyFocus(ctx: Ctx, id: string): void {
@@ -233,34 +308,68 @@ function setupPanZoom(ctx: Ctx, stage: HTMLElement): void {
     },
     { passive: false },
   );
-  let dragging = false;
+
+  const pointers = new Map<number, { x: number; y: number }>();
+  let initialPinchDist = 0;
   let moved = false;
-  let last = { x: 0, y: 0 };
+
   stage.addEventListener('pointerdown', (ev) => {
     if (ctx.mode === 'svg' && (ev.target as Element).closest('.m-node[data-node], [data-edge]')) return;
     if (ctx.mode === 'canvas' && hitNode(ctx, ev)) return;
-    dragging = true;
-    moved = false;
-    last = { x: ev.clientX, y: ev.clientY };
+    pointers.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
     stage.setPointerCapture(ev.pointerId);
     stage.classList.add('m-grabbing');
+    moved = false;
+
+    if (pointers.size === 2) {
+      const pts = Array.from(pointers.values());
+      if (pts[0] && pts[1]) {
+        initialPinchDist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+      }
+    }
   });
+
   stage.addEventListener('pointermove', (ev) => {
-    if (!dragging) return;
-    if (Math.abs(ev.clientX - last.x) + Math.abs(ev.clientY - last.y) > 2) moved = true;
-    ctx.camera.panBy(ev.clientX - last.x, ev.clientY - last.y);
-    last = { x: ev.clientX, y: ev.clientY };
+    if (!pointers.has(ev.pointerId)) return;
+    const prev = pointers.get(ev.pointerId)!;
+    pointers.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+
+    if (pointers.size === 1) {
+      const dx = ev.clientX - prev.x;
+      const dy = ev.clientY - prev.y;
+      if (Math.abs(dx) + Math.abs(dy) > 2) moved = true;
+      ctx.camera.panBy(dx, dy);
+    } else if (pointers.size === 2) {
+      const pts = Array.from(pointers.values());
+      if (pts[0] && pts[1]) {
+        const dist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+        if (initialPinchDist > 0 && dist > 0) {
+          moved = true;
+          const factor = dist / initialPinchDist;
+          const rect = stage.getBoundingClientRect();
+          const midX = (pts[0].x + pts[1].x) / 2 - rect.left;
+          const midY = (pts[0].y + pts[1].y) / 2 - rect.top;
+          ctx.camera.zoomAt(midX, midY, factor);
+          initialPinchDist = dist;
+        }
+      }
+    }
   });
+
   const stop = (ev: PointerEvent): void => {
-    if (dragging && !moved && ctx.mode === 'canvas' && !hitNode(ctx, ev)) deselect(ctx);
-    dragging = false;
-    stage.classList.remove('m-grabbing');
+    const wasPointer = pointers.has(ev.pointerId);
+    pointers.delete(ev.pointerId);
+    if (pointers.size === 0) {
+      if (wasPointer && !moved && ctx.mode === 'canvas' && !hitNode(ctx, ev)) deselect(ctx);
+      stage.classList.remove('m-grabbing');
+      initialPinchDist = 0;
+    } else if (pointers.size === 1) {
+      initialPinchDist = 0;
+    }
   };
+
   stage.addEventListener('pointerup', stop);
-  stage.addEventListener('pointercancel', () => {
-    dragging = false;
-    stage.classList.remove('m-grabbing');
-  });
+  stage.addEventListener('pointercancel', stop);
 }
 
 // ─── pointer wiring per backend ─────────────────────────────────────────────
@@ -287,7 +396,7 @@ function setupSvgPointer(ctx: Ctx): void {
         location.href = rootPrefix() + href;
         return;
       }
-      selectDevice(ctx, nodeEl.dataset['node']!, false);
+      selectDevice(ctx, nodeEl.dataset['node']!, true);
       return;
     }
     const edgeEl = (ev.target as Element).closest<SVGElement>('[data-edge]');
@@ -295,17 +404,7 @@ function setupSvgPointer(ctx: Ctx): void {
       const edgeId = edgeEl.getAttribute('data-edge');
       const link = ctx.data.links.find((l) => l.id === edgeId);
       if (link) {
-        clearFocus(ctx);
-        ctx.selected = undefined;
-        ctx.edgeEls.get(link.id)?.classList.add('is-path');
-        setChipsHot(ctx, link.id, true);
-        ctx.nodeEls.get(link.from.device)?.classList.add('is-adj');
-        ctx.nodeEls.get(link.to.device)?.classList.add('is-adj');
-        fillLinkInspector(
-          { deviceById: ctx.deviceById, linksByDevice: ctx.linksByDevice, devicePages: devicePageIds(ctx.data) },
-          link,
-          (id) => selectDevice(ctx, id, false),
-        );
+        selectLink(ctx, link);
         return;
       }
     }
@@ -380,12 +479,25 @@ function setupCanvasPointer(ctx: Ctx): void {
   });
   ctx.stage.addEventListener('click', (ev) => {
     const node = hitNode(ctx, ev);
-    if (!node) return;
-    if (node.href !== undefined) {
-      location.href = rootPrefix() + node.href;
+    if (node) {
+      if (node.href !== undefined) {
+        location.href = rootPrefix() + node.href;
+        return;
+      }
+      selectDevice(ctx, node.id, true);
       return;
     }
-    selectDevice(ctx, node.id, false);
+    const w = toWorld(ctx, ev);
+    const cam = ctx.camera.get();
+    const edge = ctx.engine!.edgeAt(w.x, w.y, 8 / cam.k);
+    if (edge && document.documentElement.dataset['inspector'] !== 'off') {
+      const link = ctx.data.links.find((l) => l.id === edge.id);
+      if (link) {
+        selectLink(ctx, link);
+        return;
+      }
+    }
+    deselect(ctx);
   });
   ctx.stage.addEventListener('pointerleave', () => {
     if (tip) tip.hidden = true;
@@ -394,10 +506,176 @@ function setupCanvasPointer(ctx: Ctx): void {
 
 // ─── selection + inspector ──────────────────────────────────────────────────
 
+export interface InspectorTabDef {
+  id: string;
+  label: string;
+  target?: 'device' | 'edge' | 'both';
+  order?: number;
+  visible?: (item: DataDevice | DataLink, ctx?: Ctx) => boolean;
+  render: (
+    item: DataDevice | DataLink,
+    container: HTMLElement,
+    ctx?: Ctx,
+  ) => void | (() => void);
+}
+
+interface TabInstance {
+  id: string;
+  label: string;
+  render?: (container: HTMLElement) => void | (() => void);
+}
+
+let activeCtx: Ctx | undefined;
+let activeMaps: DeviceMaps | undefined;
+let activeGoto: ((id: string) => void) | undefined;
+const customTabsRegistry = new Map<string, InspectorTabDef>();
+let currentActiveCleanup: (() => void) | void = undefined;
+let currentInspectedItem: { type: 'device' | 'edge'; item: DataDevice | DataLink } | null = null;
+let currentTabsList: TabInstance[] = [];
+const eventHooks: { [key: string]: Array<(...args: any[]) => void> } = {};
+
+function emitEvent(evt: string, ...args: any[]): void {
+  const list = eventHooks[evt];
+  if (list) {
+    for (const fn of list) {
+      try {
+        fn(...args);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }
+}
+
+function onEvent(evt: string, cb: (...args: any[]) => void): () => void {
+  let list = eventHooks[evt];
+  if (!list) {
+    list = [];
+    eventHooks[evt] = list;
+  }
+  list.push(cb);
+  return () => {
+    const arr = eventHooks[evt];
+    if (arr) {
+      const idx = arr.indexOf(cb);
+      if (idx !== -1) arr.splice(idx, 1);
+    }
+  };
+}
+
+function refreshInspector(): void {
+  if (!currentInspectedItem || !activeMaps || !activeGoto) return;
+  if (currentInspectedItem.type === 'device') {
+    fillInspector(activeMaps, currentInspectedItem.item as DataDevice, activeGoto);
+  } else {
+    fillLinkInspector(activeMaps, currentInspectedItem.item as DataLink, activeGoto);
+  }
+}
+
+export function registerYamlTabs(data: EmbeddedData): void {
+  if (!data.inspector?.tabs) return;
+  for (const tab of data.inspector.tabs) {
+    customTabsRegistry.set(tab.id, {
+      id: tab.id,
+      label: tab.label,
+      target: tab.target ?? 'device',
+      order: 50,
+      visible: (item) => {
+        if (tab.field) {
+          const v =
+            (item as any)[tab.field] ??
+            (item as any).customFields?.[tab.field] ??
+            (item as any).sections?.[tab.field];
+          return v !== undefined && v !== null && v !== '';
+        }
+        if (tab.fields && tab.fields.length > 0) {
+          return tab.fields.some((f) => {
+            const v =
+              (item as any)[f] ??
+              (item as any).customFields?.[f] ??
+              (item as any).sections?.[f];
+            return v !== undefined && v !== null && v !== '';
+          });
+        }
+        return true;
+      },
+      render: (item, container) => {
+        if (tab.field) {
+          const v =
+            (item as any)[tab.field] ??
+            (item as any).customFields?.[tab.field] ??
+            (item as any).sections?.[tab.field];
+          container.innerHTML = renderCustomSection(tab.label, v);
+        } else if (tab.fields && tab.fields.length > 0) {
+          const obj: Record<string, unknown> = {};
+          for (const f of tab.fields) {
+            const v =
+              (item as any)[f] ??
+              (item as any).customFields?.[f] ??
+              (item as any).sections?.[f];
+            if (v !== undefined) obj[f] = v;
+          }
+          container.innerHTML = renderCustomSection(tab.label, obj);
+        } else {
+          const v =
+            (item as any)[tab.id] ??
+            (item as any).customFields?.[tab.id] ??
+            (item as any).sections?.[tab.id];
+          container.innerHTML = renderCustomSection(tab.label, v);
+        }
+      },
+    });
+  }
+}
+
+export function exposePublicApi(ctx?: Ctx): void {
+  if (ctx) activeCtx = ctx;
+  (window as any).marrow = {
+    inspector: {
+      registerTab(def: InspectorTabDef): () => void {
+        customTabsRegistry.set(def.id, def);
+        refreshInspector();
+        return () => {
+          customTabsRegistry.delete(def.id);
+          refreshInspector();
+        };
+      },
+      activateTab(tabId: string): void {
+        const panel = document.querySelector<HTMLElement>('.m-inspector');
+        if (panel) activateInspectorTab(panel, tabId);
+      },
+      getTabs(): InspectorTabDef[] {
+        return Array.from(customTabsRegistry.values());
+      },
+    },
+    getSelected() {
+      return currentInspectedItem;
+    },
+    selectDevice(id: string, fly = true) {
+      if (activeCtx) selectDevice(activeCtx, id, fly);
+    },
+    selectLink(id: string) {
+      if (activeCtx) {
+        const link = activeCtx.data.links.find((l) => l.id === id);
+        if (link) selectLink(activeCtx, link);
+      }
+    },
+    deselect() {
+      deselect(activeCtx);
+    },
+    openAbout() {
+      openAboutDialog(activeCtx);
+    },
+    on: onEvent,
+  };
+}
+
 export function selectDevice(ctx: Ctx, id: string, fly = true): void {
+  activeCtx = ctx;
   const device = ctx.deviceById.get(id);
   if (!device || !hasNode(ctx, id)) return;
   ctx.selected = id;
+  currentInspectedItem = { type: 'device', item: device };
   markSelected(ctx, id);
   document.documentElement.classList.add('has-selection');
   applyFocus(ctx, id);
@@ -407,16 +685,75 @@ export function selectDevice(ctx: Ctx, id: string, fly = true): void {
     if (b) ctx.camera.flyTo(b);
   }
   syncHash(ctx);
+  const statusNode = document.querySelector('.m-status-node');
+  if (statusNode) {
+    const sub = [device.mgmtIp, device.role, device.tier].filter(Boolean).join(' · ');
+    statusNode.textContent = sub ? `${device.name} · ${sub}` : device.name;
+  }
+  emitEvent('select', currentInspectedItem);
 }
 
-function deselect(ctx: Ctx): void {
-  ctx.selected = undefined;
-  markSelected(ctx, undefined);
+function deselect(ctx?: Ctx): void {
+  if (ctx) {
+    ctx.selected = undefined;
+    markSelected(ctx, undefined);
+    clearFocus(ctx);
+    syncHash(ctx);
+    if (window.innerWidth < 768) {
+      setTimeout(() => ctx.camera.fit(true), 80);
+    }
+  }
   document.documentElement.classList.remove('has-selection');
-  clearFocus(ctx);
+  if (currentActiveCleanup) {
+    try {
+      currentActiveCleanup();
+    } catch (e) {
+      console.error(e);
+    }
+    currentActiveCleanup = undefined;
+  }
+  currentInspectedItem = null;
   const panel = document.querySelector<HTMLElement>('.m-inspector');
-  if (panel) panel.hidden = true;
-  syncHash(ctx);
+  if (panel) {
+    panel.hidden = true;
+    panel.dataset['sheet'] = 'closed';
+  }
+  const shell = document.getElementById('marrow-shell');
+  if (shell) {
+    shell.style.setProperty('--inspector-offset', '0px');
+  }
+  const statusNode = document.querySelector('.m-status-node');
+  if (statusNode) statusNode.textContent = 'Ready';
+  emitEvent('deselect');
+}
+
+export function selectLink(ctx: Ctx, link: DataLink, fly = true): void {
+  activeCtx = ctx;
+  currentInspectedItem = { type: 'edge', item: link };
+  clearFocus(ctx);
+  ctx.selected = undefined;
+  document.documentElement.classList.add('has-selection');
+  ctx.edgeEls.get(link.id)?.classList.add('is-path');
+  setChipsHot(ctx, link.id, true);
+  ctx.nodeEls.get(link.from.device)?.classList.add('is-adj');
+  ctx.nodeEls.get(link.to.device)?.classList.add('is-adj');
+  if (ctx.mode === 'canvas' && ctx.engine) {
+    ctx.engine.setFocus({
+      focus: link.from.device,
+      adjacent: new Set([link.to.device]),
+      edges: new Set([link.id]),
+    });
+  }
+  fillLinkInspector(
+    { deviceById: ctx.deviceById, linksByDevice: ctx.linksByDevice, devicePages: devicePageIds(ctx.data) },
+    link,
+    (id) => selectDevice(ctx, id, false),
+  );
+  if (fly && window.innerWidth < 768) {
+    const b = linkWorldBox(ctx, link);
+    if (b) ctx.camera.flyTo(b);
+  }
+  emitEvent('select', currentInspectedItem);
 }
 
 /**
@@ -427,9 +764,14 @@ function deselect(ctx: Ctx): void {
  */
 function setupClickAway(ctx: Ctx): void {
   document.addEventListener('pointerdown', (ev) => {
-    if (ctx.selected === undefined) return;
+    if (ctx.selected === undefined && !currentInspectedItem) return;
     const target = ev.target as Element;
-    if (target.closest('.m-inspector, .m-controls, .m-minimap, .m-spotlight, .m-rail-wrap, .m-dock, .m-sidebar, [data-node], [data-edge]')) return;
+    if (
+      target.closest(
+        '.m-inspector, .m-controls, .m-minimap, .m-spotlight, .m-rail-wrap, .m-dock, .m-sidebar, .m-command-bar, .m-status-bar, .m-mobile-nav, [data-node], [data-edge]',
+      )
+    )
+      return;
     if (ctx.mode === 'canvas' && hitNode(ctx, ev)) return; // canvas nodes aren't DOM
     deselect(ctx);
   });
@@ -528,15 +870,174 @@ function renderCustomSection(title: string, content: unknown): string {
   </details>`;
 }
 
+function activateInspectorTab(panel: HTMLElement, tabId: string): void {
+  const currentTab = currentTabsList.find((t) => t.id === tabId) ?? currentTabsList[0];
+  if (!currentTab) return;
+
+  if (currentActiveCleanup) {
+    try {
+      currentActiveCleanup();
+    } catch (e) {
+      console.error(e);
+    }
+    currentActiveCleanup = undefined;
+  }
+
+  const tabs = panel.querySelectorAll<HTMLButtonElement>('.m-tab-btn');
+  const panes = panel.querySelectorAll<HTMLElement>('.m-tab-pane, .m-inspector-pane');
+  for (const tab of tabs) {
+    const active = tab.dataset['tab'] === currentTab.id;
+    tab.classList.toggle('is-active', active);
+    tab.classList.toggle('active', active);
+    tab.setAttribute('aria-selected', String(active));
+  }
+  for (const pane of panes) {
+    const active = pane.id === `m-pane-${currentTab.id}`;
+    pane.classList.toggle('is-active', active);
+    pane.classList.toggle('active', active);
+    pane.hidden = !active;
+  }
+
+  const pane = panel.querySelector<HTMLElement>(`#m-pane-${currentTab.id}`);
+  if (pane && currentTab.render) {
+    const cleanup = currentTab.render(pane);
+    if (typeof cleanup === 'function') {
+      currentActiveCleanup = cleanup;
+    }
+  }
+
+  if (window.innerWidth < 768 && (currentTab.id === 'interfaces' || currentTab.id === 'config')) {
+    panel.dataset['sheet'] = 'full';
+  }
+
+  emitEvent('tabchange', currentTab.id);
+}
+
+function bindInspectorTabs(panel: HTMLElement): void {
+  const tabsBar = panel.querySelector('.m-inspector-tabs');
+  tabsBar?.addEventListener('click', (ev) => {
+    const btn = (ev.target as Element).closest<HTMLButtonElement>('.m-tab-btn');
+    if (!btn || !btn.dataset['tab']) return;
+    activateInspectorTab(panel, btn.dataset['tab']);
+  });
+}
+
+function setupInspector(ctx: Ctx): void {
+  const panel = document.querySelector<HTMLElement>('.m-inspector');
+  if (!panel) return;
+
+  panel.querySelector('.m-inspector-close')?.addEventListener('click', () => deselect(ctx));
+  bindInspectorTabs(panel);
+
+  const handle = panel.querySelector<HTMLElement>('.m-sheet-drag-handle');
+  if (handle) {
+    let startY = 0;
+    let isDragging = false;
+    handle.addEventListener('pointerdown', (ev) => {
+      startY = ev.clientY;
+      isDragging = true;
+      handle.setPointerCapture(ev.pointerId);
+    });
+    handle.addEventListener('pointerup', (ev) => {
+      if (!isDragging) return;
+      isDragging = false;
+      const diff = ev.clientY - startY;
+      const current = panel.dataset['sheet'] || 'half';
+      let next = current;
+      if (Math.abs(diff) < 10) {
+        if (current === 'peek') next = 'half';
+        else if (current === 'half') next = 'full';
+        else if (current === 'full') next = 'half';
+        else next = 'half';
+      } else if (diff > 40) {
+        if (current === 'full') next = 'half';
+        else if (current === 'half') next = 'peek';
+        else {
+          deselect(ctx);
+          return;
+        }
+      } else if (diff < -40) {
+        if (current === 'peek') next = 'half';
+        else if (current === 'half') next = 'full';
+      }
+      panel.dataset['sheet'] = next;
+      panel.dataset['sheetSnap'] = next;
+      if (next !== 'full') {
+        if (ctx.selected) {
+          const b = nodeWorldBox(ctx, ctx.selected);
+          if (b) ctx.camera.flyTo(b);
+        } else if (currentInspectedItem?.type === 'edge') {
+          const b = linkWorldBox(ctx, currentInspectedItem.item as DataLink);
+          if (b) ctx.camera.flyTo(b);
+        }
+      }
+    });
+  }
+
+  window.addEventListener('resize', () => {
+    const shell = document.getElementById('marrow-shell');
+    if (shell) {
+      if (window.innerWidth < 768 || panel.hidden) {
+        shell.style.setProperty('--inspector-offset', '0px');
+      } else {
+        shell.style.setProperty('--inspector-offset', '380px');
+      }
+    }
+  });
+}
+
+function renderInspectorTabsAndPanes(panel: HTMLElement, tabs: TabInstance[]): void {
+  currentTabsList = tabs;
+  const tabsBar = panel.querySelector<HTMLElement>('.m-inspector-tabs');
+  const body = panel.querySelector<HTMLElement>('.m-inspector-body');
+  if (!tabsBar || !body) return;
+
+  tabsBar.innerHTML = tabs
+    .map(
+      (t) =>
+        `<button class="m-tab-btn" data-tab="${html(t.id)}" type="button" role="tab" aria-selected="false">${html(t.label)}</button>`,
+    )
+    .join('');
+
+  const existingPanes = new Set<string>();
+  for (const pane of body.querySelectorAll<HTMLElement>('.m-tab-pane, .m-inspector-pane')) {
+    const id = pane.id.replace('m-pane-', '');
+    existingPanes.add(id);
+  }
+  for (const t of tabs) {
+    if (!existingPanes.has(t.id)) {
+      const pane = document.createElement('div');
+      pane.id = `m-pane-${t.id}`;
+      pane.className = 'm-inspector-pane m-tab-pane';
+      pane.setAttribute('role', 'tabpanel');
+      pane.hidden = true;
+      body.appendChild(pane);
+    }
+  }
+
+  const activeBtn = panel.querySelector<HTMLButtonElement>('.m-tab-btn.is-active, .m-tab-btn.active');
+  const wantedTabId = activeBtn?.dataset['tab'];
+  const nextTabId = tabs.some((t) => t.id === wantedTabId) ? wantedTabId! : tabs[0]?.id;
+  if (nextTabId) {
+    activateInspectorTab(panel, nextTabId);
+  }
+}
+
 function fillInspector(maps: DeviceMaps, d: DataDevice, onGoto: (id: string) => void): void {
   if (document.documentElement.dataset['inspector'] === 'off') return;
   const panel = document.querySelector<HTMLElement>('.m-inspector');
   const body = document.querySelector<HTMLElement>('.m-inspector-body');
   const title = document.querySelector<HTMLElement>('.m-inspector-title');
   if (!panel || !body || !title) return;
+
+  activeMaps = maps;
+  activeGoto = onGoto;
+  currentInspectedItem = { type: 'device', item: d };
+
   title.textContent = d.name;
   const desc = document.querySelector<HTMLElement>('.m-inspector-desc');
   if (desc) desc.textContent = [d.role ?? d.tier, d.zone].filter(Boolean).join(' · ');
+
   const h = html;
   const facts: Array<[string, string | undefined]> = [
     ['ID', d.id],
@@ -552,53 +1053,118 @@ function fillInspector(maps: DeviceMaps, d: DataDevice, onGoto: (id: string) => 
     maps.devicePages.includes(d.id) && currentPage() !== `devices/${d.id}.html`
       ? `<a class="m-full-link" href="${rootPrefix()}devices/${encodeURIComponent(d.id)}.html#d=${encodeURIComponent(d.id)}">Open page<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg></a>`
       : '';
-  body.innerHTML = [
-    `<div class="m-icon-badge"><svg viewBox="0 0 48 48"><use href="#ic-${cssSafe(d.icon)}" width="48" height="48"/></svg><span class="m-status-pill m-status-${cssSafe(d.status)}">${h(d.status)}</span>${fullPage}</div>`,
-    `<dl class="m-facts">${facts
-      .filter(([, v]) => v !== undefined)
-      .map(([k, v]) => `<dt>${h(k)}</dt><dd>${h(v!)}</dd>`)
-      .join('')}</dl>`,
-    links.length
-      ? `<h3>Links (${links.length})</h3><ul class="m-links">${links
-          .map((l) => {
-            const mine = l.from.device === d.id ? l.from : l.to;
-            const other = l.from.device === d.id ? l.to : l.from;
-            const otherName = maps.deviceById.get(other.device)?.name ?? other.device;
-            // the line itself, drawn as the canvas draws it, then the words:
-            // logical semantics (trunk/tunnel/peering/lag) first, then medium/speed
-            const words = [...linkSemanticsWords(l), l.kind, l.speed].filter(Boolean).join(' · ');
-            const meta = `<span class="m-link-meta">${linkSwatch(l)}${words ? `<span>${h(words)}</span>` : ''}</span>`;
-            return `<li><button data-goto="${h(other.device)}"><span class="m-link-other">${h(otherName)}</span><span class="m-link-ports">${h(mine.port ?? '—')} → ${h(other.port ?? '—')}</span>${meta}</button></li>`;
-          })
-          .join('')}</ul>`
-      : '',
-    d.interfaces.length
-      ? `<h3>Interfaces (${d.interfaces.length})</h3><table class="m-table"><thead><tr><th>Name</th><th>VLAN</th><th>IP</th><th>Description</th></tr></thead><tbody>${d.interfaces
+
+  const tabsList: TabInstance[] = [
+    {
+      id: 'overview',
+      label: 'Overview',
+      render: (container) => {
+        container.innerHTML = [
+          `<div class="m-icon-badge"><svg viewBox="0 0 48 48"><use href="#ic-${cssSafe(d.icon)}" width="48" height="48"/></svg><span class="m-status-pill m-status-${cssSafe(d.status)}">${h(d.status)}</span>${fullPage}</div>`,
+          `<dl class="m-facts">${facts
+            .filter(([, v]) => v !== undefined)
+            .map(([k, v]) => `<dt>${h(k)}</dt><dd>${h(v!)}</dd>`)
+            .join('')}</dl>`,
+          d.stack
+            ? `<h3>Members (${d.stack.members.length})</h3><ul class="m-members">${d.stack.members
+                .map((m) => `<li>${h(m)}</li>`)
+                .join('')}</ul>`
+            : '',
+          d.note ? `<h3>Note</h3><div class="m-note">${h(d.note)}</div>` : '',
+        ].join('');
+      },
+    },
+  ];
+
+  if (d.interfaces.length > 0) {
+    tabsList.push({
+      id: 'interfaces',
+      label: `Interfaces (${d.interfaces.length})`,
+      render: (container) => {
+        container.innerHTML = `<table class="m-table"><thead><tr><th>Name</th><th>VLAN</th><th>IP</th><th>Description</th></tr></thead><tbody>${d.interfaces
           .map(
             (i) =>
               `<tr><td>${h(i.name)}</td><td>${i.vlan ?? ''}</td><td>${h(i.ip ?? '')}</td><td>${h(i.description ?? '')}</td></tr>`,
           )
-          .join('')}</tbody></table>`
-      : '',
-    d.stack
-      ? `<h3>Members (${d.stack.members.length})</h3><ul class="m-members">${d.stack.members
-          .map((m) => `<li>${h(m)}</li>`)
-          .join('')}</ul>`
-      : '',
-    d.note ? `<h3>Note</h3><div class="m-note">${h(d.note)}</div>` : '',
-    d.config ? `<h3>Config</h3><pre class="m-config">${h(d.config)}</pre>` : '',
-    d.customFields && Object.keys(d.customFields).length > 0
-      ? renderCustomSection('Custom Fields', d.customFields)
-      : '',
-    ...(d.sections
-      ? Object.entries(d.sections).map(([title, content]) =>
-          renderCustomSection(title, content),
-        )
-      : []),
-  ].join('');
+          .join('')}</tbody></table>`;
+      },
+    });
+  }
+
+  if (links.length > 0) {
+    tabsList.push({
+      id: 'neighbors',
+      label: `Neighbors (${links.length})`,
+      render: (container) => {
+        container.innerHTML = `<ul class="m-links">${links
+          .map((l) => {
+            const mine = l.from.device === d.id ? l.from : l.to;
+            const other = l.from.device === d.id ? l.to : l.from;
+            const otherName = maps.deviceById.get(other.device)?.name ?? other.device;
+            const words = [...linkSemanticsWords(l), l.kind, l.speed].filter(Boolean).join(' · ');
+            const meta = `<span class="m-link-meta">${linkSwatch(l)}${words ? `<span>${h(words)}</span>` : ''}</span>`;
+            return `<li><button type="button" data-goto="${h(other.device)}"><span class="m-link-other">${h(otherName)}</span><span class="m-link-ports">${h(mine.port ?? '—')} → ${h(other.port ?? '—')}</span>${meta}</button></li>`;
+          })
+          .join('')}</ul>`;
+        for (const btn of container.querySelectorAll<HTMLButtonElement>('[data-goto]')) {
+          btn.addEventListener('click', () => onGoto(btn.dataset['goto']!));
+        }
+      },
+    });
+  }
+
+  // Custom registered tabs for devices
+  const customTabs = Array.from(customTabsRegistry.values())
+    .filter((t) => (!t.target || t.target === 'device' || t.target === 'both') && (!t.visible || t.visible(d, activeCtx)))
+    .sort((a, b) => (a.order ?? 50) - (b.order ?? 50));
+
+  for (const ct of customTabs) {
+    tabsList.push({
+      id: ct.id,
+      label: ct.label,
+      render: (container) => ct.render(d, container, activeCtx),
+    });
+  }
+
+  const hasCustom =
+    (d.customFields && Object.keys(d.customFields).length > 0) ||
+    (d.sections && Object.keys(d.sections).length > 0);
+  if (hasCustom) {
+    tabsList.push({
+      id: 'metadata',
+      label: 'Custom Fields',
+      render: (container) => {
+        container.innerHTML = [
+          d.customFields && Object.keys(d.customFields).length > 0
+            ? renderCustomSection('Custom Fields', d.customFields)
+            : '',
+          ...(d.sections
+            ? Object.entries(d.sections).map(([title, content]) =>
+                renderCustomSection(title, content),
+              )
+            : []),
+        ].join('');
+      },
+    });
+  }
+
+  if (d.config) {
+    tabsList.push({
+      id: 'config',
+      label: 'Config',
+      render: (container) => {
+        container.innerHTML = `<pre class="m-config">${h(d.config!)}</pre>`;
+      },
+    });
+  }
+
+  renderInspectorTabsAndPanes(panel, tabsList);
+
   panel.hidden = false;
-  for (const btn of body.querySelectorAll<HTMLButtonElement>('[data-goto]')) {
-    btn.addEventListener('click', () => onGoto(btn.dataset['goto']!));
+  panel.dataset['sheet'] = panel.dataset['sheet'] && panel.dataset['sheet'] !== 'closed' ? panel.dataset['sheet'] : 'half';
+  const shell = document.getElementById('marrow-shell');
+  if (shell && window.innerWidth >= 768) {
+    shell.style.setProperty('--inspector-offset', '380px');
   }
 }
 
@@ -608,11 +1174,17 @@ function fillLinkInspector(maps: DeviceMaps, l: DataLink, onGoto: (id: string) =
   const body = document.querySelector<HTMLElement>('.m-inspector-body');
   const title = document.querySelector<HTMLElement>('.m-inspector-title');
   if (!panel || !body || !title) return;
+
+  activeMaps = maps;
+  activeGoto = onGoto;
+  currentInspectedItem = { type: 'edge', item: l };
+
   const fromName = maps.deviceById.get(l.from.device)?.name ?? l.from.device;
   const toName = maps.deviceById.get(l.to.device)?.name ?? l.to.device;
   title.textContent = `${fromName} ⟷ ${toName}`;
   const desc = document.querySelector<HTMLElement>('.m-inspector-desc');
   if (desc) desc.textContent = [l.kind, l.speed, l.mode].filter(Boolean).join(' · ');
+
   const h = html;
   const facts: Array<[string, string | undefined]> = [
     ['From', `${fromName}${l.from.port ? ` (${l.from.port})` : ''}`],
@@ -628,21 +1200,68 @@ function fillLinkInspector(maps: DeviceMaps, l: DataLink, onGoto: (id: string) =
     ['Encap', l.encap],
     ['Status', l.status],
   ];
-  body.innerHTML = [
-    `<div class="m-icon-badge">${linkSwatch(l)}<span class="m-status-pill m-status-${cssSafe(l.status)}">${h(l.status)}</span></div>`,
-    `<dl class="m-facts">${facts
-      .filter(([, v]) => v !== undefined)
-      .map(([k, v]) => `<dt>${h(k)}</dt><dd>${h(v!)}</dd>`)
-      .join('')}</dl>`,
-    l.note ? `<h3>Note</h3><div class="m-note">${h(l.note)}</div>` : '',
-    l.customFields && Object.keys(l.customFields).length > 0
-      ? renderCustomSection('Custom Fields', l.customFields)
-      : '',
-    ...(l.sections
-      ? Object.entries(l.sections).map(([t, c]) => renderCustomSection(t, c))
-      : []),
-  ].join('');
+
+  const tabsList: TabInstance[] = [
+    {
+      id: 'overview',
+      label: 'Overview',
+      render: (container) => {
+        container.innerHTML = [
+          `<div class="m-icon-badge">${linkSwatch(l)}<span class="m-status-pill m-status-${cssSafe(l.status)}">${h(l.status)}</span></div>`,
+          `<dl class="m-facts">${facts
+            .filter(([, v]) => v !== undefined)
+            .map(([k, v]) => `<dt>${h(k)}</dt><dd>${h(v!)}</dd>`)
+            .join('')}</dl>`,
+          l.note ? `<h3>Note</h3><div class="m-note">${h(l.note)}</div>` : '',
+        ].join('');
+      },
+    },
+  ];
+
+  // Custom registered tabs for edges
+  const customTabs = Array.from(customTabsRegistry.values())
+    .filter((t) => (t.target === 'edge' || t.target === 'both') && (!t.visible || t.visible(l, activeCtx)))
+    .sort((a, b) => (a.order ?? 50) - (b.order ?? 50));
+
+  for (const ct of customTabs) {
+    tabsList.push({
+      id: ct.id,
+      label: ct.label,
+      render: (container) => ct.render(l, container, activeCtx),
+    });
+  }
+
+  const hasCustom =
+    (l.customFields && Object.keys(l.customFields).length > 0) ||
+    (l.sections && Object.keys(l.sections).length > 0);
+  if (hasCustom) {
+    tabsList.push({
+      id: 'metadata',
+      label: 'Custom Fields',
+      render: (container) => {
+        container.innerHTML = [
+          l.customFields && Object.keys(l.customFields).length > 0
+            ? renderCustomSection('Custom Fields', l.customFields)
+            : '',
+          ...(l.sections
+            ? Object.entries(l.sections).map(([t, c]) => renderCustomSection(t, c))
+            : []),
+        ].join('');
+      },
+    });
+  }
+
+  renderInspectorTabsAndPanes(panel, tabsList);
+
   panel.hidden = false;
+  panel.dataset['sheet'] = 'half';
+  const shell = document.getElementById('marrow-shell');
+  if (shell && window.innerWidth >= 768) {
+    shell.style.setProperty('--inspector-offset', '380px');
+  }
+
+  const statusNode = document.querySelector('.m-status-node');
+  if (statusNode) statusNode.textContent = `${fromName} ⟷ ${toName}`;
 }
 
 // ─── spotlight ──────────────────────────────────────────────────────────────
@@ -920,8 +1539,8 @@ function setupSpotlight(ctx: Ctx | undefined, data: EmbeddedData): void {
   overlay.addEventListener('click', (ev) => {
     if (ev.target === overlay) close();
   });
-  // the dock pill AND its peek tab both open search
-  for (const btn of document.querySelectorAll('.m-search-btn')) btn.addEventListener('click', open);
+  // the dock pill, command bar search pill, and peek tab all open search
+  for (const btn of document.querySelectorAll('.m-search-btn, .m-cmd-search-btn')) btn.addEventListener('click', open);
   addEventListener('keydown', (ev) => {
     if ((ev.key === 'k' && (ev.metaKey || ev.ctrlKey)) || (ev.key === '/' && !isTyping())) {
       ev.preventDefault();
@@ -932,6 +1551,93 @@ function setupSpotlight(ctx: Ctx | undefined, data: EmbeddedData): void {
 }
 
 // ─── menubar (shadcn Menubar; popovers share the DropdownMenu spec) ─────────
+
+function fillAboutDialog(dlg: HTMLElement, ctx?: Ctx): void {
+  const rawScript = document.getElementById('marrow-data')?.textContent;
+  const data: EmbeddedData | undefined = ctx?.data ?? (rawScript ? JSON.parse(rawScript) : undefined);
+  if (!data) return;
+
+  const titleEl = dlg.querySelector<HTMLElement>('.m-about-title');
+  const descEl = dlg.querySelector<HTMLElement>('.m-about-desc');
+  const bodyEl = dlg.querySelector<HTMLElement>('.m-about-body');
+
+  if (titleEl) titleEl.textContent = data.name || 'Topology Diagram';
+  if (descEl) {
+    descEl.textContent = data.description || '';
+    descEl.hidden = !data.description;
+  }
+
+  if (!bodyEl) return;
+
+  const author = data.author ?? data.titleBlock?.author;
+  const revision = data.revision ?? data.titleBlock?.revision;
+  const date = data.date ?? data.titleBlock?.date;
+  const devCount = data.devices?.length ?? 0;
+  const linkCount = data.links?.length ?? 0;
+  const zoneCount = data.zonesCount ?? data.zones?.length ?? 0;
+
+  const chips: string[] = [];
+  if (author) chips.push(`<span class="m-about-pill"><strong>Author:</strong> ${html(author)}</span>`);
+  if (revision) chips.push(`<span class="m-about-pill"><strong>Revision:</strong> ${html(revision)}</span>`);
+  if (date) chips.push(`<span class="m-about-pill"><strong>Date:</strong> ${html(date)}</span>`);
+  chips.push(`<span class="m-about-pill"><strong>Devices:</strong> ${devCount}</span>`);
+  chips.push(`<span class="m-about-pill"><strong>Links:</strong> ${linkCount}</span>`);
+  if (zoneCount > 0) chips.push(`<span class="m-about-pill"><strong>Zones:</strong> ${zoneCount}</span>`);
+
+  const metaHtml = `<div class="m-about-meta">${chips.join('')}</div>`;
+
+  let contentHtml = '';
+  if (data.about) {
+    if (typeof data.about === 'string') {
+      contentHtml = `<div class="m-about-content">${renderMarkdownTable(data.about)}</div>`;
+    } else if (typeof data.about === 'object') {
+      const sections = Object.entries(data.about as Record<string, unknown>);
+      contentHtml = `<div class="m-about-sections">${sections
+        .map(([title, content]) => renderCustomSection(title, content))
+        .join('')}</div>`;
+    }
+  } else {
+    const specs: Record<string, string> = {
+      'Engine Mode': ctx ? (ctx.mode === 'canvas' ? 'Canvas 2D' : 'Vector SVG') : 'Document Inventory',
+      'Inventory Size': `${devCount} devices · ${linkCount} links${zoneCount ? ` · ${zoneCount} zones` : ''}`,
+      'Compiler Version': 'Marrow v2 Declarative Schema',
+    };
+    contentHtml = `
+      <div class="m-about-sections">
+        ${renderCustomSection('Topology Specifications', specs)}
+      </div>
+      <div class="m-about-hint">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+        <div>
+          <strong>Customizing this page:</strong> You can add rich documentation, architecture decisions, operational runbooks, or contact information by declaring an <code>about:</code> section in your topology YAML.
+        </div>
+      </div>
+    `;
+  }
+
+  bodyEl.innerHTML = metaHtml + contentHtml;
+}
+
+function openAboutDialog(ctx?: Ctx): void {
+  const dlg = document.querySelector<HTMLElement>('.m-about-dialog');
+  if (!dlg) return;
+  fillAboutDialog(dlg, ctx);
+  dlg.hidden = false;
+}
+
+function setupAboutDialog(ctx?: Ctx): void {
+  const dlg = document.querySelector<HTMLElement>('.m-about-dialog');
+  if (!dlg) return;
+  dlg.querySelector('.m-about-close')?.addEventListener('click', () => {
+    dlg.hidden = true;
+  });
+  dlg.addEventListener('click', (ev) => {
+    if (ev.target === dlg) dlg.hidden = true;
+  });
+  addEventListener('keydown', (ev) => {
+    if (ev.key === 'Escape' && !dlg.hidden) dlg.hidden = true;
+  });
+}
 
 function openShortcutsGuide(): void {
   const dlg = document.querySelector<HTMLElement>('.m-shortcuts');
@@ -1075,7 +1781,7 @@ function setupMenubar(ctx: Ctx | undefined): void {
       case 'print': close(); window.print(); break;
       case 'guide': close(); openShortcutsGuide(); break;
       case 'palette': close(); document.querySelector<HTMLButtonElement>('.m-search-btn')?.click(); break;
-      case 'about': close(); document.querySelector<HTMLElement>('.m-sidebar')?.classList.add('open'); break;
+      case 'about': close(); openAboutDialog(ctx); break;
     }
   });
 
@@ -1252,9 +1958,21 @@ function setupTooltipSvg(ctx: Ctx): void {
 // ─── controls / theme / keyboard ────────────────────────────────────────────
 
 function setupControls(ctx: Ctx): void {
-  document.querySelector('.m-ctl-fit')?.addEventListener('click', () => ctx.camera.fit(true));
-  document.querySelector('.m-ctl-in')?.addEventListener('click', () => zoomCenter(ctx, 1.35));
-  document.querySelector('.m-ctl-out')?.addEventListener('click', () => zoomCenter(ctx, 1 / 1.35));
+  for (const btn of document.querySelectorAll('.m-ctl-fit')) {
+    btn.addEventListener('click', () => ctx.camera.fit(true));
+  }
+  for (const btn of document.querySelectorAll('.m-ctl-in')) {
+    btn.addEventListener('click', () => zoomCenter(ctx, 1.35));
+  }
+  for (const btn of document.querySelectorAll('.m-ctl-out')) {
+    btn.addEventListener('click', () => zoomCenter(ctx, 1 / 1.35));
+  }
+  for (const btn of document.querySelectorAll('.m-minimap-btn')) {
+    btn.addEventListener('click', () => {
+      const mini = document.querySelector<HTMLButtonElement>('.m-minimap .m-mini-toggle');
+      if (mini) mini.click();
+    });
+  }
 }
 
 // ─── export (reached via the ⌘K command center) ─────────────────────────────
@@ -1589,23 +2307,50 @@ function setupTheme(): void {
   if (/Mac|iP(hone|ad|od)/.test(navigator.platform)) {
     for (const kbd of document.querySelectorAll('.m-searchpill kbd, .m-dock-hint kbd')) kbd.textContent = '⌘ K';
   }
+
+  for (const btn of document.querySelectorAll('.m-theme-btn')) {
+    btn.addEventListener('click', () => {
+      const next = root.dataset['theme'] === 'light' ? 'dark' : 'light';
+      root.dataset['theme'] = next;
+      delete root.dataset['themeMode'];
+      localStorage.setItem('marrow-theme', next);
+    });
+  }
 }
 
 // ─── sidebar ────────────────────────────────────────────────────────────────
 
 function setupSidebar(ctx: Ctx | undefined): void {
   const sidebar = document.querySelector<HTMLElement>('.m-sidebar');
-  const toggle = document.querySelector<HTMLButtonElement>('.m-sidebar-btn');
-  if (!sidebar || !toggle) return;
+  if (!sidebar) return;
   const root = document.documentElement;
 
   const setOpen = (open: boolean): void => {
     sidebar.classList.toggle('open', open);
-    toggle.classList.toggle('on', open);
+    sidebar.classList.toggle('is-collapsed', !open);
+    for (const btn of document.querySelectorAll('.m-sidebar-btn')) {
+      btn.classList.toggle('on', open);
+    }
     localStorage.setItem('marrow-sidebar', open ? 'open' : 'closed');
   };
-  setOpen(localStorage.getItem('marrow-sidebar') === 'open');
-  toggle.addEventListener('click', () => setOpen(!sidebar.classList.contains('open')));
+  const defaultOpen = !sidebar.classList.contains('is-collapsed');
+  const stored = localStorage.getItem('marrow-sidebar');
+  setOpen(stored !== null ? stored === 'open' : defaultOpen);
+
+  for (const btn of document.querySelectorAll('.m-sidebar-btn')) {
+    btn.addEventListener('click', () => setOpen(!sidebar.classList.contains('open')));
+  }
+  for (const closeBtn of sidebar.querySelectorAll<HTMLButtonElement>('.m-sidebar-close')) {
+    closeBtn.addEventListener('click', () => setOpen(false));
+  }
+  document.addEventListener('pointerdown', (ev) => {
+    if (window.innerWidth < 768 && sidebar.classList.contains('open')) {
+      const target = ev.target as Node;
+      if (!sidebar.contains(target) && !document.querySelector('.m-sidebar-btn')?.contains(target)) {
+        setOpen(false);
+      }
+    }
+  });
   // collapsible nav groups (Branch, Building, …); in strip mode the head is
   // the group's single icon — clicking it expands the sidebar with it open
   sidebar.addEventListener('click', (ev) => {
@@ -1667,6 +2412,49 @@ function setupSidebar(ctx: Ctx | undefined): void {
       apply();
     });
   }
+}
+
+function setupMobileNav(ctx: Ctx | undefined): void {
+  const nav = document.querySelector<HTMLElement>('.m-mobile-nav');
+  if (!nav) return;
+
+  const setActive = (action: string): void => {
+    for (const b of nav.querySelectorAll<HTMLButtonElement>('.m-mob-btn, .m-mobile-btn')) {
+      const match = b.dataset['action'] === action;
+      b.classList.toggle('is-active', match);
+      b.classList.toggle('active', match);
+    }
+  };
+
+  nav.addEventListener('click', (ev) => {
+    const btn = (ev.target as Element).closest<HTMLButtonElement>('.m-mob-btn, .m-mobile-btn');
+    if (!btn || !btn.dataset['action']) return;
+    const action = btn.dataset['action'];
+    setActive(action);
+
+    const sidebar = document.querySelector<HTMLElement>('.m-sidebar');
+    const inspector = document.querySelector<HTMLElement>('.m-inspector');
+
+    if (action === 'canvas') {
+      sidebar?.classList.remove('open');
+      if (inspector) inspector.dataset['sheet'] = 'closed';
+    } else if (action === 'search') {
+      const searchBtn = document.querySelector<HTMLButtonElement>('.m-cmd-search-btn, .m-search-btn');
+      searchBtn?.click();
+    } else if (action === 'pages') {
+      if (sidebar) {
+        const isOpen = sidebar.classList.contains('open');
+        sidebar.classList.toggle('open', !isOpen);
+        if (!isOpen && inspector) inspector.dataset['sheet'] = 'closed';
+      }
+    } else if (action === 'details') {
+      if (inspector) {
+        sidebar?.classList.remove('open');
+        inspector.hidden = false;
+        inspector.dataset['sheet'] = 'half';
+      }
+    }
+  });
 }
 
 /** The v1-style icon rail: quick toggles kept in sync with the panel controls. */
@@ -1819,6 +2607,9 @@ function setupInventoryDetails(data: EmbeddedData): void {
   const panel = document.querySelector<HTMLElement>('.m-inspector');
   if (!panel || data.devices.length === 0) return;
 
+  registerYamlTabs(data);
+  exposePublicApi(undefined);
+
   const deviceById = new Map(data.devices.map((d) => [d.id, d]));
   const linksByDevice = new Map<string, DataLink[]>();
   for (const l of data.links) {
@@ -1827,6 +2618,7 @@ function setupInventoryDetails(data: EmbeddedData): void {
     }
   }
   const maps: DeviceMaps = { deviceById, linksByDevice, devicePages: devicePageIds(data) };
+  bindInspectorTabs(panel);
 
   const show = (id: string): void => {
     const d = deviceById.get(id);
@@ -2223,9 +3015,20 @@ function setupMinimap(ctx: Ctx, stage: HTMLElement): () => void {
     content += `<circle class="m-mini-dot m-status-${n.status}" cx="${(PAD + (n.box.x + n.box.w / 2) * k).toFixed(1)}" cy="${(PAD + (n.box.y + n.box.h / 2) * k).toFixed(1)}" r="${r}"/>`;
   }
 
+  const GLYPH_MAP =
+    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"/><path d="M15 5.764v15"/><path d="M9 3.236v15"/></svg>';
+  const GLYPH_CHEVRON =
+    '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
+
+  const initiallyCollapsed = localStorage.getItem('marrow-minimap') === 'closed';
+
   wrap.innerHTML =
-    `<button class="m-mini-toggle" type="button" aria-label="Toggle minimap"></button>` +
+    `<button class="m-mini-toggle" type="button" aria-label="${initiallyCollapsed ? 'Show minimap' : 'Hide minimap'}">${initiallyCollapsed ? GLYPH_MAP : GLYPH_CHEVRON}</button>` +
     `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">${content}<rect class="m-mini-view" x="0" y="0" width="10" height="10" rx="2"/></svg>`;
+
+  if (initiallyCollapsed) {
+    wrap.classList.add('collapsed');
+  }
 
   const mini = wrap.querySelector('svg')!;
   const view = wrap.querySelector<SVGRectElement>('.m-mini-view')!;
@@ -2260,17 +3063,13 @@ function setupMinimap(ctx: Ctx, stage: HTMLElement): () => void {
     dragging = false;
   });
 
-  const GLYPH_MAP =
-    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"/><path d="M15 5.764v15"/><path d="M9 3.236v15"/></svg>';
-  const GLYPH_CHEVRON =
-    '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
   const toggle = wrap.querySelector<HTMLButtonElement>('.m-mini-toggle')!;
   const applyCollapsed = (collapsed: boolean): void => {
     wrap.classList.toggle('collapsed', collapsed);
     toggle.innerHTML = collapsed ? GLYPH_MAP : GLYPH_CHEVRON;
     toggle.setAttribute('aria-label', collapsed ? 'Show minimap' : 'Hide minimap');
   };
-  applyCollapsed(localStorage.getItem('marrow-minimap') === 'closed');
+  applyCollapsed(initiallyCollapsed);
   toggle.addEventListener('click', (ev) => {
     ev.stopPropagation();
     const collapsed = !wrap.classList.contains('collapsed');
@@ -2293,9 +3092,9 @@ function setupHash(ctx: Ctx): () => void {
 }
 
 function syncHash(ctx: Ctx): void {
-  const state: { device?: string; camera?: { x: number; y: number; k: number } } = { camera: ctx.camera.get() };
+  const state: { device?: string } = {};
   if (ctx.selected !== undefined) state.device = ctx.selected;
-  history.replaceState(null, '', serializeHash(state) || location.pathname);
+  history.replaceState(null, '', serializeHash(state) || location.pathname + location.search);
 }
 
 // ─── utils ──────────────────────────────────────────────────────────────────

@@ -4,7 +4,15 @@
       <li v-for="d in demos" :key="d.id">
         <button class="mshow-card" type="button" @click="open(d)">
           <span class="mshow-thumb">
-            <img :src="`/demo/${d.id}.png`" :alt="`${d.title} — compiled Marrow diagram`" loading="lazy" />
+            <iframe
+              :src="`/demo/${d.id}-embed.html`"
+              :title="`${d.title} — live preview`"
+              loading="lazy"
+              tabindex="-1"
+              class="mshow-thumb-frame"
+              @load="syncThumbTheme($event)"
+            />
+            <span class="mshow-thumb-shim" />
             <span class="mshow-play"><SmartIcon name="lucide:maximize-2" :size="16" /></span>
           </span>
           <span class="mshow-body">
@@ -155,12 +163,22 @@ function close() {
 function pushTheme() {
   const theme = colorMode.value === 'light' ? 'light' : 'dark';
   frame.value?.contentWindow?.postMessage({ type: 'marrow:theme', theme }, '*');
+  if (import.meta.client) {
+    for (const thumb of document.querySelectorAll<HTMLIFrameElement>('.mshow-thumb-frame')) {
+      thumb.contentWindow?.postMessage({ type: 'marrow:theme', theme }, '*');
+    }
+  }
+}
+function syncThumbTheme(event: Event) {
+  const target = event.target as HTMLIFrameElement;
+  const theme = colorMode.value === 'light' ? 'light' : 'dark';
+  target.contentWindow?.postMessage({ type: 'marrow:theme', theme }, '*');
 }
 function onMessage(e: MessageEvent) {
   // the diagram pings when its runtime is ready — answer with the current theme
   if ((e.data as { type?: string } | null)?.type === 'marrow:ready') pushTheme();
 }
-watch(() => colorMode.value, () => active.value && pushTheme());
+watch(() => colorMode.value, () => pushTheme());
 
 function onKey(e: KeyboardEvent) {
   if (e.key === 'Escape' && active.value) close();
@@ -226,36 +244,61 @@ onBeforeUnmount(() => {
     border-right: 1px solid hsl(var(--border));
   }
 }
-.mshow-thumb img {
+.mshow-thumb img,
+.mshow-thumb-frame {
   width: 100%;
   height: 100%;
   object-fit: cover;
   object-position: center;
   display: block;
+  border: 0;
+  pointer-events: none;
+  background: transparent;
   transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.mshow-card:hover .mshow-thumb img {
+.mshow-thumb-frame {
+  min-height: 180px;
+}
+.mshow-thumb-shim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: transparent;
+}
+.mshow-card:hover .mshow-thumb img,
+.mshow-card:hover .mshow-thumb-frame {
   transform: scale(1.03);
 }
 .mshow-play {
   position: absolute;
   inset: 0;
+  z-index: 2;
   display: grid;
   place-items: center;
-  color: #fff;
-  background: radial-gradient(circle at center, rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0) 60%);
+  background: transparent;
   opacity: 0;
-  transition: opacity 0.16s ease;
+  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
 }
 .mshow-play > :deep(svg) {
+  width: 38px;
+  height: 38px;
   padding: 9px;
   border-radius: 999px;
-  background: rgba(9, 9, 11, 0.72);
-  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: hsl(var(--card) / 0.9);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid hsl(var(--border));
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  color: hsl(var(--foreground));
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .mshow-card:hover .mshow-play,
 .mshow-card:focus-visible .mshow-play {
   opacity: 1;
+}
+.mshow-card:hover .mshow-play > :deep(svg) {
+  transform: scale(1.1);
 }
 
 .mshow-body {

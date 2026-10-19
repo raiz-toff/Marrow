@@ -187,14 +187,32 @@ devices:
 
 Links also accept `custom_fields:` and `sections:`. Clicking any link in the SVG viewer opens a dedicated link inspector drawer.
 
+## Diagram metadata and "About this diagram"
+
+Provide architectural context, runbooks, and team contacts using the root `about:` section. This content opens in the interactive **About this diagram** document dialog modal:
+
+```yaml
+author: NetOps Architecture Team
+revision: v1.0
+date: "2026-10-19"
+about:
+  Overview: Multi-vendor campus core and distribution backbone.
+  Design Notes: |
+    - Dual Arista spine switches with EVPN-VXLAN fabric
+    - Redundant LACP uplinks across distribution switches
+  Runbook: |
+    - Maintenance window: 02:00–04:00 UTC
+    - Escalation contact: noc@example.com
+```
+
 ## Branding (global configuration)
 
 Branding is global and configured in `marrow.config.yaml` at the repository root, not in individual topology files (see ADR-0003):
 
 ```yaml [marrow.config.yaml]
 brand:
-  name: Acme Networks
-  note: Proprietary & Confidential
+  name: Marrow
+  note: Engineering Architecture & Design
 theme:
   dark:
     accent: "#38bdf8"
@@ -211,9 +229,13 @@ theme:
 - Edit `input/*.yaml` only — never `output/`, `icon-packs/**/svg/`, or `node_modules/`.
 - Use `density:` and `scale:` for layout compactness; never use `pin:` to reposition nodes.
 - Put inventory facts in `custom_fields:` and tables in `sections:`.
+- Put diagram-level documentation, runbooks, and architectural overview in `about:`.
 - Bring legacy v1 files forward with `npm run marrow -- import <file>` (don't
   author against `legacy-v1/`).
 - Imported files may carry an `x-v1-config:` block (`engines:`/`layouts:`) —
   it's inert v1 leftovers, never read by v2 (which always derives one layout
   from declared structure). Delete it when you touch the file.
+- Check skills and toolchain updates (`npx skills check`). Apply safe patches cleanly; alert the user and require authorization before applying breaking/impacting updates.
+- Autonomously self-heal minor update regressions (deprecated syntax, renamed keys, missing icon packs) via structured diagnostics (`validate --json`) before reporting back.
 - Don't commit unless asked.
+

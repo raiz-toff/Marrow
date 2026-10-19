@@ -90,6 +90,8 @@ export function rawToTopology(raw: RawTopology): Topology {
   if (raw.author !== undefined) topology.author = raw.author;
   if (raw.revision !== undefined) topology.revision = raw.revision;
   if (raw.date !== undefined) topology.date = raw.date;
+  if (raw.about !== undefined) topology.about = raw.about;
+  if (raw.inspector !== undefined) topology.inspector = raw.inspector;
   if (raw.title_block !== undefined) {
     topology.titleBlock = {
       title: raw.title_block.title ?? raw.name,

@@ -97,6 +97,19 @@ export const titleBlockSchema = z.strictObject({
   logo: z.string().optional(),
 });
 
+export const inspectorTabSchema = z.strictObject({
+  id: z.string().min(1),
+  label: z.string().min(1),
+  target: z.enum(['device', 'edge', 'both']).default('device'),
+  field: z.string().optional(),
+  fields: z.array(z.string()).optional(),
+  template: z.string().optional(),
+});
+
+export const inspectorSchema = z.strictObject({
+  tabs: z.array(inspectorTabSchema).default([]),
+});
+
 export const topologySchema = z.strictObject({
   marrow: z.number(),
   name: z.string().min(1),
@@ -104,7 +117,9 @@ export const topologySchema = z.strictObject({
   author: z.string().optional(),
   revision: z.string().optional(),
   date: z.string().optional(),
+  about: z.unknown().optional(),
   title_block: titleBlockSchema.optional(),
+  inspector: inspectorSchema.optional(),
   theme: asEnum(THEMES).default('dark'),
   density: asEnum(DENSITIES).default('standard'),
   scale: z.number().min(0.4).max(2.5).default(1),

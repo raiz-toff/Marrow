@@ -151,13 +151,15 @@ async function cmdBuild(rest: string[]): Promise<number> {
         packs: { type: 'string' },
         single: { type: 'boolean', default: false },
         config: { type: 'string' },
+        embed: { type: 'boolean', default: false },
+        chrome: { type: 'string' },
       },
       allowPositionals: true,
     }),
   );
   if (!parsed.ok) {
     console.error(
-      `${parsed.message}\n\nusage: marrow build <file> [-o <out>] [--single] [--packs <dir>] [--config <file.yaml>]`,
+      `${parsed.message}\n\nusage: marrow build <file> [-o <out>] [--single] [--embed] [--chrome minimal|full] [--packs <dir>] [--config <file.yaml>]`,
     );
     return 2;
   }
@@ -207,6 +209,8 @@ async function cmdBuild(rest: string[]): Promise<number> {
     icons: packs.catalog,
     ...(config.brand ? { brand: config.brand } : {}),
     ...(config.themeConfig ? { themeConfig: config.themeConfig } : {}),
+    ...(values.embed ? { embed: true } : {}),
+    ...(values.chrome === 'minimal' || values.chrome === 'full' ? { chrome: values.chrome } : {}),
   };
   try {
     if (plan.mode === 'site' && !values.single) {

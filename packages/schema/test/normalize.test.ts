@@ -125,4 +125,67 @@ devices:
       logo: 'brand/custom-logo.svg',
     });
   });
+
+  test('normalizes inspector tabs configuration', () => {
+    const inspectorSource = `
+marrow: 2
+name: Inspector Test
+inspector:
+  tabs:
+    - id: telemetry
+      label: Live Telemetry
+      target: device
+      field: telemetry
+    - id: optics
+      label: Optical Health
+      target: edge
+      field: optical_budget
+devices:
+  - id: sw-01
+    icon: cisco/switches/layer-3-switch
+`;
+    const { valid, topology } = validateSource(inspectorSource, { icons: ciscoCatalog() });
+    expect(valid).toBe(true);
+    const t = topology as any;
+    expect(t.inspector).toBeDefined();
+    expect(t.inspector.tabs).toHaveLength(2);
+    expect(t.inspector.tabs[0]).toEqual({
+      id: 'telemetry',
+      label: 'Live Telemetry',
+      target: 'device',
+      field: 'telemetry',
+    });
+    expect(t.inspector.tabs[1]).toEqual({
+      id: 'optics',
+      label: 'Optical Health',
+      target: 'edge',
+      field: 'optical_budget',
+    });
+  });
+
+  test('normalizes about section with markdown and custom metadata', () => {
+    const aboutSource = `
+marrow: 2
+name: About Test
+author: Network Architecture Team
+date: "2026-10-19"
+revision: "v1.2"
+about:
+  Overview: "Multi-vendor routing lab between Cisco and Arista."
+  Design Notes: |
+    - Dual spine architecture
+    - BGP EVPN control plane
+devices:
+  - id: sw-01
+    icon: cisco/switches/layer-3-switch
+`;
+    const { valid, topology } = validateSource(aboutSource, { icons: ciscoCatalog() });
+    expect(valid).toBe(true);
+    const t = topology as any;
+    expect(t.author).toBe('Network Architecture Team');
+    expect(t.revision).toBe('v1.2');
+    expect(t.about).toBeDefined();
+    expect(t.about.Overview).toBe('Multi-vendor routing lab between Cisco and Arista.');
+    expect(t.about['Design Notes']).toContain('Dual spine architecture');
+  });
 });
