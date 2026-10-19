@@ -1,465 +1,957 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark" data-root="" data-page="index.html">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="generator" content="marrow-v2">
-<title>Spatial HUD &amp; Infinite Canvas Architecture Preview — Marrow</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Marrow — Network Architecture Studio</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-/* ── Marrow Design Token System (Defect 1 Standard) ── */
+/* ═══════════════════════════════════════════════════════════════════
+   1. DESIGN TOKENS — Enterprise Network Observability (Obsidian CAD)
+   ═══════════════════════════════════════════════════════════════════ */
 :root {
-  --bg: #09090b; --bg-raise: #18181b; --panel: rgba(24, 24, 27, 0.82); --panel-solid: #18181b;
-  --line: rgba(255, 255, 255, 0.08); --line-strong: rgba(255, 255, 255, 0.18);
-  --ink: #fafafa; --ink-dim: #a1a1aa; --ink-faint: #71717a;
-  --chip: #18181b; --chip-line: #3f3f46; --grid-dot: rgba(255, 255, 255, 0.08);
-  --m-accent: #3b82f6; --ring: #3b82f6; --zone: #71717a;
-  --up: #22c55e; --down: #ef4444; --degraded: #f59e0b; --planned: #71717a; --unknown: #71717a;
-  --edge: #d4d4d8;
-  --sidebar: oklch(0.205 0 0); --sidebar-fg: #fafafa;
-  --sidebar-accent: oklch(0.269 0 0); --sidebar-border: rgb(255 255 255 / .1);
-  --radius-sm: 6px; --radius: 8px; --radius-lg: 14px; --radius-pill: 9999px;
-  --shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.6), 0 4px 12px rgba(0, 0, 0, 0.35);
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / .4);
-  --inspector-w: 380px;
-}
-:root[data-theme="light"] {
-  --bg: #f8fafc; --bg-raise: #f1f5f9; --panel: rgba(255, 255, 255, 0.86); --panel-solid: #ffffff;
-  --line: rgba(0, 0, 0, 0.08); --line-strong: rgba(0, 0, 0, 0.18);
-  --ink: #0f172a; --ink-dim: #64748b; --ink-faint: #94a3b8;
-  --chip: #ffffff; --chip-line: #cbd5e1; --grid-dot: rgba(0, 0, 0, 0.06);
-  --m-accent: #2563eb; --ring: #2563eb; --zone: #64748b;
-  --up: #16a34a; --down: #dc2626; --degraded: #d97706; --planned: #94a3b8; --unknown: #94a3b8;
-  --edge: #64748b;
-  --sidebar: oklch(0.985 0 0); --sidebar-fg: #0f172a;
-  --sidebar-accent: oklch(0.97 0 0); --sidebar-border: oklch(0.922 0 0);
-  --shadow: 0 16px 32px -8px rgba(15, 23, 42, 0.12), 0 4px 12px rgba(15, 23, 42, 0.06);
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / .05);
+  --bg-app: #090a0d;
+  --bg-canvas: #0c0e14;
+  --bg-grid-dot: rgba(255, 255, 255, 0.08);
+  --bg-grid-line: rgba(255, 255, 255, 0.03);
+  
+  --panel-bg: rgba(18, 20, 26, 0.88);
+  --panel-solid: #13161f;
+  --panel-card: #181c27;
+  --panel-card-hover: #1e2332;
+  --panel-header: #0f1118;
+  
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-medium: rgba(255, 255, 255, 0.16);
+  --border-strong: rgba(255, 255, 255, 0.28);
+  --border-focus: #3b82f6;
+
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --text-faint: #475569;
+
+  --accent-primary: #3b82f6;
+  --accent-glow: rgba(59, 130, 246, 0.35);
+  --accent-subtle: rgba(59, 130, 246, 0.12);
+  --accent-hover: #2563eb;
+
+  --status-up: #10b981;
+  --status-up-glow: rgba(16, 185, 129, 0.35);
+  --status-warn: #f59e0b;
+  --status-down: #ef4444;
+
+  --link-fiber: #38bdf8;
+  --link-trunk: #10b981;
+  --link-tunnel: #a855f7;
+
+  --radius-xs: 3px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-pill: 9999px;
+
+  --topbar-height: 48px;
+  --statusbar-height: 28px;
+  --mobile-nav-height: 56px;
+  --drawer-width: 380px;
+
+  --shadow-drawer: -8px 0 24px rgba(0, 0, 0, 0.5);
+  --shadow-float: 0 10px 25px -5px rgba(0, 0, 0, 0.6);
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
-[hidden] { display: none !important; }
-html, body { height: 100%; width: 100%; overflow: hidden; }
-body {
-  background: var(--bg); color: var(--ink);
-  font: 14px/1.45 'Inter', -apple-system, system-ui, sans-serif;
-  user-select: none;
+html[data-theme="light"] {
+  --bg-app: #f1f5f9;
+  --bg-canvas: #f8fafc;
+  --bg-grid-dot: rgba(0, 0, 0, 0.08);
+  --bg-grid-line: rgba(0, 0, 0, 0.04);
+  
+  --panel-bg: rgba(255, 255, 255, 0.92);
+  --panel-solid: #ffffff;
+  --panel-card: #f8fafc;
+  --panel-card-hover: #f1f5f9;
+  --panel-header: #ffffff;
+  
+  --border-subtle: rgba(0, 0, 0, 0.08);
+  --border-medium: rgba(0, 0, 0, 0.16);
+  --border-strong: rgba(0, 0, 0, 0.28);
+  --border-focus: #2563eb;
+
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --text-faint: #94a3b8;
+
+  --accent-primary: #2563eb;
+  --accent-glow: rgba(37, 99, 235, 0.2);
+  --accent-subtle: rgba(37, 99, 235, 0.08);
+  --accent-hover: #1d4ed8;
+
+  --status-up: #059669;
+  --status-up-glow: rgba(5, 150, 105, 0.2);
+  --status-warn: #d97706;
+  --status-down: #dc2626;
+
+  --shadow-drawer: -8px 0 24px rgba(0, 0, 0, 0.08);
+  --shadow-float: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg-app);
+  color: var(--text-primary);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .font-mono {
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
   font-variant-numeric: tabular-nums;
 }
 
-/* ── Container Query Root ── */
-#marrow-app {
-  position: fixed; inset: 0; width: 100%; height: 100%;
-  container-type: size;
-}
-
-/* ── 1. The Core Spatial Law: 100% Canvas Stage (No Frame Margins) ── */
-.m-stage {
-  position: absolute; inset: 0; width: 100%; height: 100%;
-  cursor: grab; background: var(--bg);
-  overflow: hidden; z-index: 1;
-}
-.m-stage.m-grabbing { cursor: grabbing; }
-.m-svg { width: 100%; height: 100%; display: block; }
-.m-grid-dot { fill: var(--grid-dot); }
-
-/* ── 2. Floating Heads-Up Display (HUD) Pointer Layer ── */
-.m-hud-layer {
-  position: fixed; inset: 0;
-  pointer-events: none; z-index: 20;
-}
-.m-hud-layer * { pointer-events: auto; }
-
-/* ── 3. Top-Left (Corner 1): Identity & Breadcrumbs Pill ── */
-.m-breadcrumbs {
-  position: absolute; top: 16px; left: 16px; height: 42px;
-  background: var(--panel);
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  border: 1px solid var(--line); border-radius: var(--radius-pill);
-  box-shadow: var(--shadow);
-  display: flex; align-items: center; gap: 8px;
-  padding: 0 16px 0 12px; font-size: 13px;
-  transition: all .25s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.m-breadcrumbs:hover { border-color: var(--line-strong); }
-.m-brand-mark {
-  display: flex; align-items: center; gap: 8px; font-weight: 700;
-  color: var(--ink); font-size: 13px; margin-right: 4px;
-}
-.m-brand-mark svg { width: 18px; height: 18px; color: var(--m-accent); }
-.m-breadcrumbs a { color: var(--ink-dim); text-decoration: none; font-weight: 500; transition: color .15s; }
-.m-breadcrumbs a:hover { color: var(--ink); }
-.m-breadcrumbs .m-crumb-here { color: var(--ink); font-weight: 600; }
-.m-breadcrumbs .m-crumb-sep { display: grid; place-items: center; color: var(--ink-faint); opacity: 0.6; }
-.m-breadcrumbs .m-crumb-sep svg { width: 13px; height: 13px; }
-
-/* Sidebar rail button integrated seamlessly beside breadcrumbs */
-.m-sidebar-trigger {
-  width: 28px; height: 28px; border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--ink) 8%, transparent);
-  border: 1px solid var(--line); color: var(--ink-dim);
-  display: grid; place-items: center; cursor: pointer;
-  transition: all .15s; margin-right: 2px;
-}
-.m-sidebar-trigger:hover { background: var(--bg-raise); color: var(--ink); }
-
-/* ── 4. Top-Right (Corner 2): Global Actions Pill (Search, Theme, Export) ── */
-.m-dock {
-  position: absolute; top: 16px; right: 16px; height: 42px;
-  background: var(--panel);
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  border: 1px solid var(--line); border-radius: var(--radius-pill);
-  box-shadow: var(--shadow);
-  display: flex; align-items: center; gap: 8px;
-  padding: 0 6px 0 12px;
-  transition: all .25s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.m-dock:hover { border-color: var(--line-strong); }
-.m-searchpill {
-  background: none; border: none; font: inherit; font-size: 13px;
-  color: var(--ink-dim); display: flex; align-items: center; gap: 8px;
-  cursor: pointer; padding: 6px 8px; border-radius: var(--radius-sm);
-  transition: background .15s, color .15s;
-}
-.m-searchpill:hover { background: color-mix(in srgb, var(--ink) 6%, transparent); color: var(--ink); }
-.m-searchpill kbd {
-  font-family: inherit; font-size: 10px; font-weight: 600;
-  padding: 2px 6px; border-radius: 4px; border: 1px solid var(--line);
-  background: var(--bg-raise); color: var(--ink-faint);
-}
-.m-dock-sep { width: 1px; height: 18px; background: var(--line); }
-.m-theme-toggle, .m-export-btn {
-  background: none; border: none; color: var(--ink-dim);
-  width: 32px; height: 32px; border-radius: 50%;
-  display: grid; place-items: center; cursor: pointer;
-  transition: all .15s;
-}
-.m-theme-toggle:hover, .m-export-btn:hover {
-  background: color-mix(in srgb, var(--ink) 8%, transparent); color: var(--ink);
-}
-.m-export-pill-btn {
-  background: color-mix(in srgb, var(--m-accent) 15%, transparent);
-  border: 1px solid color-mix(in srgb, var(--m-accent) 35%, transparent);
-  color: var(--m-accent); font-weight: 600; font-size: 12px;
-  padding: 6px 12px; border-radius: var(--radius-pill); cursor: pointer;
-  display: flex; align-items: center; gap: 6px; transition: all .15s;
-}
-.m-export-pill-btn:hover {
-  background: var(--m-accent); color: #ffffff;
-  box-shadow: 0 0 14px color-mix(in srgb, var(--m-accent) 45%, transparent);
-}
-
-/* ── 5. Bottom-Center (Corner 3): Camera Dock (-, 100%, Fit, +) ── */
-.m-controls {
-  position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
-  height: 40px; background: var(--panel);
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  border: 1px solid var(--line); border-radius: var(--radius-pill);
-  box-shadow: var(--shadow);
-  display: flex; align-items: center; gap: 2px; padding: 0 6px;
-  transition: all .25s ease;
-}
-.m-controls:hover { border-color: var(--line-strong); }
-.m-controls .m-btn {
-  width: 30px; height: 30px; border: none; border-radius: var(--radius-sm);
-  background: none; color: var(--ink-dim); display: grid; place-items: center;
-  cursor: pointer; font-size: 14px; font-weight: 600; transition: background .15s, color .15s;
-}
-.m-controls .m-btn:hover { background: var(--bg-raise); color: var(--ink); }
-.m-zoom-pill {
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
-  font-variant-numeric: tabular-nums;
-  font-size: 12px; font-weight: 600; color: var(--ink);
-  min-width: 54px; text-align: center; padding: 4px 8px;
-  border-radius: var(--radius-sm); cursor: pointer; transition: background .15s;
-}
-.m-zoom-pill:hover { background: color-mix(in srgb, var(--ink) 8%, transparent); }
-
-/* ── 6. Bottom-Right (Corner 4): Minimap with 396px Coordinated Slide ── */
-.m-minimap {
-  position: absolute; bottom: 20px; right: 20px;
-  width: 180px; height: 120px;
-  background: var(--panel);
-  backdrop-filter: blur(16px) saturate(180%);
-  border: 1px solid var(--line); border-radius: var(--radius-lg);
-  box-shadow: var(--shadow);
+/* ═══════════════════════════════════════════════════════════════════
+   2. DESKTOP WORKSPACE ARCHITECTURE
+   ═══════════════════════════════════════════════════════════════════ */
+#workspace-shell {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
-  transition: transform .35s cubic-bezier(0.16, 1, 0.3, 1), opacity .25s;
-}
-.has-selection .m-minimap {
-  transform: translateX(-396px); /* Smoothly slides left so 380px inspector never covers it! */
-}
-.m-mini-head {
-  height: 24px; padding: 0 10px; display: flex; align-items: center;
-  justify-content: space-between; border-bottom: 1px solid var(--line);
-  font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em;
-  color: var(--ink-faint);
-}
-.m-mini-body {
-  width: 100%; height: 96px; position: relative;
-  background: color-mix(in srgb, var(--bg) 60%, transparent);
-}
-.m-mini-view-indicator {
-  position: absolute; border: 1.5px solid var(--m-accent);
-  background: color-mix(in srgb, var(--m-accent) 15%, transparent);
-  border-radius: 3px; pointer-events: none; transition: all 0.1s ease-out;
 }
 
-/* ── 7. Bottom-Left (Corner 5): Interactive Legend / Filter Pill ── */
-.m-legend-corner {
-  position: absolute; bottom: 20px; left: 20px;
-  display: flex; flex-direction: column-reverse; gap: 8px;
+/* Top Command & Navigation Bar */
+.m-command-bar {
+  height: var(--topbar-height);
+  background: var(--panel-header);
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  z-index: 50;
+  flex-shrink: 0;
 }
-.m-legend-chip {
-  height: 38px; padding: 0 14px;
-  background: var(--panel); backdrop-filter: blur(16px);
-  border: 1px solid var(--line); border-radius: var(--radius-pill);
-  box-shadow: var(--shadow);
-  display: flex; align-items: center; gap: 8px;
-  font-size: 13px; font-weight: 600; color: var(--ink-dim);
-  cursor: pointer; transition: all .15s;
+
+.m-brand-hierarchy {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
 }
-.m-legend-chip:hover { color: var(--ink); border-color: var(--line-strong); }
-.m-legend-popover {
-  width: 270px; background: var(--panel);
-  backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid var(--line); border-radius: var(--radius-lg);
-  box-shadow: var(--shadow); padding: 14px;
-  display: none; flex-direction: column; gap: 10px;
-  animation: mPopIn .2s cubic-bezier(0.16, 1, 0.3, 1);
+
+.m-marrow-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  text-decoration: none;
+  flex-shrink: 0;
 }
-.m-legend-popover.open { display: flex; }
-@keyframes mPopIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-.m-legend-title {
-  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
-  color: var(--ink-faint); display: flex; justify-content: space-between; align-items: center;
+.m-marrow-badge svg {
+  width: 20px;
+  height: 20px;
+  color: var(--accent-primary);
+}
+
+.m-vert-sep {
+  width: 1px;
+  height: 18px;
+  background: var(--border-subtle);
+  flex-shrink: 0;
+}
+
+.m-breadcrumb-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.m-crumb-link {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.15s;
+}
+.m-crumb-link:hover { color: var(--text-primary); }
+.m-crumb-divider { color: var(--text-faint); font-size: 11px; }
+.m-crumb-current {
+  color: var(--text-primary);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.m-zone-tag {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: var(--radius-xs);
+  background: var(--accent-subtle);
+  color: var(--accent-primary);
+  border: 1px solid color-mix(in srgb, var(--accent-primary) 30%, transparent);
+}
+
+/* Operational Lenses Segmented Control */
+.m-lenses-bar {
+  display: flex;
+  align-items: center;
+  background: var(--panel-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+  gap: 2px;
+}
+.m-lens-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s;
+}
+.m-lens-btn:hover { color: var(--text-primary); }
+.m-lens-btn.active {
+  background: var(--panel-solid);
+  color: var(--text-primary);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+.m-lens-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+/* Header Right Actions */
+.m-header-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.m-health-chip {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: var(--panel-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 4px 9px;
+}
+.m-dot-pulse {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--status-up);
+  box-shadow: 0 0 6px var(--status-up-glow);
+}
+
+.m-btn-search {
+  background: var(--panel-card);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.m-btn-search:hover {
+  background: var(--panel-card-hover);
+  color: var(--text-primary);
+  border-color: var(--border-medium);
+}
+.m-btn-search kbd {
+  font-size: 10px;
+  font-family: inherit;
+  font-weight: 600;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--text-primary) 10%, transparent);
+  color: var(--text-muted);
+}
+
+.m-tool-icon-btn {
+  background: transparent;
+  border: none;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.m-tool-icon-btn:hover {
+  background: var(--panel-card-hover);
+  color: var(--text-primary);
+}
+
+.m-btn-export {
+  background: var(--accent-subtle);
+  border: 1px solid color-mix(in srgb, var(--accent-primary) 30%, transparent);
+  color: var(--accent-primary);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s;
+}
+.m-btn-export:hover {
+  background: var(--accent-primary);
+  color: #ffffff;
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   3. MAIN WORKSPACE BODY (CANVAS + DOCKED PANELS)
+   ═══════════════════════════════════════════════════════════════════ */
+.m-workspace-body {
+  position: relative;
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* The Canvas Stage */
+.m-canvas-container {
+  position: relative;
+  flex: 1;
+  height: 100%;
+  background: var(--bg-canvas);
+  cursor: grab;
+  overflow: hidden;
+}
+.m-canvas-container.is-panning { cursor: grabbing; }
+
+.m-svg-viewport {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Left Dockable Topology Filter & Legend Rail */
+.m-left-rail {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 260px;
+  pointer-events: auto;
+}
+.m-rail-card {
+  background: var(--panel-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-float);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12px;
+}
+.m-rail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border-subtle);
 }
 .m-legend-item {
-  display: flex; align-items: center; justify-content: space-between;
-  font-size: 12px; color: var(--ink-dim); padding: 5px 8px;
-  border-radius: var(--radius-sm); cursor: pointer; transition: background .15s;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 3px 0;
+  cursor: pointer;
+  border-radius: var(--radius-xs);
+  transition: opacity 0.15s;
 }
-.m-legend-item:hover { background: color-mix(in srgb, var(--ink) 6%, transparent); color: var(--ink); }
-.m-legend-swatch { display: flex; align-items: center; gap: 8px; }
-.m-swatch-line { width: 24px; height: 0; border-top-width: 2px; border-top-style: solid; }
-.m-swatch-trunk { border-top-width: 4px; border-top-style: double; }
-.m-swatch-tunnel { border-top-width: 2px; border-top-style: dashed; }
-.m-swatch-peering { border-top-width: 2px; border-top-style: dotted; }
+.m-legend-item:hover { opacity: 0.8; }
+.m-legend-color-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.m-cable-swatch {
+  width: 16px;
+  height: 3px;
+  border-radius: 2px;
+}
+.m-swatch-fiber { background: var(--link-fiber); }
+.m-swatch-trunk { background: var(--link-trunk); }
+.m-swatch-tunnel { background: var(--link-tunnel); border-top: 1px dashed #fff; }
 
-/* ── 8. Inspector Drawer (Desktop Floating Card vs Mobile Bottom Sheet) ── */
-.m-inspector {
-  position: absolute; top: 68px; right: 16px; bottom: 16px;
-  width: var(--inspector-w); background: var(--panel);
-  backdrop-filter: blur(24px) saturate(200%);
-  -webkit-backdrop-filter: blur(24px) saturate(200%);
-  border: 1px solid var(--line); border-radius: var(--radius-lg);
-  box-shadow: var(--shadow);
-  display: flex; flex-direction: column;
-  transform: translateX(calc(100% + 32px));
-  transition: transform .35s cubic-bezier(0.16, 1, 0.3, 1);
-  overflow: hidden; z-index: 30;
+/* Bottom Floating Minimap */
+.m-minimap-float {
+  position: absolute;
+  bottom: 14px;
+  right: 14px;
+  width: 170px;
+  height: 110px;
+  background: var(--panel-bg);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-float);
+  z-index: 20;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.has-selection .m-inspector {
-  transform: translateX(0);
+.m-minimap-head {
+  padding: 4px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  justify-content: space-between;
 }
-.m-inspector-head {
-  padding: 16px 20px; display: flex; align-items: center;
-  justify-content: space-between; border-bottom: 1px solid var(--line);
+.m-minimap-view {
+  position: relative;
+  flex: 1;
+  background: color-mix(in srgb, var(--panel-solid) 80%, transparent);
 }
-.m-inspector-id { display: flex; align-items: center; gap: 10px; }
-.m-status-dot {
-  width: 9px; height: 9px; border-radius: 50%;
-  background: var(--up); box-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
-}
-.m-inspector-title { font-size: 16px; font-weight: 700; letter-spacing: -.01em; color: var(--ink); }
-.m-inspector-desc { font-size: 12px; color: var(--ink-dim); }
-.m-inspector-close {
-  width: 30px; height: 30px; border-radius: var(--radius-sm);
-  background: none; border: 0; color: var(--ink-dim);
-  display: grid; place-items: center; cursor: pointer; transition: all .15s;
-}
-.m-inspector-close:hover { background: var(--bg-raise); color: var(--ink); }
-.m-inspector-body {
-  overflow-y: auto; padding: 20px; flex: 1; display: flex; flex-direction: column; gap: 18px;
-}
-.m-inspector-section {
-  background: color-mix(in srgb, var(--bg) 40%, transparent);
-  border: 1px solid var(--line); border-radius: var(--radius-md);
-  padding: 14px;
-}
-.m-inspector-section summary {
-  cursor: pointer; list-style: none; font-size: 11px; font-weight: 700;
-  text-transform: uppercase; letter-spacing: .06em; color: var(--ink-faint);
-  display: flex; justify-content: space-between; align-items: center;
-}
-.m-table {
-  width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px;
-}
-.m-table th {
-  text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line);
-  color: var(--ink-faint); font-weight: 600;
-}
-.m-table td {
-  padding: 6px 8px; border-bottom: 1px solid color-mix(in srgb, var(--line) 40%, transparent);
-  color: var(--ink-dim);
-}
-.m-table tr:hover td { color: var(--ink); background: color-mix(in srgb, var(--ink) 4%, transparent); }
-.m-drawer-foot {
-  display: flex; align-items: center; gap: 8px; padding: 12px 20px; flex: none;
-  border-top: 1px solid var(--line); font-size: 11px; font-weight: 600;
-  letter-spacing: .14em; text-transform: uppercase; color: var(--ink-faint);
+.m-minimap-box {
+  position: absolute;
+  border: 1px solid var(--accent-primary);
+  background: color-mix(in srgb, var(--accent-primary) 15%, transparent);
+  border-radius: 2px;
+  pointer-events: none;
 }
 
-/* ── 9. Interactive Screen Simulator Toolbar ── */
-.m-sim-bar {
-  position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
-  height: 42px; padding: 0 10px; gap: 6px;
-  background: var(--panel-solid); border: 1px solid var(--m-accent);
-  box-shadow: 0 0 20px color-mix(in srgb, var(--m-accent) 25%, transparent);
-  border-radius: var(--radius-pill); display: flex; align-items: center;
+/* ═══════════════════════════════════════════════════════════════════
+   4. NOC / CAD BOTTOM STATUS BAR (Classic Grounded Instrument Bar)
+   ═══════════════════════════════════════════════════════════════════ */
+.m-status-bar {
+  height: var(--statusbar-height);
+  background: var(--panel-header);
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  z-index: 50;
+  flex-shrink: 0;
+  user-select: none;
 }
-.m-sim-title {
-  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
-  color: var(--m-accent); padding-right: 8px; border-right: 1px solid var(--line);
+.m-status-left, .m-status-center, .m-status-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
-.m-sim-btn {
-  background: transparent; border: 1px solid var(--line); color: var(--ink-dim);
-  font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: var(--radius-sm);
-  cursor: pointer; transition: all .15s;
+.m-status-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
-.m-sim-btn:hover { background: color-mix(in srgb, var(--m-accent) 15%, transparent); color: var(--m-accent); border-color: var(--m-accent); }
-.m-sim-btn.active { background: var(--m-accent); color: #ffffff; border-color: var(--m-accent); }
+.m-status-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-family: inherit;
+  padding: 2px 6px;
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s;
+}
+.m-status-btn:hover {
+  background: var(--panel-card);
+  color: var(--text-primary);
+}
+.m-zoom-control {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--panel-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xs);
+  padding: 1px 4px;
+}
+.m-zoom-pct {
+  min-width: 42px;
+  text-align: center;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+}
 
-/* ── 10. Container Query Responsive Tiers (The 4 Specs) ── */
-
-/* Tier 2: Laptop / Split-Screen (768px - 1280px) */
-@container (max-width: 1280px) {
-  .m-breadcrumbs a { display: none; }
-  .m-breadcrumbs .m-crumb-sep { display: none; }
-  .m-minimap { width: 140px; height: 96px; }
-  .m-inspector { width: 340px; }
-  .has-selection .m-minimap { transform: translateX(-356px); }
+/* ═══════════════════════════════════════════════════════════════════
+   5. RIGHT TELEMETRY INSPECTOR DRAWER (Linear / NetBox Style)
+   ═══════════════════════════════════════════════════════════════════ */
+.m-inspector-drawer {
+  width: var(--drawer-width);
+  height: 100%;
+  background: var(--panel-solid);
+  border-left: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-drawer);
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), margin-right 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  flex-shrink: 0;
+}
+.m-inspector-drawer.is-collapsed {
+  margin-right: calc(-1 * var(--drawer-width));
 }
 
-/* Tier 3: Mobile / Tablet (< 768px) -> Bottom Sheet */
-@container (max-width: 768px) {
-  .m-breadcrumbs { left: 12px; top: 12px; height: 38px; padding: 0 12px; }
-  .m-dock { right: 12px; top: 12px; height: 38px; }
-  .m-searchpill span, .m-searchpill kbd, .m-export-pill-btn span { display: none; }
-  .m-minimap { display: none; } /* Hide minimap on mobile screens */
-  .m-controls { bottom: 12px; }
-  .m-legend-corner { bottom: 12px; left: 12px; }
+.m-drawer-header {
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+.m-device-id-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.m-device-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.m-device-name {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.m-oper-pill {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--status-up) 15%, transparent);
+  color: var(--status-up);
+  border: 1px solid color-mix(in srgb, var(--status-up) 30%, transparent);
+}
+.m-device-sub {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.m-ip-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: color-mix(in srgb, var(--text-primary) 6%, transparent);
+  border: 1px solid var(--border-subtle);
+  padding: 3px 8px;
+  border-radius: var(--radius-xs);
+  font-size: 11px;
+  color: var(--text-primary);
+  cursor: pointer;
+  margin-top: 4px;
+  width: fit-content;
+}
+.m-ip-chip:hover {
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}
+
+/* Tabs */
+.m-drawer-tabs {
+  display: flex;
+  background: var(--panel-header);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 0 16px;
+  gap: 16px;
+}
+.m-tab-link {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 10px 0;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.m-tab-link:hover { color: var(--text-primary); }
+.m-tab-link.active {
+  color: var(--accent-primary);
+  border-bottom-color: var(--accent-primary);
+}
+
+.m-drawer-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Dense Data Cards */
+.m-data-card {
+  background: var(--panel-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.m-data-card-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.m-key-value-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 14px;
+}
+.m-kv-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.m-kv-label {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.m-kv-val {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Monospace Dense Interface Table */
+.m-table-dense {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+  text-align: left;
+}
+.m-table-dense th {
+  padding: 6px 8px;
+  color: var(--text-muted);
+  font-weight: 600;
+  border-bottom: 1px solid var(--border-subtle);
+  text-transform: uppercase;
+  font-size: 10px;
+}
+.m-table-dense td {
+  padding: 7px 8px;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+}
+.m-table-dense tr:last-child td { border-bottom: none; }
+.m-table-dense tr:hover td { background: var(--panel-card-hover); }
+
+.m-jump-neighbor-btn {
+  background: var(--accent-subtle);
+  color: var(--accent-primary);
+  border: none;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 6px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.m-jump-neighbor-btn:hover {
+  background: var(--accent-primary);
+  color: #fff;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   6. SVG DIAGRAM OBJECTS (Spine-Leaf Demo Network)
+   ═══════════════════════════════════════════════════════════════════ */
+.m-node-item {
+  cursor: pointer;
+  transition: transform 0.15s ease-out;
+}
+.m-node-item:hover { transform: translateY(-2px); }
+.m-node-box {
+  fill: var(--panel-solid);
+  stroke: var(--border-medium);
+  stroke-width: 1.5;
+  rx: 10;
+  transition: stroke 0.15s, stroke-width 0.15s, filter 0.15s;
+}
+.m-node-item.selected .m-node-box {
+  stroke: var(--accent-primary);
+  stroke-width: 2.5;
+  filter: drop-shadow(0 0 12px var(--accent-glow));
+}
+.m-link-cable {
+  fill: none;
+  stroke-width: 3px;
+  stroke-linejoin: round;
+  transition: opacity 0.2s, stroke-width 0.2s;
+}
+.m-link-halo {
+  fill: none;
+  stroke: var(--bg-canvas);
+  stroke-width: 8px;
+  stroke-linejoin: round;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   7. TABLET ENGINEERING (768px <= Width < 1024px)
+   ═══════════════════════════════════════════════════════════════════ */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .m-breadcrumb-nav .m-crumb-link:first-child { display: none; }
+  .m-breadcrumb-nav .m-crumb-divider:first-of-type { display: none; }
+  .m-health-chip { display: none; }
   
-  /* Mobile Bottom Sheet */
-  .m-inspector {
-    top: auto; right: 0; bottom: 0; left: 0;
-    width: 100%; height: 55vh;
-    border-radius: 20px 20px 0 0; border-left: none; border-top: 1px solid var(--line);
-    transform: translateY(100%);
+  /* Inspector acts as overlay drawer on tablet to keep canvas space */
+  .m-inspector-drawer {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 340px;
+    box-shadow: -12px 0 30px rgba(0, 0, 0, 0.6);
   }
-  .has-selection .m-inspector {
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   8. MOBILE ARCHITECTURE (< 768px) — Thumb-Engineered Console
+   ═══════════════════════════════════════════════════════════════════ */
+.m-mobile-header { display: none; }
+.m-mobile-bottom-nav { display: none; }
+.m-mobile-fab-fit { display: none; }
+.m-mobile-search-modal { display: none; }
+
+@media (max-width: 767px) {
+  /* Hide Desktop Headers & Grounded Bottom Bar */
+  .m-command-bar { display: none; }
+  .m-status-bar { display: none; }
+  .m-left-rail { display: none; }
+  .m-minimap-float { display: none; }
+
+  /* 8.1 Compact Mobile Top Bar (44px) */
+  .m-mobile-header {
+    height: 44px;
+    background: var(--panel-header);
+    border-bottom: 1px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 12px;
+    z-index: 50;
+    flex-shrink: 0;
+  }
+  .m-mob-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .m-mob-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  /* 8.2 Floating Thumb-Zone Re-center / Fit Button */
+  .m-mobile-fab-fit {
+    display: flex;
+    position: absolute;
+    bottom: calc(var(--mobile-nav-height) + 16px);
+    right: 16px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--panel-solid);
+    border: 1px solid var(--border-medium);
+    color: var(--text-primary);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 25;
+    transition: transform 0.15s, background 0.15s;
+  }
+  .m-mobile-fab-fit:active { transform: scale(0.92); }
+
+  /* 8.3 Mobile Bottom Navigation Bar (Thumb Accessible) */
+  .m-mobile-bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px));
+    background: var(--panel-header);
+    border-top: 1px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    z-index: 50;
+  }
+  .m-mob-nav-item {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 10px;
+    font-weight: 600;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 6px 12px;
+    cursor: pointer;
+    transition: color 0.15s;
+  }
+  .m-mob-nav-item.active {
+    color: var(--accent-primary);
+  }
+
+  /* 8.4 Mobile Bottom Sheet Inspector */
+  .m-inspector-drawer {
+    position: fixed;
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px));
+    width: 100%;
+    height: 54vh;
+    border-left: none;
+    border-top: 1px solid var(--border-medium);
+    border-radius: 18px 18px 0 0;
+    box-shadow: 0 -12px 30px rgba(0, 0, 0, 0.5);
+    transform: translateY(100%);
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 45;
+  }
+  .m-inspector-drawer.is-open {
     transform: translateY(0);
   }
-}
+  .m-sheet-grab-bar {
+    width: 36px;
+    height: 4px;
+    background: var(--border-medium);
+    border-radius: 999px;
+    margin: 8px auto 2px;
+    cursor: pointer;
+  }
 
-/* Tier 4: Blog / Docs Embed (< 600px OR html[data-chrome="minimal"]) */
-@container (max-width: 600px) {
-  .m-breadcrumbs { border-radius: var(--radius-sm); height: 32px; font-size: 11px; }
-  .m-dock { display: none; }
-  .m-controls { left: auto; right: 12px; transform: none; bottom: 12px; height: 32px; }
-  .m-legend-corner { display: none; }
-  .m-minimap { display: none; }
-}
-
-html[data-chrome="minimal"] .m-breadcrumbs { border-radius: var(--radius-sm); height: 32px; font-size: 11px; }
-html[data-chrome="minimal"] .m-dock { display: none; }
-html[data-chrome="minimal"] .m-controls { left: auto; right: 12px; transform: none; bottom: 12px; height: 32px; }
-html[data-chrome="minimal"] .m-legend-corner { display: none; }
-html[data-chrome="minimal"] .m-minimap { display: none; }
-
-/* ── 11. Target Node in Viewport (Demonstrating Center Pan & Halos) ── */
-.m-target-node {
-  cursor: pointer; transition: transform .2s ease;
-}
-.m-target-node:hover { transform: translateY(-3px); }
-.m-node-rect {
-  fill: var(--panel-solid); stroke: var(--line-strong); stroke-width: 1.5; rx: 12;
-}
-.has-selection .m-node-rect {
-  stroke: var(--m-accent); stroke-width: 2.5;
-  filter: drop-shadow(0 0 16px color-mix(in srgb, var(--m-accent) 40%, transparent));
-}
-.m-crossing-halo {
-  fill: none; stroke: var(--bg); stroke-width: 7px; stroke-linejoin: round;
+  /* 8.5 Full-Screen Mobile Quick Search Modal */
+  .m-mobile-search-modal {
+    position: fixed;
+    inset: 0;
+    background: var(--bg-app);
+    z-index: 60;
+    display: none;
+    flex-direction: column;
+  }
+  .m-mobile-search-modal.is-active {
+    display: flex;
+  }
+  .m-search-modal-head {
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .m-search-input-field {
+    flex: 1;
+    background: var(--panel-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: 14px;
+    padding: 8px 12px;
+    outline: none;
+  }
+  .m-search-input-field:focus { border-color: var(--accent-primary); }
+  .m-search-results-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .m-search-result-item {
+    background: var(--panel-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+  }
 }
 </style>
 </head>
 <body>
 
-<div id="marrow-app">
-  <!-- ── 1. 100% Canvas Stage ── -->
-  <main class="m-stage" id="stage">
-    <svg class="m-svg" id="canvas-svg">
-      <defs>
-        <!-- Background dot grid -->
-        <pattern id="dot-grid" width="32" height="32" patternUnits="userSpaceOnUse">
-          <circle cx="2" cy="2" r="1.2" class="m-grid-dot"/>
-        </pattern>
-      </defs>
-      <rect width="100%" height="100%" fill="url(#dot-grid)"/>
+<div id="workspace-shell">
 
-      <!-- World Camera Container -->
-      <g id="camera-group" transform="matrix(1 0 0 1 0 0)">
-        
-        <!-- Safe Inset Framing Zone (Shows clearance around 72px top, 68px bottom, 40px sides) -->
-        <rect id="safe-rect" x="40" y="72" width="1120" height="680" fill="none" stroke="var(--line)" stroke-dasharray="6 6" rx="16" opacity="0.4"/>
-        <text x="60" y="98" fill="var(--ink-faint)" font-size="12" font-weight="600" letter-spacing="0.06em">SAFE VIEWPORT ZONE (DIAGRAM CLEARS ALL 5 FLOATING HUDS)</text>
-
-        <!-- Crossing Links Demo with 4px Knockout Halo -->
-        <path d="M 280 360 L 920 360" stroke="var(--up)" stroke-width="3" fill="none"/>
-        <path d="M 600 160 L 600 560" class="m-crossing-halo"/>
-        <path d="M 600 160 L 600 560" stroke="var(--m-accent)" stroke-width="3" fill="none"/>
-
-        <!-- Interactive Center Target: core-sw-01 -->
-        <g class="m-target-node" id="target-node" transform="translate(530, 300)" onclick="toggleSelection()">
-          <rect class="m-node-rect" width="140" height="110"/>
-          <circle cx="24" cy="26" r="5" fill="var(--up)"/>
-          <text x="36" y="30" fill="var(--ink)" font-size="13" font-weight="700">core-sw-01</text>
-          <text x="24" y="54" fill="var(--ink-dim)" font-size="11" font-weight="500">Cisco Catalyst 9500</text>
-          
-          <!-- IP Chip (Tabular Monospace font) -->
-          <rect x="18" y="70" width="104" height="22" rx="4" fill="color-mix(in srgb, var(--ink) 8%, transparent)"/>
-          <text x="70" y="85" text-anchor="middle" fill="var(--ink)" font-size="11" class="font-mono">10.255.0.1</text>
-        </g>
-
-        <!-- Helper hint -->
-        <text x="600" y="440" text-anchor="middle" fill="var(--ink-faint)" font-size="12" font-weight="500">
-          Click node to open Inspector Drawer &amp; test camera offset + minimap slide
-        </text>
-
-      </g>
-    </svg>
-  </main>
-
-  <!-- ── 2. Floating Heads-Up Display (HUD) Layer ── -->
-  <div class="m-hud-layer">
-
-    <!-- Top-Left: Identity & Breadcrumbs Pill -->
-    <nav class="m-breadcrumbs" aria-label="Breadcrumb">
-      <button class="m-sidebar-trigger" type="button" aria-label="Toggle Sidebar" onclick="alert('Sidebar drawer toggled!')">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-      </button>
-      <div class="m-brand-mark">
+  <!-- ═══════════════════════════════════════════════════════════════════
+       1. DESKTOP / TABLET COMMAND & OBSERVABILITY BAR
+       ═══════════════════════════════════════════════════════════════════ -->
+  <header class="m-command-bar">
+    <div class="m-brand-hierarchy">
+      <a href="#" class="m-marrow-badge" title="Marrow Topology Engine">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
           <path d="M5 20V10a4 4 0 0 1 4-4" stroke-width="2.4"/>
           <path d="M13 20V10" stroke-width="2.4"/>
@@ -467,205 +959,569 @@ html[data-chrome="minimal"] .m-minimap { display: none; }
           <path d="m17.2 4.2 1.8 1.8-1.8 1.8" stroke-width="2.4"/>
         </svg>
         <span>Marrow</span>
-      </div>
-      <span class="m-crumb-sep"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></span>
-      <a href="#">Global Enterprise</a>
-      <span class="m-crumb-sep"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></span>
-      <span class="m-crumb-here">HQ Campus</span>
-    </nav>
+      </a>
 
-    <!-- Simulation Tester Toolbar (Floating Center Top) -->
-    <div class="m-sim-bar">
-      <span class="m-sim-title">Test Tiers</span>
-      <button class="m-sim-btn active" onclick="setTier('desktop')">Desktop (>1280)</button>
-      <button class="m-sim-btn" onclick="setTier('laptop')">Laptop (1024)</button>
-      <button class="m-sim-btn" onclick="setTier('mobile')">Mobile (<768)</button>
-      <button class="m-sim-btn" onclick="setTier('embed')">Embed (#embed)</button>
+      <div class="m-vert-sep"></div>
+
+      <nav class="m-breadcrumb-nav" aria-label="Topology Hierarchy">
+        <a href="#" class="m-crumb-link">US-East DC1</a>
+        <span class="m-crumb-divider">/</span>
+        <a href="#" class="m-crumb-link">Spine-Leaf Fabric</a>
+        <span class="m-crumb-divider">/</span>
+        <span class="m-crumb-current">
+          Pod 1 Core
+          <span class="m-zone-tag">EVPN / VXLAN</span>
+        </span>
+      </nav>
     </div>
 
-    <!-- Top-Right: Global Actions Pill -->
-    <div class="m-dock">
-      <button class="m-searchpill" type="button" aria-label="Search" onclick="alert('Command Center (⌘K) triggered!')">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-        <span>Search devices…</span>
-        <kbd>Ctrl K</kbd>
+
+
+    <!-- Right Header Tools -->
+    <div class="m-header-tools">
+      <div class="m-health-chip font-mono">
+        <span class="m-dot-pulse"></span>
+        <span>5 Nodes · 8 Links · 100% Up</span>
+      </div>
+
+      <button class="m-btn-search" onclick="openSearchModal()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <span>Search</span>
+        <kbd>/</kbd>
       </button>
 
-      <div class="m-dock-sep"></div>
-
-      <!-- Theme Switcher -->
-      <button class="m-theme-toggle" type="button" aria-label="Toggle Theme" onclick="toggleTheme()" title="Toggle Theme">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      <button class="m-tool-icon-btn" onclick="toggleTheme()" title="Toggle Dark/Light Mode">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
       </button>
 
-      <!-- Blueprint Export -->
-      <button class="m-export-pill-btn" type="button" onclick="alert('Exporting high-resolution CAD Blueprint with Title Block & Auto-Legend!')">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+      <button class="m-btn-export" onclick="alert('Exporting Vector CAD Blueprint (SVG / Standalone HTML)')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
         <span>Export</span>
       </button>
     </div>
+  </header>
 
-    <!-- Bottom-Center: Camera Dock -->
-    <div class="m-controls">
-      <button class="m-btn" type="button" onclick="zoomDelta(-0.2)" title="Zoom Out">−</button>
-      <div class="m-zoom-pill font-mono" id="zoom-readout" onclick="resetZoom()" title="Click to reset to 100%">100%</div>
-      <button class="m-btn" type="button" onclick="fitView()" title="Fit View with Safe Insets">Fit</button>
-      <button class="m-btn" type="button" onclick="zoomDelta(0.2)" title="Zoom In">+</button>
+  <!-- ═══════════════════════════════════════════════════════════════════
+       2. MOBILE COMPACT TOP BAR (< 768px)
+       ═══════════════════════════════════════════════════════════════════ -->
+  <header class="m-mobile-header">
+    <div class="m-mob-brand">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-primary)" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 20V10a4 4 0 0 1 4-4" stroke-width="2.4"/>
+        <path d="M13 20V10" stroke-width="2.4"/>
+        <path d="M13 10a4 4 0 0 1 4-4h2" stroke-width="2.4"/>
+        <path d="m17.2 4.2 1.8 1.8-1.8 1.8" stroke-width="2.4"/>
+      </svg>
+      <span>Pod 1 Core</span>
+      <span class="m-zone-tag" style="font-size:9px">EVPN</span>
     </div>
-
-    <!-- Bottom-Right: Minimap with 396px Coordinated Slide -->
-    <div class="m-minimap" id="minimap">
-      <div class="m-mini-head">
-        <span>Minimap</span>
-        <span class="font-mono text-[9px]">Live Track</span>
-      </div>
-      <div class="m-mini-body">
-        <div style="position: absolute; left: 80px; top: 40px; width: 18px; height: 14px; background: var(--m-accent); border-radius: 3px;"></div>
-        <div class="m-mini-view-indicator" id="mini-tracker" style="left: 20px; top: 20px; width: 140px; height: 56px;"></div>
-      </div>
-    </div>
-
-    <!-- Bottom-Left: Interactive Link Legend Pill -->
-    <div class="m-legend-corner">
-      <div class="m-legend-popover" id="legend-box">
-        <div class="m-legend-title">
-          <span>Active Topology Links</span>
-          <span class="font-mono text-[10px]">3 Types</span>
-        </div>
-        <div class="m-legend-item">
-          <div class="m-legend-swatch">
-            <span class="m-swatch-line" style="border-color: var(--m-accent);"></span>
-            <span>100G Inter-Core</span>
-          </div>
-          <span class="font-mono text-[11px]">Fiber</span>
-        </div>
-        <div class="m-legend-item">
-          <div class="m-legend-swatch">
-            <span class="m-swatch-line m-swatch-trunk" style="border-color: var(--up);"></span>
-            <span>40G MLAG Trunk</span>
-          </div>
-          <span class="font-mono text-[11px]">VLAN 10,20</span>
-        </div>
-        <div class="m-legend-item">
-          <div class="m-legend-swatch">
-            <span class="m-swatch-line m-swatch-tunnel" style="border-color: #a855f7;"></span>
-            <span>IPsec VPN</span>
-          </div>
-          <span class="font-mono text-[11px]">Encrypted</span>
-        </div>
-      </div>
-      <button class="m-legend-chip" type="button" onclick="toggleLegend()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20v-6M6 20V10M18 20V4"/></svg>
-        <span>Legend &amp; Links</span>
+    <div class="m-mob-actions">
+      <button class="m-tool-icon-btn" onclick="openSearchModal()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      </button>
+      <button class="m-tool-icon-btn" onclick="toggleTheme()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2"/></svg>
       </button>
     </div>
+  </header>
 
-    <!-- Inspector Drawer (Desktop Floating Card vs Mobile Bottom Sheet) -->
-    <aside class="m-inspector" id="inspector">
-      <div class="m-inspector-head">
-        <div class="m-inspector-id">
-          <span class="m-status-dot"></span>
-          <div>
-            <div class="m-inspector-title">core-sw-01</div>
-            <div class="m-inspector-desc">Cisco Catalyst 9500-48Y4C</div>
+  <!-- ═══════════════════════════════════════════════════════════════════
+       3. MAIN BODY: CANVAS + DOCKED/SLIDING PANELS
+       ═══════════════════════════════════════════════════════════════════ -->
+  <div class="m-workspace-body">
+
+    <!-- The Infinite Vector Diagram Stage -->
+    <main class="m-canvas-container" id="stage">
+      <svg class="m-svg-viewport" id="viewport-svg">
+        <defs>
+          <!-- Precision Dot Grid -->
+          <pattern id="dot-grid" width="32" height="32" patternUnits="userSpaceOnUse">
+            <circle cx="2" cy="2" r="1.2" fill="var(--bg-grid-dot)"/>
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#dot-grid)"/>
+
+        <!-- Camera Transformation Group -->
+        <g id="camera-group" transform="matrix(1 0 0 1 0 0)">
+
+          <!-- Links Layer -->
+          <g id="links-layer">
+            <!-- Spine to Leaf 1 (100G Fiber) -->
+            <path id="link-spine-leaf1" d="M 500 160 L 250 360" class="m-link-cable" stroke="var(--link-fiber)"/>
+            <!-- Spine to Leaf 2 (100G Fiber) -->
+            <path id="link-spine-leaf2" d="M 500 160 L 750 360" class="m-link-cable" stroke="var(--link-fiber)"/>
+            
+            <!-- Horizontal MLAG Trunk between Leaf 1 and Leaf 2 -->
+            <path id="link-mlag-trunk" d="M 250 360 L 750 360" class="m-link-cable" stroke="var(--link-trunk)"/>
+
+            <!-- Vertical Cable Crossing with 8px Knockout Halo -->
+            <path d="M 500 160 L 500 520" class="m-link-halo"/>
+            <path id="link-spine-wan" d="M 500 160 L 500 520" class="m-link-cable" stroke="var(--link-tunnel)"/>
+          </g>
+
+          <!-- Devices Layer -->
+          <g id="devices-layer">
+            <!-- Spine Switch 01 -->
+            <g class="m-node-item" id="node-spine1" transform="translate(430, 110)" onclick="selectDevice('spine-01')">
+              <rect class="m-node-box" width="140" height="90"/>
+              <circle cx="22" cy="24" r="4.5" fill="var(--status-up)"/>
+              <text x="34" y="28" fill="var(--text-primary)" font-size="13" font-weight="700">spine-01</text>
+              <text x="22" y="50" fill="var(--text-secondary)" font-size="11" font-weight="500">Arista 7280R3</text>
+              <rect x="16" y="62" width="108" height="18" rx="3" fill="color-mix(in srgb, var(--text-primary) 7%, transparent)"/>
+              <text x="70" y="75" text-anchor="middle" fill="var(--text-primary)" font-size="10" class="font-mono">10.255.0.10</text>
+            </g>
+
+            <!-- Core Switch 01 (Default Selected) -->
+            <g class="m-node-item selected" id="node-core" transform="translate(430, 470)" onclick="selectDevice('core-sw-01')">
+              <rect class="m-node-box" width="140" height="90"/>
+              <circle cx="22" cy="24" r="4.5" fill="var(--status-up)"/>
+              <text x="34" y="28" fill="var(--text-primary)" font-size="13" font-weight="700">core-sw-01</text>
+              <text x="22" y="50" fill="var(--text-secondary)" font-size="11" font-weight="500">Cisco C9500-48Y4C</text>
+              <rect x="16" y="62" width="108" height="18" rx="3" fill="color-mix(in srgb, var(--text-primary) 7%, transparent)"/>
+              <text x="70" y="75" text-anchor="middle" fill="var(--text-primary)" font-size="10" class="font-mono">10.255.0.1</text>
+            </g>
+
+            <!-- Leaf Switch 01 -->
+            <g class="m-node-item" id="node-leaf1" transform="translate(180, 315)" onclick="selectDevice('leaf-01')">
+              <rect class="m-node-box" width="140" height="90"/>
+              <circle cx="22" cy="24" r="4.5" fill="var(--status-up)"/>
+              <text x="34" y="28" fill="var(--text-primary)" font-size="13" font-weight="700">leaf-01</text>
+              <text x="22" y="50" fill="var(--text-secondary)" font-size="11" font-weight="500">Arista 7050SX3</text>
+              <rect x="16" y="62" width="108" height="18" rx="3" fill="color-mix(in srgb, var(--text-primary) 7%, transparent)"/>
+              <text x="70" y="75" text-anchor="middle" fill="var(--text-primary)" font-size="10" class="font-mono">10.255.1.11</text>
+            </g>
+
+            <!-- Leaf Switch 02 -->
+            <g class="m-node-item" id="node-leaf2" transform="translate(680, 315)" onclick="selectDevice('leaf-02')">
+              <rect class="m-node-box" width="140" height="90"/>
+              <circle cx="22" cy="24" r="4.5" fill="var(--status-up)"/>
+              <text x="34" y="28" fill="var(--text-primary)" font-size="13" font-weight="700">leaf-02</text>
+              <text x="22" y="50" fill="var(--text-secondary)" font-size="11" font-weight="500">Arista 7050SX3</text>
+              <rect x="16" y="62" width="108" height="18" rx="3" fill="color-mix(in srgb, var(--text-primary) 7%, transparent)"/>
+              <text x="70" y="75" text-anchor="middle" fill="var(--text-primary)" font-size="10" class="font-mono">10.255.1.12</text>
+            </g>
+          </g>
+
+        </g>
+      </svg>
+    </main>
+
+    <!-- Left Topology Filter & Cable Legend -->
+    <aside class="m-left-rail">
+      <div class="m-rail-card">
+        <div class="m-rail-header">
+          <span>Cable Semantics</span>
+          <span class="font-mono text-[10px]">3 Types</span>
+        </div>
+        <div class="m-legend-item" onclick="toggleLinkHighlight('fiber')">
+          <div class="m-legend-color-box">
+            <span class="m-cable-swatch m-swatch-fiber"></span>
+            <span>100G Inter-Spine</span>
+          </div>
+          <span class="font-mono text-[10px] text-muted">Fiber</span>
+        </div>
+        <div class="m-legend-item" onclick="toggleLinkHighlight('trunk')">
+          <div class="m-legend-color-box">
+            <span class="m-cable-swatch m-swatch-trunk"></span>
+            <span>40G MLAG Trunk</span>
+          </div>
+          <span class="font-mono text-[10px] text-muted">VLAN 10,20</span>
+        </div>
+        <div class="m-legend-item" onclick="toggleLinkHighlight('tunnel')">
+          <div class="m-legend-color-box">
+            <span class="m-cable-swatch m-swatch-tunnel"></span>
+            <span>EVPN VXLAN Overlay</span>
+          </div>
+          <span class="font-mono text-[10px] text-muted">Tunnel</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Floating Minimap Radar (Desktop / Tablet) -->
+    <div class="m-minimap-float" id="minimap">
+      <div class="m-minimap-head">
+        <span>Minimap</span>
+        <span class="font-mono">World View</span>
+      </div>
+      <div class="m-minimap-view">
+        <div class="m-minimap-box" id="mini-box" style="left:20px; top:15px; width:80px; height:50px;"></div>
+      </div>
+    </div>
+
+    <!-- Floating Mobile Re-center / Fit Thumb Button -->
+    <button class="m-mobile-fab-fit" onclick="fitView()" title="Fit View to Screen">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+    </button>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         4. RIGHT TELEMETRY INSPECTOR & MOBILE BOTTOM SHEET
+         ═══════════════════════════════════════════════════════════════════ -->
+    <aside class="m-inspector-drawer is-open" id="inspector">
+      <!-- Mobile Drag Handle -->
+      <div class="m-sheet-grab-bar" onclick="toggleInspectorMobile()"></div>
+
+      <div class="m-drawer-header">
+        <div class="m-device-id-block">
+          <div class="m-device-title-row">
+            <span class="m-device-name" id="insp-name">core-sw-01</span>
+            <span class="m-oper-pill" id="insp-status">Operational</span>
+          </div>
+          <div class="m-device-sub" id="insp-model">Cisco Catalyst 9500-48Y4C · Core L3</div>
+          <div class="m-ip-chip font-mono" onclick="copyIp()" title="Click to copy IP">
+            <span id="insp-ip">10.255.0.1</span>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
           </div>
         </div>
-        <button class="m-inspector-close" type="button" aria-label="Close" onclick="toggleSelection()">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+
+        <button class="m-tool-icon-btn" onclick="toggleInspector()" title="Close Inspector">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
         </button>
       </div>
 
-      <div class="m-inspector-body">
-        <div class="m-inspector-section">
-          <summary>Hardware Telemetry</summary>
-          <table class="m-table">
-            <tr><th>Property</th><th>Value</th></tr>
-            <tr><td>Serial Number</td><td class="font-mono">FOC2241091</td></tr>
-            <tr><td>Management IP</td><td class="font-mono">10.255.0.1</td></tr>
-            <tr><td>BGP Autonomous System</td><td class="font-mono">65001</td></tr>
-            <tr><td>Software Version</td><td>IOS-XE 17.9.4a</td></tr>
-          </table>
-        </div>
-
-        <div class="m-inspector-section">
-          <summary>Optical Transceiver Metrics</summary>
-          <table class="m-table font-mono">
-            <tr><th>Port</th><th>Tx Power</th><th>Rx Power</th><th>State</th></tr>
-            <tr><td>Te1/0/1</td><td>-1.2 dBm</td><td>-2.4 dBm</td><td style="color:var(--up)">Optimal</td></tr>
-            <tr><td>Te1/0/2</td><td>-1.1 dBm</td><td>-2.2 dBm</td><td style="color:var(--up)">Optimal</td></tr>
-            <tr><td>Te1/0/48</td><td>-1.5 dBm</td><td>-3.1 dBm</td><td style="color:var(--up)">Optimal</td></tr>
-          </table>
-        </div>
+      <!-- Navigation Tabs -->
+      <div class="m-drawer-tabs">
+        <button class="m-tab-link active" onclick="switchTab('tab-overview', this)">Overview</button>
+        <button class="m-tab-link" onclick="switchTab('tab-interfaces', this)">Interfaces (48)</button>
+        <button class="m-tab-link" onclick="switchTab('tab-routing', this)">BGP &amp; Peers</button>
       </div>
 
-      <div class="m-drawer-foot">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M5 20V10a4 4 0 0 1 4-4" stroke-width="2.4"/>
-          <path d="M13 20V10" stroke-width="2.4"/>
-          <path d="M13 10a4 4 0 0 1 4-4h2" stroke-width="2.4"/>
-          <path d="m17.2 4.2 1.8 1.8-1.8 1.8" stroke-width="2.4"/>
-        </svg>
-        <span>Marrow Engineering</span>
+      <!-- Scrollable Tab Content -->
+      <div class="m-drawer-content">
+        <!-- Overview Tab -->
+        <div id="tab-overview" class="m-tab-panel">
+          <div class="m-data-card">
+            <div class="m-data-card-title">
+              <span>Hardware Telemetry</span>
+              <span class="font-mono text-[10px]">SNMP OK</span>
+            </div>
+            <div class="m-key-value-grid">
+              <div class="m-kv-cell">
+                <span class="m-kv-label">Serial Number</span>
+                <span class="m-kv-val font-mono" id="insp-serial">FOC2419018</span>
+              </div>
+              <div class="m-kv-cell">
+                <span class="m-kv-label">Rack Location</span>
+                <span class="m-kv-val" id="insp-rack">DC1-RowB-Rack04</span>
+              </div>
+              <div class="m-kv-cell">
+                <span class="m-kv-label">OS Version</span>
+                <span class="m-kv-val font-mono" id="insp-os">IOS-XE 17.9.4a</span>
+              </div>
+              <div class="m-kv-cell">
+                <span class="m-kv-label">BGP ASN</span>
+                <span class="m-kv-val font-mono" id="insp-asn">65001</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="m-data-card">
+            <div class="m-data-card-title">
+              <span>Adjacent Neighbors (LLDP/CDP)</span>
+              <span class="font-mono text-[10px]" id="insp-neighbor-count">3 Links</span>
+            </div>
+            <table class="m-table-dense font-mono">
+              <thead>
+                <tr><th>Local Port</th><th>Neighbor</th><th>Speed</th><th>Action</th></tr>
+              </thead>
+              <tbody id="insp-neighbors-body">
+                <tr>
+                  <td>Te1/0/1</td>
+                  <td style="color:var(--accent-primary); font-weight:600;">leaf-01</td>
+                  <td>100G</td>
+                  <td><button class="m-jump-neighbor-btn" onclick="focusDevice('leaf-01')">Focus</button></td>
+                </tr>
+                <tr>
+                  <td>Te1/0/2</td>
+                  <td style="color:var(--accent-primary); font-weight:600;">leaf-02</td>
+                  <td>100G</td>
+                  <td><button class="m-jump-neighbor-btn" onclick="focusDevice('leaf-02')">Focus</button></td>
+                </tr>
+                <tr>
+                  <td>Te1/0/48</td>
+                  <td style="color:var(--accent-primary); font-weight:600;">spine-01</td>
+                  <td>100G</td>
+                  <td><button class="m-jump-neighbor-btn" onclick="focusDevice('spine-01')">Focus</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Interfaces Tab -->
+        <div id="tab-interfaces" class="m-tab-panel" style="display:none">
+          <div class="m-data-card">
+            <div class="m-data-card-title">Active Ports &amp; Optics</div>
+            <table class="m-table-dense font-mono">
+              <thead>
+                <tr><th>Port</th><th>Mode</th><th>VLANs</th><th>Status</th><th>Tx/Rx</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Te1/0/1</td><td>Trunk</td><td>10,20</td><td style="color:var(--status-up)">Up</td><td>-2.1 dBm</td></tr>
+                <tr><td>Te1/0/2</td><td>Trunk</td><td>10,20</td><td style="color:var(--status-up)">Up</td><td>-1.9 dBm</td></tr>
+                <tr><td>Te1/0/3</td><td>Access</td><td>10</td><td style="color:var(--status-up)">Up</td><td>-3.4 dBm</td></tr>
+                <tr><td>Te1/0/4</td><td>Access</td><td>20</td><td style="color:var(--text-faint)">Down</td><td>—</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- BGP & Peers Tab -->
+        <div id="tab-routing" class="m-tab-panel" style="display:none">
+          <div class="m-data-card">
+            <div class="m-data-card-title">BGP EVPN Peering Sessions</div>
+            <table class="m-table-dense font-mono">
+              <thead>
+                <tr><th>Peer IP</th><th>Remote AS</th><th>Prefixes</th><th>State</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>10.255.0.10</td><td>65000</td><td>64</td><td style="color:var(--status-up)">Established</td></tr>
+                <tr><td>10.255.1.11</td><td>65002</td><td>32</td><td style="color:var(--status-up)">Established</td></tr>
+                <tr><td>10.255.1.12</td><td>65003</td><td>32</td><td style="color:var(--status-up)">Established</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </aside>
 
   </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       5. GROUNDED DESKTOP STATUS BAR (CAD / Observability Console)
+       ═══════════════════════════════════════════════════════════════════ -->
+  <footer class="m-status-bar font-mono">
+    <div class="m-status-left">
+      <div class="m-status-item">
+        <span style="color:var(--accent-primary); font-weight:700;">ACTIVE:</span>
+        <span id="stat-selected-node">core-sw-01 (10.255.0.1)</span>
+      </div>
+      <div class="m-status-item">
+        <span style="color:var(--text-muted)">POINTER:</span>
+        <span id="stat-coords">X: 500, Y: 340</span>
+      </div>
+    </div>
+
+    <div class="m-status-center">
+      <div class="m-zoom-control">
+        <button class="m-status-btn" onclick="zoomStep(-0.2)" title="Zoom Out">−</button>
+        <span class="m-zoom-pct" id="stat-zoom" onclick="resetZoom()">100%</span>
+        <button class="m-status-btn" onclick="zoomStep(0.2)" title="Zoom In">+</button>
+      </div>
+      <button class="m-status-btn" onclick="fitView()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+        <span>Fit View</span>
+      </button>
+    </div>
+
+    <div class="m-status-right">
+      <button class="m-status-btn" onclick="toggleMinimap()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+        <span>Minimap</span>
+      </button>
+      <div class="m-status-item">
+        <span>Marrow v2.4</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       6. MOBILE BOTTOM NAVIGATION (Thumb Ergonomics)
+       ═══════════════════════════════════════════════════════════════════ -->
+  <nav class="m-mobile-bottom-nav">
+    <button class="m-mob-nav-item active" id="mob-tab-canvas" onclick="setMobileMode('canvas')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      <span>Canvas</span>
+    </button>
+    <button class="m-mob-nav-item" id="mob-tab-search" onclick="openSearchModal()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <span>Search</span>
+    </button>
+    <button class="m-mob-nav-item" id="mob-tab-zones" onclick="alert('Open Site Navigation (Zones)')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="16" height="20" x="4" y="2" rx="2"/><path d="M9 22v-4h6v4"/></svg>
+      <span>Pages</span>
+    </button>
+    <button class="m-mob-nav-item" id="mob-tab-inspector" onclick="toggleInspectorMobile()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      <span>Details</span>
+    </button>
+  </nav>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       7. MOBILE QUICK SEARCH MODAL
+       ═══════════════════════════════════════════════════════════════════ -->
+  <div class="m-mobile-search-modal" id="search-modal">
+    <div class="m-search-modal-head">
+      <input type="text" class="m-search-input-field" id="search-query-input" placeholder="Search devices, IPs, or ports…" oninput="filterSearchNodes(this.value)">
+      <button class="m-status-btn" onclick="closeSearchModal()" style="font-size:13px">Cancel</button>
+    </div>
+    <div class="m-search-results-list" id="search-results-list">
+      <div class="m-search-result-item" onclick="pickSearchNode('core-sw-01')">
+        <div>
+          <div style="font-weight:700; font-size:13px">core-sw-01</div>
+          <div style="font-size:11px; color:var(--text-secondary)">Cisco Catalyst 9500 · Core L3</div>
+        </div>
+        <span class="font-mono text-[11px] text-muted">10.255.0.1</span>
+      </div>
+      <div class="m-search-result-item" onclick="pickSearchNode('spine-01')">
+        <div>
+          <div style="font-weight:700; font-size:13px">spine-01</div>
+          <div style="font-size:11px; color:var(--text-secondary)">Arista 7280R3 · Spine</div>
+        </div>
+        <span class="font-mono text-[11px] text-muted">10.255.0.10</span>
+      </div>
+      <div class="m-search-result-item" onclick="pickSearchNode('leaf-01')">
+        <div>
+          <div style="font-weight:700; font-size:13px">leaf-01</div>
+          <div style="font-size:11px; color:var(--text-secondary)">Arista 7050SX3 · Leaf Top-of-Rack</div>
+        </div>
+        <span class="font-mono text-[11px] text-muted">10.255.1.11</span>
+      </div>
+      <div class="m-search-result-item" onclick="pickSearchNode('leaf-02')">
+        <div>
+          <div style="font-weight:700; font-size:13px">leaf-02</div>
+          <div style="font-size:11px; color:var(--text-secondary)">Arista 7050SX3 · Leaf Top-of-Rack</div>
+        </div>
+        <span class="font-mono text-[11px] text-muted">10.255.1.12</span>
+      </div>
+    </div>
+  </div>
+
 </div>
 
+<!-- ═══════════════════════════════════════════════════════════════════
+     8. JAVASCRIPT CONTROLLER (Camera, Telemetry State, Touch Math)
+     ═══════════════════════════════════════════════════════════════════ -->
 <script>
-// State
+// Mock Network Topology Database
+const topologyData = {
+  'core-sw-01': {
+    name: 'core-sw-01',
+    model: 'Cisco Catalyst 9500-48Y4C · Core L3',
+    ip: '10.255.0.1',
+    status: 'Operational',
+    serial: 'FOC2419018',
+    rack: 'DC1-RowB-Rack04',
+    os: 'IOS-XE 17.9.4a',
+    asn: '65001',
+    cx: 500, cy: 515,
+    neighbors: [
+      { port: 'Te1/0/1', neighbor: 'leaf-01', speed: '100G' },
+      { port: 'Te1/0/2', neighbor: 'leaf-02', speed: '100G' },
+      { port: 'Te1/0/48', neighbor: 'spine-01', speed: '100G' }
+    ]
+  },
+  'spine-01': {
+    name: 'spine-01',
+    model: 'Arista DCS-7280R3 · Spine Fabric',
+    ip: '10.255.0.10',
+    status: 'Operational',
+    serial: 'JPE1849021',
+    rack: 'DC1-RowA-Rack01',
+    os: 'EOS 4.31.1F',
+    asn: '65000',
+    cx: 500, cy: 155,
+    neighbors: [
+      { port: 'Ethernet1/1', neighbor: 'leaf-01', speed: '100G' },
+      { port: 'Ethernet2/1', neighbor: 'leaf-02', speed: '100G' },
+      { port: 'Ethernet48/1', neighbor: 'core-sw-01', speed: '100G' }
+    ]
+  },
+  'leaf-01': {
+    name: 'leaf-01',
+    model: 'Arista DCS-7050SX3 · Top-of-Rack Leaf',
+    ip: '10.255.1.11',
+    status: 'Operational',
+    serial: 'SSJ2104920',
+    rack: 'DC1-RowB-Rack01',
+    os: 'EOS 4.31.1F',
+    asn: '65002',
+    cx: 250, cy: 360,
+    neighbors: [
+      { port: 'Ethernet1/1', neighbor: 'spine-01', speed: '100G' },
+      { port: 'Ethernet49/1', neighbor: 'leaf-02', speed: '40G MLAG' },
+      { port: 'Ethernet50/1', neighbor: 'core-sw-01', speed: '100G' }
+    ]
+  },
+  'leaf-02': {
+    name: 'leaf-02',
+    model: 'Arista DCS-7050SX3 · Top-of-Rack Leaf',
+    ip: '10.255.1.12',
+    status: 'Operational',
+    serial: 'SSJ2104924',
+    rack: 'DC1-RowB-Rack02',
+    os: 'EOS 4.31.1F',
+    asn: '65003',
+    cx: 750, cy: 360,
+    neighbors: [
+      { port: 'Ethernet1/1', neighbor: 'spine-01', speed: '100G' },
+      { port: 'Ethernet49/1', neighbor: 'leaf-01', speed: '40G MLAG' },
+      { port: 'Ethernet50/1', neighbor: 'core-sw-01', speed: '100G' }
+    ]
+  }
+};
+
+// Workspace State
 let scale = 1.0;
 let panX = 0;
 let panY = 0;
 let isPanning = false;
 let startX = 0;
 let startY = 0;
-let hasSelection = true;
+let selectedDeviceId = 'core-sw-01';
+let isInspectorOpen = true;
 
 const stage = document.getElementById('stage');
 const cameraGroup = document.getElementById('camera-group');
-const zoomReadout = document.getElementById('zoom-readout');
-const app = document.getElementById('marrow-app');
-const legendBox = document.getElementById('legend-box');
-const miniTracker = document.getElementById('mini-tracker');
+const statZoom = document.getElementById('stat-zoom');
+const statCoords = document.getElementById('stat-coords');
+const statSelected = document.getElementById('stat-selected-node');
+const inspector = document.getElementById('inspector');
+const miniBox = document.getElementById('mini-box');
 
-function updateCamera() {
+// ── CAMERA TRANSFORMATION ENGINE ──
+function applyCamera() {
   cameraGroup.setAttribute('transform', `matrix(${scale} 0 0 ${scale} ${panX} ${panY})`);
-  zoomReadout.textContent = `${Math.round(scale * 100)}%`;
-  
-  // Update minimap tracker box
-  const normX = Math.max(5, Math.min(60, 40 - (panX / 30)));
-  const normY = Math.max(5, Math.min(40, 25 - (panY / 30)));
-  const normW = Math.max(40, Math.min(160, 140 / scale));
-  const normH = Math.max(30, Math.min(80, 56 / scale));
-  miniTracker.style.left = `${normX}px`;
-  miniTracker.style.top = `${normY}px`;
-  miniTracker.style.width = `${normW}px`;
-  miniTracker.style.height = `${normH}px`;
+  statZoom.textContent = `${Math.round(scale * 100)}%`;
+
+  // Update Mini radar coordinates
+  const normX = Math.max(5, Math.min(100, 30 - (panX / 25)));
+  const normY = Math.max(5, Math.min(60, 20 - (panY / 25)));
+  const normW = Math.max(30, Math.min(120, 80 / scale));
+  const normH = Math.max(20, Math.min(80, 50 / scale));
+  miniBox.style.left = `${normX}px`;
+  miniBox.style.top = `${normY}px`;
+  miniBox.style.width = `${normW}px`;
+  miniBox.style.height = `${normH}px`;
 }
 
-// Pan Gestures
+// Mouse Panning
 stage.addEventListener('mousedown', (e) => {
-  if (e.target.closest('.m-target-node')) return;
+  if (e.target.closest('.m-node-item')) return;
   isPanning = true;
-  stage.classList.add('m-grabbing');
+  stage.classList.add('is-panning');
   startX = e.clientX - panX;
   startY = e.clientY - panY;
 });
 
 window.addEventListener('mousemove', (e) => {
+  // Track pointer coordinates in world space for CAD status bar
+  const rect = stage.getBoundingClientRect();
+  const worldX = Math.round((e.clientX - rect.left - panX) / scale);
+  const worldY = Math.round((e.clientY - rect.top - panY) / scale);
+  statCoords.textContent = `X: ${worldX}, Y: ${worldY}`;
+
   if (!isPanning) return;
   panX = e.clientX - startX;
   panY = e.clientY - startY;
-  updateCamera();
+  applyCamera();
 });
 
 window.addEventListener('mouseup', () => {
   isPanning = false;
-  stage.classList.remove('m-grabbing');
+  stage.classList.remove('is-panning');
 });
 
-// Wheel Zoom towards cursor
+// Wheel Zoom Centered on Pointer
 stage.addEventListener('wheel', (e) => {
   e.preventDefault();
   const factor = e.deltaY < 0 ? 1.1 : 0.9;
@@ -678,65 +1534,213 @@ stage.addEventListener('wheel', (e) => {
   panX = mx - (mx - panX) * (newScale / scale);
   panY = my - (my - panY) * (newScale / scale);
   scale = newScale;
-  
-  updateCamera();
+  applyCamera();
 }, { passive: false });
 
-function zoomDelta(d) {
+// Mobile Touch Gestures (Pinch-Zoom and One-Finger Pan)
+let initialPinchDist = 0;
+stage.addEventListener('touchstart', (e) => {
+  if (e.target.closest('.m-node-item')) return;
+  if (e.touches.length === 1) {
+    isPanning = true;
+    startX = e.touches[0].clientX - panX;
+    startY = e.touches[0].clientY - panY;
+  } else if (e.touches.length === 2) {
+    isPanning = false;
+    initialPinchDist = Math.hypot(
+      e.touches[0].clientX - e.touches[1].clientX,
+      e.touches[0].clientY - e.touches[1].clientY
+    );
+  }
+}, { passive: true });
+
+window.addEventListener('touchmove', (e) => {
+  if (isPanning && e.touches.length === 1) {
+    panX = e.touches[0].clientX - startX;
+    panY = e.touches[0].clientY - startY;
+    applyCamera();
+  } else if (e.touches.length === 2 && initialPinchDist > 0) {
+    const curDist = Math.hypot(
+      e.touches[0].clientX - e.touches[1].clientX,
+      e.touches[0].clientY - e.touches[1].clientY
+    );
+    const zoomFactor = curDist / initialPinchDist;
+    scale = Math.max(0.3, Math.min(3.0, scale * (zoomFactor > 1 ? 1.02 : 0.98)));
+    initialPinchDist = curDist;
+    applyCamera();
+  }
+}, { passive: true });
+
+window.addEventListener('touchend', () => {
+  isPanning = false;
+  initialPinchDist = 0;
+});
+
+function zoomStep(d) {
   scale = Math.max(0.3, Math.min(3.0, scale + d));
-  updateCamera();
+  applyCamera();
 }
 
 function resetZoom() {
   scale = 1.0;
-  panX = 0;
-  panY = 0;
-  updateCamera();
+  fitView();
 }
 
-// Safe Viewport Auto-Fit (HUD clearance)
+// Precision View Fitting with Safe Bounds
 function fitView() {
   const isMobile = window.innerWidth < 768;
-  const rightInset = (!isMobile && hasSelection) ? 420 : 60;
-  const topInset = 80;
-  const bottomInset = (isMobile && hasSelection) ? 300 : 80;
-  const leftInset = 60;
-
-  const availW = window.innerWidth - leftInset - rightInset;
-  const availH = window.innerHeight - topInset - bottomInset;
-
-  const sceneW = 800;
-  const sceneH = 300;
-
-  scale = Math.min(availW / sceneW, availH / sceneH, 1.2);
+  const isTablet = window.innerWidth >= 768 && window.innerWidth < 1024;
   
-  panX = leftInset + (availW - sceneW * scale) / 2 - 200 * scale;
-  panY = topInset + (availH - sceneH * scale) / 2 - 150 * scale;
+  let leftInset = isMobile ? 20 : 280; // clears left legend rail on desktop
+  let rightInset = (!isMobile && isInspectorOpen) ? 400 : 40;
+  let topInset = isMobile ? 60 : 70;
+  let bottomInset = isMobile ? 90 : 50;
 
-  updateCamera();
+  const availW = Math.max(200, window.innerWidth - leftInset - rightInset);
+  const availH = Math.max(200, window.innerHeight - topInset - bottomInset);
+
+  const sceneW = 760;
+  const sceneH = 500;
+
+  scale = Math.min(availW / sceneW, availH / sceneH, isMobile ? 0.75 : 1.15);
+  
+  panX = leftInset + (availW - sceneW * scale) / 2 - 140 * scale;
+  panY = topInset + (availH - sceneH * scale) / 2 - 80 * scale;
+
+  applyCamera();
 }
 
-// Inspector Toggle + Camera Center Shift Math
-function toggleSelection() {
-  hasSelection = !hasSelection;
-  if (hasSelection) {
-    document.body.classList.add('has-selection');
-    // Design Rule: Camera centers item in remaining visible area by panning -190px
-    if (window.innerWidth >= 768) {
-      panX -= 190;
-      updateCamera();
-    }
-  } else {
-    document.body.classList.remove('has-selection');
-    if (window.innerWidth >= 768) {
-      panX += 190;
-      updateCamera();
-    }
+// ── DEVICE SELECTION & TELEMETRY POPULATION ──
+function selectDevice(devId) {
+  const data = topologyData[devId];
+  if (!data) return;
+
+  selectedDeviceId = devId;
+
+  // Update SVG highlights
+  document.querySelectorAll('.m-node-item').forEach(el => el.classList.remove('selected'));
+  const targetNode = document.getElementById(`node-${devId.replace('-sw', '').replace('-0', '')}`) ||
+                     document.getElementById(`node-${devId.split('-')[0]}`) ||
+                     document.querySelector(`[onclick="selectDevice('${devId}')"]`);
+  if (targetNode) targetNode.classList.add('selected');
+
+  // Populate Inspector
+  document.getElementById('insp-name').textContent = data.name;
+  document.getElementById('insp-status').textContent = data.status;
+  document.getElementById('insp-model').textContent = data.model;
+  document.getElementById('insp-ip').textContent = data.ip;
+  document.getElementById('insp-serial').textContent = data.serial;
+  document.getElementById('insp-rack').textContent = data.rack;
+  document.getElementById('insp-os').textContent = data.os;
+  document.getElementById('insp-asn').textContent = data.asn;
+  document.getElementById('insp-neighbor-count').textContent = `${data.neighbors.length} Links`;
+
+  // Update Status Bar
+  statSelected.textContent = `${data.name} (${data.ip})`;
+
+  // Render Neighbors
+  const tbody = document.getElementById('insp-neighbors-body');
+  tbody.innerHTML = '';
+  data.neighbors.forEach(n => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${n.port}</td>
+      <td style="color:var(--accent-primary); font-weight:600;">${n.neighbor}</td>
+      <td>${n.speed}</td>
+      <td><button class="m-jump-neighbor-btn" onclick="focusDevice('${n.neighbor}')">Focus</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // Open inspector if collapsed
+  if (!isInspectorOpen) {
+    toggleInspector();
+  }
+
+  // On mobile, open the bottom sheet
+  if (window.innerWidth < 768) {
+    inspector.classList.add('is-open');
+    document.querySelectorAll('.m-mob-nav-item').forEach(el => el.classList.remove('active'));
+    document.getElementById('mob-tab-inspector')?.classList.add('active');
   }
 }
 
-function toggleLegend() {
-  legendBox.classList.toggle('open');
+// Jump Camera to Focused Neighbor Node
+function focusDevice(devId) {
+  selectDevice(devId);
+  const data = topologyData[devId];
+  if (!data) return;
+
+  const isMobile = window.innerWidth < 768;
+  const targetScreenX = isMobile ? window.innerWidth / 2 : (window.innerWidth - 380) / 2;
+  const targetScreenY = isMobile ? window.innerHeight * 0.35 : window.innerHeight / 2;
+
+  panX = targetScreenX - data.cx * scale;
+  panY = targetScreenY - data.cy * scale;
+  applyCamera();
+}
+
+function copyIp() {
+  const ip = document.getElementById('insp-ip').textContent;
+  navigator.clipboard?.writeText(ip);
+  alert(`Copied IP: ${ip}`);
+}
+
+// ── DRAWER & TAB ACTIONS ──
+function toggleInspector() {
+  isInspectorOpen = !isInspectorOpen;
+  if (isInspectorOpen) {
+    inspector.classList.remove('is-collapsed');
+    inspector.classList.add('is-open');
+    document.getElementById('minimap').style.transform = (window.innerWidth >= 1024) ? 'translateX(-390px)' : 'none';
+  } else {
+    inspector.classList.add('is-collapsed');
+    inspector.classList.remove('is-open');
+    document.getElementById('minimap').style.transform = 'none';
+  }
+}
+
+function toggleInspectorMobile() {
+  inspector.classList.toggle('is-open');
+}
+
+function switchTab(tabId, btn) {
+  document.querySelectorAll('.m-tab-link').forEach(el => el.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.m-tab-panel').forEach(p => p.style.display = 'none');
+  const target = document.getElementById(tabId);
+  if (target) target.style.display = 'block';
+}
+
+function setLens(lensType, btn) {
+  document.querySelectorAll('.m-lens-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  
+  const linkSpine1 = document.getElementById('link-spine-leaf1');
+  const linkSpine2 = document.getElementById('link-spine-leaf2');
+  const linkMlag = document.getElementById('link-mlag-trunk');
+  const linkWan = document.getElementById('link-spine-wan');
+
+  if (lensType === 'physical') {
+    linkSpine1.style.opacity = '1';
+    linkSpine2.style.opacity = '1';
+    linkMlag.style.opacity = '1';
+    linkWan.style.opacity = '1';
+  } else if (lensType === 'vlan') {
+    linkSpine1.style.opacity = '0.2';
+    linkSpine2.style.opacity = '0.2';
+    linkMlag.style.opacity = '1';
+    linkWan.style.opacity = '0.2';
+  } else if (lensType === 'bgp') {
+    linkSpine1.style.opacity = '0.2';
+    linkSpine2.style.opacity = '0.2';
+    linkMlag.style.opacity = '0.2';
+    linkWan.style.opacity = '1';
+  }
+}
+
+function toggleLinkHighlight(type) {
+  alert(`Filtering active topology for: ${type.toUpperCase()}`);
 }
 
 function toggleTheme() {
@@ -744,28 +1748,61 @@ function toggleTheme() {
   document.documentElement.setAttribute('data-theme', cur === 'dark' ? 'light' : 'dark');
 }
 
-// Interactive Screen Simulator
-function setTier(t) {
-  document.querySelectorAll('.m-sim-btn').forEach(b => b.classList.remove('active'));
-  event.target.classList.add('active');
-  document.documentElement.removeAttribute('data-chrome');
-
-  if (t === 'desktop') {
-    app.style.maxWidth = '100vw';
-  } else if (t === 'laptop') {
-    app.style.maxWidth = '1024px';
-  } else if (t === 'mobile') {
-    app.style.maxWidth = '680px';
-  } else if (t === 'embed') {
-    app.style.maxWidth = '550px';
-    document.documentElement.setAttribute('data-chrome', 'minimal');
-  }
-  fitView();
+function toggleMinimap() {
+  const mm = document.getElementById('minimap');
+  mm.style.display = mm.style.display === 'none' ? 'flex' : 'none';
 }
 
-// Initialize
-document.body.classList.add('has-selection');
+// ── MOBILE NAVIGATION LOGIC ──
+function setMobileMode(mode) {
+  document.querySelectorAll('.m-mob-nav-item').forEach(el => el.classList.remove('active'));
+  if (mode === 'canvas') {
+    document.getElementById('mob-tab-canvas').classList.add('active');
+    inspector.classList.remove('is-open');
+  }
+}
+
+function openSearchModal() {
+  document.getElementById('search-modal').classList.add('is-active');
+  document.getElementById('search-query-input').focus();
+}
+
+function closeSearchModal() {
+  document.getElementById('search-modal').classList.remove('is-active');
+}
+
+function pickSearchNode(nodeId) {
+  closeSearchModal();
+  focusDevice(nodeId);
+}
+
+function filterSearchNodes(q) {
+  const query = q.toLowerCase();
+  document.querySelectorAll('.m-search-result-item').forEach(item => {
+    const text = item.textContent.toLowerCase();
+    item.style.display = text.includes(query) ? 'flex' : 'none';
+  });
+}
+
+// Global Keyboard Shortcut '/' or '⌘K' for search
+window.addEventListener('keydown', (e) => {
+  if (e.key === '/' && document.activeElement.tagName !== 'INPUT') {
+    e.preventDefault();
+    openSearchModal();
+  }
+});
+
+// Responsive resize listener
+window.addEventListener('resize', () => {
+  fitView();
+});
+
+// Initial Setup
 fitView();
+if (window.innerWidth >= 1024) {
+  document.getElementById('minimap').style.transform = 'translateX(-390px)';
+}
 </script>
+
 </body>
 </html>

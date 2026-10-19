@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Marrow — Production Layout Architecture &amp; HTML Shell Skeleton</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════════════
+   1. MARROW CORE DESIGN TOKENS (tokens.ts & styles.ts)
+   ═══════════════════════════════════════════════════════════════════ */
+:root {
+  /* Surfaces & Palettes */
+  --bg: #09090b;
+  --bg-raise: #18181b;
+  --panel: #121215;
+  --panel-elevated: #1a1a1f;
+  --line: #27272a;
+  --line-strong: #3f3f46;
+  --ink: #fafafa;
+  --ink-dim: #a1a1aa;
+  --ink-faint: #71717a;
+  --grid-dot: #27272a;
+  --m-accent: #3b82f6;
+  --m-accent-ink: #ffffff;
+  --m-accent-subtle: rgba(59, 130, 246, 0.12);
+  --ring: #3b82f6;
+  --zone: #71717a;
+  --edge: #d4d4d8;
+
+  /* Telemetry Status */
+  --up: #22c55e;
+  --down: #ef4444;
+  --degraded: #f59e0b;
+  --planned: #71717a;
+  --unknown: #71717a;
+
+  /* Geometry & Radius */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius: 8px;
+  --radius-lg: 12px;
+  --radius-pill: 9999px;
+  --shadow: 0 10px 30px -12px rgb(0 0 0 / .55), 0 4px 10px -6px rgb(0 0 0 / .45);
+  --shadow-drawer: -8px 0 24px rgba(0, 0, 0, 0.6);
+  --shadow-spotlight: 0 20px 48px -10px rgba(0, 0, 0, 0.7);
+
+  /* Layout Insets */
+  --topbar-height: 48px;
+  --statusbar-height: 28px;
+  --sidebar-width: 260px;
+  --inspector-width: 380px;
+  --inspector-offset: 380px; /* Reactive CSS variable driving minimap shift */
+
+  /* Wireframe Slot Colors */
+  --slot-border: rgba(59, 130, 246, 0.35);
+  --slot-bg: rgba(59, 130, 246, 0.05);
+  --slot-text: #3b82f6;
+}
+
+:root[data-theme="light"] {
+  --bg: #fafafa;
+  --bg-raise: #f4f4f5;
+  --panel: #ffffff;
+  --panel-elevated: #f1f5f9;
+  --line: #e4e4e7;
+  --line-strong: #d4d4d8;
+  --ink: #18181b;
+  --ink-dim: #71717a;
+  --ink-faint: #a1a1aa;
+  --grid-dot: #e4e4e7;
+  --m-accent: #2563eb;
+  --m-accent-ink: #ffffff;
+  --m-accent-subtle: rgba(37, 99, 235, 0.08);
+  --ring: #2563eb;
+  --zone: #71717a;
+  --edge: #71717a;
+
+  --up: #16a34a;
+  --down: #dc2626;
+  --degraded: #d97706;
+
+  --shadow: 0 10px 24px -8px rgb(0 0 0 / .10), 0 4px 8px -4px rgb(0 0 0 / .06);
+  --shadow-drawer: -8px 0 24px rgba(0, 0, 0, 0.08);
+  --shadow-spotlight: 0 20px 48px -10px rgba(0, 0, 0, 0.15);
+
+  --slot-border: rgba(37, 99, 235, 0.35);
+  --slot-bg: rgba(37, 99, 235, 0.05);
+  --slot-text: #2563eb;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-mono {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Skeleton Wireframe Slot Helper */
+.m-slot {
+  border: 1px dashed var(--slot-border);
+  background: var(--slot-bg);
+  border-radius: var(--radius-xs);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 8px;
+  font-size: 11px;
+  color: var(--slot-text);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.m-slot::before { content: '<'; opacity: 0.6; }
+.m-slot::after { content: '>'; opacity: 0.6; }
+
+kbd {
+  display: inline-flex; align-items: center; justify-content: center;
+  height: 18px; min-width: 18px; padding: 0 4px; border-radius: 3px;
+  background: var(--bg-raise); color: var(--ink-dim);
+  font: 600 10px 'JetBrains Mono', monospace;
+  border: 1px solid var(--line);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   2. SINGLE UNIFIED HEADER (Real Marrow Tools Only)
+   ═══════════════════════════════════════════════════════════════════ */
+#marrow-shell {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.m-command-bar {
+  height: var(--topbar-height);
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  z-index: 50;
+  flex-shrink: 0;
+  transition: height 0.2s ease;
+}
+
+.m-header-left, .m-header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.m-icon-btn {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--ink-dim);
+  height: 30px;
+  padding: 0 8px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.m-icon-btn:hover {
+  background: var(--bg-raise);
+  color: var(--ink);
+  border-color: var(--line-strong);
+}
+
+/* Mobile Header Adaptations (< 768px) */
+.m-mob-only { display: none !important; }
+
+@media (max-width: 767px) {
+  .m-command-bar {
+    height: 44px;
+    padding: 0 10px;
+  }
+  .m-desk-only { display: none !important; }
+  .m-mob-only { display: flex !important; }
+  .m-crumb-intermediate { display: none !important; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   3. WORKSPACE CONTAINER
+   ═══════════════════════════════════════════════════════════════════ */
+.m-workspace {
+  position: relative;
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* Full Bleed Vector Canvas Stage */
+.m-stage {
+  position: relative;
+  flex: 1;
+  height: 100%;
+  background: var(--bg);
+  cursor: crosshair;
+  overflow: hidden;
+}
+.m-svg-viewport {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   4. LEFT SITE NAVIGATION SIDEBAR (Multi-Page Site Mode Only)
+   ═══════════════════════════════════════════════════════════════════ */
+.m-sidebar {
+  width: var(--sidebar-width);
+  height: 100%;
+  background: var(--panel);
+  border-right: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  z-index: 25;
+  flex-shrink: 0;
+  transition: margin-left 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.m-sidebar.is-collapsed {
+  margin-left: calc(-1 * var(--sidebar-width));
+}
+
+.m-sidebar-head {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.m-sidebar-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.m-nav-tree-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 10px;
+  border-radius: var(--radius-xs);
+  font-size: 12px;
+  color: var(--ink-dim);
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+.m-nav-tree-item:hover {
+  background: var(--bg-raise);
+  color: var(--ink);
+}
+.m-nav-tree-item.active {
+  background: var(--m-accent-subtle);
+  color: var(--m-accent);
+  border-color: color-mix(in srgb, var(--m-accent) 30%, transparent);
+  font-weight: 600;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   5. RIGHT INSPECTOR (Real Marrow Schema: Interfaces, Config, Metadata)
+   ═══════════════════════════════════════════════════════════════════ */
+.m-inspector {
+  width: var(--inspector-width);
+  height: 100%;
+  background: var(--panel);
+  border-left: 1px solid var(--line);
+  box-shadow: var(--shadow-drawer);
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  transition: margin-right 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), height 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.m-inspector.is-collapsed {
+  margin-right: calc(-1 * var(--inspector-width));
+}
+
+.m-inspector-head {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+.m-inspector-tabs {
+  display: flex;
+  gap: 12px;
+  padding: 0 16px;
+  background: var(--bg-raise);
+  border-bottom: 1px solid var(--line);
+  overflow-x: auto;
+}
+.m-tab-btn {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--ink-dim);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 8px 0;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.m-tab-btn.active {
+  color: var(--m-accent);
+  border-bottom-color: var(--m-accent);
+}
+
+.m-inspector-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Drag Handle: Strictly display: none on desktop/tablet */
+.m-sheet-drag-handle {
+  display: none;
+  width: 36px;
+  height: 4px;
+  background: var(--line-strong);
+  border-radius: var(--radius-pill);
+  margin: 8px auto 2px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* Mobile 3-Snap-Point Sheet Rules (< 768px) */
+@media (max-width: 767px) {
+  .m-sheet-drag-handle { display: block; }
+
+  .m-inspector {
+    position: fixed;
+    top: auto; left: 0; right: 0;
+    bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px));
+    width: 100%;
+    border-left: none;
+    border-top: 1px solid var(--line-strong);
+    border-radius: 18px 18px 0 0;
+    box-shadow: 0 -12px 36px rgba(0, 0, 0, 0.7);
+    transform: translateY(100%);
+    z-index: 45;
+  }
+
+  /* Snap Point 1: Closed */
+  .m-inspector[data-sheet-snap="closed"] {
+    transform: translateY(100%);
+  }
+
+  /* Snap Point 2: Peek (84px) */
+  .m-inspector[data-sheet-snap="peek"] {
+    transform: translateY(0);
+    height: 84px;
+    overflow: hidden;
+  }
+
+  /* Snap Point 3: Half (52vh) */
+  .m-inspector[data-sheet-snap="half"] {
+    transform: translateY(0);
+    height: 52vh;
+  }
+
+  /* Snap Point 4: Full (92vh) */
+  .m-inspector[data-sheet-snap="full"] {
+    transform: translateY(0);
+    height: 92vh;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   6. MINIMAP PLACEMENT VIA CSS VARIABLE OFFSET
+   ═══════════════════════════════════════════════════════════════════ */
+.m-minimap {
+  position: absolute;
+  bottom: 40px; /* Elevated above 28px Grounded Status Bar */
+  right: calc(14px + var(--inspector-offset)); /* Driven by CSS Custom Property */
+  width: 170px;
+  height: 110px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: right 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s;
+}
+.m-minimap-head {
+  padding: 4px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--ink-dim);
+  border-bottom: 1px solid var(--line);
+}
+.m-minimap-body {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 767px) {
+  .m-minimap { display: none; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   7. GROUNDED BOTTOM STATUS BAR (28px)
+   ═══════════════════════════════════════════════════════════════════ */
+.m-status-bar {
+  height: var(--statusbar-height);
+  background: var(--panel);
+  border-top: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  font-size: 11px;
+  color: var(--ink-dim);
+  z-index: 50;
+  flex-shrink: 0;
+}
+.m-status-left, .m-status-center, .m-status-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+@media (max-width: 767px) {
+  .m-status-bar { display: none; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   8. MOBILE BOTTOM NAVIGATION BAR (56px)
+   ═══════════════════════════════════════════════════════════════════ */
+.m-mobile-nav {
+  display: none;
+}
+@media (max-width: 767px) {
+  .m-mobile-nav {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px));
+    background: var(--panel);
+    border-top: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    z-index: 50;
+  }
+}
+
+.m-mobile-fab { display: none; }
+@media (max-width: 767px) {
+  .m-mobile-fab {
+    display: flex;
+    position: absolute;
+    bottom: calc(var(--mobile-nav-height) + 16px);
+    right: 16px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--panel);
+    border: 1px solid var(--line-strong);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    align-items: center;
+    justify-content: center;
+    z-index: 25;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   9. EMBED & EXPORT MODES
+   ═══════════════════════════════════════════════════════════════════ */
+#marrow-shell[data-view-mode="embed"] .m-command-bar,
+#marrow-shell[data-view-mode="embed"] .m-status-bar,
+#marrow-shell[data-view-mode="embed"] .m-sidebar {
+  display: none !important;
+}
+
+#marrow-shell[data-view-mode="export"] {
+  border: 2px solid var(--line-strong);
+  margin: 20px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   10. SPOTLIGHT & CONTEXT MENU OVERLAYS
+   ═══════════════════════════════════════════════════════════════════ */
+.m-spotlight-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  display: none;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 12vh;
+}
+.m-spotlight-backdrop.is-open { display: flex; }
+
+.m-spotlight-box {
+  width: 540px;
+  max-width: 92vw;
+  background: var(--panel);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-spotlight);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.m-spotlight-head {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.m-spotlight-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--ink);
+  font-size: 15px;
+  font-family: inherit;
+}
+.m-spotlight-list {
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.m-spotlight-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 13px;
+}
+.m-spotlight-item:hover, .m-spotlight-item.is-selected {
+  background: var(--m-accent-subtle);
+  color: var(--m-accent);
+}
+.m-spotlight-foot {
+  padding: 8px 16px;
+  border-top: 1px solid var(--line);
+  background: var(--bg-raise);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 11px;
+  color: var(--ink-dim);
+}
+
+.m-context-menu {
+  position: fixed;
+  background: var(--panel);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-spotlight);
+  min-width: 190px;
+  padding: 6px;
+  z-index: 90;
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+}
+.m-context-menu.is-open { display: flex; }
+
+.m-ctx-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  font-size: 12px;
+  color: var(--ink);
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+}
+.m-ctx-item:hover {
+  background: var(--m-accent);
+  color: #fff;
+}
+.m-ctx-divider {
+  height: 1px;
+  background: var(--line);
+  margin: 4px 0;
+}
+
+/* Floating Test Controls Badge */
+.m-sk-overlay-tools {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: var(--panel);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow);
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 25;
+}
+</style>
+</head>
+<body>
+
+<div id="marrow-shell" data-single-file="false" data-view-mode="default">
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       1. UNIFIED COMMAND BAR (Real Marrow Tools: Mark, Breadcrumbs, Search, Stats)
+       ═══════════════════════════════════════════════════════════════════ -->
+  <header class="m-command-bar">
+    <div class="m-header-left">
+      <!-- Sidebar Trigger Button (Ctrl+B) - Multi-Page Sites -->
+      <button class="m-icon-btn" onclick="toggleSidebar()" title="Toggle Site Navigation (Ctrl+B)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        <span class="m-desk-only">Navigation</span>
+        <kbd class="m-desk-only">Ctrl B</kbd>
+      </button>
+
+      <div class="m-slot font-mono">slot:brand-mark (Marrow)</div>
+
+      <!-- Real Breadcrumbs: Site / Zone / Page -->
+      <div style="display:flex; align-items:center; gap:6px;">
+        <span class="m-slot font-mono m-crumb-intermediate">US-East DC1</span>
+        <span class="m-crumb-intermediate" style="color:var(--ink-faint)">/</span>
+        <span class="m-slot font-mono">Pod 1 Core</span>
+      </div>
+    </div>
+
+    <div class="m-header-right">
+      <!-- Search Button (Ctrl+K) -->
+      <button class="m-icon-btn m-desk-only" onclick="openSpotlight()" title="Search devices, IPs, interfaces (Ctrl+K)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <span>Search devices…</span>
+        <kbd>Ctrl K</kbd>
+      </button>
+
+      <!-- Real Topology Metrics Chip -->
+      <div class="m-slot font-mono m-desk-only">slot:stats (12 Devices · 24 Links)</div>
+
+      <!-- Theme Switch -->
+      <button class="m-icon-btn m-desk-only" onclick="toggleTheme()" title="Toggle Dark/Light Mode">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2"/></svg>
+      </button>
+
+      <!-- Vector CAD Export -->
+      <div class="m-slot font-mono m-desk-only">slot:export-action</div>
+
+      <!-- Mobile Tools (Visible exclusively on < 768px) -->
+      <button class="m-icon-btn m-mob-only" onclick="openSpotlight()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      </button>
+      <button class="m-icon-btn m-mob-only" onclick="toggleTheme()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       2. WORKSPACE FLEX ROW
+       ═══════════════════════════════════════════════════════════════════ -->
+  <div class="m-workspace">
+
+    <!-- Left Site Navigation Sidebar (Multi-Page Sites Only) -->
+    <aside class="m-sidebar" id="slot-sidebar">
+      <div class="m-sidebar-head">
+        <div class="m-slot font-mono" style="flex:1">slot:site-zones (Navigation)</div>
+        <button class="m-icon-btn" style="border:none; padding:4px;" onclick="toggleSidebar()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <!-- Real Marrow Multi-Page Site Navigation & Sections -->
+      <div class="m-sidebar-body">
+        <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:var(--ink-faint); margin:4px 0;">Browse</div>
+        <div class="m-nav-tree-item active">
+          <span>Overview Fabric</span>
+          <span class="font-mono text-[10px]" style="background:var(--bg-raise); padding:1px 5px; border-radius:3px;">12</span>
+        </div>
+        <div class="m-nav-tree-item">
+          <span>Pod 1 Core (Spine/Leaf)</span>
+          <span class="font-mono text-[10px]" style="background:var(--bg-raise); padding:1px 5px; border-radius:3px;">4</span>
+        </div>
+        <div class="m-nav-tree-item">
+          <span>Pod 2 Compute</span>
+          <span class="font-mono text-[10px]" style="background:var(--bg-raise); padding:1px 5px; border-radius:3px;">6</span>
+        </div>
+        <div class="m-nav-tree-item">
+          <span>WAN Edge &amp; Firewalls</span>
+          <span class="font-mono text-[10px]" style="background:var(--bg-raise); padding:1px 5px; border-radius:3px;">2</span>
+        </div>
+        <div class="m-nav-tree-item" style="border-bottom:1px solid var(--line); padding-bottom:10px; margin-bottom:10px;">
+          <span>Inventory Sheet</span>
+          <span class="font-mono text-[10px]">All</span>
+        </div>
+
+        <!-- Real Marrow Legend -->
+        <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:var(--ink-faint); margin:6px 0 2px;">Legend</div>
+        <div style="display:flex; flex-direction:column; gap:6px; font-size:12px; color:var(--ink-dim); padding:4px 0 10px; border-bottom:1px solid var(--line);">
+          <div style="display:flex; align-items:center; gap:8px;"><span style="width:8px; height:8px; border-radius:50%; background:var(--up);"></span> Up</div>
+          <div style="display:flex; align-items:center; gap:8px;"><span style="width:8px; height:8px; border-radius:50%; background:var(--degraded);"></span> Degraded</div>
+          <div style="display:flex; align-items:center; gap:8px;"><span style="width:8px; height:8px; border-radius:50%; background:var(--down);"></span> Down</div>
+          <div style="display:flex; align-items:center; gap:8px;"><span style="width:8px; height:8px; border-radius:50%; background:var(--planned);"></span> Planned</div>
+          <div style="display:flex; align-items:center; gap:8px;"><span style="width:16px; height:2px; background:var(--ink-dim);"></span> Link</div>
+          <div style="display:flex; align-items:center; gap:8px;"><span style="width:16px; height:2px; border-top:2px dashed var(--ink-dim);"></span> Degraded / Planned</div>
+        </div>
+
+        <!-- Real Marrow About Metadata -->
+        <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:var(--ink-faint); margin:6px 0 2px;">About</div>
+        <div style="display:flex; flex-direction:column; gap:4px; font-size:11px; color:var(--ink-dim);">
+          <div style="display:flex; justify-content:space-between;"><span>Layout:</span><span class="font-mono">layered</span></div>
+          <div style="display:flex; justify-content:space-between;"><span>Renderer:</span><span class="font-mono">svg</span></div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Vector Canvas Stage -->
+    <main class="m-stage" id="slot-stage" oncontextmenu="openContextMenu(event)" onclick="handleCanvasClick()">
+      <svg class="m-svg-viewport" id="viewport-svg">
+        <defs>
+          <pattern id="grid-dots" width="30" height="30" patternUnits="userSpaceOnUse">
+            <circle cx="2" cy="2" r="1.2" fill="var(--grid-dot)"/>
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#grid-dots)"/>
+
+        <!-- Safe-Inset Camera Boundary -->
+        <rect id="safe-rect" x="290" y="20" width="560" height="480" fill="none" stroke="var(--slot-border)" stroke-dasharray="6 6" rx="10"/>
+        <text id="safe-text" x="310" y="50" fill="var(--slot-text)" font-family="JetBrains Mono" font-size="11" font-weight="600">
+          UNOBSTRUCTED DRAWING AREA (SAFE INSETS)
+        </text>
+      </svg>
+    </main>
+
+    <!-- Minimap Radar: Elevated 40px, Positioned via calc(14px + var(--inspector-offset)) -->
+    <div class="m-minimap" id="slot-minimap">
+      <div class="m-minimap-head font-mono">slot:minimap-radar</div>
+      <div class="m-minimap-body">
+        <div class="m-slot font-mono">slot:radar-tracker</div>
+      </div>
+    </div>
+
+    <!-- Floating Mobile Re-Center FAB -->
+    <div class="m-mobile-fab" onclick="snapSheet('peek')">
+      <div class="m-slot font-mono" style="border:none; padding:0; font-size:10px;">Fit</div>
+    </div>
+
+    <!-- Right Telemetry Inspector (Real Schema Data) -->
+    <aside class="m-inspector" id="slot-inspector" data-sheet-snap="half">
+      <!-- Mobile Drag Handle -->
+      <div class="m-sheet-drag-handle" onclick="cycleSnapPoint()" title="Click to cycle snap point (peek -> half -> full)"></div>
+
+      <div class="m-inspector-head">
+        <div style="display:flex; flex-direction:column; gap:3px;">
+          <div class="m-slot font-mono">slot:hostname + status-dot (core-sw-01)</div>
+          <div class="m-slot font-mono">slot:role · tier · zone (Core L3 · Pod 1)</div>
+          <div class="m-slot font-mono" style="cursor:pointer" onclick="alert('Copied 10.255.0.1!')">slot:mgmt-ip (10.255.0.1)</div>
+        </div>
+        <button class="m-icon-btn" onclick="toggleInspector()" style="border:none; padding:4px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <!-- Real Schema Inspector Tabs -->
+      <div class="m-inspector-tabs">
+        <button class="m-tab-btn active" onclick="switchInspectorTab('overview', this)">Overview</button>
+        <button class="m-tab-btn" onclick="switchInspectorTab('interfaces', this)">Interfaces (48)</button>
+        <button class="m-tab-btn" onclick="switchInspectorTab('neighbors', this)">Neighbors (3)</button>
+        <button class="m-tab-btn" onclick="switchInspectorTab('metadata', this)">Custom Fields</button>
+        <button class="m-tab-btn" onclick="switchInspectorTab('config', this)">Config</button>
+      </div>
+
+      <div class="m-inspector-body">
+        <!-- Overview Pane -->
+        <div id="insp-pane-overview" style="display:flex; flex-direction:column; gap:10px;">
+          <div class="m-slot font-mono" style="height:70px; width:100%">slot:ha-pair-and-notes (ha_pair_with: core-sw-02)</div>
+          <div class="m-slot font-mono" style="height:90px; width:100%">slot:tier-role-zone (Tier: Core, Zone: Pod1)</div>
+        </div>
+
+        <!-- Interfaces Pane -->
+        <div id="insp-pane-interfaces" style="display:none; flex-direction:column; gap:8px;">
+          <div class="m-slot font-mono" style="height:140px; width:100%">slot:interfaces-table (Port, IP, VLAN, Description)</div>
+        </div>
+
+        <!-- Neighbors Pane -->
+        <div id="insp-pane-neighbors" style="display:none; flex-direction:column; gap:8px;">
+          <div class="m-slot font-mono" style="height:120px; width:100%">slot:connected-links (Device, Port, Speed, Focus)</div>
+        </div>
+
+        <!-- Custom Fields Pane -->
+        <div id="insp-pane-metadata" style="display:none; flex-direction:column; gap:8px;">
+          <div class="m-slot font-mono" style="height:110px; width:100%">slot:custom_fields &amp; sections (YAML Metadata)</div>
+        </div>
+
+        <!-- Config Pane -->
+        <div id="insp-pane-config" style="display:none; flex-direction:column; gap:8px;">
+          <div class="m-slot font-mono" style="height:130px; width:100%">slot:config-snippet (Cisco IOS-XE / Arista EOS)</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Floating Test Controls Badge -->
+    <div class="m-sk-overlay-tools">
+      <span class="font-mono text-[10px]" id="viewport-readout" style="color:var(--ink-dim)">1440 × 900 · DESKTOP</span>
+      <button class="m-icon-btn" onclick="toggleSidebar()">Sidebar (Ctrl+B)</button>
+      <button class="m-icon-btn" onclick="toggleInspector()">Inspector</button>
+      <button class="m-icon-btn" onclick="toggleSingleFileRule()">Toggle --single</button>
+      <button class="m-icon-btn" onclick="cycleViewMode()">View Mode</button>
+      <button class="m-icon-btn" onclick="toggleTheme()">Theme</button>
+    </div>
+
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       3. GROUNDED STATUS BAR (28px Desktop & Tablet)
+       ═══════════════════════════════════════════════════════════════════ -->
+  <footer class="m-status-bar">
+    <div class="m-status-left">
+      <div class="m-slot font-mono">slot:active-node (core-sw-01 · 10.255.0.1)</div>
+      <div class="m-slot font-mono" id="stat-safe-inset">Safe Insets: L:260 R:380 T:48 B:28</div>
+    </div>
+
+    <div class="m-status-center">
+      <div class="m-slot font-mono">slot:camera-controls ([-] 100% [+] [Fit])</div>
+    </div>
+
+    <div class="m-status-right">
+      <div class="m-slot font-mono" onclick="toggleMinimap()" style="cursor:pointer">slot:minimap-toggle</div>
+      <div class="m-slot font-mono" id="view-mode-badge">mode:default</div>
+    </div>
+  </footer>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       4. MOBILE BOTTOM NAVIGATION (< 768px, 56px)
+       ═══════════════════════════════════════════════════════════════════ -->
+  <nav class="m-mobile-nav">
+    <div class="m-slot font-mono" onclick="snapSheet('closed')" style="cursor:pointer">Canvas</div>
+    <div class="m-slot font-mono" onclick="openSpotlight()" style="cursor:pointer">Search</div>
+    <div class="m-slot font-mono" onclick="toggleSidebar()" style="cursor:pointer">Pages</div>
+    <div class="m-slot font-mono" onclick="snapSheet('half')" style="cursor:pointer">Details</div>
+  </nav>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     5. SPOTLIGHT COMMAND CENTER MODAL OVERLAY (Ctrl+K / /)
+     ═══════════════════════════════════════════════════════════════════ -->
+<div class="m-spotlight-backdrop" id="spotlight-modal" onclick="if(event.target===this)closeSpotlight()">
+  <div class="m-spotlight-box">
+    <div class="m-spotlight-head">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="text" class="m-spotlight-input" id="spotlight-input" placeholder="Search devices, IPs, interfaces, VLANs…" autofocus>
+      <kbd>ESC</kbd>
+    </div>
+    <div class="m-spotlight-list">
+      <div class="m-spotlight-item is-selected">
+        <div>
+          <div style="font-weight:600">core-sw-01</div>
+          <div style="font-size:11px; color:var(--ink-dim)">Cisco Catalyst 9500 · 10.255.0.1</div>
+        </div>
+        <kbd>↵ Enter</kbd>
+      </div>
+      <div class="m-spotlight-item">
+        <div>
+          <div style="font-weight:600">spine-01</div>
+          <div style="font-size:11px; color:var(--ink-dim)">Arista 7280R3 · 10.255.0.10</div>
+        </div>
+        <kbd>↵ Enter</kbd>
+      </div>
+      <div class="m-spotlight-item">
+        <div>
+          <div style="font-weight:600">leaf-01</div>
+          <div style="font-size:11px; color:var(--ink-dim)">Arista 7050SX3 · 10.255.1.11</div>
+        </div>
+        <kbd>↵ Enter</kbd>
+      </div>
+    </div>
+    <div class="m-spotlight-foot">
+      <span><kbd>↑</kbd><kbd>↓</kbd> navigate</span>
+      <span><kbd>↵</kbd> select</span>
+      <span><kbd>esc</kbd> close</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     6. RIGHT-CLICK CAD CONTEXT MENU OVERLAY
+     ═══════════════════════════════════════════════════════════════════ -->
+<div class="m-context-menu" id="context-menu">
+  <div class="m-ctx-item" onclick="alert('Action: Inspect Telemetry')">
+    <span>Inspect Details</span>
+    <kbd>Space</kbd>
+  </div>
+  <div class="m-ctx-item" onclick="alert('Action: Focus Camera')">
+    <span>Focus &amp; Center</span>
+    <kbd>F</kbd>
+  </div>
+  <div class="m-ctx-divider"></div>
+  <div class="m-ctx-item" onclick="alert('Action: Trace Adjacent Links')">
+    <span>Trace Adjacent Links</span>
+  </div>
+  <div class="m-ctx-divider"></div>
+  <div class="m-ctx-item" onclick="alert('Action: Copied Management IP')">
+    <span>Copy IP</span>
+    <kbd>Ctrl C</kbd>
+  </div>
+  <div class="m-ctx-item" onclick="alert('Action: Copied SSH Command')">
+    <span>Copy SSH Command</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     7. JAVASCRIPT CONTROLLER
+     ═══════════════════════════════════════════════════════════════════ -->
+<script>
+const shell = document.getElementById('marrow-shell');
+const sidebar = document.getElementById('slot-sidebar');
+const inspector = document.getElementById('slot-inspector');
+const spotlight = document.getElementById('spotlight-modal');
+const contextMenu = document.getElementById('context-menu');
+const minimap = document.getElementById('slot-minimap');
+
+// Safe-Inset Camera Framing Math
+function updateMetrics() {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  const isMobile = w < 768;
+  const isTablet = w >= 768 && w < 1024;
+
+  let mode = isMobile ? 'MOBILE' : (isTablet ? 'TABLET' : 'DESKTOP');
+  document.getElementById('viewport-readout').textContent = `${w} × ${h} · ${mode}`;
+
+  const sidebarOpen = !sidebar.classList.contains('is-collapsed');
+  const inspectorOpen = !inspector.classList.contains('is-collapsed');
+
+  // Update CSS custom property --inspector-offset
+  if (!isMobile && inspectorOpen) {
+    shell.style.setProperty('--inspector-offset', '380px');
+  } else {
+    shell.style.setProperty('--inspector-offset', '0px');
+  }
+
+  // Calculate Insets
+  const insetTop = isMobile ? 44 : 48;
+  let insetBottom = isMobile ? 56 : 28;
+  if (isMobile) {
+    const snap = inspector.getAttribute('data-sheet-snap');
+    if (snap === 'peek') insetBottom = 84 + 56;
+    else if (snap === 'half') insetBottom = h * 0.52;
+    else if (snap === 'full') insetBottom = h * 0.92;
+  }
+
+  const insetLeft = (!isMobile && sidebarOpen) ? 260 : 20;
+  const insetRight = (!isMobile && inspectorOpen) ? 380 : 20;
+
+  document.getElementById('stat-safe-inset').textContent = 
+    `Safe Insets: L:${insetLeft} R:${insetRight} T:${insetTop} B:${Math.round(insetBottom)}`;
+
+  const safeW = Math.max(80, w - insetLeft - insetRight - 20);
+  const safeH = Math.max(80, h - insetTop - insetBottom - 20);
+
+  const rect = document.getElementById('safe-rect');
+  rect.setAttribute('x', insetLeft + 10);
+  rect.setAttribute('y', insetTop + 10);
+  rect.setAttribute('width', safeW);
+  rect.setAttribute('height', safeH);
+
+  const text = document.getElementById('safe-text');
+  text.setAttribute('x', insetLeft + 30);
+  text.setAttribute('y', insetTop + 40);
+}
+
+// Mobile 3-Snap-Point Bottom Sheet
+function snapSheet(point) {
+  inspector.setAttribute('data-sheet-snap', point);
+  updateMetrics();
+}
+
+function cycleSnapPoint() {
+  const cur = inspector.getAttribute('data-sheet-snap') || 'half';
+  if (cur === 'peek') snapSheet('half');
+  else if (cur === 'half') snapSheet('full');
+  else snapSheet('peek');
+}
+
+function handleCanvasClick() {
+  if (window.innerWidth < 768) {
+    const cur = inspector.getAttribute('data-sheet-snap');
+    if (cur === 'full') snapSheet('half');
+    else if (cur === 'half') snapSheet('peek');
+  }
+}
+
+// Inspector Tabs Switcher (Real Schema Data)
+function switchInspectorTab(tabName, btn) {
+  document.querySelectorAll('.m-tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  ['overview', 'interfaces', 'neighbors', 'metadata', 'config'].forEach(t => {
+    const el = document.getElementById(`insp-pane-${t}`);
+    if (el) el.style.display = (t === tabName) ? 'flex' : 'none';
+  });
+  if (window.innerWidth < 768 && (tabName === 'interfaces' || tabName === 'config')) {
+    snapSheet('full'); // Dense tables auto-expand sheet to full height
+  }
+}
+
+// Single-File Rule (--single)
+function toggleSingleFileRule() {
+  const isSingle = shell.getAttribute('data-single-file') === 'true';
+  shell.setAttribute('data-single-file', isSingle ? 'false' : 'true');
+  if (!isSingle) {
+    sidebar.classList.add('is-collapsed');
+    alert('Single-File Mode (--single): Sidebar collapsed by default for 100% canvas width!');
+  } else {
+    sidebar.classList.remove('is-collapsed');
+    alert('Multi-Page Site Mode: Site Navigation tree active.');
+  }
+  updateMetrics();
+}
+
+// Embed & Export View Modes
+function cycleViewMode() {
+  const cur = shell.getAttribute('data-view-mode') || 'default';
+  let next = (cur === 'default') ? 'embed' : (cur === 'embed' ? 'export' : 'default');
+  shell.setAttribute('data-view-mode', next);
+  document.getElementById('view-mode-badge').textContent = `mode:${next}`;
+  alert(`Switched View Mode to: ${next.toUpperCase()}`);
+  updateMetrics();
+}
+
+function toggleSidebar() {
+  sidebar.classList.toggle('is-collapsed');
+  updateMetrics();
+}
+
+function toggleInspector() {
+  if (window.innerWidth < 768) {
+    const cur = inspector.getAttribute('data-sheet-snap');
+    snapSheet(cur === 'closed' ? 'half' : 'closed');
+  } else {
+    inspector.classList.toggle('is-collapsed');
+    updateMetrics();
+  }
+}
+
+function openSpotlight() {
+  spotlight.classList.add('is-open');
+  document.getElementById('spotlight-input').focus();
+}
+function closeSpotlight() {
+  spotlight.classList.remove('is-open');
+}
+
+function openContextMenu(e) {
+  e.preventDefault();
+  contextMenu.style.left = `${Math.min(window.innerWidth - 200, e.clientX)}px`;
+  contextMenu.style.top = `${Math.min(window.innerHeight - 220, e.clientY)}px`;
+  contextMenu.classList.add('is-open');
+}
+window.addEventListener('click', () => contextMenu.classList.remove('is-open'));
+
+window.addEventListener('keydown', (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
+    e.preventDefault();
+    toggleSidebar();
+  }
+  if (((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') || (e.key === '/' && document.activeElement.tagName !== 'INPUT')) {
+    e.preventDefault();
+    openSpotlight();
+  }
+  if (e.key === 'Escape') {
+    closeSpotlight();
+    contextMenu.classList.remove('is-open');
+  }
+});
+
+function toggleMinimap() {
+  minimap.style.display = minimap.style.display === 'none' ? 'flex' : 'none';
+}
+
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute('data-theme');
+  document.documentElement.setAttribute('data-theme', cur === 'dark' ? 'light' : 'dark');
+}
+
+window.addEventListener('resize', updateMetrics);
+updateMetrics();
+</script>
+
+</body>
+</html>
