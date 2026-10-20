@@ -12,9 +12,20 @@ import {
   THEMES,
   TIERS,
   TUNNEL_ENCAPS,
+  WATERMARK_MODES,
+  WATERMARK_CASINGS,
+  WATERMARK_FONTS,
 } from '@marrow/model';
 
 const asEnum = <T extends string>(values: readonly T[]) => z.enum(values as unknown as [T, ...T[]]);
+
+export const watermarkSchema = z.strictObject({
+  enabled: z.boolean().default(true),
+  mode: asEnum(WATERMARK_MODES).default('full'),
+  opacity: z.number().min(0.01).max(0.5).optional(),
+  casing: asEnum(WATERMARK_CASINGS).default('uppercase'),
+  font: asEnum(WATERMARK_FONTS).default('sans'),
+});
 
 export const endpointObjectSchema = z.strictObject({
   device: z.string(),
@@ -118,6 +129,7 @@ export const topologySchema = z.strictObject({
   revision: z.string().optional(),
   date: z.string().optional(),
   about: z.unknown().optional(),
+  watermark: watermarkSchema.optional(),
   title_block: titleBlockSchema.optional(),
   inspector: inspectorSchema.optional(),
   theme: asEnum(THEMES).default('dark'),

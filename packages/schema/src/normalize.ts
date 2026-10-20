@@ -91,6 +91,7 @@ export function rawToTopology(raw: RawTopology): Topology {
   if (raw.revision !== undefined) topology.revision = raw.revision;
   if (raw.date !== undefined) topology.date = raw.date;
   if (raw.about !== undefined) topology.about = raw.about;
+  if (raw.watermark !== undefined) topology.watermark = raw.watermark;
   if (raw.inspector !== undefined) topology.inspector = raw.inspector;
   if (raw.title_block !== undefined) {
     topology.titleBlock = {

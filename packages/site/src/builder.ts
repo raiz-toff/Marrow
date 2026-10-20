@@ -207,6 +207,7 @@ export function createSiteBuilder(
       theme: topology.theme,
       stage: svg,
       ...(topology.description !== undefined ? { subtitle: topology.description } : {}),
+      ...(topology.watermark !== undefined ? { watermark: topology.watermark } : {}),
       ...(options.brand !== undefined ? { brand: options.brand } : {}),
       ...(options.themeConfig !== undefined ? { themeConfig: options.themeConfig } : {}),
       ...(options.chrome !== undefined ? { chrome: options.chrome } : {}),

@@ -79,12 +79,32 @@ describe('renderShell layout and controls', () => {
     expect(html).toContain('<div class="m-minimap" hidden></div>');
   });
 
-  test('renders about diagram document dialog with Marrow watermark and attribution credit', () => {
+  test('renders about diagram document dialog with Marrow watermark and clickable attribution credit', () => {
     const html = renderShell(baseOptions);
     expect(html).toContain('class="m-about-dialog"');
     expect(html).toContain('class="m-about-watermark"');
     expect(html).toContain('MARROW');
     expect(html).toContain('class="m-about-credit"');
+    expect(html).toContain('class="m-about-credit-link"');
+    expect(html).toContain('href="https://marrowdiagram.vercel.app"');
+    expect(html).toContain('class="m-about-credit-gh"');
+    expect(html).toContain('href="https://github.com/raiz-toff/Marrow"');
     expect(html).toContain('Engineered with <strong>Marrow</strong>');
+  });
+
+  test('watermark respects modular modes (minimal, blueprint, off)', () => {
+    const minHtml = renderShell({
+      ...baseOptions,
+      watermark: { mode: 'minimal', font: 'mono' },
+    });
+    expect(minHtml).toContain('data-mode="minimal"');
+    expect(minHtml).toContain('fig. 01 — Test Topology');
+
+    const offHtml = renderShell({
+      ...baseOptions,
+      watermark: { mode: 'off' },
+    });
+    expect(offHtml).toContain('data-watermark="off"');
+    expect(offHtml).not.toContain('<div class="m-watermark"');
   });
 });

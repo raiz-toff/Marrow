@@ -1,0 +1,11 @@
+{
+  "title": "Reference",
+  "icon": "FileCode",
+  "pages": [
+    "schema",
+    "config",
+    "cli",
+    "diagnostics",
+    "icon-packs"
+  ]
+}

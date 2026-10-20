@@ -1,0 +1,93 @@
+---
+title: Diagnostic codes
+description: The stable MRW code registry — every error and warning, what causes it, and how to fix it.
+---
+
+Diagnostic codes are **part of the public contract**. Agents and tests key off
+them, so codes are never renumbered and never reused. `MRW-E***` is an error;
+`MRW-W1**` is a warning.
+
+Errors block the build. Warnings are advisory — usually worth fixing, never
+blocking.
+
+## Anatomy of a diagnostic
+
+```
+input/branch.yaml:14:11  error  MRW-E010  Unknown icon
+     │            │  │     │       │         │
+     file         │  col   │       code      title
+                  line     severity
+
+  13 │     name: Edge Router
+  14 │     icon: affinity/tile/rooter
+     │           ^^^^^^^^^^^^^^^^^^^^          ← snippet with the exact span
+  15 │     tier: edge
+
+  hint: search for a real id — marrow icons search rooter
+  did you mean: affinity/tile/router · affinity/symbol/router · cisco/routers/router
+```
+
+Every diagnostic carries a code, a YAML path, a line and column, a source
+snippet, a fix hint, and — where it makes sense — ranked did-you-mean
+suggestions. `--json` gives you all of that as structured data.
+
+<Callout type="info">
+Use the suggestions. They're ranked by edit distance against the real
+catalog, so the first one is right far more often than a guess is.
+</Callout>
+
+## Errors
+
+| Code | Title | Usual cause and fix |
+| --- | --- | --- |
+| `MRW-E001` | YAML syntax error | Malformed YAML — indentation, an unclosed quote, a stray tab. Fix at the reported line |
+| `MRW-E002` | Document root must be a mapping | The file starts with a list or a scalar. The top level is a mapping with `marrow:`, `name:`, `devices:` |
+| `MRW-E003` | Missing marrow version | Add `marrow: 2` as the first key |
+| `MRW-E004` | Unsupported marrow version | Only the integer `2` is supported. `marrow: "2"` (a string) also trips this |
+| `MRW-E005` | Unknown key | A typo (`teir:` for `tier:`) or a v1 key with no v2 equivalent. Prefix with `x-` to keep it private |
+| `MRW-E006` | Invalid type | A string where a list belongs, a list where a mapping belongs |
+| `MRW-E007` | Missing required field | A device without `id` or `icon`; a link without `from` or `to`; a zone without `id` |
+| `MRW-E008` | Duplicate identifier | Two devices (or two zones) sharing an `id` |
+| `MRW-E009` | Unknown device reference | A link endpoint, `hero`, or `ha_pair_with` naming a device that doesn't exist |
+| `MRW-E010` | Unknown icon | The icon id isn't in the catalog — **or the pack isn't installed**. Suggestions are ranked; `marrow icons fetch <pack>` if it's aws/azure/gcp |
+| `MRW-E011` | Invalid value | Outside the allowed set — a `tier` that isn't one of the six, a `speed` that isn't on the list, a `vlan` outside 1–4094 |
+| `MRW-E012` | Invalid identifier | An id that isn't kebab-case `[a-z0-9._-]` starting with a letter or digit |
+| `MRW-E013` | Unknown zone reference | A device's `zone`, or a zone's `parent`, naming a zone that isn't declared |
+| `MRW-E014` | Invalid link endpoint | A malformed `from`/`to`. Format is `device-id` or `device-id:Port`; only the first colon splits |
+| `MRW-E015` | Unknown reference | A reference of another kind that can't be resolved |
+| `MRW-E016` | Zone hierarchy cycle | Zone `parent` links form a loop — A parents B parents A |
+| `MRW-E017` | Internal validator error | A bug. Please [file an issue](https://github.com/raiz-toff/Marrow/issues) with the file that triggered it |
+
+## Warnings
+
+| Code | Title | What it means |
+| --- | --- | --- |
+| `MRW-W101` | Port used by multiple links | The same `device:Port` appears on more than one link. Usually copy-paste; occasionally a genuine shared physical port |
+| `MRW-W102` | Empty zone | A declared zone with no devices. It renders as an empty panel — populate it or delete it |
+| `MRW-W103` | Isolated device | A device with no links. Fine for a standalone appliance; usually a missing link or a typo'd endpoint |
+| `MRW-W104` | Self-link | A link whose `from` and `to` are the same device |
+| `MRW-W105` | Link semantics mismatch | A logical attribute contradicts the link's `mode` — e.g. `encap` on a non-`tunnel` link, `protocol` on a `trunk`, `native_vlan` on an `access` port, or `lacp` without a `lag`. The link still renders; align the attributes with the mode |
+
+## Machine-readable output
+
+```bash
+npm run marrow -- validate input/branch.yaml --json
+```
+
+Returns a report with per-file diagnostics: code, severity, message, YAML path,
+line, column, snippet, hint, and suggestions. This is the interface for agents
+and CI. Exit code is still `1` when there are errors, so it gates a pipeline
+without parsing anything.
+
+## Geometry defects are different
+
+The `MRW` registry covers the **schema**. Layout problems are caught later by
+the geometry linter, which has its own levels:
+
+| Level | Behavior |
+| --- | --- |
+| **L1** | Fails the build — node overlap, edges through node interiors, endpoints not touching their node, port-chip overlap |
+| **L2** | Auto-repaired |
+| **L3** | Advisory — excessive crossings, extreme aspect ratio |
+
+See [How layout is chosen](/docs/guides/layout#the-geometry-linter).

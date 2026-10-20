@@ -1,0 +1,105 @@
+---
+title: Icon packs
+description: What ships in the repo, what you fetch, what you provide — with the licensing reasoning behind each.
+---
+
+Roughly 2,850 icons across seven packs. They fall into two groups by how you
+get them, and the split is entirely about redistribution rights.
+
+## Committed — redistributed with the repo
+
+| Pack | Icons | Source | License |
+| --- | --- | --- | --- |
+| `cisco` | 973 | [jgraph/drawio](https://github.com/jgraph/drawio) stencils | Apache-2.0 — attribution: JGraph Ltd — [plus one clause](#the-cisco-pack-is-not-mit) |
+| `affinity` | 107 | [ecceman/affinity](https://github.com/ecceman/affinity) | MIT — attribution: ecceman |
+| `k8s` | 33 | [kubernetes/community](https://github.com/kubernetes/community/tree/master/icons) | CC-BY-4.0 — attribution: The Kubernetes Authors |
+| `generic` | 5 | Original Marrow assets | MIT |
+
+These work on a fresh clone with no fetch. `affinity` splits into two styles:
+`affinity/symbol/*` (plain line symbols) and `affinity/tile/*` (blue tiles).
+Pick one per diagram.
+
+### The `cisco` pack is not Cisco's artwork
+
+It is jgraph's own vector re-creation of Cisco-style topology shapes, shipped
+with draw.io under Apache-2.0. Copyright protects a specific piece of artwork,
+not the idea that a router is drawn as a cylinder with four arrows — so
+redrawing the shape produces a new work, which jgraph licenses freely. That is
+why Marrow can ship 973 Cisco-style icons that Cisco itself does not license
+for redistribution.
+
+The pack is named `cisco` because that is the visual language network engineers
+already read. It does not imply endorsement, and Apache-2.0 §6 grants no
+trademark rights.
+
+### The `cisco` pack is not MIT
+
+<Callout type="warn">
+`stencils/LICENSE` in the drawio repo adds one condition on top of Apache-2.0,
+and it travels with any derivative — explicitly including *"conversions to
+other formats"*, which is what an SVG export of a stencil is. The artwork **may
+not be used as a software asset in, distributed for use with, or incorporated
+into Atlassian products** or anything shipped through the Atlassian marketplace
+or plugin ecosystem, without written permission from JGraph.
+
+So: if you are building a Confluence or Jira plugin, do not use this pack. For
+every other use — including commercial products and the diagrams you export —
+it is free. The rest of Marrow remains MIT; `icon-packs/cisco/` is the one
+directory that isn't.
+</Callout>
+
+## Fetched — downloaded from the vendor
+
+| Pack | Icons | Install | Terms |
+| --- | --- | --- | --- |
+| `aws` | ~790 | `marrow icons fetch aws` | [AWS Site Terms](https://aws.amazon.com/architecture/icons/) |
+| `azure` | ~710 | `marrow icons fetch azure` | [Microsoft terms](https://learn.microsoft.com/en-us/azure/architecture/icons/) |
+| `gcp` | ~235 | `marrow icons fetch gcp` | [Google terms](https://cloud.google.com/icons) |
+
+```bash
+npm run marrow -- icons fetch              # all three, with a consent prompt
+npm run marrow -- icons fetch aws --yes    # one, non-interactive
+```
+
+Each vendor grants use of their icons **in architecture diagrams** — which is
+what Marrow's built HTML embeds — but not redistribution of the icon library
+itself. So the SVGs are gitignored and each user obtains them directly from the
+vendor's own servers. Vendor URLs live in `icon-sources.json`; the AWS and
+Azure links rotate, so `fetch` discovers the current package by reading the
+vendor's official page.
+
+GCP's current-style icons live under `gcp/current/…`.
+
+## What this means for you
+
+<Callout type="info">
+**Diagrams you build are fine to share.** Embedding the icons you used in an
+architecture diagram is precisely the use every one of these licenses grants.
+What the cloud vendors don't grant is redistributing their *libraries* — which
+is why those three are fetched rather than committed.
+</Callout>
+
+Only the icons a topology actually references are inlined into its output. A
+diagram with 12 distinct icons carries 12 sprite definitions, not 2,850.
+
+## Not available
+
+- **Juniper**, **Fortinet** — publish stencils only in Visio format (`.vss`/`.vssx`). Convert via draw.io: import the stencil, export SVG, drop the results into your own pack. Note that converting a *vendor's* stencil gives you the vendor's artwork in a new format — unlike the `cisco` pack, which is jgraph's own redrawn shapes. Check the vendor's terms before redistributing the result.
+- **Palo Alto** — no public icon library.
+
+## Manifest format
+
+Every directory under `icon-packs/` containing a `manifest.json` is discovered
+automatically. The manifest lists ids, keywords, and file paths; keywords come
+from the SVG filenames, which is why descriptive names matter.
+
+Regenerate after adding files:
+
+```bash
+npm run gen:icons
+```
+
+Full walkthrough: [Adding an icon pack](/docs/contributing/adding-an-icon-pack).
+
+Attribution details are in
+[`icon-packs/LICENSES.md`](https://github.com/raiz-toff/Marrow/blob/main/icon-packs/LICENSES.md).

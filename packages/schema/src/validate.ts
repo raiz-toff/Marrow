@@ -98,7 +98,7 @@ function validateSourceInner(source: string, options: ValidateOptions): Validati
 
   let data: unknown;
   try {
-    data = doc.toJS();
+    data = doc.toJS({ maxAliasCount: 100 });
   } catch (err) {
     // e.g. the yaml library's alias-expansion guard on billion-laughs documents
     emit('MRW-E001', {

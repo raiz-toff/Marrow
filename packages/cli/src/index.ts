@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import { parseArgs } from 'node:util';
 import { formatPretty, toJsonReport, type JsonReport } from '@marrow/diagnostics';
+import { layoutTopology } from '@marrow/layout';
+import { renderStandaloneSvg } from '@marrow/render-svg';
 import { topologyJsonSchema, validateSource } from '@marrow/schema';
 import { buildSingleFile, buildSite, planSite, type Brand, type ThemeConfig } from '@marrow/site';
 import { loadConfig, type LayoutConfig } from './config.js';
@@ -14,7 +15,9 @@ const USAGE = `marrow — agent-driven network topology studio (v2)
 
 usage:
   marrow validate <file...> [--json] [--no-icons] [--packs <dir>]
-  marrow build <file> [-o <out.html>] [--packs <dir>]
+  marrow build <file> [-o <out.html>] [--single] [--static-svg] [--packs <dir>]
+  marrow export <file> [--format svg] [-o <out.svg>] [--theme <dark|light>] [--transparent] [--packs <dir>]
+  marrow add <component...> [--out <dir>]
   marrow serve [file-or-dir] [--port <n>] [--packs <dir>]      (defaults to ./input)
   marrow import <v1-file> [-o <out.yaml>] [--packs <dir>]
   marrow snapshot <file> [-o <out.png>] [--focus <device-id>] [--theme <dark|light>] [--json] [--packs <dir>]
@@ -50,6 +53,10 @@ function main(argv: string[]): number | Promise<number> {
       return cmdImport(rest);
     case 'snapshot':
       return cmdSnapshot(rest);
+    case 'export':
+      return cmdExport(rest);
+    case 'add':
+      return cmdAdd(rest);
     case 'icons':
       return cmdIcons(rest);
     case 'schema':
@@ -153,13 +160,14 @@ async function cmdBuild(rest: string[]): Promise<number> {
         config: { type: 'string' },
         embed: { type: 'boolean', default: false },
         chrome: { type: 'string' },
+        'static-svg': { type: 'boolean', default: false },
       },
       allowPositionals: true,
     }),
   );
   if (!parsed.ok) {
     console.error(
-      `${parsed.message}\n\nusage: marrow build <file> [-o <out>] [--single] [--embed] [--chrome minimal|full] [--packs <dir>] [--config <file.yaml>]`,
+      `${parsed.message}\n\nusage: marrow build <file> [-o <out>] [--single] [--static-svg] [--embed] [--chrome minimal|full] [--packs <dir>] [--config <file.yaml>]`,
     );
     return 2;
   }
@@ -204,6 +212,19 @@ async function cmdBuild(rest: string[]): Promise<number> {
   if (config.layout?.scale !== undefined && result.topology.scale === undefined) {
     result.topology.scale = config.layout.scale;
   }
+
+  if (values['static-svg']) {
+    const outPath = values.out ?? join('output', `${baseName}.svg`);
+    const scene = await layoutTopology(result.topology);
+    const theme = result.topology.theme === 'light' ? 'light' : 'dark';
+    const svg = renderStandaloneSvg(scene, { icons: iconSource(packs.catalog), theme });
+    mkdirSync(dirname(outPath), { recursive: true });
+    writeFileSync(outPath, svg);
+    const kb = Math.round(Buffer.byteLength(svg) / 1024);
+    console.log(`exported static svg ${outPath} — ${scene.nodes.length} nodes, ${scene.edges.length} edges, ${kb} KB`);
+    return 0;
+  }
+
   const plan = planSite(result.topology);
   const buildOpts: import('@marrow/site').BuildOptions = {
     icons: packs.catalog,
@@ -247,12 +268,155 @@ async function cmdBuild(rest: string[]): Promise<number> {
   }
 }
 
+async function cmdExport(rest: string[]): Promise<number> {
+  const parsed = safeParseArgs(() =>
+    parseArgs({
+      args: rest,
+      options: {
+        out: { type: 'string', short: 'o' },
+        format: { type: 'string', default: 'svg' },
+        theme: { type: 'string' },
+        transparent: { type: 'boolean', default: false },
+        packs: { type: 'string' },
+        config: { type: 'string' },
+      },
+      allowPositionals: true,
+    }),
+  );
+  if (!parsed.ok) {
+    console.error(
+      `${parsed.message}\n\nusage: marrow export <file> [--format svg] [-o <out.svg>] [--theme dark|light] [--transparent] [--packs <dir>]`,
+    );
+    return 2;
+  }
+  const { values, positionals } = parsed.args;
+  const file = positionals[0];
+  if (!file || positionals.length > 1) {
+    console.error('usage: marrow export <file> [--format svg] [-o <out.svg>]');
+    return 2;
+  }
+  if (values.format !== 'svg') {
+    console.error(`unsupported export format "${values.format}" — currently supported: svg`);
+    return 2;
+  }
+  let source: string;
+  try {
+    source = readFileSync(file, 'utf8');
+  } catch (err) {
+    console.error(`cannot read ${file}: ${(err as Error).message}`);
+    return 2;
+  }
+  const packs = loadIconCatalog(values.packs);
+  if (packs.error) {
+    console.error(packs.error);
+    return 2;
+  }
+  const result = validateSource(source, { icons: packs.catalog });
+  if (!result.topology) {
+    console.error(formatPretty(result.diagnostics, { color: process.stderr.isTTY ?? false, filename: file }));
+    return 1;
+  }
+  const baseName = basename(file).replace(/\.ya?ml$/i, '');
+  const outPath = values.out ?? join('output', `${baseName}.svg`);
+  const scene = await layoutTopology(result.topology);
+  const theme =
+    values.theme === 'light' || values.theme === 'dark'
+      ? values.theme
+      : result.topology.theme === 'light'
+      ? 'light'
+      : 'dark';
+  const svg = renderStandaloneSvg(scene, {
+    icons: iconSource(packs.catalog),
+    theme,
+    transparent: values.transparent,
+  });
+  if (outPath === '-') {
+    process.stdout.write(svg);
+    return 0;
+  }
+  mkdirSync(dirname(outPath), { recursive: true });
+  writeFileSync(outPath, svg);
+  const kb = Math.round(Buffer.byteLength(svg) / 1024);
+  console.log(`exported ${outPath} — ${scene.nodes.length} nodes, ${scene.edges.length} edges, ${kb} KB`);
+  return 0;
+}
+
+function iconSource(icons: import('@marrow/icons').IconCatalog): import('@marrow/render-svg').IconSource {
+  return {
+    svg: (id: string) => {
+      const entry = icons.get(id);
+      if (!entry) return undefined;
+      try {
+        return readFileSync(join(entry.packDir, entry.file), 'utf8');
+      } catch {
+        return undefined;
+      }
+    },
+  };
+}
+
+function cmdAdd(rest: string[]): number {
+  const parsed = safeParseArgs(() =>
+    parseArgs({
+      args: rest,
+      options: {
+        out: { type: 'string', short: 'o' },
+      },
+      allowPositionals: true,
+    }),
+  );
+  if (!parsed.ok) {
+    console.error(`${parsed.message}\n\nusage: marrow add <component...> [--out <dir>]`);
+    return 2;
+  }
+  const { values, positionals: components } = parsed.args;
+  if (components.length === 0) {
+    console.error('usage: marrow add <component...> [--out <dir>]');
+    return 2;
+  }
+
+  const outDir = values.out ?? join('src', 'components', 'marrow');
+  const registryJsonPath = join('docs', 'public', 'r', 'registry.json');
+  if (!existsSync(registryJsonPath)) {
+    console.error('error: registry catalog not found at docs/public/r/registry.json — run npm run registry:build first');
+    return 2;
+  }
+
+  let catalog: { items: Array<{ name: string; files: Array<{ path: string; content: string; target?: string }> }> };
+  try {
+    catalog = JSON.parse(readFileSync(registryJsonPath, 'utf8'));
+  } catch (err) {
+    console.error(`error reading registry catalog: ${(err as Error).message}`);
+    return 2;
+  }
+
+  const itemMap = new Map(catalog.items.map((it) => [it.name, it]));
+
+  for (const name of components) {
+    const item = itemMap.get(name);
+    if (!item) {
+      console.error(
+        `error: unknown component "${name}". Available components:\n  ${catalog.items.map((i) => i.name).join(', ')}`,
+      );
+      return 1;
+    }
+    for (const file of item.files) {
+      const fileName = basename(file.path);
+      const targetPath = join(outDir, fileName);
+      mkdirSync(dirname(targetPath), { recursive: true });
+      writeFileSync(targetPath, file.content);
+      console.log(`✔ added ${name} to ${targetPath}`);
+    }
+  }
+  return 0;
+}
+
 async function cmdServe(rest: string[]): Promise<number> {
   const parsed = safeParseArgs(() =>
     parseArgs({
       args: rest,
       options: {
-        port: { type: 'string', default: '5200' },
+        port: { type: 'string' },
         host: { type: 'string', default: '127.0.0.1' },
         packs: { type: 'string' },
         config: { type: 'string' },
@@ -288,6 +452,7 @@ async function cmdServe(rest: string[]): Promise<number> {
       configLoader: () => globalConfig(configFile),
       ...globalConfig(configFile),
       port: Number(values.port) || 5200,
+      portExplicit: values.port !== undefined,
       host: values.host ?? '127.0.0.1',
     });
     const modeNote = running.mode() === 'site' ? 'multi-page site — zone/device pages + inventory served live' : 'single page';
@@ -418,22 +583,39 @@ async function cmdSnapshot(rest: string[]): Promise<number> {
       ...(config.brand ? { brand: config.brand } : {}),
       ...(config.themeConfig ? { themeConfig: config.themeConfig } : {}),
     });
-    const tmpHtml = join(tmpdir(), `marrow-snapshot-${process.pid}.html`);
-    writeFileSync(tmpHtml, built.html);
     const outPath = values.out ?? join('output', basename(file).replace(/\.ya?ml$/i, '') + '.png');
     mkdirSync(dirname(outPath), { recursive: true });
 
-    const browser = await chromium.launch();
+    let browser;
+    try {
+      browser = await chromium.launch();
+    } catch (launchErr) {
+      // Fallback: try system Chrome if Playwright's bundled Chromium is not installed
+      try {
+        browser = await chromium.launch({ channel: 'chrome' });
+      } catch {
+        console.error(
+          `snapshot needs Chromium: ${(launchErr as Error).message}\n` +
+            `Run 'npx playwright install chromium' or ensure Google Chrome is installed.`,
+        );
+        return 2;
+      }
+    }
+
     const page = await browser.newPage({
       viewport: { width: Number(values.width) || 1440, height: Number(values.height) || 900 },
       reducedMotion: 'reduce',
     });
     const hash = values.focus ? `#d=${encodeURIComponent(values.focus)}` : '';
-    await page.goto(`file://${tmpHtml}${hash}`);
-    await page.waitForTimeout(values.focus ? 1100 : 450);
+    const dataUri = `data:text/html;charset=utf-8;base64,${Buffer.from(built.html).toString('base64')}`;
+    await page.goto(`${dataUri}${hash}`);
+    try {
+      await page.waitForFunction('window.__MARROW_READY__ === true', { timeout: 15000 });
+    } catch {
+      await page.waitForTimeout(values.focus ? 1100 : 450);
+    }
     await page.screenshot({ path: outPath });
     await browser.close();
-    rmSync(tmpHtml, { force: true });
 
     const summary = {
       file,

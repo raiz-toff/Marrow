@@ -1,0 +1,19 @@
+---
+title: Introduction
+description: Marrow compiles declarative network topology YAML into interactive, offline, self-contained HTML network diagrams.
+---
+
+Welcome to the **Marrow** documentation.
+
+Marrow compiles plain YAML network definitions into single-file, interactive HTML diagrams and standalone vector SVGs. You declare what each device *is* (`tier`, `zone`, `ha_pair_with`), and the deterministic layout compiler computes coordinates, alignment, and routing automatically.
+
+<Callout type="info">
+Looking to install pre-built React components for your network documentation? Visit the [Component Registry](/docs/components).
+</Callout>
+
+## Key Capabilities
+
+- **Declarative Structure**: No manual coordinate positioning or dragging boxes. Declare device roles, tiers, and zones; the engine builds the diagram.
+- **100% Offline Portability**: Zero external runtime asset fetches. Standalone HTML files render completely offline from local disk, wikis, or USB sticks.
+- **Headless Static SVG Export**: Generate self-contained vector SVGs directly from the CLI without launching a headless browser.
+- **shadcn Component Registry**: Distribute hardware switch faceplates, CLI consoles, cable strips, and addressing tables directly into any React / Next.js project.

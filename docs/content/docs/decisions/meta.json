@@ -1,0 +1,30 @@
+{
+  "title": "Architecture & ADRs",
+  "description": "Design decisions & invariants",
+  "icon": "Scale",
+  "root": true,
+  "pages": [
+    "---Overview---",
+    "overview",
+    "---v2 Decisions---",
+    "0009-link-semantics-and-visual-language",
+    "0010-importers-may-infer",
+    "0011-discovered-and-overlay-files",
+    "0012-agent-optional-import-path",
+    "0013-design-token-contract-and-theme-overrides",
+    "0014-density-presets-and-layout-metrics",
+    "0015-modular-ui-chrome-and-embed-modes",
+    "0016-extensible-metadata-and-inspector-tabs",
+    "0017-configurable-blueprint-export-chrome",
+    "0018-diagram-level-documentation-and-watermarked-attribution",
+    "---v1 Foundation---",
+    "0001-declare-structure-not-layout",
+    "0002-agent-driven-no-gui",
+    "0003-branding-is-global-only",
+    "0004-self-contained-output",
+    "0005-vendor-icon-packs-are-fetched",
+    "0006-strict-schema-with-escape-hatch",
+    "0007-determinism-and-the-geometry-gate",
+    "0008-page-split-thresholds"
+  ]
+}

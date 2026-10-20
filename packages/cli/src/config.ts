@@ -19,7 +19,16 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, isAbsolute, resolve } from 'node:path';
 import { parse } from 'yaml';
-import type { Density } from '@marrow/model';
+import {
+  type Density,
+  type WatermarkConfig,
+  type WatermarkMode,
+  type WatermarkCasing,
+  type WatermarkFont,
+  WATERMARK_MODES,
+  WATERMARK_CASINGS,
+  WATERMARK_FONTS,
+} from '@marrow/model';
 import {
   hasBrand,
   isSafeLink,
@@ -42,12 +51,13 @@ export interface LoadedConfig {
   brand?: Brand;
   theme?: ThemeConfig;
   layout?: LayoutConfig;
+  watermark?: WatermarkConfig;
   /** Non-fatal issues, already human-readable. */
   problems: string[];
 }
 
 const BRAND_KEYS = ['name', 'note', 'logo', 'link', 'github'] as const;
-const ROOT_KEYS = ['brand', 'theme', 'layout'] as const;
+const ROOT_KEYS = ['brand', 'theme', 'layout', 'watermark'] as const;
 const THEME_KEYS = ['dark', 'light', 'links'] as const;
 const LAYOUT_KEYS = ['density', 'scale'] as const;
 
@@ -313,10 +323,17 @@ export function parseConfig(source: string, configDir: string): LoadedConfig {
       const note = str(b['note']);
       if (note !== undefined) parsedBrand.note = note;
 
-      const logoPath = str(b['logo']);
-      if (logoPath !== undefined) {
-        const logo = inlineLogo(logoPath, configDir, problems);
+      const rawLogo = b['logo'];
+      if (typeof rawLogo === 'string') {
+        const logo = inlineLogo(rawLogo, configDir, problems);
         if (logo !== undefined) parsedBrand.logo = logo;
+      } else if (typeof rawLogo === 'object' && rawLogo !== null) {
+        const logoMap = rawLogo as Record<string, unknown>;
+        const src = str(logoMap['src'] ?? logoMap['dark']);
+        if (src !== undefined) {
+          const logo = inlineLogo(src, configDir, problems);
+          if (logo !== undefined) parsedBrand.logo = logo;
+        }
       }
 
       for (const key of ['link', 'github'] as const) {
@@ -333,13 +350,44 @@ export function parseConfig(source: string, configDir: string): LoadedConfig {
 
   const theme = parseTheme(root['theme'], problems);
   const layout = parseLayout(root['layout'], problems);
+  const watermark = parseWatermark(root['watermark'], problems);
 
   return {
     ...(brand ? { brand } : {}),
     ...(theme ? { theme } : {}),
     ...(layout ? { layout } : {}),
+    ...(watermark ? { watermark } : {}),
     problems,
   };
+}
+
+function parseWatermark(raw: unknown, problems: string[]): WatermarkConfig | undefined {
+  if (raw === undefined || raw === null) return undefined;
+  if (typeof raw !== 'object' || Array.isArray(raw)) {
+    problems.push('`watermark:` must be a mapping');
+    return undefined;
+  }
+  const w = raw as Record<string, unknown>;
+  const res: WatermarkConfig = {};
+  if (w['enabled'] !== undefined) res.enabled = Boolean(w['enabled']);
+  if (w['mode'] !== undefined) {
+    const m = str(w['mode']) as WatermarkMode;
+    if (WATERMARK_MODES.includes(m)) res.mode = m;
+    else problems.push(`watermark.mode: unknown mode "${w['mode']}"`);
+  }
+  if (w['opacity'] !== undefined) {
+    const op = typeof w['opacity'] === 'number' ? w['opacity'] : parseFloat(String(w['opacity']));
+    if (Number.isFinite(op) && op >= 0.01 && op <= 1) res.opacity = op;
+  }
+  if (w['casing'] !== undefined) {
+    const c = str(w['casing']) as WatermarkCasing;
+    if (WATERMARK_CASINGS.includes(c)) res.casing = c;
+  }
+  if (w['font'] !== undefined) {
+    const f = str(w['font']) as WatermarkFont;
+    if (WATERMARK_FONTS.includes(f)) res.font = f;
+  }
+  return Object.keys(res).length > 0 ? res : undefined;
 }
 
 /**

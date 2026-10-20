@@ -1,0 +1,10 @@
+{
+  "title": "Marrow UI",
+  "description": "shadcn network UI registry",
+  "icon": "PanelsTopLeft",
+  "root": true,
+  "pages": [
+    "---Introduction---",
+    "index"
+  ]
+}

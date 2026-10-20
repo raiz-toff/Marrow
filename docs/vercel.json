@@ -1,7 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": null,
+  "framework": "nextjs",
   "installCommand": "npm install",
-  "buildCommand": "NITRO_PRESET=static npm run docs:build",
-  "outputDirectory": ".output/public"
+  "buildCommand": "npm run docs:build"
 }

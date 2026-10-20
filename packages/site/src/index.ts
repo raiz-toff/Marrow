@@ -56,6 +56,7 @@ export async function buildSingleFile(topology: Topology, options: BuildOptions)
     theme: t.theme,
     stage: svg,
     ...(t.description !== undefined ? { subtitle: t.description } : {}),
+    ...(t.watermark !== undefined ? { watermark: t.watermark } : {}),
     ...(options.brand !== undefined ? { brand: options.brand } : {}),
     ...(options.themeConfig !== undefined ? { themeConfig: options.themeConfig } : {}),
     ...(options.chrome !== undefined ? { chrome: options.chrome } : {}),

@@ -1,0 +1,67 @@
+---
+title: Importing legacy YAML
+description: Bring v1 topologies and discovery-crawler output into the v2 schema — what converts, what's preserved, and what to clean up afterwards.
+---
+
+Marrow v1 was a Python tool with a different YAML shape. `marrow import` bridges
+it — and anything else that emits v1 YAML, including the old network-discovery
+crawler.
+
+```bash
+npm run marrow -- import legacy/hq.yaml -o input/hq.yaml
+npm run marrow import legacy/hq.yaml              # prints to stdout
+```
+
+## What it does
+
+- **Rewrites identifiers.** v1 ids are free-form, usually `UPPER_SNAKE`. Every one is mapped to a valid v2 kebab-case id, and every reference is rewritten to match.
+- **Rewrites icon ids** into the v2 `pack/category/name` shape.
+- **Converts nodes to devices and links to links**, carrying across everything with a v2 equivalent.
+- **Preserves the rest.** Nothing is silently dropped: v1 fields with no v2 equivalent survive as `x-` annotations — `x-v1-tags`, `x-v1-badges`, and so on.
+
+Links whose endpoints can't be resolved are dropped, and the count is reported
+rather than hidden.
+
+<Callout type="error">
+Import is a starting point, not a finished file. **Always run `validate` on
+the result** — icon ids in particular often need fixing, because a v1 name may
+have no v2 equivalent.
+</Callout>
+
+## After importing
+
+<Callout type="warn">
+**Delete the `x-v1-config:` block.** It's inert. v1 rendered one variant per
+engine × layout combination; v2 computes exactly one layout and never reads
+that block. Leaving it in place misleads the next reader into expecting
+multiple outputs that will never appear.
+</Callout>
+
+Then do the work the importer can't:
+
+1. **Declare tiers.** v1 had no tier concept, so an imported file lays out flat. Adding `tier:` to every device is usually the single biggest improvement.
+2. **Declare zones.** Group by site or building. Two or more zones with devices switches on the zoned mosaic.
+3. **Fix icons.** `npm run icons search <keyword>` — validation errors carry ranked suggestions.
+4. **Declare HA pairs.** `ha_pair_with` on both devices.
+5. **Prune `x-v1-*` annotations** you don't want to keep. They're harmless but they're noise.
+
+## A typical session
+
+```bash
+npm run marrow -- import legacy/hq.yaml -o input/hq.yaml
+npm run validate input/hq.yaml
+#   3 errors — unknown icons
+npm run icons search "core switch"
+#   ... edit input/hq.yaml ...
+npm run validate input/hq.yaml
+#   0 errors, 4 warnings — isolated devices
+npm run marrow -- snapshot input/hq.yaml -o /tmp/hq.png
+#   ... look at it, add tiers and zones ...
+npm run marrow -- build input/hq.yaml
+```
+
+## The archived v1
+
+`legacy-v1/` in the repository is the original Python implementation, kept for
+reference only and untracked by git. Don't author from it and don't build with
+it — `import` is the supported path forward.

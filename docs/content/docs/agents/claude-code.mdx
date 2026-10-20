@@ -1,0 +1,72 @@
+---
+title: Claude Code skill
+description: The packaged agent workflow — what ships in the repo, what each file is for, and how to use it from any agent.
+---
+
+Marrow ships its agent instructions in the repository, so any agent that reads
+the working tree gets them for free.
+
+## What's in the repo
+
+| File | Purpose |
+| --- | --- |
+| `AGENTS.md` | Universal operating router for agents (golden loop, commands, rules, mode router) |
+| `CLAUDE.md` | Claude Code project pointer (imports `AGENTS.md`) |
+| `.agents/skills/marrow-topology/` | Authoring skill — condensed schema, icon guidance, worked examples (mirrored to `.claude/skills/`) |
+| `.agents/skills/marrow-setup/` | Setup skill — takes a fresh clone to a working state (mirrored to `.claude/skills/`) |
+
+## `marrow-topology`
+
+Load it when creating or editing topology YAML. It packages the workflow, the
+condensed schema, and worked examples for each archetype — a small office that
+lays out tiered, a multi-site campus that lays out zoned, and so on. Copy the
+closest example and adapt rather than writing from scratch.
+
+The skill defers to `AGENTS.md` as the authoritative reference; it's the working
+checklist, not a second source of truth.
+
+## `marrow-setup`
+
+Load it when the toolchain isn't working: a fresh clone, a missing `dist/`, or
+`validate` reporting *"icon pack is not installed"*. It installs dependencies,
+compiles the toolchain, and fetches the vendor icon packs that are never
+committed.
+
+## Using Marrow from other agents
+
+Nothing here is Claude-specific. Any coding agent with shell and file access can
+drive the loop:
+
+```bash
+npm run marrow -- icons search <keyword> --json     # find real icon ids
+npm run marrow -- validate input/x.yaml --json      # structured diagnostics
+npm run marrow -- snapshot input/x.yaml -o /tmp/x.png
+npm run marrow -- build input/x.yaml
+```
+
+Two things make the tool agent-friendly:
+
+**Structured diagnostics.** `--json` gives code, path, line, column, snippet,
+hint, and ranked suggestions. An agent can act on `MRW-E010` with a suggestion
+list without parsing prose.
+
+**Meaningful exit codes.** `0` valid, `1` validation errors, `2` usage or I/O
+error. An agent can distinguish "the topology is wrong" from "I called the tool
+wrong" without reading output at all.
+
+<Callout type="info">
+The `/api/*` endpoints on the dev server exist for the same reason —
+`GET /api/validate` and `GET /api/scene` let an agent poll state and inspect
+computed geometry without scraping HTML. See
+[Live preview](/docs/getting-started/live-preview#the-json-api).
+</Callout>
+
+## Keeping the guides in sync
+
+`AGENTS.md` stays in the repository because agents read the working tree, not a
+website. This documentation site is the canonical, complete reference; the
+schema section of `AGENTS.md` points here rather than restating everything.
+
+If you change the schema, the CLI, or the diagnostic registry, update the
+reference pages here — that's the source of truth. Then check whether
+`AGENTS.md` needs a matching one-line change.

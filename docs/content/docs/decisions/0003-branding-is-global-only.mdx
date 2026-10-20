@@ -1,0 +1,58 @@
+---
+title: ADR-0003 — Branding is global-only
+description: Branding lives in marrow.config.yaml and cannot be set from a topology. The separation is deliberate.
+---
+
+**Status:** accepted (supersedes the removed `backdrop:` topology key)
+
+All branding — organization name, footer note, logo, and links — lives in
+`marrow.config.yaml` at the repo root. The topology schema contains no branding
+keys at all, and nothing in the config can be overridden by a topology file.
+
+## Why
+
+A topology describes a *network*. The config describes *who it belongs to*.
+These are different kinds of fact with different rates of change: a network
+changes weekly, an organization's identity changes every few years.
+
+Putting branding in topology files means every file repeats it, and rebranding
+means editing all of them. It also means fifty diagrams drift into fifty
+slightly different footers.
+
+<Callout type="info">
+**Assumed:** the drift argument is inferred. The codebase asserts the
+separation is deliberate and repeats the "a topology describes a network, not
+who owns it" formulation, but does not record the specific failure that
+prompted removing `backdrop:`.
+</Callout>
+
+## Consequences
+
+**One edit rebrands everything you build.**
+
+**Multiple brands need multiple config files**, selected with `--config` on
+`build`, `serve`, and `snapshot`. This is the supported path for an MSP or
+consultancy producing diagrams for several customers.
+
+**`backdrop:` is gone and must not come back.** It was the per-topology
+branding key. Re-adding it, or adding any equivalent, reopens exactly what this
+decision closed — which is why the agent guide calls it out by name.
+
+**Logos are paths, not URLs, and are sanitized.** The markup is inlined verbatim
+into every page, so `<script>`, `<iframe>`, `<object>`, `<embed>`, `<link>`,
+`<meta>`, inline event handlers, and any externally-reaching URL are stripped.
+This is what keeps [ADR-0004](/docs/decisions/0004-self-contained-output) true in the
+presence of author-supplied markup.
+
+**`link` and `github` are hyperlinks, never resource loads.** A diagram fetches
+nothing when it opens; following a link is an explicit reader action.
+
+## Considered and rejected
+
+**Per-topology branding overrides.** Rejected: reintroduces drift and makes
+"which brand does this diagram carry?" a question you answer by reading the
+file rather than knowing the answer.
+
+**Branding as CLI flags.** Rejected: makes correct branding depend on
+remembering the right invocation, which fails the first time someone builds a
+diagram from a script.

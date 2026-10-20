@@ -1,0 +1,111 @@
+---
+title: Adding an icon pack
+description: Drop in your own SVGs — directory layout, manifest generation, naming, and licensing rules.
+---
+
+Packs are drop-in. Every directory under `icon-packs/` containing a
+`manifest.json` is discovered automatically — no registration step.
+
+This is how you add your company's own device artwork, or a vendor library you
+converted yourself.
+
+### Lay out the SVGs
+
+```
+icon-packs/
+└─ acme/
+   └─ svg/
+      ├─ Routers/
+      │  ├─ edge-router.svg
+      │  └─ branch-router.svg
+      ├─ Switches/
+      │  ├─ core-switch.svg
+      │  └─ access-switch.svg
+      └─ Security/
+         └─ perimeter-firewall.svg
+```
+
+The directory under `svg/` becomes the **category**; the filename becomes the
+**name** and the **search keywords**.
+
+<Callout type="warn">
+Filenames are your search index. `edge-router.svg` is findable;
+`rtr_v2_final.svg` is not. Use descriptive kebab-case or plain words — this is
+the single highest-leverage decision in the whole process.
+</Callout>
+
+### Generate the manifest
+
+```bash
+npm run marrow -- icons index
+# or index only this pack:
+npm run marrow -- icons index acme
+# → indexed pack "acme" (5 icons) → icon-packs/acme/manifest.json
+```
+
+`marrow icons index` automatically identifies directories under `icon-packs/*/` containing an
+`svg/` folder, derives the pack name from the folder name, and builds `manifest.json`.
+No manual edits to `package.json` are ever needed.
+
+The generated manifest looks like:
+
+```json title="icon-packs/acme/manifest.json"
+{
+  "pack": "acme",
+  "title": "Acme",
+  "version": "1.0.0",
+  "icons": [
+    {
+      "id": "acme/routers/edge-router",
+      "title": "Edge Router",
+      "category": "routers",
+      "keywords": ["edge", "router", "routers"],
+      "file": "svg/Routers/edge-router.svg"
+    }
+  ]
+}
+```
+
+### Verify
+
+```bash
+npm run marrow -- icons packs
+npm run marrow -- icons search "edge router"
+# acme/routers/edge-router  —  Edge Router (routers)
+```
+
+Use the id in a topology and validate.
+
+## Writing SVGs that behave
+
+- **Use `fill="currentColor"`** where you want the shape to follow the theme. Hard-coded colors stay fixed in both light and dark, which is right for a logo and wrong for a device glyph.
+- **Keep a square-ish viewBox.** Icons are drawn into a chip; extreme aspect ratios get letterboxed.
+- **No embedded raster, no external references.** Anything pointing outside the document breaks the offline guarantee and is stripped.
+- **Strip editor metadata.** Illustrator and Figma exports carry a lot of dead weight; every byte is inlined into every diagram that uses the icon.
+
+## Licensing
+
+<Callout type="error">
+**Do not commit AWS, Azure, or GCP SVGs.** Those vendors permit using their
+icons in diagrams but not redistributing the libraries, which is why they are
+fetched per-clone — see
+[ADR-0005](/docs/decisions/0005-vendor-icon-packs-are-fetched).
+
+The `cisco` pack is committed, because it is not Cisco's artwork: it is
+jgraph's Apache-2.0 draw.io stencils. It carries an Atlassian-marketplace
+restriction that the rest of Marrow does not — see the
+[amendment](/docs/decisions/0005-vendor-icon-packs-are-fetched#amendment-cisco-is-committed-after-all).
+</Callout>
+
+If you're contributing a pack upstream rather than keeping it local, it must be
+under a permissive or attributed license, with the attribution recorded in
+[`icon-packs/LICENSES.md`](https://github.com/raiz-toff/Marrow/blob/main/icon-packs/LICENSES.md).
+Private packs in your own fork are your call.
+
+## Converting vendor stencils
+
+**Juniper** and **Fortinet** publish Visio stencils (`.vss`, `.vssx`) only.
+draw.io reads them: import the stencil, then export as SVG. The result needs
+the cleanup above — the exports are verbose and often carry hard-coded colors.
+
+**Palo Alto** has no public icon library.

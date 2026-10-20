@@ -11,12 +11,9 @@ output/
 dist-npm/
 *.tgz
 
-# docs site build artifacts (Nuxt)
-docs/.nuxt/
-docs/.output/
-docs/.data/
-docs/.nitro/
-docs/.cache/
+# docs site build artifacts (Next.js & Fumadocs)
+docs/.next/
+docs/.source/
 
 # vendor icon packs fetched per-user — never committed (vendor terms allow
 # diagram use, not redistribution). Fetched whole, manifest generated on fetch:

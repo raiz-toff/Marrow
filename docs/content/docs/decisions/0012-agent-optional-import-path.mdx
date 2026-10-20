@@ -1,0 +1,37 @@
+---
+title: ADR-0012 — Agent-optional import path
+description: Amends ADR-0002. Import-to-build operates as a first-class CLI path without requiring an AI agent. The agent remains the conversational authoring interface.
+---
+
+**Status:** proposed (amends [ADR-0002](/docs/decisions/0002-agent-driven-no-gui) if accepted)
+
+Marrow establishes `import` → `build` as a supported, standalone workflow requiring no AI agent in the loop. The agent remains the conversational authoring and visual verification interface.
+
+## Why
+
+[ADR-0002](/docs/decisions/0002-agent-driven-no-gui) established that non-agent users are second-class, reflecting a workflow where authoring YAML was the sole entry point.
+
+Import adapters ([ADR-0010](/docs/decisions/0010-importers-may-infer)) change this constraint. Users with terminal logs (`show running-config`), Packet Tracer labs, or packet captures (`.pcapng`) already possess structural network data. Requiring them to install and configure an AI coding agent before generating a diagram introduces unnecessary adoption friction for operations engineers and students.
+
+## Decision
+
+1. The following CLI pipeline is a supported, tested product sequence without an agent:
+   ```bash
+   marrow import ./configs -o net.discovered.yaml
+   marrow build net.discovered.yaml
+   ```
+2. Import diagnostics (`MRW-I` range) target human operators directly: clear error descriptions, source line references, and remediation guidance.
+3. ADR-0002 is narrowed: manual YAML authoring from scratch remains agent-oriented, while the automated import pipeline is standalone.
+4. Core ADR-0002 constraints remain active: no canvas GUI editor, permanent diagnostic codes, and automated visual verification gates.
+
+## Consequences
+
+- **Positive:** Reduces onboarding prerequisites to Node.js and existing device configurations.
+- **Positive:** Agents benefit by starting from parsed evidence rather than raw conversational prompts.
+- **Negative:** Diagnostic messages must serve both human operators and automated agents simultaneously.
+- **Negative:** Test fixtures must expand to cover syntax variations across network operating systems (Cisco IOS, IOS-XE, NX-OS).
+
+## Considered and rejected
+
+- **Forcing agent execution for all imports.** Rejected: restricts adoption among network engineers who need simple CLI conversion.
+- **Adding a graphical diagram builder.** Rejected: manual box-positioning violates [ADR-0001](/docs/decisions/0001-declare-structure-not-layout).

@@ -86,9 +86,13 @@ describe('buildSite (xl-campus, 358 devices)', () => {
       }
     }
 
-    // offline: no external URLs anywhere
+    // offline: no external resource loads; external hrefs must be anchors (e.g. attribution)
     for (const [page, content] of site.files) {
-      expect(/(?:src|href)\s*=\s*"https?:\/\//i.test(content), `${page} external ref`).toBe(false);
+      expect(/\bsrc\s*=\s*"https?:\/\//i.test(content), `${page} external src`).toBe(false);
+      expect(/<link\b[^>]*href\s*=\s*"https?:\/\//i.test(content), `${page} external link`).toBe(false);
+      for (const tag of content.match(/<[a-z-]+\b[^>]*href\s*=\s*"https?:\/\/[^"]*"[^>]*>/gi) ?? []) {
+        expect(tag.toLowerCase().startsWith('<a '), `${page} non-anchor external href: ${tag}`).toBe(true);
+      }
     }
 
     // the search index covers every authored device

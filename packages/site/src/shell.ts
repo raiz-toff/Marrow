@@ -45,6 +45,7 @@ export interface ShellOptions {
   /** Embed / kiosk modularity: 'minimal' hides topbar & dock, 'full' preserves all chrome. */
   chrome?: 'full' | 'minimal';
   embed?: boolean;
+  watermark?: import('@marrow/model').WatermarkConfig;
 }
 
 /** One icon language for all chrome: Lucide geometry — a 24-unit grid,
@@ -133,8 +134,22 @@ export function renderShell(o: ShellOptions): string {
   const main = o.stage
     ? `<main class="m-stage">\n${o.stage}\n<div class="m-tooltip" hidden></div>\n</main>`
     : `<main class="m-doc">${o.body ?? ''}</main>`;
-  const watermark = o.stage
-    ? `<div class="m-watermark" aria-hidden="true"><span>${esc(o.title)}</span>${o.subtitle ? `<small>${esc(o.subtitle)}</small>` : ''}</div>`
+  const wm = o.watermark ?? {};
+  const wmEnabled = wm.enabled ?? true;
+  const wmMode = wm.mode ?? 'full';
+  const wmAttrs: string[] = [`data-mode="${wmMode}"`];
+  if (wm.font) wmAttrs.push(`data-font="${wm.font}"`);
+  if (wm.casing) wmAttrs.push(`data-casing="${wm.casing}"`);
+  const wmStyle = wm.opacity !== undefined ? ` style="opacity:${wm.opacity};"` : '';
+
+  let wmText = esc(o.title);
+  let wmSub = o.subtitle ? `<small>${esc(o.subtitle)}</small>` : '';
+  if (wmMode === 'minimal' || wmMode === 'blueprint') {
+    wmText = `fig. 01 — ${esc(o.title)}`;
+  }
+
+  const watermark = o.stage && wmEnabled && wmMode !== 'off'
+    ? `<div class="m-watermark" ${wmAttrs.join(' ')}${wmStyle} aria-hidden="true"><span>${wmText}</span>${wmSub}</div>`
     : '';
   /* the top strip always carries a mark: the company logo + brand name when
      configured, the Marrow product mark otherwise */
@@ -216,12 +231,13 @@ export function renderShell(o: ShellOptions): string {
   const modeAttr = auto ? ' data-theme-mode="auto"' : '';
   const isMinimal = o.chrome === 'minimal' || o.embed === true;
   const chromeAttr = isMinimal ? ' data-chrome="minimal"' : '';
+  const watermarkAttr = (!wmEnabled || wmMode === 'off') ? ' data-watermark="off"' : (wmMode !== 'full' ? ` data-watermark="${wmMode}"` : '');
 
   // Modular pre-boot script: resolves URL query and hash parameters (#embed=true, ?chrome=minimal, ?inspector=off, ?minimap=off, ?theme=light)
   const headScript = `<script>try{var r=document.documentElement,q=new URLSearchParams(location.search),h=location.hash.slice(1),hp=new URLSearchParams(h.indexOf(';')>=0?h.replace(/;/g,'&'):h),g=function(k){return q.get(k)||hp.get(k)};if(g('embed')==='true'||g('embed')==='1'||g('chrome')==='minimal')r.dataset.chrome='minimal';if(g('inspector')==='off'||g('inspector')==='false')r.dataset.inspector='off';if(g('minimap')==='off'||g('minimap')==='false')r.dataset.minimap='off';var t=g('theme');if(t==='light'||t==='dark')r.dataset.theme=t;else if(${auto}){var s=null;try{s=localStorage.getItem('marrow-theme')}catch(e){}if(s!=='dark'&&s!=='light')r.dataset.theme=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'}}catch(e){}</script>`;
 
   return `<!DOCTYPE html>
-<html lang="en" data-theme="${themeAttr}"${modeAttr}${chromeAttr} data-root="${esc(o.rootPrefix)}" data-page="${esc(o.page)}">
+<html lang="en" data-theme="${themeAttr}"${modeAttr}${chromeAttr}${watermarkAttr} data-root="${esc(o.rootPrefix)}" data-page="${esc(o.page)}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -261,8 +277,11 @@ ${inspector}
     <div class="m-about-body"></div>
     <div class="m-about-foot">
       <div class="m-about-credit">
-        <span class="m-about-credit-mark">${I.logo}</span>
-        <span>Engineered with <strong>Marrow</strong> · Declarative Network Topology Compiler</span>
+        <a class="m-about-credit-link" href="https://marrowdiagram.vercel.app" target="_blank" rel="noopener noreferrer">
+          <span class="m-about-credit-mark">${I.logo}</span>
+          <span>Engineered with <strong>Marrow</strong> · Declarative Network Topology Compiler</span>
+        </a>
+        <a class="m-about-credit-gh" href="https://github.com/raiz-toff/Marrow" target="_blank" rel="noopener noreferrer" aria-label="GitHub repository" title="GitHub repository">${I.github}</a>
       </div>
     </div>
   </div>

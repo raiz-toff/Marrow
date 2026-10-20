@@ -1,0 +1,86 @@
+---
+title: Testing
+description: The suite, the fixture corpus, and how visual changes are verified.
+---
+
+```bash
+npm test          # 244 tests across 22 files (vitest)
+```
+
+Tests live in `packages/*/test/*.test.ts` and import source directly through
+aliases, so you don't need a build to run them.
+
+## The fixture corpus
+
+`fixtures/` is where most of the real enforcement happens:
+
+| Directory | Contents | Role |
+| --- | --- | --- |
+| `valid/` | Well-formed topologies | Happy paths; also good authoring references |
+| `invalid/` | Deliberately broken files | Each asserts a specific diagnostic code and position |
+| `corpus/` | Named shape families — `tiered-small-*`, `tiered-medium-*`, `wan-shapes-*`, `edge-cases-*` | Layout and geometry regression |
+| `v1/` | Legacy v1 files | Importer coverage |
+
+The corpus is the layout safety net. `packages/layout/test/corpus.test.ts`
+compiles every corpus file and runs the geometry linter over the result — an L1
+defect anywhere in the corpus fails the suite. That's what makes "output is
+never overlapping" a guarantee rather than an aspiration.
+
+Individual fixtures pin specific behaviors. `edge-cases-09.yaml`, for instance,
+guards the collision-free port-chip placement.
+
+<Callout type="info">
+**Fixing a layout bug? Add a corpus fixture that reproduces it.** That's the
+mechanism that stops it coming back — a unit test on the placement function
+won't catch a regression that only appears in combination.
+</Callout>
+
+## Adding tests
+
+**A new diagnostic** needs a file in `fixtures/invalid/` and an assertion on the
+code, line, and column. Test the *position*, not just the code — the whole value
+of the diagnostic system is pointing at the right place.
+
+**A layout change** needs a corpus fixture representing the shape, and the
+existing corpus must still pass the linter.
+
+**A rendering change** must be verified in both renderers. Unit tests cover the
+scene; the picture needs eyes.
+
+## Verifying visual work
+
+Tests don't tell you whether a diagram looks right. The loop that works:
+
+```bash
+npm run compile
+npm run marrow -- build fixtures/valid/small-office.yaml
+# screenshot with Playwright at deviceScaleFactor: 2
+# crop to the region you changed
+# look at the image
+npm test          # the corpus lint gate is the enforcement layer
+```
+
+Playwright is already a dev dependency — import it from
+`node_modules/playwright/index.mjs`. Render at `deviceScaleFactor: 2` and crop
+to the area you touched; a full-page screenshot at 1× hides exactly the kind of
+1-pixel misalignment you're looking for.
+
+For a quick check, `marrow snapshot` does the same thing in one command:
+
+```bash
+npm run marrow -- snapshot fixtures/valid/campus-three-tier.yaml -o /tmp/x.png
+```
+
+## Determinism
+
+Determinism is testable and tested: the same input must produce byte-identical
+output. If you introduce ordering that depends on a `Map` iteration, a
+filesystem listing, a timestamp, or anything random, the suite will catch it —
+and if it doesn't, that's a missing test worth adding.
+
+## CI
+
+`.github/workflows/ci.yml` runs `npm run compile && npm test` on every push and
+pull request. It does **not** fetch the vendor icon packs, which is deliberate:
+the suite must pass on a clean clone with no network access to third-party
+vendors.

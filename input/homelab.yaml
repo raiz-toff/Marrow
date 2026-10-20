@@ -1,0 +1,323 @@
+marrow: 2
+name: "Homelab Network Architecture"
+description: "L3 Routed Core, Dedicated Transit Interconnect, and VLAN Segmentation"
+theme: dark
+hero: cs
+
+zones:
+  - id: wan
+    name: "WAN & Remote Access"
+  - id: edge
+    name: "Edge Gateway (MikroTik)"
+  - id: core
+    name: "Core Switching (Cisco L3)"
+  - id: infra
+    name: "Management & Hypervisor (VLAN 10)"
+  - id: admin
+    name: "Admin & Trusted (VLAN 20)"
+  - id: services
+    name: "Services & Applications (VLAN 30)"
+  - id: labs
+    name: "Simulation Labs (VLAN 40)"
+
+devices:
+  # ─── WAN & REMOTE ACCESS ───
+  - id: bell679
+    name: "Landlord Wi-Fi (BELL679)"
+    icon: affinity/tile/cloud
+    tier: edge
+    zone: wan
+    role: "Upstream Internet"
+    note: "5GHz AX Station Mode connection providing WAN uplink"
+
+  - id: remote-vpn
+    name: "Remote Client (WireGuard)"
+    icon: affinity/tile/laptop
+    tier: edge
+    zone: wan
+    role: "Road Warrior VPN"
+    note: "WireGuard Tunnel endpoint (192.168.25.0/28) for secure remote homelab access"
+
+  # ─── EDGE ROUTER ───
+  - id: mt
+    name: "MikroTik hAP ax2"
+    icon: affinity/tile/router
+    tier: edge
+    zone: edge
+    role: "Edge Gateway / NAT / VPN"
+    mgmt_ip: 10.10.0.1
+    note: "RouterOS v7.19. WAN masquerade, WireGuard gateway, Admin Wi-Fi AP (BlackmagicEdge), Transit Link IP 10.10.0.1/30"
+    interfaces:
+      - name: ether1
+        description: "Transit link to Cisco Gi0/1"
+        ip: 10.10.0.1
+        vlan: 999
+      - name: wlan2
+        description: "5GHz Station Mode WAN uplink"
+      - name: wlan1
+        description: "BlackmagicEdge AP bridged to VLAN 20"
+        vlan: 20
+      - name: wg0
+        description: "WireGuard VPN Gateway"
+        ip: 192.168.25.1
+
+  # ─── CORE SWITCH ───
+  - id: cs
+    name: "Cisco Catalyst 3560-CX"
+    icon: cisco/switches/layer-3-switch
+    tier: core
+    zone: core
+    role: "Layer 3 Core Switch"
+    mgmt_ip: 10.10.10.1
+    hero: true
+    note: "Hardware line-rate inter-VLAN routing. SVIs: SVI 999 (10.10.0.2/30), SVI 10 (10.10.10.1/24), SVI 20 (10.10.20.1/24), SVI 30 (10.10.30.1/24), SVI 40 (10.10.40.1/24)"
+    interfaces:
+      - name: Gi0/1
+        description: "Transit Link to MikroTik ether1"
+        ip: 10.10.0.2
+        vlan: 999
+      - name: Gi0/5
+        description: "Lab Patch Port (VLAN 40)"
+        vlan: 40
+      - name: Gi0/7
+        description: "Admin Workstation Wired Port (VLAN 20)"
+        vlan: 20
+      - name: Gi0/8
+        description: "802.1Q Hypervisor Trunk to Proxmox"
+      - name: Vlan10
+        description: "Management SVI Default Gateway"
+        ip: 10.10.10.1
+        vlan: 10
+      - name: Vlan20
+        description: "Admin SVI Default Gateway"
+        ip: 10.10.20.1
+        vlan: 20
+      - name: Vlan30
+        description: "Services SVI Default Gateway"
+        ip: 10.10.30.1
+        vlan: 30
+      - name: Vlan40
+        description: "Simulations SVI Default Gateway"
+        ip: 10.10.40.1
+        vlan: 40
+
+  # ─── ADMIN WORKSTATION ───
+  - id: fedora
+    name: "Fedora Laptop (ASUS TUF)"
+    icon: affinity/tile/laptop
+    tier: endpoint
+    zone: admin
+    role: "Admin Workstation"
+    mgmt_ip: 10.10.20.50
+    note: "Primary daily-driver workstation (Fedora Linux). Connects via Admin Wi-Fi or wired switchport Gi0/7"
+
+  # ─── HYPERVISOR ───
+  - id: px
+    name: "Lenovo Proxmox Host"
+    icon: affinity/tile/server
+    tier: distribution
+    zone: infra
+    role: "Hypervisor (PVE 9.1)"
+    mgmt_ip: 10.10.10.10
+    note: "Lenovo Tower bare metal host on vmbr0.10 (10.10.10.10/24, gateway 10.10.10.1)"
+    interfaces:
+      - name: vmbr0
+        description: "Physical Trunk NIC (Gi0/8)"
+      - name: vmbr0.10
+        description: "Management SVI (10.10.10.10/24)"
+        ip: 10.10.10.10
+        vlan: 10
+
+  # ─── SERVICES & APPLICATIONS (VLAN 30) ───
+  - id: sync-server
+    name: "Obsidian CouchDB (CT 104)"
+    icon: cisco/datacenter/database-relational
+    tier: endpoint
+    zone: services
+    role: "Obsidian LiveSync CouchDB"
+    mgmt_ip: 10.10.30.39
+    note: "sync.lan (:5984) — Multi-device vault synchronization backend"
+
+  - id: netbox
+    name: "NetBox IPAM (CT 105)"
+    icon: cisco/capability/database
+    tier: endpoint
+    zone: services
+    role: "Source of Truth / DCIM"
+    mgmt_ip: 10.10.30.41
+    note: "netbox.lan (:80 / :8000) — NetBox 4.7 IPAM, DCIM, and Topology Views"
+
+  - id: coder
+    name: "Dev Server (VM 103)"
+    icon: cisco/endpoints/terminal
+    tier: endpoint
+    zone: services
+    role: "Development & Docker"
+    mgmt_ip: 10.10.30.38
+    note: "coder.lan — Docker host, Portainer (:9443), Cockpit (:9090)"
+
+  - id: gitlab
+    name: "GitLab CE (VM 102)"
+    icon: affinity/tile/server
+    tier: endpoint
+    zone: services
+    role: "GitLab Repository & CI/CD"
+    mgmt_ip: 10.10.30.40
+    note: "gitlab.lan — On-prem code repository, issues, and CI runners"
+
+  - id: adguard
+    name: "AdGuard Home DNS (CT 106)"
+    icon: cisco/design/secure-dns
+    tier: endpoint
+    zone: services
+    role: "Core DNS & Ad-Blocker"
+    mgmt_ip: 10.10.30.53
+    note: "dns.lan — Local split-horizon DNS for *.lan and recursive filtering"
+
+  - id: npm
+    name: "Nginx Proxy Manager (CT 107)"
+    icon: affinity/tile/firewall
+    tier: endpoint
+    zone: services
+    role: "HTTPS Reverse Proxy"
+    mgmt_ip: 10.10.30.50
+    note: "proxy.lan — Automated SSL termination and internal routing"
+
+  # ─── SIMULATION LABS (VLAN 40) ───
+  - id: eveng
+    name: "EVE-NG Lab (VM 100)"
+    icon: cisco/endpoints/terminal
+    tier: endpoint
+    zone: labs
+    role: "Multi-Vendor Lab Platform"
+    mgmt_ip: 10.10.40.100
+    note: "eveng.lan — Multi-vendor network emulation server"
+
+  - id: cml
+    name: "Cisco Modeling Labs (VM 101)"
+    icon: cisco/endpoints/terminal
+    tier: endpoint
+    zone: labs
+    role: "Cisco Network Simulator"
+    mgmt_ip: 10.10.40.101
+    note: "cml.lan (:9090 / :443) — Official Cisco virtual topologies"
+
+  - id: lab-port
+    name: "Lab Patch Port (Gi0/5)"
+    icon: affinity/tile/switch
+    tier: endpoint
+    zone: labs
+    role: "Physical Lab Breakout"
+    note: "Direct hardware patch panel breakout into VLAN 40 simulation subnet"
+
+links:
+  # ─── WAN & EDGE LINKS ───
+  - from: "bell679:5GHz"
+    to: "mt:wlan2"
+    kind: wireless
+    speed: 1G
+    mode: routed
+    label: "5GHz Station WAN"
+
+  - from: "remote-vpn:wg0"
+    to: "mt:wg0"
+    kind: virtual
+    mode: tunnel
+    encap: wireguard
+    label: "192.168.25.0/28"
+
+  # ─── TRANSIT INTERCONNECT ───
+  - from: "mt:ether1"
+    to: "cs:Gi0/1"
+    kind: copper
+    speed: 1G
+    mode: routed
+    protocol: static
+    label: "10.10.0.0/30 (VLAN 999)"
+    note: "Dedicated Routed Transit Interconnect between MikroTik Gateway and Cisco Core"
+
+  # ─── ADMIN CONNECTIONS ───
+  - from: "cs:Gi0/7"
+    to: "fedora:eth0"
+    kind: copper
+    speed: 1G
+    mode: access
+    vlans: 20
+    label: "Gi0/7 (VLAN 20)"
+
+  - from: "mt:wlan1"
+    to: "fedora:wlan0"
+    kind: wireless
+    speed: 1G
+    mode: access
+    vlans: 20
+    label: "BlackmagicEdge AP"
+
+  # ─── HYPERVISOR 802.1Q TRUNK ───
+  - from: "cs:Gi0/8"
+    to: "px:vmbr0"
+    kind: copper
+    speed: 1G
+    mode: trunk
+    vlans: "10,20,30,40"
+    label: "802.1Q Trunk"
+    note: "Physical Trunk carrying VLANs 10, 20, 30, 40 to Lenovo Proxmox Server"
+
+  # ─── PROXMOX SERVICES (VLAN 30) ───
+  - from: "px:vnet104"
+    to: "sync-server:eth0"
+    kind: virtual
+    mode: access
+    vlans: 30
+
+  - from: "px:vnet105"
+    to: "netbox:eth0"
+    kind: virtual
+    mode: access
+    vlans: 30
+
+  - from: "px:tap103"
+    to: "coder:eth0"
+    kind: virtual
+    mode: access
+    vlans: 30
+
+  - from: "px:tap102"
+    to: "gitlab:eth0"
+    kind: virtual
+    mode: access
+    vlans: 30
+
+  - from: "px:vnet106"
+    to: "adguard:eth0"
+    kind: virtual
+    mode: access
+    vlans: 30
+
+  - from: "px:vnet107"
+    to: "npm:eth0"
+    kind: virtual
+    mode: access
+    vlans: 30
+
+  # ─── PROXMOX LABS (VLAN 40) ───
+  - from: "px:tap100"
+    to: "eveng:eth0"
+    kind: virtual
+    mode: access
+    vlans: 40
+
+  - from: "px:tap101"
+    to: "cml:eth0"
+    kind: virtual
+    mode: access
+    vlans: 40
+
+  # ─── PHYSICAL LAB BREAKOUT (VLAN 40) ───
+  - from: "cs:Gi0/5"
+    to: "lab-port:eth0"
+    kind: copper
+    speed: 1G
+    mode: access
+    vlans: 40
+    label: "Gi0/5 (VLAN 40)"

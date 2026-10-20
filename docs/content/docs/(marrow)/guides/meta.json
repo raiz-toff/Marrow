@@ -1,0 +1,14 @@
+{
+  "title": "Guides",
+  "icon": "BookOpen",
+  "pages": [
+    "authoring",
+    "zones-and-tiers",
+    "layout",
+    "icons",
+    "branding",
+    "output",
+    "embedding",
+    "importing-v1"
+  ]
+}

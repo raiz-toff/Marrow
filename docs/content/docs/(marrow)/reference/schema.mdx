@@ -1,0 +1,326 @@
+---
+title: Topology schema
+description: Every key in the Marrow 2 topology format, with types, defaults, and constraints.
+---
+
+The complete format. A machine-readable JSON Schema is served at
+[`/schema.json`](/schema.json) and can be regenerated with
+`npm run marrow -- schema`.
+
+<Callout type="warn">
+Unknown keys are **errors** (`MRW-E005`), not warnings. Prefix a key with
+`x-` to keep it private and ignored. See
+[ADR-0006](/docs/decisions/0006-strict-schema-with-escape-hatch).
+</Callout>
+
+## Document
+
+```yaml
+marrow: 2                      # required — the integer 2
+name: Marrow Global HQ         # required
+description: One-line summary  # optional — becomes the watermark subtitle
+author: NetOps Team            # optional — diagram author or architecture team
+revision: v1.0                 # optional — revision string
+date: "2026-10-19"             # optional — ISO date string
+about:                         # optional — markdown string or structured facts/sections
+  Overview: Enterprise backbone
+  Architecture: |
+    - Dual spine EVPN fabric
+    - Redundant core interconnects
+theme: dark                    # dark | light | auto   (default: dark)
+density: standard              # compact | standard | spacious (default: standard)
+scale: 1.0                     # float 0.4 to 2.5 (default: 1.0)
+hero: core-sw-01               # optional — device featured when the diagram opens
+title_block: {}                # optional — engineering title block metadata for static exports
+inspector:                     # optional — custom inspector drawer tabs configuration
+  tabs: []
+zones: []                      # optional
+devices: []                    # the nodes
+links: []                      # the cables
+```
+
+| Key | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `marrow` | integer | yes | Must be exactly `2`. `MRW-E003` if missing, `MRW-E004` if another value |
+| `name` | string | yes | Diagram title |
+| `description` | string | no | Watermark subtitle |
+| `author` | string | no | Engineering team, author, or architect |
+| `revision` | string | no | Revision or version tag (e.g. `v1.0`, `2026.Q4`) |
+| `date` | string | no | ISO date string (`YYYY-MM-DD`) |
+| `about` | string \| map | no | Diagram-level documentation rendered in the **About this diagram** document dialog. Accepts markdown or structured sections/facts |
+| `title_block` | object | no | CAD title block configuration for static vector SVG and PNG exports |
+| `inspector` | object | no | Declarative custom tab definitions for the right-hand inspector drawer |
+| `theme` | `dark` \| `light` \| `auto` | no | Default `dark`. `auto` follows the viewer's OS scheme; a host can also drive any embed's theme by `postMessage` (see [Embedding → Theme](/docs/guides/embedding#theme)) |
+| `density` | `compact` \| `standard` \| `spacious` | no | Default `standard`. Scales node chips (48px / 64px / 80px), typography (10px / 12px / 14px), layer spacing, and port chips |
+| `scale` | float 0.4–2.5 | no | Global layout scale multiplier. Default `1.0`. Multiplies box padding, icon chip size, and layer spacing |
+| `hero` | device id | no | Camera focus on open |
+| `zones` | list | no | |
+| `devices` | list | — | |
+| `links` | list | — | |
+
+## Identifiers
+
+Every `id` matches `[a-z0-9._-]+`, starting with a letter or digit. Device ids
+are unique among devices; zone ids are unique among zones. Violations are
+`MRW-E012` (invalid) and `MRW-E008` (duplicate).
+
+## Zones
+
+```yaml
+zones:
+  - id: campus            # required, kebab-case
+    name: Campus          # optional — defaults to id
+    parent: emea          # optional — nest by referencing another zone id
+    collapse: auto        # auto | open | closed      (default: auto)
+    accent: "#7aa2ff"     # optional hex — tints the zone panel
+```
+
+| Key | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `id` | identifier | yes | |
+| `name` | string | no | Defaults to `id` |
+| `parent` | zone id | no | Must exist. Cycles are `MRW-E016` |
+| `collapse` | `auto` \| `open` \| `closed` | no | Default `auto` |
+| `accent` | hex color | no | e.g. `"#7aa2ff"` |
+
+## Devices
+
+```yaml
+devices:
+  - id: core-sw-01
+    name: Core Switch 1
+    icon: cisco/switches/layer-3-switch
+    tier: core
+    zone: campus
+    role: L3 core
+    status: up
+    mgmt_ip: 10.0.0.1
+    ha_pair_with: core-sw-02
+    hero: false
+    pin: { x: 100, y: 200 }
+    accent: "#7aa2ff"
+    note: "Change freeze"
+    config: "hostname core1"
+    custom_fields:
+      Serial Number: "FOC21345678"
+      Rack: "DC-1 / Rack A1"
+    sections:
+      Firewall Policies: |
+        | Rule | Protocol | Port | Action |
+        | 10   | TCP      | 443  | Allow  |
+        | 20   | TCP      | 80   | Allow  |
+    interfaces:
+      - name: Gi1/0/1
+        description: uplink
+        vlan: 10
+        ip: 10.0.0.1
+```
+
+| Key | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `id` | identifier | yes | Unique among devices |
+| `name` | string | no | Defaults to `id` |
+| `icon` | icon id | **yes** | Must exist — `MRW-E010` with suggestions if not |
+| `tier` | `core` \| `distribution` \| `access` \| `edge` \| `endpoint` \| `management` | no | Drives vertical rank |
+| `zone` | zone id | no | Must be declared — `MRW-E013` |
+| `role` | string | no | Free text, shown in the inspector |
+| `status` | `up` \| `down` \| `degraded` \| `planned` \| `unknown` | no | Default `up` |
+| `mgmt_ip` | string | no | |
+| `ha_pair_with` | device id | no | **Declare on both devices** |
+| `hero` | boolean | no | Alternative to the document-level `hero:` |
+| `pin` | `{x, y}` | no | Fixes position, bypassing placement |
+| `accent` | hex color | no | |
+| `note` | string | no | Inspector + promotes the device to its own page on sites |
+| `config` | string | no | Config snippet; same promotion effect |
+| `custom_fields` | map of string: primitive | no | Key-value pairs displayed in the inspector facts drawer |
+| `sections` | map of string: content | no | Collapsible tabs in inspector; content can be markdown tables, key-value objects, or arrays of row objects |
+| `interfaces` | list | no | |
+
+### Interfaces
+
+| Key | Type | Notes |
+| --- | --- | --- |
+| `name` | string | e.g. `Gi1/0/1` |
+| `description` | string | |
+| `vlan` | integer | 1–4094 |
+| `ip` | string | |
+
+Interfaces are documentation. The port in a link endpoint is geometry. They
+don't have to match, but agreement makes a much better inspector.
+
+## Links
+
+```yaml
+links:
+  - from: core-sw-01:Gi1/0/1     # "device-id:Port" — port optional
+    to: acc-sw-01:Gi0/48
+    kind: fiber                  # the physical medium
+    speed: 10G
+    mode: trunk                  # the logical function (drives the symbol)
+    vlans: "10,20,30"            # VLANs carried on the trunk
+    native_vlan: 1
+    lag: po1
+    lacp: active
+    status: up
+    animated: true
+    label: "×2"
+    note: "packet loss 12%"
+```
+
+A link has two independent axes: the **physical medium** (`kind`, `speed`) and
+the **logical function** (`mode` and its refining attributes). They compose — a
+`10G fiber` cable can be a `trunk`, an `access` port, or a `routed` L3 link.
+
+| Key | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `from` | endpoint | yes | `device-id` or `device-id:Port` |
+| `to` | endpoint | yes | Same |
+| `kind` | `copper` \| `fiber` \| `dac` \| `wireless` \| `virtual` \| `wan` \| `serial` | no | Physical medium |
+| `speed` | `10M` \| `100M` \| `1G` \| `2.5G` \| `5G` \| `10G` \| `25G` \| `40G` \| `100G` \| `400G` | no | Drives stroke width |
+| `mode` | `access` \| `trunk` \| `routed` \| `tunnel` \| `peering` \| `stack` | no | Logical function — drives the symbol (see below) |
+| `vlans` | string \| integer | no | VLAN set/range on a `trunk`, or the single VLAN on an `access` port, e.g. `"10,20,30-39"` |
+| `native_vlan` | integer 1–4094 | no | Native (untagged) VLAN on a `trunk` |
+| `encap` | `ipsec` \| `gre` \| `vxlan` \| `wireguard` \| `dmvpn` \| `mpls` \| `l2tp` \| `geneve` \| `ssl` | no | Overlay/VPN encapsulation on a `tunnel` |
+| `protocol` | `ospf` \| `ebgp` \| `ibgp` \| `bgp` \| `eigrp` \| `isis` \| `rip` \| `static` | no | Routing/control-plane protocol on a `routed` or `peering` link |
+| `lag` | string | no | Bundle id — links sharing it between the same pair aggregate onto one strand |
+| `lacp` | `active` \| `passive` \| `on` \| `static` \| `pagp` | no | Aggregation control mode; pairs with `lag` |
+| `status` | `up` \| `down` \| `degraded` \| `planned` | no | Default `up`. No `unknown` on links |
+| `animated` | boolean | no | Flowing dash — use sparingly |
+| `label` | string | no | Edge label (aggregate bundles auto-label `×N`) |
+| `note` | string | no | Freeform note shown in link inspector drawer |
+| `custom_fields` | map of string: primitive | no | Key-value pairs displayed in link inspector drawer |
+| `sections` | map of string: content | no | Collapsible tabs in link inspector drawer |
+
+### Logical link modes
+
+`mode` declares what the cable carries; the compiler renders each as a distinct
+symbol (see [ADR-0009](/docs/decisions/0009-link-semantics-and-visual-language)). It
+is **declared, never inferred** — the engine will not guess `trunk` from a port
+name. The refining attributes read like device config:
+
+| Mode | Symbol | Companion keys | Reads like |
+| --- | --- | --- | --- |
+| `access` | plain line, `v<vlan>` chip | `vlans` | an access switchport |
+| `trunk` | **double rail** + VLAN chip | `vlans`, `native_vlan` | `switchport mode trunk` |
+| `routed` | solid line + protocol chip | `protocol` | an L3 routed interface |
+| `peering` | dotted line + protocol chip | `protocol` | an OSPF/BGP adjacency |
+| `tunnel` | dashed line + 🔒 encap chip | `encap` | a site-to-site VPN / overlay |
+| `stack` | thick bar, `stack` chip | — | a stack/backplane cable |
+
+Aggregation is orthogonal to `mode`: give the members a shared `lag` id (plus an
+optional `lacp` mode) and they bundle onto one strand whose chip is the bundle id
+(`PO1`). A LAG can be a trunk, an access, or a routed port-channel.
+
+```yaml
+# an LACP port-channel carrying a trunk
+- { from: core-1:Te1/0/1, to: core-2:Te1/0/1, lag: po1, lacp: active, mode: trunk }
+- { from: core-1:Te1/0/2, to: core-2:Te1/0/2, lag: po1, lacp: active, mode: trunk }
+# a site-to-site IPsec VPN and a VXLAN overlay
+- { from: fw-a:tun0, to: fw-b:tun0, mode: tunnel, encap: ipsec }
+- { from: leaf-1, to: leaf-2, mode: tunnel, encap: vxlan }
+# eBGP peering to an upstream
+- { from: edge-rt, to: isp-rt, mode: peering, protocol: ebgp, kind: wan }
+```
+
+Attributes that don't match the mode are advisory warnings, not errors
+(`MRW-W105`) — e.g. `encap` on a non-tunnel link, or `lacp` without a `lag`.
+
+### Endpoint parsing
+
+**Only the first colon splits device from port.**
+
+```
+core-sw-01:Gi1/0/1   →  device "core-sw-01", port "Gi1/0/1"
+core-sw-01           →  device "core-sw-01", no port
+```
+
+Since ids are kebab-case, they never contain a colon, so this is unambiguous.
+A malformed endpoint is `MRW-E014`; an unresolvable device is `MRW-E009`.
+
+## Referential rules
+
+All enforced by `validate`:
+
+- Every zone and device reference must exist.
+- Ids are unique within their kind.
+- A port reused across links → warning `MRW-W101`.
+- An unlinked device → warning `MRW-W103`.
+- An empty zone → warning `MRW-W102`.
+- A link from a device to itself → warning `MRW-W104`.
+- A zone hierarchy cycle → error `MRW-E016`.
+
+## About documentation
+
+The `about:` key configures the interactive **About this diagram** document dialog modal. It accepts either raw Markdown or a dictionary of structured sections:
+
+```yaml
+# Form A: Structured dictionary of sections (facts or Markdown)
+about:
+  Overview: Enterprise multi-vendor routing lab connecting Cisco and Arista nodes.
+  Architecture Notes: |
+    - Spine/leaf EVPN-VXLAN fabric
+    - Redundant LACP bundles across all distribution uplinks
+    - OSPF Area 0 backbone transit
+  Contacts:
+    NOC: "noc@example.com"
+    Lead Architect: "Jane Doe"
+```
+
+```yaml
+# Form B: Freeform Markdown document
+about: |
+  ## Data Center Fabric Overview
+  This topology documents the migration from classic three-tier architecture
+  to a modern spine-and-leaf Clos network.
+  
+  | Tier | Platform | Uplinks |
+  | :--- | :--- | :--- |
+  | Spine | Arista 7050X3 | 100G QSFP28 |
+  | Leaf | Cisco Nexus 93180 | 40G QSFP+ |
+```
+
+When omitted, the modal opens with default topology specifications (diagram mode, inventory device count, active interconnects, and compiler schema version) alongside a tip explaining how to add custom documentation.
+
+## Custom inspector tabs
+
+Topologies can declare custom tabs for the right-hand inspector drawer via `inspector.tabs`:
+
+```yaml
+inspector:
+  tabs:
+    - id: bgp
+      label: BGP Routing
+      target: device          # device | edge | both (default: device)
+      field: bgp_neighbors    # maps to device.custom_fields.bgp_neighbors or sections
+    - id: telemetry
+      label: Telemetry
+      target: both
+      fields: [latency, drops, optical_budget]
+```
+
+| Key | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | identifier | yes | Unique identifier for the inspector tab |
+| `label` | string | yes | Title displayed on the inspector drawer tab button |
+| `target` | `device` \| `edge` \| `both` | no | Target element type (default: `device`) |
+| `field` | string | no | Single custom field or section key to display in the tab |
+| `fields` | list of strings | no | Multiple field keys bundled into a structured facts table |
+
+## Private annotations
+
+```yaml
+devices:
+  - id: core-sw-01
+    icon: cisco/switches/layer-3-switch
+    x-owner: netops
+    x-cmdb-id: CI0004421
+```
+
+Any `x-` prefixed key at any level is preserved in the file and ignored by the
+compiler.
+
+## Inert legacy keys
+
+`x-v1-config:` may appear in files produced by `marrow import`. It records the
+archived v1 configuration (`engines:`, `layouts:`, `output_filename:`) and has
+**zero effect** in v2. Delete it.

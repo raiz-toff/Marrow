@@ -1,0 +1,139 @@
+---
+title: ADR-0005 — Vendor icon packs are fetched, not committed
+description: AWS, Azure, and GCP artwork is obtained per-clone. Their terms permit use in diagrams but not redistribution.
+---
+
+**Status:** accepted — **amended**, see [Amendment: Cisco](#amendment-cisco-is-committed-after-all)
+
+The `aws`, `azure`, and `gcp` icon SVGs are gitignored. Each user obtains them
+via `marrow icons fetch` from the vendors' own servers. Only each pack's
+`manifest.json` (ids, keywords, file paths) is committed.
+
+## Why
+
+Each vendor grants use of their icons **in architecture diagrams** — which is
+exactly what Marrow's built HTML embeds — but does **not** grant redistribution
+of the icon library itself. Committing them to a public MIT-licensed repository
+would be redistribution.
+
+This is a licensing constraint, not a technical preference, and it isn't
+negotiable by anyone working on the project.
+
+## Consequences
+
+**Manifests are committed even when the artwork isn't.** This is the detail that
+makes the decision workable: `validate` and `icons search` work on a fresh clone
+with no fetch, so a topology referencing an AWS icon validates cleanly and
+renders as a placeholder until the SVGs are present. Without this, every clone
+would be broken until someone ran a download.
+
+**A first-run step exists and must be discoverable.** `npm run setup` offers the
+fetch; `validate` says *"pack not installed — run `marrow icons fetch <pack>`"*
+rather than reporting a generic unknown-icon error.
+
+**CI does not fetch.** The test suite must pass on a clean clone with no access
+to third-party vendors, so nothing in the suite depends on the vendor packs.
+
+**Fetch URLs rot.** The AWS and Azure package links rotate, so `fetch`
+discovers the current one by reading the vendor's official page rather than
+hard-coding a URL. That means fetching can break when a vendor redesigns their
+site — a maintenance cost accepted knowingly.
+
+**Diagrams remain freely shareable.** Embedding the icons you used in an
+architecture diagram is precisely the granted use. Nothing about this decision
+restricts what you do with your output.
+
+## Considered and rejected
+
+**Committing the icons anyway.** Rejected: not ours to redistribute.
+
+**Shipping only vendor-neutral icons.** Rejected: the whole point of using AWS
+icons for a VPC is that readers recognize them instantly. A cloud architecture
+drawn in generic shapes is materially worse.
+
+**A separate npm package holding the icons.** Rejected: publishing them is still
+redistribution — it moves the problem rather than solving it.
+
+## Amendment: Cisco is committed after all
+
+The original decision put `cisco` in the same bucket as the cloud three, on the
+premise that the SVGs were Cisco's artwork. **That premise was wrong**, and the
+Cisco half of this ADR is withdrawn. `icon-packs/cisco/svg/` is now committed.
+
+The pack's SVGs are exports of the **draw.io stencil libraries** — jgraph's own
+vector re-creations of Cisco-style topology shapes, licensed Apache-2.0, not
+copies of anything Cisco published. Copyright attaches to a specific piece of
+artwork, not to the convention that a router is drawn as a cylinder with four
+arrows. Redrawing the shape yields a new work with a clean chain of title, which
+is precisely how draw.io ships Cisco, AWS, and Azure shapes without licensing
+any of them.
+
+Provenance was verified rather than assumed. All 973 SVGs were matched against
+`stencils/cisco/`, `stencils/cisco_safe/`, and `stencils/cisco19.xml` in
+[jgraph/drawio](https://github.com/jgraph/drawio):
+
+| Check | Result |
+| --- | --- |
+| Matched a named stencil shape | 820 / 973 |
+| …and matched on normalized path geometry | 811 / 820 |
+| Carry the mxGraph renderer signature | 973 / 973 |
+| Contain embedded raster or vendor metadata | 0 |
+
+The 153 unmatched files were named `rect*` — real artwork exported from a
+draw.io canvas rather than from a named stencil. They carry the same renderer
+signature as every other file in the pack, so they are draw.io output.
+
+### Filenames were normalized
+
+295 of the 973 files arrived with export placeholder names — `rect_47.svg`,
+`icon12.svg`. Since manifest keywords are derived from filenames, those icons
+were invisible to `icons search`, which in an agent-driven tool means they
+effectively did not exist. They were renamed before the pack shipped:
+
+- **152 `rect*`** are cisco19 product tiles. drawio's own sidebar defines each
+  as `rect;prIcon=l2_switch` with the display label "L2 Switch", so the real
+  names were recoverable — matched by glyph geometry against the 232 named
+  cisco19 stencils, then reviewed visually. Icons carrying literal text (UPS vs
+  RPS, MSE, SIEM, QFP) were corrected against the render where geometry
+  disagreed, since near-identical glyphs differ only by their label.
+- **141 `icon*`** had no upstream name to recover: jgraph left the cisco_safe
+  Business, IOT, Tech, and Security sets with empty labels and empty search
+  tags. These were identified by rendering and inspection.
+
+Names were chosen for what an agent would search for. SVG contents are
+untouched — this is a rename plus a manifest regeneration, nothing more.
+
+### What this costs
+
+**Marrow is no longer uniformly MIT.** drawio's `stencils/LICENSE` adds a
+condition on top of Apache-2.0 that travels with derivatives, explicitly
+including format conversions: the artwork may not be incorporated into Atlassian
+products or anything distributed through the Atlassian marketplace. That clause
+now rides with `icon-packs/cisco/`, and downstream users inherit it. The rest of
+the repo is unaffected.
+
+This was judged worth it. The alternative was the roughest edge in the setup
+experience — every user hand-sourcing 973 files whose names had to match a
+committed manifest exactly — in exchange for avoiding a restriction that binds
+almost nobody who would use a network topology tool.
+
+**Trademark remains unaddressed.** Apache-2.0 §6 grants no trademark rights, and
+nothing here obtains any. The pack is named `cisco` because that is the visual
+vocabulary network engineers read. If Marrow is ever commercialized, this is the
+question to take to counsel — not the copyright one, which is settled.
+
+### Considered and rejected in the amendment
+
+**Renaming the pack to something non-trademarked.** Rejected for now: every icon
+id (`cisco/routers/router`) is a public contract that appears in user YAML, and
+breaking all 973 to soften a trademark question nobody has raised is a bad
+trade. Revisit if Marrow is commercialized.
+
+**Shipping only the 820 verified files.** Rejected: the 153 `rect*` files are
+legitimate draw.io output, and dropping them would shrink the pack to buy
+paperwork tidiness.
+
+**Keeping the placeholder names and adding aliases later.** Rejected: nothing
+referenced those ids yet — no tags, no fixture, no topology in `input/` — so
+renaming cost nothing. Once published, every id becomes a public contract and
+the same change would need an alias layer. This was the free window.

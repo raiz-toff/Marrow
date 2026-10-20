@@ -38,6 +38,8 @@ export interface ServeOptions {
   icons: IconCatalog;
   port?: number;
   host?: string;
+  /** When false or undefined, automatically increments port on EADDRINUSE up to 10 attempts. When true, fails fast. */
+  portExplicit?: boolean;
   /** Global branding from brand/brand.html, applied to every previewed page. */
   brand?: Brand;
   themeConfig?: ThemeConfig;
@@ -218,7 +220,7 @@ export async function serve(options: ServeOptions): Promise<RunningServer> {
 
   // watch the directory; debounce per-file bursts from fs.watch
   const timers = new Map<string, ReturnType<typeof setTimeout>>();
-  const watcher: FSWatcher = watch(state.dir, (_event, filename) => {
+  const watcher: FSWatcher = watch(state.dir, { recursive: true }, (_event, filename) => {
     if (!filename || !/\.ya?ml$/i.test(filename)) return;
     const full = join(state.dir, filename);
     clearTimeout(timers.get(full));
@@ -263,10 +265,17 @@ export async function serve(options: ServeOptions): Promise<RunningServer> {
           'Content-Type': 'text/event-stream',
           'Cache-Control': 'no-store',
           Connection: 'keep-alive',
+          'X-Accel-Buffering': 'no',
         });
         res.write(': connected\n\n');
         sseClients.add(res);
-        req.on('close', () => sseClients.delete(res));
+        const heartbeat = setInterval(() => {
+          if (!res.writableEnded) res.write(': heartbeat\n\n');
+        }, 15000);
+        req.on('close', () => {
+          clearInterval(heartbeat);
+          sseClients.delete(res);
+        });
         return;
       }
 
@@ -398,12 +407,35 @@ export async function serve(options: ServeOptions): Promise<RunningServer> {
   await rebuild();
 
   const host = options.host ?? '127.0.0.1';
+  const basePort = options.port ?? 5200;
+  const maxAttempts = options.portExplicit || basePort === 0 ? 1 : 10;
+  let activePort = basePort;
+
   await new Promise<void>((resolvePort, reject) => {
-    server.once('error', reject);
-    server.listen(options.port ?? 5200, host, () => resolvePort());
+    const tryListen = (attempt: number) => {
+      const p = basePort === 0 ? 0 : basePort + attempt;
+      const onError = (err: NodeJS.ErrnoException) => {
+        server.removeListener('listening', onListening);
+        if (err.code === 'EADDRINUSE' && attempt < maxAttempts - 1) {
+          console.warn(`warning: port ${p} is in use, trying ${p + 1}...`);
+          tryListen(attempt + 1);
+        } else {
+          reject(err);
+        }
+      };
+      const onListening = () => {
+        server.removeListener('error', onError);
+        const address = server.address();
+        activePort = typeof address === 'object' && address !== null ? address.port : p;
+        resolvePort();
+      };
+      server.once('error', onError);
+      server.once('listening', onListening);
+      server.listen(p, host);
+    };
+    tryListen(0);
   });
-  const address = server.address();
-  const port = typeof address === 'object' && address !== null ? address.port : (options.port ?? 5200);
+  const port = activePort;
 
   return {
     port,
@@ -421,7 +453,9 @@ export async function serve(options: ServeOptions): Promise<RunningServer> {
 }
 
 function injectLive(html: string): string {
-  return html.replace('</body>', `${LIVE_CLIENT}\n</body>`);
+  const idx = html.lastIndexOf('</body>');
+  if (idx === -1) return `${html}\n${LIVE_CLIENT}`;
+  return `${html.slice(0, idx)}${LIVE_CLIENT}\n${html.slice(idx)}`;
 }
 
 function contentType(path: string): string {

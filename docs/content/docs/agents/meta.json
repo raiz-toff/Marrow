@@ -1,0 +1,13 @@
+{
+  "title": "Agentic Engine",
+  "description": "Autonomous Golden Loop & skills",
+  "icon": "Bot",
+  "root": true,
+  "pages": [
+    "---Agent Workflows---",
+    "golden-loop",
+    "claude-code",
+    "rules",
+    "updates-and-self-healing"
+  ]
+}

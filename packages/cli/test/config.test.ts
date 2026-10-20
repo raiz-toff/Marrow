@@ -161,6 +161,38 @@ layout:
     expect(problems.some((p) => p.includes('layout.density'))).toBe(true);
     expect(problems.some((p) => p.includes('layout.scale'))).toBe(true);
   });
+
+  test('parses modular watermark configuration', () => {
+    const yaml = `
+watermark:
+  enabled: true
+  mode: minimal
+  opacity: 0.05
+  font: mono
+  casing: sentence
+`;
+    const { watermark, problems } = parseConfig(yaml, dir);
+    expect(problems).toEqual([]);
+    expect(watermark?.enabled).toBe(true);
+    expect(watermark?.mode).toBe('minimal');
+    expect(watermark?.opacity).toBe(0.05);
+    expect(watermark?.font).toBe('mono');
+    expect(watermark?.casing).toBe('sentence');
+  });
+
+  test('parses brand logo dictionary with src path', () => {
+    const yaml = `
+brand:
+  name: Acme Corp
+  logo:
+    src: brand/logo.svg
+    height: 18
+`;
+    const { brand, problems } = parseConfig(yaml, dir);
+    expect(problems).toEqual([]);
+    expect(brand?.name).toBe('Acme Corp');
+    expect(brand?.logo).toContain('ACMEMARK');
+  });
 });
 
 describe('loadConfig', () => {

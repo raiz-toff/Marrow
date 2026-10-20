@@ -95,8 +95,12 @@ describe('brand in the built page', () => {
 
   test('OFFLINE GATE holds with branding applied', async () => {
     const built = await buildSingleFile(topology(), { icons, brand: ACME });
+    expect(built.html).not.toMatch(/\bsrc\s*=\s*"https?:/i);
+    expect(built.html).not.toMatch(/url\(\s*["']?https?:/i);
     const external = built.html.match(/https?:\/\/(?!www\.w3\.org)[^"' )]+/g) ?? [];
-    expect(external).toEqual([]);
+    for (const url of external) {
+      expect(url).toMatch(/^(?:https?:\/\/(?:marrowdiagram\.vercel\.app|github\.com\/raiz-toff\/Marrow))/);
+    }
   });
 });
 

@@ -329,6 +329,38 @@ body:has(.m-inspector:not([hidden])) { --frame-right: calc(var(--inspector-w) + 
   font-size: 11px; font-weight: 600; letter-spacing: .25em; text-transform: uppercase;
   color: color-mix(in srgb, var(--ink) 11%, transparent);
 }
+.m-watermark[data-mode="off"] { display: none; }
+.m-watermark[data-mode="subtle"] span {
+  color: color-mix(in srgb, var(--ink) 2%, transparent);
+}
+.m-watermark[data-mode="minimal"],
+.m-watermark[data-mode="blueprint"] {
+  bottom: 12px; line-height: 1.4;
+}
+.m-watermark[data-mode="minimal"] span,
+.m-watermark[data-mode="blueprint"] span {
+  display: inline-block; font-size: 11.5px; font-weight: 600; letter-spacing: .08em;
+  font-family: var(--font-mono, monospace);
+  color: color-mix(in srgb, var(--ink) 26%, transparent);
+}
+.m-watermark[data-mode="minimal"] small,
+.m-watermark[data-mode="blueprint"] small {
+  display: inline-block; margin: 0 0 0 8px; font-size: 10.5px; font-weight: 400; letter-spacing: .05em;
+  font-family: var(--font-mono, monospace);
+  color: color-mix(in srgb, var(--ink) 18%, transparent);
+}
+.m-watermark[data-font="mono"] span,
+.m-watermark[data-font="mono"] small {
+  font-family: var(--font-mono, monospace);
+}
+.m-watermark[data-casing="sentence"] span,
+.m-watermark[data-casing="sentence"] small {
+  text-transform: capitalize;
+}
+.m-watermark[data-casing="as-is"] span,
+.m-watermark[data-casing="as-is"] small {
+  text-transform: none;
+}
 
 /* ── backdrop: author-branded margin around the boxed viewport ── */
 .m-backdrop { position: fixed; inset: 0; z-index: 0; pointer-events: none; user-select: none; }
@@ -425,6 +457,9 @@ body:has(.m-rail-wrap) .m-sidebar:not(.open) .m-sidebar-inner { padding-top: 52p
 .m-brand-gh svg { width: 14px; height: 14px; }
 .m-brand-logo { display: inline-flex; align-items: center; flex: none; }
 .m-brand-logo svg, .m-brand-logo img { display: block; width: auto; object-fit: contain; }
+.m-brand-mark .m-brand-logo svg, .m-brand-mark .m-brand-logo img {
+  height: 18px; max-width: 120px;
+}
 .m-side-foot .m-brand-logo svg, .m-side-foot .m-brand-logo img,
 .m-drawer-foot .m-brand-logo svg, .m-drawer-foot .m-brand-logo img {
   height: 14px; max-width: 80px;
@@ -1207,12 +1242,19 @@ a.m-side-row.active i, a.m-side-row.active em { color: var(--sidebar-fg); }
   background: color-mix(in srgb, var(--panel) 92%, var(--line)); flex: none;
 }
 .m-about-credit {
-  display: inline-flex; align-items: center; gap: 8px; font-size: 12px;
-  color: var(--ink-dim); text-decoration: none; transition: color .15s;
+  display: flex; align-items: center; justify-content: space-between; width: 100%; font-size: 12px;
+  color: var(--ink-dim);
 }
-.m-about-credit:hover { color: var(--m-accent); }
+.m-about-credit-link {
+  display: inline-flex; align-items: center; gap: 8px; color: var(--ink-dim); text-decoration: none; transition: color .15s;
+}
+.m-about-credit-link:hover { color: var(--m-accent); }
 .m-about-credit-mark { display: inline-flex; align-items: center; color: var(--m-accent); }
 .m-about-credit strong { color: var(--ink); font-weight: 600; }
+.m-about-credit-gh {
+  display: inline-flex; align-items: center; color: var(--ink-dim); opacity: 0.65; transition: opacity .15s, color .15s;
+}
+.m-about-credit-gh:hover { opacity: 1; color: var(--m-accent); }
 
 /* ── keyboard-shortcuts guide (shadcn Dialog) ── */
 .m-shortcuts {

@@ -1,0 +1,19 @@
+{
+  "title": "Marrow",
+  "description": "The topology compiler & CLI",
+  "icon": "Building",
+  "root": true,
+  "pages": [
+    "---Introduction---",
+    "index",
+    "why",
+    "getting-started",
+    "---Authoring & Reference---",
+    "guides",
+    "reference",
+    "glossary",
+    "---Ecosystem---",
+    "contributing",
+    "showcase"
+  ]
+}

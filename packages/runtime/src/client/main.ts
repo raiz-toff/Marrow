@@ -46,6 +46,8 @@ function boot(): void {
     setupInventory();
     setupInventoryDetails(data);
     setupMobileNav(undefined);
+    (window as any).__MARROW_READY__ = true;
+    window.dispatchEvent(new CustomEvent('marrow:ready'));
     return;
   }
 
@@ -197,6 +199,19 @@ function boot(): void {
   const settle = (): void => document.documentElement.classList.add('settled');
   setTimeout(settle, reduced ? 0 : 1900);
   addEventListener('pointerdown', settle, { once: true });
+
+  const markReady = (): void => {
+    (window as any).__MARROW_READY__ = true;
+    window.dispatchEvent(new CustomEvent('marrow:ready'));
+  };
+
+  if (document.fonts?.ready) {
+    document.fonts.ready
+      .then(() => requestAnimationFrame(() => markReady()))
+      .catch(() => markReady());
+  } else {
+    requestAnimationFrame(() => markReady());
+  }
 }
 
 // ─── backend-neutral node operations ────────────────────────────────────────

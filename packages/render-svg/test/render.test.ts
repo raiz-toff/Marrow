@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import type { Scene } from '@marrow/scene';
-import { extractSvg, renderScene } from '../src/index.js';
+import { extractSvg, renderScene, renderStandaloneSvg } from '../src/index.js';
 
 const scene: Scene = {
   size: { w: 400, h: 300 },
@@ -108,5 +108,15 @@ describe('extractSvg', () => {
     expect(out?.inner).toContain('.ic-test-icon-cls-1');
     expect(out?.inner).toContain('class="ic-test-icon-cls-1"');
     expect(out?.inner).toContain('id="ic-test-icon-r1"');
+  });
+
+  test('renderStandaloneSvg produces self-contained SVG with viewBox and inlined styles', () => {
+    const standalone = renderStandaloneSvg(scene, { icons });
+    expect(standalone).toContain('viewBox=');
+    expect(standalone).toContain('<style>');
+    expect(standalone).toContain('--bg:');
+    expect(standalone).toContain('<symbol id="ic-test-misc-thing"');
+    expect(standalone).toContain('<use href="#ic-test-misc-thing"');
+    expect(standalone).toContain('class="m-svg m-standalone"');
   });
 });

@@ -37,6 +37,21 @@ export type CollapseMode = 'auto' | 'open' | 'closed';
 /** `auto` follows the viewer's OS colour scheme (and lets a host drive it). */
 export type Theme = 'dark' | 'light' | 'auto';
 export type Density = 'compact' | 'standard' | 'spacious';
+export type WatermarkMode = 'off' | 'minimal' | 'subtle' | 'blueprint' | 'full';
+export type WatermarkCasing = 'uppercase' | 'sentence' | 'as-is';
+export type WatermarkFont = 'mono' | 'sans';
+
+export interface WatermarkConfig {
+  enabled?: boolean;
+  mode?: WatermarkMode;
+  opacity?: number;
+  casing?: WatermarkCasing;
+  font?: WatermarkFont;
+}
+
+export const WATERMARK_MODES: readonly WatermarkMode[] = ['off', 'minimal', 'subtle', 'blueprint', 'full'];
+export const WATERMARK_CASINGS: readonly WatermarkCasing[] = ['uppercase', 'sentence', 'as-is'];
+export const WATERMARK_FONTS: readonly WatermarkFont[] = ['mono', 'sans'];
 
 export const TIERS: readonly Tier[] = ['core', 'distribution', 'access', 'edge', 'endpoint', 'management'];
 export const DEVICE_STATUSES: readonly DeviceStatus[] = ['up', 'down', 'degraded', 'planned', 'unknown'];
@@ -164,6 +179,7 @@ export interface Topology {
   revision?: string;
   date?: string;
   about?: unknown;
+  watermark?: WatermarkConfig;
   titleBlock?: TitleBlock;
   inspector?: InspectorConfig;
   zones: Zone[];

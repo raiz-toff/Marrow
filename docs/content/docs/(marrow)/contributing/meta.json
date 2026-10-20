@@ -1,0 +1,11 @@
+{
+  "title": "Contributing",
+  "icon": "GitPullRequest",
+  "pages": [
+    "overview",
+    "architecture",
+    "packages",
+    "testing",
+    "adding-an-icon-pack"
+  ]
+}
