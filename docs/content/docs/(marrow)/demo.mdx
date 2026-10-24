@@ -1,0 +1,119 @@
+---
+title: Interactive Demo Studio
+description: Live interactive preview of compiled Marrow topologies across multiple layout archetypes, chrome modes, and theme synchronization.
+---
+
+Explore compiled Marrow network topologies directly in the browser. Every topology below is compiled from declarative YAML, rendered via the offline viewer engine, and mounted using the Marrow component architecture.
+
+<DemoStudio />
+
+## Architecture & Layout Archetypes
+
+Marrow produces deterministic layouts based on semantic network structure rather than arbitrary canvas coordinates.
+
+### 1. Tiered Hierarchical Core
+- **Engine Strategy**: Structured rank separation with core, distribution, and access tiers aligned horizontally.
+- **HA Link Bundles**: Redundant pairs are aligned as adjacent partner nodes with virtual inter-chassis links (StackWise-Virtual, vPC, MLAG).
+- **Preset**: Tiered Campus Core (`/demo/tiered-embed.html`)
+
+### 2. Multi-Zone Datacenter
+- **Engine Strategy**: Logical security and management boundaries partitioned into styled perimeter cards (DMZ, App Tier, Storage Fabric).
+- **Cross-Zone Routing**: Inter-zone firewalls and spine switches route traffic across border interfaces.
+- **Preset**: Multi-Zone Datacenter (`/demo/zoned-embed.html`)
+
+### 3. Radial WAN Hub-and-Spoke
+- **Engine Strategy**: Radial coordinate calculation placing central redundant core routers in the nucleus with remote spokes distributed evenly along an orbital perimeter.
+- **Overlay Semantics**: Visualizes encrypted IPsec / DMVPN tunnels as animated dashed lines with cryptographic telemetry chips.
+- **Preset**: Hub & Spoke Fabric (`/demo/hub-spoke-embed.html`)
+
+### 4. High-Density Scale Fabric
+- **Engine Strategy**: Canvas LOD (Level-of-Detail) rendering designed for topologies exceeding 300+ devices.
+- **Performance**: High frame rate panning with radar minimap culling and instantaneous sub-millisecond node search.
+- **Preset**: Scale Test (`/demo/scale-embed.html`)
+
+---
+
+## Chrome Modes & Integration
+
+Marrow diagrams support two standard presentation modes:
+
+| Mode | URL Hash / Prop | Inspector | Minimap | Controls HUD | Use Case |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Embedded Stage** | `chrome=minimal` | Collapsible drawer | Collapsible radar | Floating HUD | In-doc callouts, RFC embeds, dashboards |
+| **Full Workbench** | `chrome=full` | Integrated panel | Fixed sidebar | Top toolbar | Standalone diagrams, audits, NOC screens |
+
+### Embedding with React / Next.js
+
+Mount diagrams using the shadcn-compatible `<MarrowEmbed />` component:
+
+```tsx
+import { MarrowEmbed } from '@marrow/ui';
+
+export function NetworkDashboard() {
+  return (
+    <MarrowEmbed
+      src="/demo/tiered-embed.html"
+      chrome="minimal"
+      inspector="on"
+      minimap="on"
+      theme="auto"
+      height="650px"
+      floatingActions={true}
+    />
+  );
+}
+```
+
+### Direct Iframe Embed
+
+You can embed any compiled Marrow HTML file using a standard `<iframe>` and control its state via the hash fragment or `postMessage`:
+
+```html
+<iframe
+  src="/demo/tiered-embed.html#chrome=minimal;inspector=on;minimap=on"
+  width="100%"
+  height="600"
+  style="border: 1px solid var(--fd-border); border-radius: 1rem;"
+></iframe>
+```
+
+---
+
+## Bi-Directional postMessage Protocol
+
+When embedded in external applications or documentation portals, the Marrow runtime communicates across window boundaries using `postMessage`:
+
+### Host to Marrow (Commands)
+
+```json
+{
+  "type": "marrow:theme",
+  "theme": "dark"
+}
+```
+
+```json
+{
+  "type": "marrow:select",
+  "deviceId": "hq-core-01"
+}
+```
+
+```json
+{
+  "type": "marrow:zoom",
+  "action": "fit"
+}
+```
+
+### Marrow to Host (Telemetry Events)
+
+```json
+{
+  "type": "marrow:selected",
+  "deviceId": "hq-core-01",
+  "tier": "core",
+  "zone": "hq",
+  "interfaces": 3
+}
+```

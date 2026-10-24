@@ -28,21 +28,7 @@ the wrong one on untrusted networks. There is no authentication.
 
 ## How reloading works
 
-```
-  save input/branch.yaml
-        │
-        ▼
-  fs.watch fires  ──►  debounce per-file bursts
-        │
-        ▼
-  validate + rebuild
-        │
-        ├── shape unchanged  ──►  reload only the pages that changed
-        └── shape changed    ──►  reload everything
-        │
-        ▼
-  SSE push  ──►  the open browser tab updates
-```
+<ReloadWorkflowVisual />
 
 Page builds are lazy and memoized, so a 5,000-device site doesn't recompile in
 full because you renamed one device. Editing a device inside one zone reloads

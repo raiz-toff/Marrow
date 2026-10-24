@@ -1,77 +1,189 @@
 'use client';
 
 import {
-  Activity,
-  ChevronRight,
-  Command,
-  Cpu,
+  ExternalLink,
   Layers,
+  Loader2,
   Maximize2,
   Minimize2,
-  Network,
-  Radio,
-  Router,
-  Search,
-  Server,
-  Shield,
-  Sparkles,
-  Terminal,
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
-import { cn, type DeviceStatus, type TopologyDevice } from './topology-types.js';
-import { useTopologyShell } from './topology-context.js';
-import { TopologyControls } from './topology-controls.js';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { cn } from './topology-types.js';
 
-export interface TopologyStageProps {
+export interface MarrowEmbedPreset {
+  label: string;
+  src: string;
+}
+
+export interface MarrowEmbedProps {
   /**
-   * Optional custom URL if an embedded diagram is explicitly desired.
-   * If omitted, renders the clean workspace stage without any diagram.
+   * Path or URL to the compiled Marrow HTML diagram
+   * (e.g. "/diagrams/datacenter.html" or "/demo/tiered-embed.html")
+   * @default "/demo/tiered-embed.html"
    */
   src?: string;
-  /** Show the in-stage title & toolbar */
-  showToolbar?: boolean;
-  /** Show floating camera controls HUD (+ / - / fit / fullscreen) */
-  showControls?: boolean;
-  /** Custom overlay children or slot */
+
+  /**
+   * In-memory raw compiled HTML string from Marrow compiler (rendered directly via srcDoc)
+   */
+  html?: string;
+
+  /**
+   * Accessible diagram title
+   * @default "Marrow Network Diagram"
+   */
+  title?: string;
+
+  /**
+   * Embed chrome mode:
+   * - "minimal": Strips breadcrumb topbars, search dock, and sidebars (#embed=true).
+   * - "full": Displays the complete standalone Marrow workbench.
+   * @default "minimal"
+   */
+  chrome?: 'minimal' | 'full';
+
+  /**
+   * Device telemetry and port inspector drawer
+   * @default "on"
+   */
+  inspector?: 'on' | 'off';
+
+  /**
+   * Radar navigation minimap overlay
+   * @default "on"
+   */
+  minimap?: 'on' | 'off';
+
+  /**
+   * Theme mode:
+   * - "auto": Synchronizes live with host dark/light mode via postMessage.
+   * - "dark" | "light": Explicitly overrides diagram theme.
+   * @default "auto"
+   */
+  theme?: 'dark' | 'light' | 'auto';
+
+  /**
+   * Viewport height (CSS value)
+   * @default "600px"
+   */
+  height?: string | number;
+
+  /**
+   * Show floating action controls (fullscreen, open standalone) in the top corner
+   * @default true
+   */
+  floatingActions?: boolean;
+
+  /**
+   * Optional preset diagrams for in-stage switching
+   */
+  presets?: MarrowEmbedPreset[];
+
+  /**
+   * Callback fired when Marrow runtime signals "marrow:ready"
+   */
+  onReady?: () => void;
+
+  /**
+   * Optional custom overlay children
+   */
   children?: React.ReactNode;
-  /** Optional custom CSS classes on the container */
+
+  /**
+   * Additional CSS classes on the outer container
+   */
   className?: string;
 }
 
-const STATUS_LED_COLOR: Record<DeviceStatus, string> = {
-  up: '#10b981',
-  degraded: '#f59e0b',
-  down: '#f43f5e',
-  planned: '#0ea5e9',
-  unknown: '#71717a',
-};
+/**
+ * Builds the effective iframe URL appending Marrow embedding hash flags.
+ */
+function buildEmbedUrl(
+  src: string,
+  options: {
+    chrome?: 'minimal' | 'full';
+    inspector?: 'on' | 'off';
+    minimap?: 'on' | 'off';
+    theme?: 'dark' | 'light' | 'auto';
+  },
+): string {
+  if (!src) return '';
+  const hashIdx = src.indexOf('#');
+  const base = hashIdx >= 0 ? src.slice(0, hashIdx) : src;
+  const rawHash = hashIdx >= 0 ? src.slice(hashIdx + 1) : '';
 
-function getDeviceIcon(tier: string, role: string) {
-  const r = role.toLowerCase();
-  if (r.includes('firewall') || r.includes('security') || r.includes('dmz')) return Shield;
-  if (r.includes('router') || tier === 'edge') return Router;
-  if (r.includes('server') || r.includes('cluster') || r.includes('db') || tier === 'endpoint') return Server;
-  return Network;
+  const params = new URLSearchParams(
+    rawHash.includes(';') ? rawHash.replace(/;/g, '&') : rawHash,
+  );
+
+  if (options.chrome === 'minimal' && !params.has('chrome') && !params.has('embed')) {
+    params.set('chrome', 'minimal');
+  } else if (options.chrome === 'full') {
+    params.delete('chrome');
+    params.delete('embed');
+  }
+
+  if (options.inspector === 'off') {
+    params.set('inspector', 'off');
+  } else if (options.inspector === 'on') {
+    params.delete('inspector');
+  }
+
+  if (options.minimap === 'off') {
+    params.set('minimap', 'off');
+  } else if (options.minimap === 'on') {
+    params.delete('minimap');
+  }
+
+  if (options.theme && options.theme !== 'auto') {
+    params.set('theme', options.theme);
+  }
+
+  const hashString = params.toString();
+  return hashString ? `${base}#${hashString}` : base;
 }
 
-export function TopologyStage({
+export function MarrowEmbed({
   src,
-  showToolbar = true,
-  showControls = true,
+  html,
+  title = 'Marrow Network Diagram',
+  chrome = 'minimal',
+  inspector = 'on',
+  minimap = 'on',
+  theme = 'auto',
+  height = '600px',
+  floatingActions = true,
+  presets,
+  onReady,
   children,
   className,
-}: TopologyStageProps) {
-  const [isFullscreen, setIsFullscreen] = useState(false);
+}: MarrowEmbedProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { data, selectedDevice, activeZoneId, viewSettings, setSearchOpen } = useTopologyShell();
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const activeZone = data.zones.find((z) => z.id === (activeZoneId || selectedDevice?.zone));
-  const activeZoneLabel = activeZone?.label || 'All Zones';
+  // Default to the pre-compiled demo diagram if neither src nor html is specified
+  const initialSrc = src ?? (html ? undefined : '/demo/tiered-embed.html');
+  const [activeSrc, setActiveSrc] = useState<string | undefined>(initialSrc);
 
+  useEffect(() => {
+    if (src) setActiveSrc(src);
+  }, [src]);
+
+  const effectiveSrc = useMemo(() => {
+    if (!activeSrc) return undefined;
+    return buildEmbedUrl(activeSrc, { chrome, inspector, minimap, theme });
+  }, [activeSrc, chrome, inspector, minimap, theme]);
+
+  // Fullscreen support
   const toggleFullscreen = () => {
     if (!containerRef.current) return;
     if (!document.fullscreenElement) {
-      containerRef.current.requestFullscreen?.().then(() => setIsFullscreen(true)).catch(() => {});
+      containerRef.current
+        .requestFullscreen?.()
+        .then(() => setIsFullscreen(true))
+        .catch(() => {});
     } else {
       document.exitFullscreen?.().then(() => setIsFullscreen(false)).catch(() => {});
     }
@@ -85,209 +197,170 @@ export function TopologyStage({
     return () => document.removeEventListener('fullscreenchange', handleFsChange);
   }, []);
 
-  const DeviceIcon = selectedDevice
-    ? getDeviceIcon(selectedDevice.tier, selectedDevice.role)
-    : Network;
+  // Theme synchronization via postMessage
+  useEffect(() => {
+    const resolveTheme = (): 'dark' | 'light' => {
+      if (theme === 'dark' || theme === 'light') return theme;
+      if (typeof document !== 'undefined') {
+        if (
+          document.documentElement.classList.contains('dark') ||
+          document.documentElement.dataset.theme === 'dark'
+        ) {
+          return 'dark';
+        }
+      }
+      return 'light';
+    };
+
+    const sendTheme = () => {
+      try {
+        iframeRef.current?.contentWindow?.postMessage(
+          { type: 'marrow:theme', theme: resolveTheme() },
+          '*',
+        );
+      } catch {}
+    };
+
+    sendTheme();
+
+    const handleMessage = (e: MessageEvent) => {
+      if (e.data?.type === 'marrow:ready') {
+        setIsLoading(false);
+        sendTheme();
+        onReady?.();
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+
+    const observer = new MutationObserver(() => {
+      if (!theme || theme === 'auto') {
+        sendTheme();
+      }
+    });
+
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class', 'data-theme'],
+    });
+
+    return () => {
+      window.removeEventListener('message', handleMessage);
+      observer.disconnect();
+    };
+  }, [theme, onReady]);
+
+  const heightStyle = isFullscreen
+    ? '100vh'
+    : typeof height === 'number'
+      ? `${height}px`
+      : height;
 
   return (
     <div
       ref={containerRef}
+      style={{ height: heightStyle }}
       className={cn(
-        'relative flex flex-col flex-1 min-h-[460px] w-full h-full overflow-hidden rounded-xl border border-fd-border/60 bg-fd-card/40 text-fd-foreground shadow-inner select-none transition-all',
-        isFullscreen ? 'fixed inset-0 z-50 rounded-none border-0' : '',
+        'relative w-full h-full min-h-[420px] overflow-hidden rounded-xl border border-fd-border/70 bg-fd-card/30 select-none transition-all',
+        isFullscreen ? 'fixed inset-0 z-50 rounded-none border-0 h-screen w-screen bg-fd-background' : '',
         className,
       )}
     >
-      {/* ── Top Floating Stage Bar: Breadcrumb + Search Trigger ── */}
-      {showToolbar && (
-        <div className="absolute top-3 inset-x-3 z-20 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
-          {/* Left: Breadcrumbs */}
-          <div className="pointer-events-auto flex items-center gap-2 px-3 py-1.5 rounded-xl border border-fd-border/70 bg-fd-background/90 backdrop-blur-md shadow-xs">
-            <Layers className="size-3.5 text-fd-primary" />
-            <span className="text-xs font-semibold text-fd-foreground tracking-tight">
-              {data.title || 'Marrow Studio'}
-            </span>
-            <ChevronRight className="size-3 text-fd-muted-foreground/60" />
-            <span className="text-[11px] font-mono text-fd-primary">
-              {activeZoneLabel}
-            </span>
-          </div>
+      {/* Floating HUD micro-actions directly on the canvas — NO duplicate header box */}
+      {floatingActions && (
+        <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5 pointer-events-auto">
+          {presets && presets.length > 0 && (
+            <div className="flex items-center gap-1 p-0.5 rounded-lg border border-fd-border/70 bg-fd-background/90 backdrop-blur-md shadow-2xs">
+              {presets.map((p) => {
+                const isActive = activeSrc === p.src;
+                return (
+                  <button
+                    key={p.src}
+                    type="button"
+                    onClick={() => {
+                      setIsLoading(true);
+                      setActiveSrc(p.src);
+                    }}
+                    className={cn(
+                      'px-2 py-0.5 rounded-md text-[11px] font-medium transition-all cursor-pointer',
+                      isActive
+                        ? 'bg-fd-accent text-fd-foreground font-semibold shadow-2xs'
+                        : 'text-fd-muted-foreground hover:text-fd-foreground',
+                    )}
+                  >
+                    {p.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
-          {/* Right: Quick Search Button + Fullscreen */}
-          <div className="pointer-events-auto flex items-center gap-1.5">
-            <button
-              type="button"
-              onClick={() => setSearchOpen(true)}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border border-fd-border/70 bg-fd-background/90 backdrop-blur-md text-xs font-medium text-fd-muted-foreground hover:text-fd-foreground hover:border-fd-primary/50 transition-all shadow-xs cursor-pointer"
+          {activeSrc && (
+            <a
+              href={activeSrc}
+              target="_blank"
+              rel="noreferrer"
+              title="Open standalone diagram in new tab"
+              className="p-1.5 rounded-lg border border-fd-border/70 bg-fd-background/90 backdrop-blur-md text-fd-muted-foreground hover:text-fd-foreground hover:border-fd-primary/50 transition-all shadow-2xs cursor-pointer"
             >
-              <Search className="size-3.5 text-fd-muted-foreground" />
-              <span className="hidden sm:inline">Search devices…</span>
-              <kbd className="px-1.5 py-0.2 text-[10px] font-mono bg-fd-muted border border-fd-border rounded text-fd-muted-foreground">
-                Ctrl K
-              </kbd>
-            </button>
+              <ExternalLink className="size-3.5" />
+              <span className="sr-only">Open standalone</span>
+            </a>
+          )}
 
-            <button
-              type="button"
-              onClick={toggleFullscreen}
-              title={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
-              className="p-1.5 rounded-xl border border-fd-border/70 bg-fd-background/90 backdrop-blur-md text-fd-muted-foreground hover:text-fd-foreground transition-all shadow-xs cursor-pointer"
-            >
-              {isFullscreen ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={toggleFullscreen}
+            title={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
+            className="p-1.5 rounded-lg border border-fd-border/70 bg-fd-background/90 backdrop-blur-md text-fd-muted-foreground hover:text-fd-foreground hover:border-fd-primary/50 transition-all shadow-2xs cursor-pointer"
+          >
+            {isFullscreen ? (
+              <Minimize2 className="size-3.5" />
+            ) : (
+              <Maximize2 className="size-3.5" />
+            )}
+          </button>
         </div>
       )}
 
-      {/* ── Main Stage Area: Clean Workspace Viewport (No Topology Diagram) ── */}
-      <div className="relative flex-1 flex flex-col items-center justify-center p-6 w-full h-full min-h-[400px] overflow-hidden bg-fd-background/60">
-        {/* Subtle Engineering Dot Grid */}
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 pointer-events-none opacity-[0.25]"
-          style={{
-            backgroundImage:
-              'radial-gradient(var(--color-fd-border, #3f3f46) 1.2px, transparent 1.2px)',
-            backgroundSize: '20px 20px',
-          }}
-        />
+      {/* Main Diagram Viewport: Edge-to-edge flush with zero double-box nesting */}
+      <div className="relative w-full h-full min-h-0 bg-transparent overflow-hidden">
+        {/* Loading Spinner Indicator */}
+        {isLoading && (
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-fd-background/60 backdrop-blur-xs transition-opacity duration-300">
+            <Loader2 className="size-5 animate-spin text-fd-primary" />
+            <span className="text-xs font-mono text-fd-muted-foreground">
+              Initializing Marrow layout engine…
+            </span>
+          </div>
+        )}
 
-        {src ? (
+        {/* Embedded Marrow Diagram Iframe */}
+        {effectiveSrc || html ? (
           <iframe
-            src={src}
-            title={data.title}
-            className="relative z-10 w-full h-full border-0 block"
+            ref={iframeRef}
+            src={effectiveSrc}
+            srcDoc={html}
+            title={title}
+            onLoad={() => setIsLoading(false)}
+            className="w-full h-full border-0 block"
             allow="fullscreen"
           />
         ) : (
-          /* Active Hardware Telemetry Stage Card */
-          <div className="relative z-10 flex flex-col items-center gap-4 w-full max-w-lg">
-            {selectedDevice ? (
-              <div className="w-full rounded-2xl border border-fd-border/80 bg-fd-card/90 backdrop-blur-md p-5 shadow-xl transition-all">
-                {/* Header Row */}
-                <div className="flex items-center justify-between pb-3 border-b border-fd-border/50">
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center justify-center size-10 rounded-xl bg-fd-primary/10 border border-fd-primary/20 text-fd-primary shadow-xs">
-                      <DeviceIcon className="size-5" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-sm text-fd-foreground">
-                          {selectedDevice.label}
-                        </span>
-                        <span
-                          className="size-2 rounded-full inline-block shadow-xs"
-                          style={{
-                            backgroundColor:
-                              STATUS_LED_COLOR[selectedDevice.status] || '#10b981',
-                          }}
-                          title={`Status: ${selectedDevice.status.toUpperCase()}`}
-                        />
-                      </div>
-                      <span className="text-xs text-fd-muted-foreground">
-                        {selectedDevice.role}
-                      </span>
-                    </div>
-                  </div>
-
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full border border-fd-border bg-fd-muted/70 text-fd-muted-foreground uppercase tracking-wider">
-                    Tier: {selectedDevice.tier}
-                  </span>
-                </div>
-
-                {/* Hardware Telemetry Spec Grid */}
-                <div className="grid grid-cols-2 gap-2.5 py-3.5 text-xs">
-                  <div className="flex flex-col gap-0.5 p-2 rounded-xl bg-fd-background/50 border border-fd-border/40">
-                    <span className="text-[10px] font-mono uppercase tracking-wider text-fd-muted-foreground">
-                      Management IP
-                    </span>
-                    <span className="font-mono font-medium text-fd-foreground">
-                      {selectedDevice.ip || 'DHCP Assigned'}
-                    </span>
-                  </div>
-
-                  <div className="flex flex-col gap-0.5 p-2 rounded-xl bg-fd-background/50 border border-fd-border/40">
-                    <span className="text-[10px] font-mono uppercase tracking-wider text-fd-muted-foreground">
-                      Hardware Model
-                    </span>
-                    <span className="font-medium truncate text-fd-foreground" title={selectedDevice.model}>
-                      {selectedDevice.model || 'Standard Chassis'}
-                    </span>
-                  </div>
-
-                  <div className="flex flex-col gap-0.5 p-2 rounded-xl bg-fd-background/50 border border-fd-border/40">
-                    <span className="text-[10px] font-mono uppercase tracking-wider text-fd-muted-foreground">
-                      Network OS
-                    </span>
-                    <span className="font-medium truncate text-fd-foreground" title={selectedDevice.os}>
-                      {selectedDevice.os || 'Enterprise OS'}
-                    </span>
-                  </div>
-
-                  <div className="flex flex-col gap-0.5 p-2 rounded-xl bg-fd-background/50 border border-fd-border/40">
-                    <span className="text-[10px] font-mono uppercase tracking-wider text-fd-muted-foreground">
-                      Interfaces Configured
-                    </span>
-                    <span className="font-mono font-medium text-fd-primary">
-                      {selectedDevice.interfaces.length} Connected Ports
-                    </span>
-                  </div>
-                </div>
-
-                {/* Interactive Guidance Footer */}
-                <div className="pt-2.5 border-t border-fd-border/50 flex items-center justify-between text-[11px] text-fd-muted-foreground">
-                  <span className="flex items-center gap-1.5">
-                    <Activity className="size-3.5 text-fd-primary" />
-                    <span>Telemetry synced with right Inspector drawer</span>
-                  </span>
-                  <span className="font-mono text-[10px] text-fd-muted-foreground/70">
-                    Zone: {selectedDevice.zone.toUpperCase()}
-                  </span>
-                </div>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center p-8 text-center rounded-2xl border border-dashed border-fd-border bg-fd-card/40">
-                <Network className="size-8 text-fd-muted-foreground/50 mb-2" />
-                <span className="text-sm font-semibold text-fd-foreground">No Hardware Selected</span>
-                <span className="text-xs text-fd-muted-foreground mt-1 max-w-xs">
-                  Click any device in the left sidebar or press Ctrl+K to inspect telemetry.
-                </span>
-              </div>
-            )}
-
-            {/* Stage Purpose Callout */}
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-fd-border/60 bg-fd-muted/40 text-[11px] text-fd-muted-foreground">
-              <Sparkles className="size-3 text-fd-primary" />
-              <span>Workspace Stage frames device selection, sidebar, and inspector controls</span>
-            </div>
+          <div className="flex items-center justify-center h-full text-xs text-fd-muted-foreground">
+            Provide a diagram URL (<code>src</code>) or raw compiled markup (<code>html</code>).
           </div>
         )}
 
-        {/* Custom Overlay Children */}
         {children}
-
-        {/* Floating Camera Controls HUD */}
-        {showControls && <TopologyControls />}
-
-        {/* Bottom Left Engineering Blueprint Watermark */}
-        {viewSettings?.watermark !== 'off' && (
-          <div
-            aria-hidden="true"
-            className="absolute left-3.5 bottom-3 z-10 pointer-events-none select-none flex items-baseline gap-2"
-          >
-            <span className="text-[10px] font-mono font-semibold uppercase tracking-widest text-fd-muted-foreground/60">
-              fig. 01 — Marrow Workspace Studio
-            </span>
-            <span className="hidden sm:inline text-[9px] font-mono text-fd-muted-foreground/40">
-              Zero-Diagram Shell Mode
-            </span>
-          </div>
-        )}
       </div>
     </div>
   );
 }
 
-/** Export aliases so existing imports work cleanly */
-export const TopologyCanvas = TopologyStage;
-export const TopologyViewport = TopologyStage;
+// Aliases for seamless drop-in compatibility
+export const TopologyCanvas = MarrowEmbed;
+export const TopologyViewport = MarrowEmbed;
+export const TopologyStage = MarrowEmbed;
+export const MarrowDiagram = MarrowEmbed;
+export type TopologyStageProps = MarrowEmbedProps;

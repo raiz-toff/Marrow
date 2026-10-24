@@ -30,7 +30,7 @@ const mono = JetBrains_Mono({
 });
 
 export const metadata = {
-  metadataBase: new URL('https://marrow.run'),
+  metadataBase: new URL('https://marrowdiagram.vercel.app'),
   title: {
     template: '%s | Marrow',
     default: 'Marrow — Declarative Network Topology Studio',

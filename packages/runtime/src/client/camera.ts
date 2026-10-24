@@ -104,6 +104,24 @@ export class Camera {
     );
   }
 
+  /** Re-center the viewport on a world rect without altering the zoom level unless needed. */
+  reCenter(rect: WorldRect, animate = false): void {
+    const vis = this.visibleArea();
+    const k = this.state.k;
+    const target: CameraState = {
+      x: vis.x + vis.w / 2 - (rect.x + rect.w / 2) * k,
+      y: vis.y + vis.h / 2 - (rect.y + rect.h / 2) * k,
+      k,
+    };
+    if (!animate) {
+      this.cancelAnim();
+      this.state = target;
+      this.apply();
+      return;
+    }
+    this.animateTo(target, 280);
+  }
+
   zoomAt(screenX: number, screenY: number, factor: number): void {
     const { x, y, k } = this.state;
     const nk = clamp(k * factor, MIN_K, MAX_K);

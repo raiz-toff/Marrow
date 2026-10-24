@@ -9,41 +9,7 @@ into either SVG or canvas inside a self-contained page.
 
 ## The pipeline
 
-```
-  YAML source
-      │
-      ▼
-  ┌─────────┐  parse (line/col preserved) → strict validation → normalize
-  │ schema  │  errors carry code, path, line, col, snippet, hint, suggestions
-  └─────────┘
-      │  Topology  (the normalized model every module speaks)
-      ▼
-  ┌─────────┐  classify  → one of six archetypes
-  │ layout  │  size      → measure nodes, labels included (deterministic tables)
-  │         │  place     → ELK layered · compose mosaic · polar · circle
-  │         │  route     → libavoid orthogonal, or polylines for radial
-  │         │  tidy      → coincident runs, gutter buses, draw order
-  └─────────┘
-      │  Scene  (boxes + polylines — the geometric contract)
-      ▼
-  ┌─────────┐  L1 fails the build · L2 auto-repairs · L3 advises
-  │  lint   │
-  └─────────┘
-      │
-      ▼
-  ┌─────────────┐         ┌──────────┐
-  │ render-svg  │  hero   │  canvas  │  scale
-  │             │  tier   │  engine  │  tier
-  └─────────────┘         └──────────┘
-      │
-      ▼
-  ┌─────────┐  collapse → plan pages → compile
-  │  site   │  single self-contained file, or a multi-page site
-  └─────────┘
-      │
-      ▼
-  HTML  +  the ~20 KB runtime client (camera, inspector, spotlight, minimap, export)
-```
+<CompilePipelineVisual />
 
 ## Stage by stage
 

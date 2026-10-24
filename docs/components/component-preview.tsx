@@ -2,21 +2,6 @@
 
 import React, { useState } from 'react';
 import { Check, Copy, Eye, Code2, Terminal } from 'lucide-react';
-import { useTopologyShell } from '@marrow/ui';
-
-export function TopologySearchTrigger() {
-  const { setSearchOpen } = useTopologyShell();
-  return (
-    <button
-      type="button"
-      onClick={() => setSearchOpen(true)}
-      className="inline-flex items-center gap-3 px-4 py-2.5 rounded-xl border border-fd-border bg-fd-card text-fd-foreground hover:bg-fd-accent transition-colors shadow-xs font-medium text-xs cursor-pointer"
-    >
-      <span>Open Command Search</span>
-      <kbd className="px-2 py-0.5 text-[11px] font-mono bg-fd-muted border border-fd-border rounded">Ctrl K</kbd>
-    </button>
-  );
-}
 
 interface ComponentPreviewProps {
   title?: string;
@@ -44,7 +29,7 @@ export function ComponentPreview({
 
   const defaultInstall =
     installCommand ??
-    `npx shadcn@latest add https://marrow.run/r/${name}.json`;
+    `npx shadcn@latest add https://marrowdiagram.vercel.app/r/${name}.json`;
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);

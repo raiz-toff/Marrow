@@ -9,7 +9,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![npm version](https://img.shields.io/badge/npm-marrow--cli-blue.svg)](https://www.npmjs.com/package/marrow-cli)
 
-📖 **[Full documentation](https://marrowdiagram.vercel.app)** · 🎯 **[Live Showcase](https://marrowdiagram.vercel.app/showcase)** · ⚡ **[Quickstart](https://marrowdiagram.vercel.app/getting-started/quickstart)**
+📖 **[Full Documentation](https://marrowdiagram.vercel.app)** · 🎯 **[Live Showcase](https://marrowdiagram.vercel.app/docs/showcase)** · ⚡ **[Quickstart](https://marrowdiagram.vercel.app/docs/getting-started/quickstart)** · 🧩 **[React / shadcn Components](https://marrowdiagram.vercel.app/docs/components)**
 
 ---
 
@@ -31,7 +31,8 @@
 * **Network-native link semantics**: Real 802.1Q double-rail trunks with VLAN chips (`10,20,30`), LACP port-channel bundles, IPsec / GRE / VXLAN overlay padlocks, and per-interface access chips.
 * **Self-contained, offline interactive HTML**: Everything—vendor icons, layout styles, and the lightweight runtime—is embedded into a single `.html` file. It works offline on a plane, needs no server, and respects your privacy.
 * **Configurable Blueprint & Static Export**: Export clean, publication-ready SVGs or high-resolution 2x Retina PNGs with engineering CAD title blocks, dynamic vector auto-legends, and visible interface port labels.
-* **Modular UI Chrome**: Run in full workstation mode with command bar, search palette (`Ctrl+K`), and device inspector, or embed in docs/kiosks with `#embed=true` or `?chrome=minimal`.
+* **Modular UI & Embed Modes**: Run in full workstation mode with command bar, search palette (`Ctrl+K`), and device inspector, or embed minimal diagrams in docs, dashboards, or NOC monitors with `#chrome=minimal`.
+* **shadcn/ui Component Registry**: Embed interactive compiled diagrams and render live link badges directly in your React / Next.js applications via `npx shadcn add`.
 * **Agent-native compiler**: Built specifically for pair-programming with AI coding agents (Claude Code, Cursor, Cline, Antigravity, Windsurf, Aider). Structured JSON diagnostics (`--json`) and autonomous self-healing for minor update regressions.
 
 ---
@@ -65,6 +66,67 @@ npm run validate fixtures/valid/small-office.yaml
 npm run build fixtures/valid/small-office.yaml
 open output/small-office.html
 ```
+
+---
+
+## React & shadcn UI Component Suite
+
+Marrow provides official, production-ready React / Next.js components through our **shadcn-compatible registry** (`registry.json`):
+
+### 1. Marrow Diagram Embed (`<MarrowEmbed />`)
+Embed interactive, compiled HTML diagrams directly into your web applications with automatic dark/light theme synchronization, fullscreen expansion, and minimal kiosk chrome:
+
+```bash
+npx shadcn@latest add https://marrowdiagram.vercel.app/r/topology-canvas.json
+```
+
+Or via GitHub shorthand:
+```bash
+npx shadcn@latest add raiz-toff/Marrow/topology-canvas
+```
+
+```tsx
+import { MarrowEmbed } from "@/components/marrow/topology-canvas";
+
+export function CampusTopology() {
+  return (
+    <MarrowEmbed
+      src="/diagrams/campus.html"
+      title="Campus Core Architecture"
+      chrome="minimal"
+      height="600px"
+    />
+  );
+}
+```
+
+### 2. Cable & Link Badge (`<CableBadge />`)
+Display physical/logical link modes (trunk, routed, tunnel, LAG), port line speeds (1G–400G), and animated traffic packet flow:
+
+```bash
+npx shadcn@latest add https://marrowdiagram.vercel.app/r/cable-badge.json
+```
+
+Or via GitHub shorthand:
+```bash
+npx shadcn@latest add raiz-toff/Marrow/cable-badge
+```
+
+```tsx
+import { CableBadge } from "@/components/marrow/cable-badge";
+
+export function LinkTelemetry() {
+  return (
+    <div className="flex items-center gap-3">
+      <CableBadge mode="trunk" speed="100G" status="up" animated />
+      <CableBadge mode="routed" speed="25G" status="up" />
+      <CableBadge mode="tunnel" speed="10G" status="degraded" />
+    </div>
+  );
+}
+```
+
+Explore full component props and live interactive previews in the **[Component Documentation](https://marrowdiagram.vercel.app/docs/components)**.
 
 ---
 
@@ -163,12 +225,13 @@ npm run marrow -- icons search switch router firewall server
 
 Full documentation lives in [`docs/`](docs/) and is published at **[https://marrowdiagram.vercel.app](https://marrowdiagram.vercel.app)**:
 
-* **[Quickstart](https://marrowdiagram.vercel.app/getting-started/quickstart)** — Five-minute introduction to compiling your first diagram.
-* **[Authoring Guide](https://marrowdiagram.vercel.app/guides/authoring)** — Device hierarchy, link semantics, custom fields, and blueprint title blocks.
-* **[Zones & Tiers](https://marrowdiagram.vercel.app/guides/zones-and-tiers)** — Spatial clustering, boundary containers, and tier ordering.
-* **[Embedding & Kiosk Modes](https://marrowdiagram.vercel.app/guides/embedding)** — Embedding minimal diagrams in Notion, MkDocs, iframe hubs, or NOC monitors.
-* **[Agent Workflow & Self-Healing](https://marrowdiagram.vercel.app/agents/updates-and-self-healing)** — Operating router, update verification, and autonomous repair loops.
-* **[Architecture Decisions (ADRs)](https://marrowdiagram.vercel.app/decisions/overview)** — Design token contracts, density scaling, and CAD blueprint export specifications.
+* **[Quickstart](https://marrowdiagram.vercel.app/docs/getting-started/quickstart)** — Five-minute introduction to compiling your first diagram.
+* **[Authoring Guide](https://marrowdiagram.vercel.app/docs/guides/authoring)** — Device hierarchy, link semantics, custom fields, and blueprint title blocks.
+* **[Zones & Tiers](https://marrowdiagram.vercel.app/docs/guides/zones-and-tiers)** — Spatial clustering, boundary containers, and tier ordering.
+* **[Embedding & Kiosk Modes](https://marrowdiagram.vercel.app/docs/guides/embedding)** — Embedding minimal diagrams in Notion, MkDocs, iframe hubs, or NOC monitors.
+* **[React & shadcn Components](https://marrowdiagram.vercel.app/docs/components)** — Embedding diagrams and link badges in Next.js/React applications.
+* **[Agent Workflow & Self-Healing](https://marrowdiagram.vercel.app/docs/agents/updates-and-self-healing)** — Operating router, update verification, and autonomous repair loops.
+* **[Architecture Decisions (ADRs)](https://marrowdiagram.vercel.app/docs/decisions/overview)** — Design token contracts, density scaling, and CAD blueprint export specifications.
 
 ---
 

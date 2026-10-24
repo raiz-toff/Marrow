@@ -33,6 +33,8 @@ export interface BuildOptions {
   /** Embed / kiosk modularity: 'minimal' hides topbar & dock, 'full' preserves all chrome. */
   chrome?: 'full' | 'minimal';
   embed?: boolean;
+  /** Layout archetype for HTML diagram shell: locked to 'spacious'. */
+  shellLayout?: 'spacious';
 }
 
 export interface BuildResult {
@@ -212,6 +214,7 @@ export function createSiteBuilder(
       ...(options.themeConfig !== undefined ? { themeConfig: options.themeConfig } : {}),
       ...(options.chrome !== undefined ? { chrome: options.chrome } : {}),
       ...(options.embed !== undefined ? { embed: options.embed } : {}),
+      ...(options.shellLayout !== undefined ? { layout: options.shellLayout } : {}),
       dataJson: embeddedData(collapsed, {
         page: path,
         // devicePages omitted — derived client-side from the shared search index
@@ -238,6 +241,7 @@ export function createSiteBuilder(
       ...(options.themeConfig !== undefined ? { themeConfig: options.themeConfig } : {}),
       ...(options.chrome !== undefined ? { chrome: options.chrome } : {}),
       ...(options.embed !== undefined ? { embed: options.embed } : {}),
+      ...(options.shellLayout !== undefined ? { layout: options.shellLayout } : {}),
       // full device+link payload: the inventory drawer shows device details in place
       // (devicePages omitted — derived client-side from the shared search index)
       dataJson: embeddedData(topology, { page: 'inventory.html' }),

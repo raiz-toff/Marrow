@@ -12,6 +12,9 @@ export default function HomePage() {
           <span className="font-bold tracking-tight text-foreground">Marrow</span>
         </div>
         <nav className="flex items-center gap-4 text-xs font-medium">
+          <Link href="/demo" className="text-primary font-semibold hover:text-primary/80 transition-colors">
+            Live Demo
+          </Link>
           <Link href="/docs" className="text-muted-foreground hover:text-foreground transition-colors">
             Documentation
           </Link>
@@ -54,8 +57,14 @@ export default function HomePage() {
             {/* Quick Actions */}
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
               <Link
-                href="/docs/getting-started/quickstart"
+                href="/demo"
                 className="rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 transition-colors"
+              >
+                Interactive Demo
+              </Link>
+              <Link
+                href="/docs/getting-started/quickstart"
+                className="rounded-lg border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors"
               >
                 Quickstart Guide
               </Link>
@@ -64,12 +73,6 @@ export default function HomePage() {
                 className="rounded-lg border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors"
               >
                 Explore Components
-              </Link>
-              <Link
-                href="/docs/components/catalog"
-                className="rounded-lg border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors"
-              >
-                Live Catalog
               </Link>
             </div>
 

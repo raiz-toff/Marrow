@@ -39,7 +39,7 @@ clone compiles itself: `npm install` runs it for you. Odd behavior from
 
 ```
 marrow validate <file...> [--json] [--no-icons] [--packs <dir>]
-marrow build    <file> [-o <out.html>] [--single] [--packs <dir>] [--config <file.yaml>]
+marrow build    <file> [-o <out>] [--single] [--static-svg] [--embed] [--chrome minimal|full] [--packs <dir>] [--config <file.yaml>]
 marrow serve    <file-or-dir> [--port <n>] [--host <addr>] [--packs <dir>] [--config <file.yaml>]
 marrow import   <v1-file> [-o <out.yaml>] [--packs <dir>]
 marrow snapshot <file> [-o <out.png>] [--focus <device-id>] [--theme <dark|light>] [--json] [--packs <dir>] [--config <file.yaml>]
@@ -91,12 +91,17 @@ Compile to HTML.
 npm run marrow -- build input/branch.yaml
 npm run marrow -- build input/branch.yaml -o dist/net.html
 npm run marrow -- build input/big.yaml --single
+npm run marrow -- build input/branch.yaml --embed
+npm run marrow -- build input/branch.yaml --static-svg -o dist/net.svg
 ```
 
 | Flag | Effect |
 | --- | --- |
-| `-o <out>` | Output path. Defaults to `output/<name>.html` |
+| `-o <out>` | Output path. Defaults to `output/<name>.html` (or `output/<name>.svg` with `--static-svg`) |
 | `--single` | Force one file even above the split threshold |
+| `--static-svg` | Export static standalone vector SVG instead of interactive HTML |
+| `--embed` | Pre-configure minimal chrome mode (`#embed=true`) for iframe embedding |
+| `--chrome <minimal\|full>` | Specify default UI chrome mode (`minimal` hides topbar, search dock, and sidebar) |
 | `--packs <dir>` | Alternative icon-packs directory |
 | `--config <file>` | Alternative `marrow.config.yaml` |
 

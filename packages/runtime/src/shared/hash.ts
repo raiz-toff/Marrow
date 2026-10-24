@@ -44,6 +44,7 @@ export interface ModularUiOptions {
   exportTitle?: 'on' | 'off';
   exportLegend?: 'on' | 'off';
   exportPorts?: 'on' | 'off';
+  layout?: 'spacious';
 }
 
 export function parseModularParams(search: string, hash: string): ModularUiOptions {
@@ -59,6 +60,11 @@ export function parseModularParams(search: string, hash: string): ModularUiOptio
     opts.chrome = 'minimal';
   } else if (chrome === 'full' || embed === 'false') {
     opts.chrome = 'full';
+  }
+
+  const layout = get('layout');
+  if (layout === 'spacious') {
+    opts.layout = 'spacious';
   }
 
   const inspector = get('inspector');

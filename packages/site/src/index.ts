@@ -61,6 +61,7 @@ export async function buildSingleFile(topology: Topology, options: BuildOptions)
     ...(options.themeConfig !== undefined ? { themeConfig: options.themeConfig } : {}),
     ...(options.chrome !== undefined ? { chrome: options.chrome } : {}),
     ...(options.embed !== undefined ? { embed: options.embed } : {}),
+    ...(options.shellLayout !== undefined ? { layout: options.shellLayout } : {}),
     dataJson: embeddedData(t, { page: 'index.html', devicePages: [], scene: tier === 'canvas' ? scene : undefined }),
     assets: { mode: 'inline', runtime: getRuntimeSource() },
     about: { layout: archetypeLabel(scene.archetype), renderer: rendererLabel(tier) },

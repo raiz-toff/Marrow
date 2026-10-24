@@ -46,6 +46,8 @@ export interface ShellOptions {
   chrome?: 'full' | 'minimal';
   embed?: boolean;
   watermark?: import('@marrow/model').WatermarkConfig;
+  /** Layout archetype inspired by Fumadocs: locked to 'spacious'. */
+  layout?: 'spacious';
 }
 
 /** One icon language for all chrome: Lucide geometry — a 24-unit grid,
@@ -54,9 +56,14 @@ const ic = (paths: string, size = 16): string =>
   `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
 
 const I = {
-  hamburger: ic('<path d="M4 6h16M4 12h16M4 18h16"/>'),
+  panelLeft: ic('<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/>', 18),
   magnifier: ic('<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>', 14),
   moon: ic('<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>'),
+  moon13: ic('<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>', 13),
+  sun: ic(
+    '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
+    13,
+  ),
   tag: ic(
     '<path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/>',
   ),
@@ -165,19 +172,20 @@ export function renderShell(o: ShellOptions): string {
   const commandBar = `<header class="m-command-bar">
   <div class="m-header-left">
     <button class="m-icon-btn m-sidebar-btn" type="button" aria-label="Toggle navigation (Ctrl+B)" title="Toggle navigation (Ctrl+B)">
-      ${I.hamburger}
+      ${I.panelLeft}
     </button>
     <div class="m-brand-mark">${brandLogo(o)}<span>${brandName(o)}</span></div>
+    <span class="m-header-sep" aria-hidden="true">/</span>
     <nav class="m-breadcrumbs" aria-label="Breadcrumb">${crumbs}</nav>
   </div>
   <div class="m-header-right">
     <button class="m-icon-btn m-search-btn m-desk-only" type="button" aria-label="Search" title="Search devices, IPs, interfaces (Ctrl+K)">
       ${I.magnifier}<span>Search devices…</span><kbd>Ctrl K</kbd>
     </button>
-    ${o.stats ? `<span class="m-stats-chip m-desk-only">${esc(o.stats)}</span>` : ''}
-    <button class="m-icon-btn m-theme-btn m-desk-only" type="button" aria-label="Toggle theme" title="Toggle theme">
-      ${I.moon}
-    </button>
+    <div class="m-icon-btn m-theme-btn m-desk-only" role="group" aria-label="Toggle theme" title="Toggle color theme">
+      <span class="m-theme-opt m-theme-sun" data-theme-val="light" aria-label="Light mode">${I.sun}</span>
+      <span class="m-theme-opt m-theme-moon" data-theme-val="dark" aria-label="Dark mode">${I.moon13}</span>
+    </div>
     <button class="m-icon-btn m-search-btn m-mob-only" type="button" aria-label="Search">
       ${I.magnifier}
     </button>
@@ -232,12 +240,30 @@ export function renderShell(o: ShellOptions): string {
   const isMinimal = o.chrome === 'minimal' || o.embed === true;
   const chromeAttr = isMinimal ? ' data-chrome="minimal"' : '';
   const watermarkAttr = (!wmEnabled || wmMode === 'off') ? ' data-watermark="off"' : (wmMode !== 'full' ? ` data-watermark="${wmMode}"` : '');
+  const activeLayout = 'spacious';
+  const layoutAttr = ` data-layout="spacious"`;
 
   // Modular pre-boot script: resolves URL query and hash parameters (#embed=true, ?chrome=minimal, ?inspector=off, ?minimap=off, ?theme=light)
-  const headScript = `<script>try{var r=document.documentElement,q=new URLSearchParams(location.search),h=location.hash.slice(1),hp=new URLSearchParams(h.indexOf(';')>=0?h.replace(/;/g,'&'):h),g=function(k){return q.get(k)||hp.get(k)};if(g('embed')==='true'||g('embed')==='1'||g('chrome')==='minimal')r.dataset.chrome='minimal';if(g('inspector')==='off'||g('inspector')==='false')r.dataset.inspector='off';if(g('minimap')==='off'||g('minimap')==='false')r.dataset.minimap='off';var t=g('theme');if(t==='light'||t==='dark')r.dataset.theme=t;else if(${auto}){var s=null;try{s=localStorage.getItem('marrow-theme')}catch(e){}if(s!=='dark'&&s!=='light')r.dataset.theme=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'}}catch(e){}</script>`;
+  const headScript = `<script>try{var r=document.documentElement,q=new URLSearchParams(location.search),h=location.hash.slice(1),hp=new URLSearchParams(h.indexOf(';')>=0?h.replace(/;/g,'&'):h),g=function(k){return q.get(k)||hp.get(k)};if(g('embed')==='true'||g('embed')==='1'||g('chrome')==='minimal')r.dataset.chrome='minimal';if(g('inspector')==='off'||g('inspector')==='false')r.dataset.inspector='off';if(g('minimap')==='off'||g('minimap')==='false')r.dataset.minimap='off';r.dataset.layout='spacious';var t=g('theme');if(t==='light'||t==='dark')r.dataset.theme=t;else if(${auto}){var s=null;try{s=localStorage.getItem('marrow-theme')}catch(e){}if(s!=='dark'&&s!=='light')r.dataset.theme=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'}}catch(e){}</script>`;
+
+  const mobileBar = `<footer class="m-mobile-bar" aria-label="Mobile navigation">
+  <div class="m-mob-left">
+    ${brandLogo(o)}
+    <span class="m-mob-brand">${brandName(o)}</span>
+    <button class="m-mob-selector-btn" type="button" aria-label="Current topology">
+      <span>${esc(o.title)}</span>
+      <span class="m-mob-caret">▼</span>
+    </button>
+  </div>
+  <div class="m-mob-right">
+    <button class="m-icon-btn m-search-btn" type="button" aria-label="Search">${I.magnifier}</button>
+    <button class="m-icon-btn m-sidebar-btn" type="button" aria-label="Navigation">${I.panelLeft}</button>
+    <button class="m-icon-btn m-theme-btn" type="button" aria-label="Toggle theme">${I.moon}</button>
+  </div>
+</footer>`;
 
   return `<!DOCTYPE html>
-<html lang="en" data-theme="${themeAttr}"${modeAttr}${chromeAttr}${watermarkAttr} data-root="${esc(o.rootPrefix)}" data-page="${esc(o.page)}">
+<html lang="en" data-theme="${themeAttr}"${modeAttr}${chromeAttr}${watermarkAttr}${layoutAttr} data-root="${esc(o.rootPrefix)}" data-page="${esc(o.page)}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -247,16 +273,22 @@ ${headScript}
 ${css}
 </head>
 <body${o.stage ? '' : ' class="m-doc-body"'}>
-<div id="marrow-shell" data-single-file="${isSingle ? 'true' : 'false'}" data-view-mode="default">
+<div id="marrow-shell"${layoutAttr} data-single-file="${isSingle ? 'true' : 'false'}" data-view-mode="default">
 ${backdrop}
-${commandBar}
-<div class="m-workspace">
 ${sidebar(o)}
+<div class="m-sidebar-backdrop"></div>
+<div class="m-main-column">
+${commandBar}
+<div class="m-stage-body">
+<div class="m-stage-wrap">
 ${main}
 ${watermark}
 ${o.stage ? `<div class="m-minimap" hidden></div>` : ''}
 ${controls}
+</div>
 ${inspector}
+</div>
+${mobileBar}
 </div>
 </div>
 <div class="m-about-dialog" hidden>
@@ -420,8 +452,8 @@ function sidebar(o: ShellOptions): string {
   /* no brand mark here on purpose: the sidebar footer already carries one, and
      two logos in one panel reads as clutter */
   const header = `<div class="m-side-header">
-  <div class="m-side-id"><strong>${esc(o.title)}</strong><small>${esc(o.stats)}</small></div>
-  <button class="m-icon-btn m-sidebar-close" type="button" aria-label="Close sidebar">${I.x}</button>
+  <div class="m-side-id"><strong class="m-side-title">Lab Overview</strong>${o.stats ? `<small class="m-side-stats">${esc(o.stats)}</small>` : ''}</div>
+  <button class="m-icon-btn m-sidebar-close m-mob-only" type="button" aria-label="Close sidebar">${I.x}</button>
 </div>`;
   const pages =
     o.navLinks && o.navLinks.length > 0

@@ -9,41 +9,15 @@ gives the actual rules so you can predict — and control — the outcome.
 
 ## The pipeline
 
-```
-  topology
-     │
-     ▼
-  classify   ── one of: zoned · tiered · ring · hub-spoke · mesh · flat
-     │
-     ▼
-  size       ── measure every node, labels included (deterministic glyph tables)
-     │
-     ▼
-  place      ── ELK layered  (zoned, tiered, flat)
-                compose      (zone mosaic packing)
-                polar        (hub-spoke)
-                circle       (ring, mesh)
-     │
-     ▼
-  route      ── libavoid orthogonal routing, or polylines for radial shapes
-     │
-     ▼
-  tidy       ── merge coincident runs, pull fan-outs onto gutter buses
-     │
-     ▼
-  lint       ── L1 fails the build · L2 auto-repairs · L3 advises
-     │
-     ▼
-  scene      ── boxes + polylines, handed to the renderers
-```
+<CompilePipelineVisual />
 
-The chosen archetype is shown in every diagram's sidebar under **About →
-Layout**, so you can always check what the engine decided.
+The chosen archetype is shown in every diagram's sidebar under **About → Layout**, so you can always check what the engine decided.
 
 ## Classification, in precedence order
 
-Rules are evaluated top to bottom; the first match wins. Declared structure
-always outranks inferred shape.
+Rules are evaluated top to bottom; the first match wins. Declared structure always outranks inferred shape.
+
+<ArchetypeDecisionVisual />
 
 ### 1. `zoned` — two or more zones contain devices
 

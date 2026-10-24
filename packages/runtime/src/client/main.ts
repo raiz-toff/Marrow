@@ -92,7 +92,7 @@ function boot(): void {
     },
     sceneSize,
     (s) => {
-      document.documentElement.dataset['zoom'] = s.k < 0.55 ? 'far' : s.k > 1.5 ? 'near' : 'mid';
+      document.documentElement.dataset['zoom'] = s.k < 0.70 ? 'far' : s.k > 1.3 ? 'near' : 'mid';
       engine?.applyCamera(s);
       minimapSync();
       hashSyncSoon();
@@ -105,17 +105,14 @@ function boot(): void {
       const insets = { top: 0, right: 0, bottom: 0, left: 0 };
       const inspector = document.querySelector<HTMLElement>('.m-inspector');
       if (inspector && !inspector.hidden && inspector.dataset['sheet'] !== 'closed') {
-        if (window.innerWidth < 768) {
-          const snap = inspector.dataset['sheet'] || inspector.dataset['sheetSnap'] || 'half';
-          const sheetH =
-            snap === 'full'
-              ? Math.round(window.innerHeight * 0.90)
-              : snap === 'peek'
-                ? 84
-                : Math.round(window.innerHeight * 0.50);
-          insets.bottom = Math.max(0, sheetH - 6);
-        } else {
-          insets.right = inspector.offsetWidth || 380;
+        const stageRect = stage.getBoundingClientRect();
+        const inspRect = inspector.getBoundingClientRect();
+        if (inspRect.top < stageRect.bottom && inspRect.bottom > stageRect.top) {
+          if (inspRect.left <= stageRect.left && inspRect.right >= stageRect.right) {
+            insets.bottom = Math.max(0, stageRect.bottom - inspRect.top);
+          } else if (inspRect.right >= stageRect.right && inspRect.left > stageRect.left) {
+            insets.right = Math.max(0, stageRect.right - inspRect.left);
+          }
         }
       }
       return insets;
@@ -191,6 +188,27 @@ function boot(): void {
       camera.fit(false);
     }
   });
+
+  if (typeof ResizeObserver !== 'undefined') {
+    let lastW = stage.clientWidth;
+    let lastH = stage.clientHeight;
+    const ro = new ResizeObserver(() => {
+      const nw = stage.clientWidth;
+      const nh = stage.clientHeight;
+      if (nw === 0 || nh === 0) return;
+      if (nw === lastW && nh === lastH) return;
+      lastW = nw;
+      lastH = nh;
+      if (ctx.selected) {
+        const b = nodeWorldBox(ctx, ctx.selected);
+        if (b) {
+          ctx.camera.reCenter(b, false);
+        }
+      }
+      minimapSync();
+    });
+    ro.observe(stage);
+  }
   const wanted = !isReload ? (initial.device ?? (data as { hero?: string }).hero) : undefined;
   if (wanted !== undefined) {
     const resolved = resolveNodeFor(ctx, wanted);
@@ -1054,14 +1072,34 @@ function fillInspector(maps: DeviceMaps, d: DataDevice, onGoto: (id: string) => 
   if (desc) desc.textContent = [d.role ?? d.tier, d.zone].filter(Boolean).join(' · ');
 
   const h = html;
-  const facts: Array<[string, string | undefined]> = [
-    ['ID', d.id],
-    ['Tier', d.tier],
-    ['Zone', d.zone],
-    ['Role', d.role],
-    ['Status', d.status],
-    ['Mgmt IP', d.mgmtIp],
-    ['HA pair', d.haPairWith],
+
+  function renderStatusBadge(status?: string): string {
+    const s = status || 'unknown';
+    const safe = cssSafe(s);
+    const label = s.toUpperCase();
+    return `<span class="m-status-badge m-status-${safe}" title="Operational status: ${html(s)}"><span class="m-status-dot"></span><span class="m-status-text">${html(label)}</span></span>`;
+  }
+
+  function renderRoleBadge(role?: string): string {
+    if (!role) return '';
+    return `<span class="m-role-badge">${html(role.toUpperCase())}</span>`;
+  }
+
+  const quickBadges = [
+    renderStatusBadge(d.status),
+    d.role ? renderRoleBadge(d.role) : '',
+    d.tier ? `<span class="m-tier-badge">${h(d.tier)}</span>` : '',
+    d.zone ? `<span class="m-zone-badge">${h(d.zone)}</span>` : '',
+  ].filter(Boolean).join('');
+
+  const formattedFacts: Array<[string, string | undefined]> = [
+    ['ID', `<code class="m-ip-chip">${h(d.id)}</code>`],
+    ['Tier', d.tier ? `<span class="m-tier-badge">${h(d.tier)}</span>` : undefined],
+    ['Zone', d.zone ? `<span class="m-zone-badge">${h(d.zone)}</span>` : undefined],
+    ['Role', d.role ? renderRoleBadge(d.role) : undefined],
+    ['Status', renderStatusBadge(d.status)],
+    ['Mgmt IP', d.mgmtIp ? `<code class="m-ip-chip" title="Click to copy IP">${h(d.mgmtIp)}</code>` : undefined],
+    ['HA pair', d.haPairWith ? `<button type="button" class="m-ha-chip" data-goto="${h(d.haPairWith)}"><span>⇄</span> ${h(d.haPairWith)}</button>` : undefined],
   ];
   const links = maps.linksByDevice.get(d.id) ?? [];
   const fullPage =
@@ -1075,18 +1113,26 @@ function fillInspector(maps: DeviceMaps, d: DataDevice, onGoto: (id: string) => 
       label: 'Overview',
       render: (container) => {
         container.innerHTML = [
-          `<div class="m-icon-badge"><svg viewBox="0 0 48 48"><use href="#ic-${cssSafe(d.icon)}" width="48" height="48"/></svg><span class="m-status-pill m-status-${cssSafe(d.status)}">${h(d.status)}</span>${fullPage}</div>`,
-          `<dl class="m-facts">${facts
+          `<div class="m-icon-badge"><svg viewBox="0 0 48 48"><use href="#ic-${cssSafe(d.icon)}" width="48" height="48"/></svg><div class="m-quick-badges">${quickBadges}</div>${fullPage}</div>`,
+          `<dl class="m-facts">${formattedFacts
             .filter(([, v]) => v !== undefined)
-            .map(([k, v]) => `<dt>${h(k)}</dt><dd>${h(v!)}</dd>`)
+            .map(([k, v]) => `<dt>${h(k)}</dt><dd>${v!}</dd>`)
             .join('')}</dl>`,
           d.stack
-            ? `<h3>Members (${d.stack.members.length})</h3><ul class="m-members">${d.stack.members
+            ? `<details class="m-inspector-section" open><summary><h3>Members (${d.stack.members.length})</h3><svg class="m-section-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary><div class="m-section-body"><ul class="m-members">${d.stack.members
                 .map((m) => `<li>${h(m)}</li>`)
-                .join('')}</ul>`
+                .join('')}</ul></div></details>`
             : '',
-          d.note ? `<h3>Note</h3><div class="m-note">${h(d.note)}</div>` : '',
+          d.note ? `<details class="m-inspector-section" open><summary><h3>Note</h3><svg class="m-section-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary><div class="m-section-body"><div class="m-note">${renderInlineMd(d.note)}</div></div></details>` : '',
         ].join('');
+        for (const btn of container.querySelectorAll<HTMLButtonElement>('[data-goto]')) {
+          btn.addEventListener('click', () => onGoto(btn.dataset['goto']!));
+        }
+        for (const ipEl of container.querySelectorAll<HTMLElement>('.m-ip-chip')) {
+          ipEl.addEventListener('click', () => {
+            if (navigator.clipboard) void navigator.clipboard.writeText(ipEl.textContent?.trim() ?? '');
+          });
+        }
       },
     },
   ];
@@ -1381,36 +1427,47 @@ function setupSpotlight(ctx: Ctx | undefined, data: EmbeddedData): void {
       },
     ];
     if (ctx !== undefined) {
-      cmds.push(
-        {
+      if (ctx.data.devices.length > 0) {
+        cmds.push({
           label: 'Device labels',
           icon: CMD_IC.tag,
           shortcut: stored('labels', 'auto'),
           keywords: 'names show hide cycle',
           run: () => set('labels', cycle3('labels')),
-        },
-        {
+        });
+      }
+      const hasPorts =
+        ctx.data.links.some((l) => Boolean(l.from.port || l.to.port)) ||
+        ctx.data.devices.some((d) => Array.isArray(d.interfaces) && d.interfaces.length > 0);
+      if (hasPorts) {
+        cmds.push({
           label: 'Port labels',
           icon: CMD_IC.plug,
           shortcut: stored('ports', 'auto'),
           keywords: 'interfaces chips cycle',
           run: () => set('ports', cycle3('ports')),
-        },
-        {
+        });
+      }
+      const hasMotion = ctx.data.links.some((l) => Boolean(l.animated));
+      if (hasMotion) {
+        cmds.push({
           label: 'Link motion',
           icon: CMD_IC.pulse,
           shortcut: stored('motion', 'on') !== 'off' ? 'on' : 'off',
           keywords: 'animation flow dashes',
           run: () => set('motion', stored('motion', 'on') !== 'off' ? 'off' : 'on'),
-        },
-        {
+        });
+      }
+      const showMinimap = document.documentElement.dataset['minimap'] !== 'off' && ctx.data.devices.length >= 2;
+      if (showMinimap) {
+        cmds.push({
           label: 'Minimap',
           icon: CMD_IC.map,
           shortcut: stored('minimap', 'on') !== 'off' ? 'on' : 'off',
           keywords: 'overview map corner',
           run: () => set('minimap', stored('minimap', 'on') !== 'off' ? 'off' : 'on'),
-        },
-      );
+        });
+      }
     }
     return cmds;
   };
@@ -1470,6 +1527,41 @@ function setupSpotlight(ctx: Ctx | undefined, data: EmbeddedData): void {
   type Entry = { kind: 'device'; id: string } | { kind: 'cmd'; cmd: Command };
   let flat: Entry[] = [];
   let active = 0;
+
+  const clearSearchCanvas = (): void => {
+    if (!ctx) return;
+    ctx.stage.classList.remove('is-search-active');
+    for (const el of ctx.nodeEls.values()) {
+      el.classList.remove('is-search-match', 'is-search-dim');
+    }
+    if (ctx.mode === 'canvas' && ctx.engine) {
+      ctx.engine.setSearchMatches(undefined);
+    }
+  };
+
+  const updateSearchCanvas = (query: string, hits: Array<{ id: string }>): void => {
+    if (!ctx) return;
+    const q = query.trim();
+    if (!q) {
+      clearSearchCanvas();
+      return;
+    }
+    const matched = new Set(hits.map((h) => h.id));
+    ctx.stage.classList.add('is-search-active');
+    for (const [id, el] of ctx.nodeEls) {
+      if (matched.has(id)) {
+        el.classList.add('is-search-match');
+        el.classList.remove('is-search-dim');
+      } else {
+        el.classList.remove('is-search-match');
+        el.classList.add('is-search-dim');
+      }
+    }
+    if (ctx.mode === 'canvas' && ctx.engine) {
+      ctx.engine.setSearchMatches(matched);
+    }
+  };
+
   const open = (): void => {
     overlay.hidden = false;
     input.value = '';
@@ -1478,6 +1570,7 @@ function setupSpotlight(ctx: Ctx | undefined, data: EmbeddedData): void {
   };
   const close = (): void => {
     overlay.hidden = true;
+    clearSearchCanvas();
   };
   const runEntry = (entry: Entry | undefined): void => {
     if (!entry) return;
@@ -1492,6 +1585,7 @@ function setupSpotlight(ctx: Ctx | undefined, data: EmbeddedData): void {
       query === '' || `${c.label} ${c.keywords ?? ''}`.toLowerCase().includes(ql);
     const { nav, actions, view } = collectCommands();
     const deviceHits = query === '' ? [] : searchDocs(query, docs);
+    updateSearchCanvas(query, deviceHits);
     const navHits = nav.filter(matches);
     const actionHits = actions.filter(matches);
     const viewHits = view.filter(matches);
@@ -1702,16 +1796,27 @@ function setupMenubar(ctx: Ctx | undefined): void {
   const content = (menu: string): string => {
     if (menu === 'view') {
       const stage = ctx !== undefined;
+      const hasDevices = ctx !== undefined && ctx.data.devices.length > 0;
+      const hasPorts =
+        ctx !== undefined &&
+        (ctx.data.links.some((l) => Boolean(l.from.port || l.to.port)) ||
+          ctx.data.devices.some((d) => Array.isArray(d.interfaces) && d.interfaces.length > 0));
+      const hasMotion = ctx !== undefined && ctx.data.links.some((l) => Boolean(l.animated));
+      const showMinimap =
+        ctx !== undefined &&
+        document.documentElement.dataset['minimap'] !== 'off' &&
+        ctx.data.devices.length >= 2;
+      const hasAnyToggle = hasDevices || hasPorts || hasMotion || showMinimap;
       return (
         (stage
           ? item('fit', 'Fit view', { shortcut: 'F' }) +
             item('zoom-in', 'Zoom in', { shortcut: `${mod}+` }) +
             item('zoom-out', 'Zoom out', { shortcut: `${mod}−` }) +
-            sep() +
-            item('t-labels', 'Device labels', { check: stored('labels', 'auto') }) +
-            item('t-ports', 'Port labels', { check: stored('ports', 'auto') }) +
-            item('t-motion', 'Link motion', { check: stored('motion', 'on') !== 'off' }) +
-            item('t-minimap', 'Minimap', { check: stored('minimap', 'on') !== 'off' }) +
+            (hasAnyToggle ? sep() : '') +
+            (hasDevices ? item('t-labels', 'Device labels', { check: stored('labels', 'auto') }) : '') +
+            (hasPorts ? item('t-ports', 'Port labels', { check: stored('ports', 'auto') }) : '') +
+            (hasMotion ? item('t-motion', 'Link motion', { check: stored('motion', 'on') !== 'off' }) : '') +
+            (showMinimap ? item('t-minimap', 'Minimap', { check: stored('minimap', 'on') !== 'off' }) : '') +
             sep()
           : '') +
         item('t-theme', 'Theme', { check: document.documentElement.dataset['theme'] ?? 'dark' })
@@ -1748,8 +1853,17 @@ function setupMenubar(ctx: Ctx | undefined): void {
     const r = btn.getBoundingClientRect();
     pop.style.left = '0px';
     pop.style.top = '0px';
-    pop.style.left = `${Math.min(r.left, innerWidth - pop.offsetWidth - 8)}px`;
-    pop.style.top = `${Math.min(r.bottom + 6, innerHeight - pop.offsetHeight - 8)}px`;
+    const isOverlaySidebar = window.innerWidth <= 1024;
+    if (isOverlaySidebar) {
+      const sidebar = document.querySelector<HTMLElement>('.m-sidebar');
+      const drawerW = sidebar ? sidebar.offsetWidth : 280;
+      const left = Math.max(12, Math.min(r.left, drawerW - pop.offsetWidth - 12));
+      pop.style.left = `${left}px`;
+      pop.style.top = `${Math.min(r.bottom + 6, innerHeight - pop.offsetHeight - 8)}px`;
+    } else {
+      pop.style.left = `${Math.max(8, Math.min(r.left, innerWidth - pop.offsetWidth - 8))}px`;
+      pop.style.top = `${Math.min(r.bottom + 6, innerHeight - pop.offsetHeight - 8)}px`;
+    }
     syncTriggers();
   };
 
@@ -1854,15 +1968,22 @@ function setupContextMenu(ctx: Ctx): void {
         item('copy-id', 'Copy device ID') +
         (d.mgmtIp !== undefined ? item('copy-ip', 'Copy mgmt IP') : '');
     } else {
+      const hasDevices = ctx.data.devices.length > 0;
+      const hasPorts =
+        ctx.data.links.some((l) => Boolean(l.from.port || l.to.port)) ||
+        ctx.data.devices.some((d) => Array.isArray(d.interfaces) && d.interfaces.length > 0);
+      const hasMotion = ctx.data.links.some((l) => Boolean(l.animated));
+      const showMinimap = document.documentElement.dataset['minimap'] !== 'off' && ctx.data.devices.length >= 2;
+      const hasAnyToggle = hasDevices || hasPorts || hasMotion || showMinimap;
       menu.innerHTML =
         item('fit', 'Fit view', { shortcut: 'F' }) +
         item('zoom-in', 'Zoom in', { shortcut: `${mod}+` }) +
         item('zoom-out', 'Zoom out', { shortcut: `${mod}−` }) +
-        sep() +
-        item('t-labels', 'Device labels', { check: stored('labels', 'auto') }) +
-        item('t-ports', 'Port labels', { check: stored('ports', 'auto') }) +
-        item('t-motion', 'Link motion', { check: stored('motion', 'on') !== 'off' }) +
-        item('t-minimap', 'Minimap', { check: stored('minimap', 'on') !== 'off' }) +
+        (hasAnyToggle ? sep() : '') +
+        (hasDevices ? item('t-labels', 'Device labels', { check: stored('labels', 'auto') }) : '') +
+        (hasPorts ? item('t-ports', 'Port labels', { check: stored('ports', 'auto') }) : '') +
+        (hasMotion ? item('t-motion', 'Link motion', { check: stored('motion', 'on') !== 'off' }) : '') +
+        (showMinimap ? item('t-minimap', 'Minimap', { check: stored('minimap', 'on') !== 'off' }) : '') +
         sep() +
         item('png', 'Export PNG') +
         (ctx.mode === 'svg' ? item('svg', 'Export SVG') : '') +
@@ -2267,6 +2388,11 @@ function syncModularParams(ctx?: Ctx): void {
   if (opts.theme) {
     root.dataset['theme'] = opts.theme;
   }
+
+  if (opts.layout === 'spacious') {
+    root.dataset['layout'] = 'spacious';
+    document.querySelector('#marrow-shell')?.setAttribute('data-layout', 'spacious');
+  }
 }
 
 function setupTheme(): void {
@@ -2324,8 +2450,10 @@ function setupTheme(): void {
   }
 
   for (const btn of document.querySelectorAll('.m-theme-btn')) {
-    btn.addEventListener('click', () => {
-      const next = root.dataset['theme'] === 'light' ? 'dark' : 'light';
+    btn.addEventListener('click', (ev) => {
+      const opt = (ev.target as Element).closest<HTMLElement>('.m-theme-opt');
+      const val = opt?.dataset['themeVal'];
+      const next = val || (root.dataset['theme'] === 'light' ? 'dark' : 'light');
       root.dataset['theme'] = next;
       delete root.dataset['themeMode'];
       localStorage.setItem('marrow-theme', next);
@@ -2359,8 +2487,10 @@ function setupSidebar(ctx: Ctx | undefined): void {
     closeBtn.addEventListener('click', () => setOpen(false));
   }
   document.addEventListener('pointerdown', (ev) => {
-    if (window.innerWidth < 768 && sidebar.classList.contains('open')) {
+    if (window.innerWidth <= 1024 && sidebar.classList.contains('open')) {
       const target = ev.target as Node;
+      const menupop = document.querySelector<HTMLElement>('.m-menupop');
+      if (menupop && !menupop.hidden && menupop.contains(target)) return;
       if (!sidebar.contains(target) && !document.querySelector('.m-sidebar-btn')?.contains(target)) {
         setOpen(false);
       }
@@ -2430,7 +2560,7 @@ function setupSidebar(ctx: Ctx | undefined): void {
 }
 
 function setupMobileNav(ctx: Ctx | undefined): void {
-  const nav = document.querySelector<HTMLElement>('.m-mobile-nav');
+  const nav = document.querySelector<HTMLElement>('.m-mobile-nav, .m-mobile-bar');
   if (!nav) return;
 
   const setActive = (action: string): void => {
@@ -2442,13 +2572,23 @@ function setupMobileNav(ctx: Ctx | undefined): void {
   };
 
   nav.addEventListener('click', (ev) => {
+    const inspector = document.querySelector<HTMLElement>('.m-inspector');
+    const sidebar = document.querySelector<HTMLElement>('.m-sidebar');
+
+    const mobSelBtn = (ev.target as Element).closest<HTMLButtonElement>('.m-mob-selector-btn');
+    if (mobSelBtn) {
+      if (sidebar) {
+        const isOpen = sidebar.classList.contains('open');
+        sidebar.classList.toggle('open', !isOpen);
+        if (!isOpen && inspector) inspector.dataset['sheet'] = 'closed';
+      }
+      return;
+    }
+
     const btn = (ev.target as Element).closest<HTMLButtonElement>('.m-mob-btn, .m-mobile-btn');
     if (!btn || !btn.dataset['action']) return;
     const action = btn.dataset['action'];
     setActive(action);
-
-    const sidebar = document.querySelector<HTMLElement>('.m-sidebar');
-    const inspector = document.querySelector<HTMLElement>('.m-inspector');
 
     if (action === 'canvas') {
       sidebar?.classList.remove('open');
@@ -2591,6 +2731,10 @@ function applySetting(ctx: Ctx | undefined, setting: string, value: string): voi
   switch (setting) {
     case 'theme':
       root.dataset['theme'] = value;
+      break;
+    case 'layout':
+      root.dataset['layout'] = 'spacious';
+      document.querySelector('#marrow-shell')?.setAttribute('data-layout', 'spacious');
       break;
     case 'labels':
       root.dataset['labels'] = value;

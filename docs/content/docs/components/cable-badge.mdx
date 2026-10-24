@@ -1,0 +1,57 @@
+---
+title: Cable & Link Badge
+description: Network cable and link mode visualizer (trunk, routed, tunnel, LAG) with media kind and optional traffic flow animation.
+---
+
+The **Cable & Link Badge** (`<CableBadge />`) is a compact visual indicator for physical and logical network links. It displays cable line styles (solid, dashed, double-rail trunk), operational status colors, port speeds, and optional packet animation pulses.
+
+---
+
+## Preview
+
+<ComponentPreview
+  name="cable-badge"
+  title="Cable & Link Badge"
+  height="240px"
+  code={`import { CableBadge } from "@marrow/ui";
+
+export function CableBadgeDemo() {
+  return (
+    <div className="flex flex-wrap items-center gap-3 p-4">
+      <CableBadge mode="trunk" speed="100G" status="up" animated />
+      <CableBadge mode="routed" speed="25G" status="up" />
+      <CableBadge mode="tunnel" speed="10G" status="degraded" />
+      <CableBadge mode="access" speed="1G" status="down" />
+    </div>
+  );
+}`}
+>
+  <div className="flex flex-wrap items-center gap-3 p-4">
+    <CableBadge mode="trunk" speed="100G" status="up" animated />
+    <CableBadge mode="routed" speed="25G" status="up" />
+    <CableBadge mode="tunnel" speed="10G" status="degraded" />
+    <CableBadge mode="access" speed="1G" status="down" />
+  </div>
+</ComponentPreview>
+
+---
+
+## Installation
+
+```bash
+npx shadcn@latest add https://marrowdiagram.vercel.app/r/cable-badge.json
+```
+
+Or via GitHub shorthand:
+
+```bash
+npx shadcn@latest add raiz-toff/Marrow/cable-badge
+```
+
+---
+
+## Features
+
+- **Link Modes**: Styled representations for `trunk`, `access`, `routed`, `tunnel`, and `peering`.
+- **Traffic Pulse Animation**: Optional animated packet ping to indicate active flow telemetry.
+- **Speed Chip**: Integrated mono chip for line rates (`1G`, `10G`, `25G`, `40G`, `100G`, `400G`).

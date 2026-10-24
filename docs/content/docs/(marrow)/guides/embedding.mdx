@@ -101,73 +101,44 @@ host-driven theme overrides the baked `theme:` and isn't persisted — opening t
 same file standalone still shows its authored theme — and it works whatever
 `theme:` the file was built with.
 
-## React & Next.js component
+### Bi-Directional postMessage Protocol
 
-For technical blogs, documentation portals, or internal dashboards, wrap the diagram in a responsive component that automatically synchronizes dark/light themes over `postMessage`:
+<EmbeddingProtocolVisual />
 
-```tsx title="components/MarrowDiagram.tsx"
-'use client';
-import { useEffect, useRef } from 'react';
+## React & Next.js component (`<MarrowEmbed />`)
 
-interface MarrowDiagramProps {
-  src: string;
-  title: string;
-  height?: string | number;
-  className?: string;
-  theme?: 'dark' | 'light' | 'auto';
-}
+For Next.js, Vite, or React applications, install the official shadcn-compatible `<MarrowEmbed />` component (also exported as `<TopologyCanvas />`):
 
-export function MarrowDiagram({
-  src,
-  title,
-  height = '640px',
-  className = '',
-  theme = 'auto',
-}: MarrowDiagramProps) {
-  const iframeRef = useRef<HTMLIFrameElement>(null);
+```bash
+npx shadcn@latest add https://marrowdiagram.vercel.app/r/topology-canvas.json
+```
 
-  useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      if (event.data?.type === 'marrow:ready' && iframeRef.current?.contentWindow) {
-        iframeRef.current.contentWindow.postMessage(
-          { type: 'marrow:theme', theme },
-          '*'
-        );
-      }
-    };
+Or import directly from `@marrow/ui`:
 
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
-  }, [theme]);
+```tsx
+import { MarrowEmbed } from '@marrow/ui';
 
+export function NetworkDashboard() {
   return (
-    <iframe
-      ref={iframeRef}
-      src={src}
-      title={title}
-      loading="lazy"
-      className={className}
-      style={{
-        width: '100%',
-        height: typeof height === 'number' ? `${height}px` : height,
-        border: '1px solid var(--line, #27272a)',
-        borderRadius: '12px',
-        display: 'block',
-      }}
+    <MarrowEmbed
+      src="/diagrams/campus.html"
+      title="Campus Core Network"
+      chrome="minimal"
+      inspector="on"
+      minimap="on"
+      theme="auto"
+      height="650px"
+      floatingActions={true}
     />
   );
 }
 ```
 
-Usage in MDX or a Next.js documentation page:
-
-```tsx
-<MarrowDiagram 
-  src="/diagrams/campus.html" 
-  title="Campus Core Network" 
-  height="700px" 
-/>
-```
+The component automatically manages:
+- **Zero FOUC theme synchronization**: Subscribes to host DOM dark/light mutations and forwards theme updates via `postMessage`.
+- **Fullscreen Mode**: Integrated camera action button toggling full-viewport presentation.
+- **Standalone Launch**: Direct external link button to open the self-contained diagram in a dedicated tab.
+- **Hash Flag Pre-boot**: Sets minimal chrome, inspector, and minimap flags before the initial paint.
 
 ## Linking straight to a device
 
@@ -314,8 +285,8 @@ to post the diagnostics somewhere.
 Because output is deterministic, committing the built HTML produces a clean
 diff: the file only changes when the topology actually changed.
 
-## Where this is going
+## Interactive Demo Studio & UI Suite
 
-A live, in-page editor — YAML on the left, diagram on the right — is a natural
-next step for this documentation site and isn't built yet. The embedding story
-above is the durable part; the demo is additive.
+Explore real, interactive compiled diagrams across all layout archetypes in our live [Interactive Demo Studio](/docs/demo).
+
+To build custom network dashboards and network operating centers (NOCs) with these components, browse the [Marrow UI Component Catalog](/docs/components).

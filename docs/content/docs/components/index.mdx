@@ -1,47 +1,63 @@
 ---
 title: Introduction
-description: A shadcn-compatible component registry for network topology diagrams, hardware telemetry, and infrastructure engineering.
+description: Official shadcn-compatible React components for embedding interactive Marrow diagrams and rendering network link telemetry.
 ---
 
-Welcome to **Marrow UI** (`@marrow/ui`). Every component in the Marrow topology ecosystem is authored in **React / Next.js TSX** and distributed through our **shadcn-compatible registry** (`registry.json`).
+Welcome to **Marrow UI** (`@marrow/ui`). Marrow shares two focused, production-ready React components through our **shadcn-compatible registry** (`registry.json`):
 
-Just like shadcn/ui, you can copy and paste these components directly into your own applications or install them with a single CLI command.
+1. **[Marrow Diagram Embed](/docs/components/topology-canvas)**: Embed self-contained, interactive HTML network diagrams compiled with Marrow directly into Next.js or React applications with automatic dark/light theme syncing, fullscreen expansion, and minimal kiosk chrome.
+2. **[Cable & Link Badge](/docs/components/cable-badge)**: Visual cable mode (trunk, routed, tunnel, LAG) and line rate chips (1G–400G) with animated packet flow telemetry.
 
----
-
-## Component Catalog
-
-Browse the individual components and blocks:
-
-### 🛠️ Interactive Workbench
-* **[Component Workbench](/docs/components/workbench)**: Zero-compiler testing studio to test, inspect, and evaluate every Marrow UI component in isolation and assembled.
-
-### 🚀 Blocks
-* **[Topology Shell](/docs/components/topology-shell)**: The complete, pre-assembled network studio with card-in-card grid, sidebar, canvas, inspector, and command search.
-
-### 🧩 Workspace Components
-* **[Topology Viewport](/docs/components/topology-canvas)**: Interactive stage viewport that mounts and frames compiled Marrow network diagrams with in-stage demo switching, theme sync, and camera HUD controls.
-* **[Topology Inspector](/docs/components/topology-inspector)**: Floating 5-tab device telemetry drawer with interface tables, LLDP neighbors, and copyable CLI configurations.
-* **[Topology Sidebar](/docs/components/topology-sidebar)**: Collapsible left navigation rail with security zone switcher, gliding hover indicator, and layer toggles.
-* **[Topology Controls & Minimap](/docs/components/topology-controls)**: Floating vertical zoom/fit pill and interactive picture-in-picture minimap overlay.
-* **[Command Search](/docs/components/topology-search)**: Keyboard-first `Ctrl+K` spotlight modal for searching devices, IPs, zones, and interfaces.
+Just like shadcn/ui, you can install them with a single CLI command directly into your project's `components/marrow/` directory.
 
 ---
 
-## Quickstart
+## Installation
 
-Add any Marrow UI component to your Next.js or React application using the shadcn CLI:
+Add either component to your Next.js or React application via the shadcn CLI:
 
+### Marrow Diagram Embed
 ```bash
-# Add the complete studio block
-npx shadcn@latest add https://marrow.run/r/topology-shell.json
-
-# Or add just the inspector card
-npx shadcn@latest add https://marrow.run/r/topology-inspector.json
+npx shadcn@latest add https://marrowdiagram.vercel.app/r/topology-canvas.json
 ```
 
-Or install directly using the GitHub repository shorthand:
-
+Or via GitHub shorthand:
 ```bash
-npx shadcn@latest add raiz-toff/Marrow/topology-shell
+npx shadcn@latest add raiz-toff/Marrow/topology-canvas
+```
+
+### Cable & Link Badge
+```bash
+npx shadcn@latest add https://marrowdiagram.vercel.app/r/cable-badge.json
+```
+
+Or via GitHub shorthand:
+```bash
+npx shadcn@latest add raiz-toff/Marrow/cable-badge
+```
+
+---
+
+## Usage Example
+
+```tsx
+import { MarrowEmbed, CableBadge } from "@marrow/ui";
+
+export function NetworkDashboard() {
+  return (
+    <div className="flex flex-col gap-4 p-6">
+      <div className="flex items-center gap-3">
+        <CableBadge mode="trunk" speed="100G" status="up" animated />
+        <CableBadge mode="routed" speed="25G" status="up" />
+      </div>
+
+      <MarrowEmbed
+        src="/demo/tiered-embed.html"
+        title="Campus Core Network"
+        chrome="minimal"
+        height="600px"
+      />
+    </div>
+  );
+}
 ```

@@ -1,19 +1,11 @@
 {
   "title": "Components",
-  "description": "shadcn network UI registry for Marrow",
+  "description": "Marrow UI component registry",
   "icon": "PanelsTopLeft",
   "root": true,
   "pages": [
-    "---Overview---",
     "index",
-    "workbench",
-    "---Blocks---",
-    "topology-shell",
-    "---Workspace Components---",
     "topology-canvas",
-    "topology-inspector",
-    "topology-sidebar",
-    "topology-controls",
-    "topology-search"
+    "cable-badge"
   ]
 }

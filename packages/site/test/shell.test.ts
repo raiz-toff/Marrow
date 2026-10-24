@@ -107,4 +107,28 @@ describe('renderShell layout and controls', () => {
     expect(offHtml).toContain('data-watermark="off"');
     expect(offHtml).not.toContain('<div class="m-watermark"');
   });
+
+  test('locks layout to spacious on html and shell', () => {
+    const html = renderShell(baseOptions);
+    expect(html).toContain('data-layout="spacious"');
+    expect(html).toContain('<html lang="en" data-theme="dark" data-layout="spacious"');
+    expect(html).toContain('<div id="marrow-shell" data-layout="spacious"');
+  });
+
+  test('renders single bottom navigation bar for mobile Flux layout', () => {
+    const html = renderShell(baseOptions);
+    expect(html).toContain('class="m-mobile-bar"');
+    expect(html).toContain('class="m-mob-left"');
+    expect(html).not.toContain('class="m-icon-btn m-mob-inspector-btn"');
+    expect(html).toContain('class="m-icon-btn m-sidebar-btn"');
+  });
+
+  test('renders top header breadcrumb hierarchy and functional Lab Overview sidebar header', () => {
+    const html = renderShell(baseOptions);
+    expect(html).toContain('class="m-brand-mark"');
+    expect(html).toContain('class="m-header-sep"');
+    expect(html).toContain('class="m-breadcrumbs"');
+    expect(html).toContain('Lab Overview');
+    expect(html).toContain('class="m-side-stats"');
+  });
 });

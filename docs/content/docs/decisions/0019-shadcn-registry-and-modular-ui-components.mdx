@@ -1,0 +1,50 @@
+---
+title: ADR-0019 — Shadcn component registry for Marrow diagram embed and link telemetry
+description: Distribute focused Marrow UI components via a shadcn-compatible registry while keeping internal shells native to compiled diagram outputs.
+---
+
+## Title: Shadcn component registry for Marrow diagram embed and link telemetry
+
+## Status: Accepted
+
+## Context: Technical problem, constraints, alternatives considered
+
+Marrow compiles declarative network YAML into self-contained, interactive HTML diagrams. Software teams embedding Marrow diagrams into Next.js applications, documentation portals, and internal operations dashboards required a clean distribution mechanism that:
+
+1. Seamlessly embeds compiled diagrams without DOM/CSS collisions or complex React canvas reimplementations.
+2. Synchronizes dark and light themes dynamically between the host application and the embedded diagram.
+3. Provides visual networking primitives (such as cable mode and line speed badges) that harmonize with shadcn/ui and modern Tailwind palettes.
+4. Avoids shipping heavyweight internal workbench abstractions (such as full application shells, sidebars, and drawer panels) that belong natively inside Marrow's compiled HTML output rather than as distributed host React components.
+
+We evaluated three distribution approaches:
+- **Monolithic NPM UI Package**: Bloats host dependencies with internal workbench state machines, layouts, and panels that consumers do not need.
+- **Raw Iframe Snippets**: Lacks theme synchronization, fullscreen handling, preset diagram switching, and typed props.
+- **Streamlined Shadcn-Compatible Registry (`registry.json`)**: Code ownership model distributing strictly the required integration components (`topology-canvas` and `cable-badge`) directly into consumer codebases via `npx shadcn add`.
+
+## Decision: The selected technical architecture
+
+We established a shadcn-compatible component registry and `@marrow/ui` package focused strictly on two public integration components:
+
+1. **`<MarrowEmbed />` (`topology-canvas`)**:
+   - Embeds pre-compiled HTML diagrams (`src`) or in-memory markup (`html`).
+   - Supports `#chrome=minimal` kiosk flags and fullscreen expansion.
+   - Synchronizes dark/light mode dynamically via two-way `postMessage` protocol (`marrow:theme`, `marrow:ready`).
+   - Supports in-stage diagram preset switching.
+
+2. **`<CableBadge />` (`cable-badge`)**:
+   - Renders visual cable line styles (solid, dashed, double-rail trunk).
+   - Displays speed chips (1G to 400G) and operational status indicators (`up`, `down`, `degraded`, `planned`).
+   - Optional animated traffic pulse for flow telemetry.
+
+3. **Internal Workbench Boundaries**:
+   - Complex shells, sidebar trees, and hardware inspector drawers remain internal to Marrow's compiled HTML diagram runtime and are not exported as external shared React components.
+
+## Consequences: Direct trade-offs and operational overhead
+
+### Positive
+- **Zero Black-Box Bloat**: Consumers import only the specific embedding container and badge primitives they need.
+- **Source Ownership**: Teams customize styles and Tailwind classes directly in their own codebase.
+- **Maintainable Surface**: Eliminates maintenance of duplicate layout engines, mock telemetry state, and redundant shell components in React.
+
+### Negative & Neutral Trade-offs
+- **Registry Schema Maintenance**: Updates to component implementations require running `scripts/build-registry.mjs` to update public JSON endpoints.

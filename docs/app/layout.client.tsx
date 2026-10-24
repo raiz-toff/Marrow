@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { type ReactNode, useId } from 'react';
+import { type ReactNode } from 'react';
 import { cn } from '@/lib/cn';
 import { getSection } from '@/lib/shared';
 
@@ -32,23 +32,24 @@ export function useMode(): string | undefined {
 }
 
 export function MarrowIcon(props: React.SVGProps<SVGSVGElement>) {
-  const id = useId();
   return (
-    <svg width="80" height="80" viewBox="0 0 180 180" {...props}>
-      <circle
-        cx="90"
-        cy="90"
-        r="89"
-        fill={`url(#${id}-iconGradient)`}
-        stroke="var(--color-fd-primary)"
-        strokeWidth="1"
-      />
-      <defs>
-        <linearGradient id={`${id}-iconGradient`} gradientTransform="rotate(45)">
-          <stop offset="45%" stopColor="var(--color-fd-background)" />
-          <stop offset="100%" stopColor="var(--color-fd-primary)" />
-        </linearGradient>
-      </defs>
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 32 32"
+      fill="none"
+      aria-hidden="true"
+      {...props}
+    >
+      {/* First "r" stem and curve: adapts to current foreground text color in dark/light mode */}
+      <g stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M7 26V13a5 5 0 0 1 5-5" />
+        <path d="M17 26V13" />
+      </g>
+      {/* Second "r" curve with Marrow's signature arrow terminal: branded primary accent */}
+      <g stroke="var(--color-fd-primary, #3b82f6)" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M17 13a5 5 0 0 1 5-5h3" />
+        <path d="M22.8 5.8L25 8l-2.2 2.2" />
+      </g>
     </svg>
   );
 }

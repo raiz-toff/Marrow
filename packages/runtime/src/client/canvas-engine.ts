@@ -213,6 +213,7 @@ export class CanvasEngine {
   private labelMode: 'auto' | 'on' | 'off' = 'auto';
   private portMode: 'auto' | 'on' | 'off' = 'auto';
   private motion = true;
+  private searchMatches: Set<string> | undefined;
 
   setPortMode(mode: 'auto' | 'on' | 'off'): void {
     this.portMode = mode;
@@ -236,6 +237,11 @@ export class CanvasEngine {
 
   setFocus(focus: FocusState | undefined): void {
     this.focus = focus;
+    this.requestDraw();
+  }
+
+  setSearchMatches(matches: Set<string> | undefined): void {
+    this.searchMatches = matches;
     this.requestDraw();
   }
 
@@ -413,8 +419,9 @@ export class CanvasEngine {
 
     const entrance = this.reduced || exporting ? 1 : Math.min(1, (performance.now() - this.entranceStart) / 900);
     const focusMode = this.focus !== undefined;
+    const searchMode = this.searchMatches !== undefined;
     const showLabels = this.labelMode === 'on' ? true : this.labelMode === 'off' ? false : k > 0.5;
-    const showPorts = this.portMode === 'on' ? true : this.portMode === 'off' ? false : k > 1.4;
+    const showPorts = (this.portMode === 'on' && k >= 0.70) ? true : this.portMode === 'off' ? false : k > 1.3;
     const animate = this.motion && !this.reduced && !exporting;
     const flowPhase = (performance.now() / 1100) % 1;
 
@@ -422,7 +429,7 @@ export class CanvasEngine {
     for (const z of this.scene.zones) {
       if (!visible(z.box, 40)) continue;
       const accent = z.accent ?? c.zone;
-      g.globalAlpha = (focusMode ? 0.35 : 1) * entrance;
+      g.globalAlpha = ((focusMode || searchMode) ? 0.35 : 1) * entrance;
       g.fillStyle = withAlpha(accent, 0.09);
       g.strokeStyle = withAlpha(accent, 0.42);
       g.lineWidth = 1.2 / k;
@@ -446,7 +453,7 @@ export class CanvasEngine {
       const inPath = this.focus?.edges.has(e.id) ?? false;
       const leaf = tierOf.get(e.from.node) === 'endpoint' || tierOf.get(e.to.node) === 'endpoint';
       const lod = leaf && k < 0.55 ? 0.22 : 1;
-      g.globalAlpha = (focusMode && !inPath ? 0.08 : 0.92) * entrance * lod;
+      g.globalAlpha = (focusMode && !inPath ? 0.08 : searchMode ? 0.08 : 0.92) * entrance * lod;
       g.strokeStyle = inPath
         ? c.accent
         : e.status === 'down'
@@ -592,12 +599,13 @@ export class CanvasEngine {
       const isFocus = this.focus?.focus === n.id;
       const isAdj = this.focus?.adjacent.has(n.id) ?? false;
       const isSel = this.selected === n.id;
-      const dimmed = focusMode && !isFocus && !isAdj && !isSel;
+      const isSearchMatch = this.searchMatches?.has(n.id) ?? false;
+      const dimmed = (focusMode && !isFocus && !isAdj && !isSel) || (searchMode && !isSearchMatch);
       g.globalAlpha = (dimmed ? 0.15 : n.ghost ? 0.55 : 1) * entrance;
 
       // selection/hero = a clean accent ring (no glow)
       const accent = n.accent ?? c.accent;
-      const ring = isSel || n.hero;
+      const ring = isSel || n.hero || (searchMode && isSearchMatch);
       g.fillStyle = c.chip;
       g.strokeStyle = ring ? accent : isFocus ? c.inkDim : c.chipLine;
       g.lineWidth = (isSel ? 2 : n.hero ? 1.5 : 1.25) / Math.sqrt(k);

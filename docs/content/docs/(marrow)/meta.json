@@ -4,8 +4,9 @@
   "icon": "Building",
   "root": true,
   "pages": [
-    "---Introduction---",
+    "---Overview---",
     "index",
+    "demo",
     "why",
     "getting-started",
     "---Authoring & Reference---",

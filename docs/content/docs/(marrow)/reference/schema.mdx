@@ -204,7 +204,7 @@ name. The refining attributes read like device config:
 | `trunk` | **double rail** + VLAN chip | `vlans`, `native_vlan` | `switchport mode trunk` |
 | `routed` | solid line + protocol chip | `protocol` | an L3 routed interface |
 | `peering` | dotted line + protocol chip | `protocol` | an OSPF/BGP adjacency |
-| `tunnel` | dashed line + 🔒 encap chip | `encap` | a site-to-site VPN / overlay |
+| `tunnel` | dashed line + lock encap chip | `encap` | a site-to-site VPN / overlay |
 | `stack` | thick bar, `stack` chip | — | a stack/backplane cable |
 
 Aggregation is orthogonal to `mode`: give the members a shared `lag` id (plus an

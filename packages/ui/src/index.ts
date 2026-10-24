@@ -1,4 +1,6 @@
-// Marrow UI Component Registry (React / Next.js / shadcn TSX)
+// Marrow UI Component Suite (React / Next.js / shadcn TSX)
+// Exclusively the two production-ready components: Marrow Diagram Embed and Cable & Link Badge
+
 export {
   cn,
   DEFAULT_TOPOLOGY_DATA,
@@ -13,55 +15,17 @@ export {
 } from "./lib/utils.js";
 
 export {
-  TopologyProvider,
-  useTopologyShell,
-  type CameraState,
-  type InspectorTab,
-  type TopologyContextValue,
-  type TopologyProviderProps,
-} from "./components/topology-context.js";
+  MarrowEmbed,
+  MarrowDiagram,
+  TopologyCanvas,
+  TopologyStage,
+  TopologyViewport,
+  type MarrowEmbedProps,
+  type MarrowEmbedPreset,
+  type TopologyStageProps,
+} from "./components/topology-canvas.js";
 
 export {
-  TopologySidebar,
-  TopologySidebarHeader,
-  TopologyMenubar,
-  TopologySidebarContent,
-  TopologyAbout,
-  TopologySidebarFooter,
-  type TopologySidebarProps,
-} from "./components/topology-sidebar.js";
-
-export {
-  TopologyTreeView,
-  type TopologyTreeViewProps,
-} from "./components/topology-tree.js";
-
-export {
-  TopologyLegend,
-  TopologyStatusLegend,
-  TopologyLinkLegend,
-  STATUS_DOT,
-  STATUS_LABELS,
-  type TopologyLegendProps,
-  type TopologyStatusLegendProps,
-  type TopologyLinkLegendProps,
-} from "./components/topology-legend.js";
-
-export { TopologyCanvas, TopologyViewport } from "./components/topology-canvas.js";
-
-export {
-  TopologyControls,
-  TopologyMinimap,
-} from "./components/topology-controls.js";
-
-export { TopologyInspector } from "./components/topology-inspector.js";
-
-export {
-  TopologySearch,
-  type TopologySearchProps,
-} from "./components/topology-search.js";
-
-export {
-  TopologyShell,
-  type TopologyShellProps,
-} from "./components/topology-shell.js";
+  CableBadge,
+  type CableBadgeProps,
+} from "./components/cable-badge.js";

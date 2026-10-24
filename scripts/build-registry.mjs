@@ -10,13 +10,14 @@ mkdirSync(PUBLIC_R_DIR, { recursive: true });
 mkdirSync(join(PUBLIC_R_DIR, 'styles', 'default'), { recursive: true });
 
 // Registry items for Marrow UI (shadcn / React / Next.js TSX)
+// Exclusively the two production-ready components: Marrow Diagram Embed and Cable & Link Badge
 const REGISTRY_ITEMS = [
   {
-    name: 'topology-shell',
-    type: 'registry:block',
-    title: 'Spacious Topology Shell',
+    name: 'topology-canvas',
+    type: 'registry:ui',
+    title: 'Marrow Diagram Embed',
     description:
-      'Complete Fumadocs Spacious-inspired network topology workspace shell in React/Next.js TSX framing compiled Marrow diagrams with collapsible sidebar, floating camera controls, 5-tab telemetry inspector, and Ctrl+K search.',
+      'Component to embed interactive HTML diagrams compiled by Marrow with live theme synchronization, fullscreen, and kiosk modes.',
     dependencies: ['lucide-react'],
     files: [
       {
@@ -25,68 +26,6 @@ const REGISTRY_ITEMS = [
         target: 'components/marrow/topology-types.ts',
       },
       {
-        path: 'ui/topology-context.tsx',
-        type: 'registry:component',
-        target: 'components/marrow/topology-context.tsx',
-      },
-      {
-        path: 'ui/topology-sidebar.tsx',
-        type: 'registry:component',
-        target: 'components/marrow/topology-sidebar.tsx',
-      },
-      {
-        path: 'ui/topology-controls.tsx',
-        type: 'registry:component',
-        target: 'components/marrow/topology-controls.tsx',
-      },
-      {
-        path: 'ui/topology-canvas.tsx',
-        type: 'registry:component',
-        target: 'components/marrow/topology-canvas.tsx',
-      },
-      {
-        path: 'ui/topology-inspector.tsx',
-        type: 'registry:component',
-        target: 'components/marrow/topology-inspector.tsx',
-      },
-      {
-        path: 'ui/topology-search.tsx',
-        type: 'registry:component',
-        target: 'components/marrow/topology-search.tsx',
-      },
-      {
-        path: 'ui/topology-shell.tsx',
-        type: 'registry:component',
-        target: 'components/marrow/topology-shell.tsx',
-      },
-    ],
-  },
-  {
-    name: 'topology-sidebar',
-    type: 'registry:ui',
-    title: 'Topology Sidebar',
-    description:
-      'Spacious left navigation rail with zone switcher dropdown, Ctrl+K search trigger, gliding hover highlight block, collapsible device hierarchy, and canvas layer switches.',
-    dependencies: ['lucide-react'],
-    registryDependencies: ['topology-shell'],
-    files: [
-      {
-        path: 'ui/topology-sidebar.tsx',
-        type: 'registry:ui',
-        target: 'components/marrow/topology-sidebar.tsx',
-      },
-    ],
-  },
-  {
-    name: 'topology-canvas',
-    type: 'registry:ui',
-    title: 'Topology Stage',
-    description:
-      'Clean workspace stage card that frames the main viewport with live hardware telemetry, dot grid, breadcrumbs, and floating camera controls HUD.',
-    dependencies: ['lucide-react'],
-    registryDependencies: ['topology-shell'],
-    files: [
-      {
         path: 'ui/topology-canvas.tsx',
         type: 'registry:ui',
         target: 'components/marrow/topology-canvas.tsx',
@@ -94,50 +33,22 @@ const REGISTRY_ITEMS = [
     ],
   },
   {
-    name: 'topology-inspector',
+    name: 'cable-badge',
     type: 'registry:ui',
-    title: 'Topology Inspector',
+    title: 'Cable & Link Badge',
     description:
-      'Floating rounded-2xl right sibling card with 5 segmented tabs (Overview, Interfaces, Neighbors, Fields, Config) and copyable CLI configuration stanzas.',
+      'Network cable and link mode visualizer (trunk, routed, tunnel, LAG) with media kind and optional traffic flow animation.',
     dependencies: ['lucide-react'],
-    registryDependencies: ['topology-shell'],
     files: [
       {
-        path: 'ui/topology-inspector.tsx',
-        type: 'registry:ui',
-        target: 'components/marrow/topology-inspector.tsx',
+        path: 'ui/topology-types.ts',
+        type: 'registry:component',
+        target: 'components/marrow/topology-types.ts',
       },
-    ],
-  },
-  {
-    name: 'topology-controls',
-    type: 'registry:ui',
-    title: 'Topology Controls & Minimap',
-    description:
-      'Floating vertical zoom/fit/command pill and interactive SVG minimap overlay.',
-    dependencies: ['lucide-react'],
-    registryDependencies: ['topology-shell'],
-    files: [
       {
-        path: 'ui/topology-controls.tsx',
+        path: 'ui/cable-badge.tsx',
         type: 'registry:ui',
-        target: 'components/marrow/topology-controls.tsx',
-      },
-    ],
-  },
-  {
-    name: 'topology-search',
-    type: 'registry:ui',
-    title: 'Topology Command & Search',
-    description:
-      'Ctrl+K spotlight modal for searching devices, IPs, security zones, links, and canvas actions.',
-    dependencies: ['lucide-react'],
-    registryDependencies: ['topology-shell'],
-    files: [
-      {
-        path: 'ui/topology-search.tsx',
-        type: 'registry:ui',
-        target: 'components/marrow/topology-search.tsx',
+        target: 'components/marrow/cable-badge.tsx',
       },
     ],
   },
@@ -168,7 +79,7 @@ const builtItems = REGISTRY_ITEMS.map((item) => {
 const registryCatalog = {
   $schema: 'https://ui.shadcn.com/schema/registry.json',
   name: 'marrow',
-  homepage: 'https://marrow.run',
+  homepage: 'https://marrowdiagram.vercel.app',
   items: builtItems,
 };
 

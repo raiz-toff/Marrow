@@ -40,16 +40,7 @@ Only proceed with the update once the user gives explicit consent.
 
 Upstream updates may occasionally cause minor regressions: renamed YAML attributes, newly required fields, deprecated icon IDs, or compiler warnings. When this occurs, **the agent does not stop or request user intervention for trivial fixes**. Instead, it executes the autonomous self-healing loop:
 
-```mermaid
-graph TD
-    A[Update Applied] --> B[Run Structured Validation]
-    B --> C{Exit Code?}
-    C -->|0 - Clean| D[Self-Healing Complete]
-    C -->|1 - Diagnostic Errors| E[Parse JSON Error Codes & Hints]
-    E --> F[Apply Automated YAML / Code Fixes]
-    F --> G[Recompile & Re-verify]
-    G --> B
-```
+<SelfHealingLoopVisual />
 
 ### 1. Detect & Diagnose
 Run the validator with `--json` to obtain machine-readable diagnostics:
