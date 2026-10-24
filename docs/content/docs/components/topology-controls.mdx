@@ -1,0 +1,97 @@
+---
+title: Topology Controls & Minimap
+description: Floating vertical zoom/fit command pill and interactive picture-in-picture SVG minimap overlay with real-time viewport tracker.
+---
+
+The **Topology Controls & Minimap** components provide navigation and spatial orientation for dense network graphs.
+
+---
+
+## Interactive Preview
+
+Pan and zoom the canvas below to watch the minimap's viewport box track in real time:
+
+<ComponentPreview
+  name="topology-controls"
+  title="Topology Controls & Minimap"
+  height="540px"
+  code={`import {
+  TopologyProvider,
+  TopologyControls,
+  TopologyMinimap,
+} from "@marrow/ui";
+
+export function ControlsDemo() {
+  return (
+    <TopologyProvider>
+      <div className="relative w-full h-[500px]">
+        {/* Active canvas stage */}
+        <div className="absolute top-4 right-4">
+          <TopologyControls />
+        </div>
+        <div className="absolute bottom-4 right-4 w-52">
+          <TopologyMinimap />
+        </div>
+      </div>
+    </TopologyProvider>
+  );
+}`}
+>
+  <ControlsShowcase />
+</ComponentPreview>
+
+---
+
+## Installation
+
+```bash
+npx shadcn@latest add https://marrow.run/r/topology-controls.json
+```
+
+Or via GitHub:
+
+```bash
+npx shadcn@latest add raiz-toff/Marrow/topology-controls
+```
+
+---
+
+## Components
+
+### `<TopologyControls />`
+A floating vertical pill providing:
+- **Zoom In (`+`)** and **Zoom Out (`-`)**
+- **Reset Zoom / Fit to Screen**: Computes graph bounding box and smoothly fits all devices within the viewport.
+- **Search Shortcut Trigger (`Ctrl+K`)**
+- **Minimap Toggle Pill**: Expands or minimizes the picture-in-picture minimap.
+
+### `<TopologyMinimap />`
+An interactive picture-in-picture radar preview:
+- Renders lightweight micro-dots for all hardware nodes colored by their operational status.
+- Displays a highlighted **viewport boundary rectangle** that updates in real time as operators pan and zoom the main canvas.
+- Clicking any region on the minimap instantly jumps the camera to that zone.
+
+---
+
+## Usage
+
+```tsx
+import {
+  TopologyProvider,
+  TopologyControls,
+  TopologyMinimap,
+} from "@/components/marrow/topology-controls";
+
+export function FloatingHUD() {
+  return (
+    <TopologyProvider>
+      <div className="absolute top-4 right-4">
+        <TopologyControls />
+      </div>
+      <div className="absolute bottom-4 right-4 w-52">
+        <TopologyMinimap />
+      </div>
+    </TopologyProvider>
+  );
+}
+```

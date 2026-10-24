@@ -14,7 +14,7 @@ import {
   X,
 } from 'lucide-react';
 import { useState } from 'react';
-import { cn, type DeviceStatus } from '../lib/utils.js';
+import { cn, type DeviceStatus } from './topology-types.js';
 import { useTopologyShell, type InspectorTab } from './topology-context.js';
 
 const STATUS_BADGE: Record<DeviceStatus, { label: string; className: string; dot: string }> = {

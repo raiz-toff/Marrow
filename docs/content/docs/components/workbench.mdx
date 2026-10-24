@@ -1,0 +1,97 @@
+---
+title: Component Workbench
+description: Interactive zero-compiler testing studio for evaluating every Marrow UI component in isolation and assembled together into the workspace shell.
+---
+
+Welcome to the **Component Workbench**. This page is a dedicated testing sandbox built specifically to test, inspect, and evaluate each Marrow UI component **without any topology compiler or diagram running**.
+
+Use the interactive studio below to switch between the assembled shell and isolated component testbenches, trigger device selections, and observe how state flows between the sidebar, inspector, controls HUD, and spotlight search.
+
+---
+
+## Interactive Workbench Studio
+
+<ComponentWorkbench />
+
+---
+
+## Component Inspection & Evaluation Guide
+
+Use this workbench to evaluate each component's behavior, aesthetics, and ergonomics before we proceed to standalone HTML compiler integration:
+
+### 1. Workspace Shell (`<TopologyShell />`)
+* **Role**: The outer responsive card-in-card frame that coordinates grid geometry and holds all panels.
+* **Testing Points**:
+  * Click **Collapse Sidebar** / **Expand Sidebar** in the diagnostics bar above to test CSS grid column animation (`--fd-sidebar-col: 268px` &rarr; `0px`).
+  * Check the card-in-card border radius (`rounded-2xl`), border contrast (`border-fd-border`), and theme background variables.
+  * Test responsive behavior when resizing your browser window.
+
+---
+
+### 2. Device Inspector (`<TopologyInspector />`)
+* **Role**: 5-tab deep telemetry drawer displaying live hardware properties for the active device.
+* **Testing Points**:
+  * **Overview Tab**: Hardware model, OS version, management IP address, uptime, serial number, and role badge.
+  * **Interfaces Tab**: Port capacity matrix (10G/25G/40G), link mode (`routed`, `trunk`, `peering`, `tunnel`), VLAN tags, peer device, and live status halos.
+  * **Neighbors Tab**: LLDP and CDP adjacent peer discovery table.
+  * **Fields Tab**: Custom tags, BGP autonomous system numbers (ASNs), and operational notes.
+  * **Config Tab**: Copyable vendor CLI configuration stanza with 1-click clipboard button.
+
+---
+
+### 3. Left Navigation Rail (`<TopologySidebar />`)
+* **Role**: Authentic Marrow compound navigation sidebar (`<TopologySidebarHeader />`, `<TopologyMenubar />`, `<TopologySidebarContent />`, `<TopologyAbout />`, `<TopologySidebarFooter />`).
+* **Testing Points**:
+  * **Compound Architecture**: Test how the header, menubar, tree view, legend, and footer assemble together.
+  * **Zero Artificial Slop**: Clean, authentic Marrow design without hallucinated zone switchers or layer toggles.
+
+---
+
+### 4. Modular Infrastructure Tree (`<TopologyTreeView />`)
+* **Role**: Standalone zone and device tree component extracted for maximum modularity.
+* **Testing Points**:
+  * **Gliding Hover Block**: Hover over zone headers and devices to see the floating background indicator smoothly slide between items.
+  * **Device Selection**: Click any device in the list to update the selected device across the workspace and inspector in real time.
+  * **Zone Collapse**: Click chevron toggles to expand and collapse zone clusters.
+  * **Status Halo LEDs**: Green (`up`), Amber (`degraded`), Red (`down`), Blue (`planned`), Gray (`unknown`).
+
+---
+
+### 5. Telemetry & Cable Legend (`<TopologyLegend />`)
+* **Role**: Modular status and physical cable style indicators.
+* **Testing Points**:
+  * **Compound `<TopologyLegend />`**: Both status pills and cable styles in a neat two-column grid.
+  * **Standalone `<TopologyStatusLegend />`**: Status telemetry pills in `grid`, `inline` (HUD bar), or `compact` variants.
+  * **Standalone `<TopologyLinkLegend />`**: Solid line (`link`) and dashed line (`degraded / planned`).
+
+---
+
+### 6. Floating Controls HUD (`<TopologyControls />`)
+* **Role**: Minimal floating pill overlay providing camera and viewport shortcuts.
+* **Testing Points**:
+  * **Zoom (+ / −)**: Incremental viewport scale controls.
+  * **Fit View**: Frames and centers active content.
+  * **Command Palette Button**: Quick-access shortcut to open the device search modal.
+
+---
+
+### 5. Spotlight Command Center (`<TopologySearch />`)
+* **Role**: Keyboard-first `Ctrl+K` (or `⌘K` on macOS) modal search dialog.
+* **Testing Points**:
+  * Press `Ctrl+K` or click the search bar to open the spotlight overlay.
+  * Search by hostname (`hq-core`), IP address (`10.10.1.1`), zone (`Datacenter`), or role (`Firewall`).
+  * Use Up/Down arrow keys and Enter to select a device and dismiss the dialog.
+
+---
+
+## Architecture Checklist: What Should Be Added or Refined?
+
+Before porting these components to Marrow's standalone HTML compiler (`packages/site/src/shell.ts`), consider these design questions:
+
+| Component | Current State | Potential Enhancements |
+| :--- | :--- | :--- |
+| **Topbar & Breadcrumbs** | Floating in-stage breadcrumb | Add global branding logo, export SVG/PNG action menu, site theme selector |
+| **Minimap** | Built into controls | Add picture-in-picture radar preview when diagrams are enabled |
+| **Inspector Drawer** | Right sibling card (380px) | Add bottom sheet mode on narrow mobile viewports |
+| **Layer Switcher** | Toggled in sidebar | Add link speed filter (hide 1G access links, focus 40G/100G cores) |
+| **CLI Configs** | Formatted code block | Add syntax highlighting for Cisco IOS-XE, Arista EOS, Junos, and PAN-OS |

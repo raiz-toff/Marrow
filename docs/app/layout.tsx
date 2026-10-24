@@ -5,6 +5,20 @@ import type { ReactNode } from 'react';
 import type { Viewport } from 'next';
 import { Body } from '@/app/layout.client';
 
+if (process.env.NODE_ENV === 'development') {
+  const originalConsoleError = console.error;
+  console.error = (...args: unknown[]) => {
+    const msg = args.map((a) => (typeof a === 'string' ? a : a instanceof Error ? a.message : '')).join(' ');
+    if (
+      msg.includes('Encountered a script tag') ||
+      msg.includes('Scripts inside React components are never executed')
+    ) {
+      return;
+    }
+    originalConsoleError.apply(console, args);
+  };
+}
+
 const geist = Geist({
   variable: '--font-sans',
   subsets: ['latin'],
@@ -35,9 +49,11 @@ export const viewport: Viewport = {
 export default function Layout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={`${geist.variable} ${mono.variable}`} suppressHydrationWarning>
-      <Body>
-        <RootProvider>{children}</RootProvider>
-      </Body>
+      <body className="relative flex min-h-screen flex-col">
+        <RootProvider>
+          <Body>{children}</Body>
+        </RootProvider>
+      </body>
     </html>
   );
 }

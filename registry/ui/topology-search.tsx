@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import { cn } from "../lib/utils.js";
+import { cn } from "./topology-types.js";
 import { useTopologyShell } from "./topology-context.js";
 
 export interface TopologySearchProps {

@@ -1,0 +1,88 @@
+---
+title: Topology Inspector
+description: Floating 5-tab device telemetry and CLI drawer with live interface tables, LLDP neighbors, and copyable vendor configuration stanzas.
+---
+
+The **Topology Inspector** is a card-based telemetry panel for network engineering. It provides 5 segmented tabs: **Overview**, **Interfaces**, **Neighbors**, **Fields**, and copyable **CLI Configurations** (Cisco IOS-XE, Arista EOS, PAN-OS, Junos).
+
+---
+
+## Interactive Preview
+
+Test the inspector across different network hardware profiles:
+
+<ComponentPreview
+  name="topology-inspector"
+  title="Topology Inspector"
+  height="600px"
+  code={`import { TopologyProvider, TopologyInspector } from "@marrow/ui";
+
+export function DeviceInspectorDemo() {
+  return (
+    <TopologyProvider defaultSelectedDeviceId="hq-core-01">
+      <aside className="w-[380px] max-w-full">
+        <TopologyInspector />
+      </aside>
+    </TopologyProvider>
+  );
+}`}
+>
+  <InspectorShowcase />
+</ComponentPreview>
+
+---
+
+## Installation
+
+Install via the shadcn CLI:
+
+```bash
+npx shadcn@latest add https://marrow.run/r/topology-inspector.json
+```
+
+Or directly from the GitHub repository:
+
+```bash
+npx shadcn@latest add raiz-toff/Marrow/topology-inspector
+```
+
+---
+
+## Features
+
+- **5 Segmented Tabs**:
+  - `Overview`: Hardware model, OS version, management IP, serial number, role, uptime.
+  - `Interfaces`: Full table of device ports with link mode (`routed`, `trunk`, `peering`, `tunnel`), speed, VLAN, and live status indicator.
+  - `Neighbors`: LLDP and CDP adjacent peer discovery table.
+  - `Fields`: Custom metadata tags, BGP autonomous system numbers (ASNs), circuit IDs.
+  - `Config`: Formatted vendor CLI configuration stanza with 1-click clipboard copy.
+- **Auto-Syncing Selection**: Automatically updates whenever a node or link is selected in the canvas.
+- **Translucent Backdrop**: Soft blur background with border halo that matches your theme.
+
+---
+
+## Usage
+
+```tsx
+import { TopologyProvider, TopologyInspector } from "@/components/marrow/topology-inspector";
+
+export default function MyPage() {
+  return (
+    <TopologyProvider defaultSelectedDeviceId="hq-core-01">
+      <aside className="w-[380px]">
+        <TopologyInspector />
+      </aside>
+    </TopologyProvider>
+  );
+}
+```
+
+---
+
+## Props
+
+The component reads from the shared `useTopologyShell()` context, but you can also pass custom container classes:
+
+| Prop | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `className` | `string` | `undefined` | Optional Tailwind classes applied to the root card. |

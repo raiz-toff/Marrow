@@ -16,13 +16,13 @@ const REGISTRY_ITEMS = [
     type: 'registry:block',
     title: 'Spacious Topology Shell',
     description:
-      'Complete Fumadocs Spacious-inspired network topology workspace shell in React/Next.js TSX with recessed card frame, collapsible gliding-hover sidebar, interactive SVG pan/zoom canvas, floating controls + minimap, 5-tab right inspector card, and Ctrl+K command center.',
-    dependencies: [],
+      'Complete Fumadocs Spacious-inspired network topology workspace shell in React/Next.js TSX framing compiled Marrow diagrams with collapsible sidebar, floating camera controls, 5-tab telemetry inspector, and Ctrl+K search.',
+    dependencies: ['lucide-react'],
     files: [
       {
-        path: 'lib/utils.ts',
-        type: 'registry:lib',
-        target: 'lib/topology-utils.ts',
+        path: 'ui/topology-types.ts',
+        type: 'registry:component',
+        target: 'components/marrow/topology-types.ts',
       },
       {
         path: 'ui/topology-context.tsx',
@@ -67,7 +67,7 @@ const REGISTRY_ITEMS = [
     title: 'Topology Sidebar',
     description:
       'Spacious left navigation rail with zone switcher dropdown, Ctrl+K search trigger, gliding hover highlight block, collapsible device hierarchy, and canvas layer switches.',
-    dependencies: [],
+    dependencies: ['lucide-react'],
     registryDependencies: ['topology-shell'],
     files: [
       {
@@ -80,10 +80,10 @@ const REGISTRY_ITEMS = [
   {
     name: 'topology-canvas',
     type: 'registry:ui',
-    title: 'Topology Canvas',
+    title: 'Topology Stage',
     description:
-      'Floating rounded-2xl main stage card with translucent header bar, breadcrumbs, SVG export, interactive pan/zoom topology graph, security zone hulls, animated flow links, and hardware nodes.',
-    dependencies: [],
+      'Clean workspace stage card that frames the main viewport with live hardware telemetry, dot grid, breadcrumbs, and floating camera controls HUD.',
+    dependencies: ['lucide-react'],
     registryDependencies: ['topology-shell'],
     files: [
       {
@@ -99,7 +99,7 @@ const REGISTRY_ITEMS = [
     title: 'Topology Inspector',
     description:
       'Floating rounded-2xl right sibling card with 5 segmented tabs (Overview, Interfaces, Neighbors, Fields, Config) and copyable CLI configuration stanzas.',
-    dependencies: [],
+    dependencies: ['lucide-react'],
     registryDependencies: ['topology-shell'],
     files: [
       {
@@ -115,7 +115,7 @@ const REGISTRY_ITEMS = [
     title: 'Topology Controls & Minimap',
     description:
       'Floating vertical zoom/fit/command pill and interactive SVG minimap overlay.',
-    dependencies: [],
+    dependencies: ['lucide-react'],
     registryDependencies: ['topology-shell'],
     files: [
       {
@@ -131,7 +131,7 @@ const REGISTRY_ITEMS = [
     title: 'Topology Command & Search',
     description:
       'Ctrl+K spotlight modal for searching devices, IPs, security zones, links, and canvas actions.',
-    dependencies: [],
+    dependencies: ['lucide-react'],
     registryDependencies: ['topology-shell'],
     files: [
       {

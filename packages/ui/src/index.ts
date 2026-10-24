@@ -21,9 +21,33 @@ export {
   type TopologyProviderProps,
 } from "./components/topology-context.js";
 
-export { TopologySidebar } from "./components/topology-sidebar.js";
+export {
+  TopologySidebar,
+  TopologySidebarHeader,
+  TopologyMenubar,
+  TopologySidebarContent,
+  TopologyAbout,
+  TopologySidebarFooter,
+  type TopologySidebarProps,
+} from "./components/topology-sidebar.js";
 
-export { TopologyCanvas } from "./components/topology-canvas.js";
+export {
+  TopologyTreeView,
+  type TopologyTreeViewProps,
+} from "./components/topology-tree.js";
+
+export {
+  TopologyLegend,
+  TopologyStatusLegend,
+  TopologyLinkLegend,
+  STATUS_DOT,
+  STATUS_LABELS,
+  type TopologyLegendProps,
+  type TopologyStatusLegendProps,
+  type TopologyLinkLegendProps,
+} from "./components/topology-legend.js";
+
+export { TopologyCanvas, TopologyViewport } from "./components/topology-canvas.js";
 
 export {
   TopologyControls,

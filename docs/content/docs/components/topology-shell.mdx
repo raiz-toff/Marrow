@@ -1,0 +1,90 @@
+---
+title: Spacious Topology Shell
+description: Complete Fumadocs Spacious-inspired network topology workspace shell with recessed card frame, collapsible sidebar, interactive SVG canvas, floating controls, 5-tab inspector, and Ctrl+K spotlight.
+---
+
+The **`<TopologyShell />`** is the flagship pre-assembled block of Marrow UI. It bundles the entire network engineering studio into a single composable component that drops into any Next.js, Vite, or React application.
+
+---
+
+## Preview
+
+<ComponentPreview
+  name="topology-shell"
+  title="Spacious Topology Shell"
+  height="700px"
+  code={`import { TopologyShell } from "@marrow/ui";
+
+export default function NetworkPage() {
+  return (
+    <main className="p-4">
+      <TopologyShell
+        defaultSelectedDeviceId="hq-core-01"
+        height="680px"
+      />
+    </main>
+  );
+}`}
+>
+  <div className="w-full">
+    <TopologyShell height="680px" />
+  </div>
+</ComponentPreview>
+
+---
+
+## Installation
+
+Install the complete Spacious block via shadcn CLI:
+
+```bash
+npx shadcn@latest add https://marrow.run/r/topology-shell.json
+```
+
+Or directly via GitHub:
+
+```bash
+npx shadcn@latest add raiz-toff/Marrow/topology-shell
+```
+
+---
+
+## Composition Architecture
+
+The `<TopologyShell />` is built from the individual Marrow UI primitives:
+
+```tsx
+import {
+  TopologyProvider,
+  TopologySidebar,
+  TopologyViewport,
+  TopologyInspector,
+  TopologySearch,
+} from "@marrow/ui";
+
+export function CustomWorkspace({ data }) {
+  return (
+    <TopologyProvider data={data} defaultSelectedDeviceId="hq-core-01">
+      <div className="grid grid-cols-[268px_1fr_380px] h-screen">
+        <TopologySidebar />
+        <TopologyCanvas />
+        <TopologyInspector />
+      </div>
+      <TopologySearch />
+    </TopologyProvider>
+  );
+}
+```
+
+---
+
+## Props
+
+| Prop | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `data` | `TopologyData` | `DEFAULT_TOPOLOGY_DATA` | Network dataset (zones, devices, links). |
+| `defaultSelectedDeviceId` | `string \| null` | `'hq-core-01'` | Initial device selected on mount. |
+| `defaultSidebarCollapsed` | `boolean` | `false` | Start with left navigation rail collapsed. |
+| `height` | `string` | `'720px'` | CSS height for embedded or fullscreen viewports. |
+| `className` | `string` | `undefined` | Custom Tailwind classes for the outer container. |
+| `children` | `ReactNode` | `undefined` | Optional custom slots replacing default layout. |

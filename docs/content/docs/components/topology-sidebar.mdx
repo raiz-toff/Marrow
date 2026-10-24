@@ -1,0 +1,99 @@
+---
+title: Topology Sidebar
+description: Collapsible navigation sidebar matching Marrow's canonical HTML shell with title/stats header, menubar, zone hierarchy, telemetry legend, and layout metadata.
+---
+
+The **Topology Sidebar** is Marrow's primary navigation and topology overview panel. It faithfully reproduces the compiled Marrow HTML diagram sidebar (`.m-sidebar`), providing topology title and counters, application menubar, hierarchical zone and device exploration, status telemetry legend, layout metadata, and brand mark.
+
+---
+
+## Interactive Preview
+
+Browse zones and devices, test group expanding/collapsing, and check status LEDs:
+
+<ComponentPreview
+  name="topology-sidebar"
+  title="Topology Sidebar"
+  height="580px"
+  code={`import { TopologyProvider, TopologySidebar } from "@marrow/ui";
+
+export function SidebarDemo() {
+  return (
+    <TopologyProvider defaultSelectedDeviceId="hq-core-01">
+      <aside className="w-[280px] h-full">
+        <TopologySidebar />
+      </aside>
+    </TopologyProvider>
+  );
+}`}
+>
+  <SidebarShowcase />
+</ComponentPreview>
+
+---
+
+## Installation
+
+```bash
+npx shadcn@latest add https://marrow.run/r/topology-sidebar.json
+```
+
+Or via GitHub:
+
+```bash
+npx shadcn@latest add raiz-toff/Marrow/topology-sidebar
+```
+
+---
+
+## Default Anatomy (Marrow HTML Standard)
+
+The default sidebar strictly adheres to Marrow's offline HTML architecture (`packages/site/src/shell.ts`):
+
+1. **Header (`.m-side-header`)**:
+   - Diagram title (e.g., `Two Sites`)
+   - Device and zone summary counters (e.g., `8 devices · 2 zones`)
+   - Close toggle (`X`) to collapse the sidebar.
+2. **Application Menubar (`.m-menubar`)**:
+   - `View`, `Export`, and `Help` triggers.
+3. **Browse Section (`.m-side-section`)**:
+   - **Overview**: Full fabric overview with total node counter badge.
+   - **Zones & Devices**: Collapsible zone groupings with per-zone node badges, device hostnames, hardware tier icons, and live status LED dots (`up`, `degraded`, `down`, `planned`).
+   - **Inventory**: Total hardware device inventory counter.
+4. **Telemetry Legend (`.m-legend`)**:
+   - Device states: `up` (green), `degraded` (amber), `down` (red), `planned` (sky).
+   - Cable styles: `link` (solid) and `degraded / planned` (dashed).
+5. **About Section (`.m-about`)**:
+   - `Layout`: Active layout algorithm (e.g., `zoned-mosaic`, `tiered`).
+   - `Renderer`: Active renderer tier (e.g., `svg-hero`).
+6. **Footer (`.m-side-foot`)**:
+   - Marrow glyph, brand mark, and GitHub repository source link.
+
+> [!NOTE]
+> Custom workspace switchers or canvas layer menus are intentionally kept out of the default sidebar to preserve Marrow's core HTML design. They can be added as standalone composable extension components if desired.
+
+---
+
+## Usage
+
+```tsx
+import { TopologyProvider, TopologySidebar } from "@/components/marrow/topology-sidebar";
+
+export default function App() {
+  return (
+    <TopologyProvider>
+      <aside className="w-[268px] h-full">
+        <TopologySidebar />
+      </aside>
+    </TopologyProvider>
+  );
+}
+```
+
+---
+
+## Props
+
+| Prop | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `className` | `string` | `undefined` | Optional Tailwind class overrides on the outer `<aside>` element. |

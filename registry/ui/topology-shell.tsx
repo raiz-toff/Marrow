@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { cn, DEFAULT_TOPOLOGY_DATA, type TopologyData } from "../lib/utils.js";
+import { cn, DEFAULT_TOPOLOGY_DATA, type TopologyData } from "./topology-types.js";
 import { TopologyProvider, useTopologyShell } from "./topology-context.js";
 import { TopologySidebar } from "./topology-sidebar.js";
 import { TopologyCanvas } from "./topology-canvas.js";
@@ -11,7 +11,7 @@ import { TopologySearch } from "./topology-search.js";
 export interface TopologyShellProps {
   /** Topology dataset to render. Defaults to a realistic 9-device US-East Core & Campus fabric. */
   data?: TopologyData;
-  /** Initial selected device ID (defaults to 'core-sw-01' so the right inspector card is visible). */
+  /** Initial selected device ID (defaults to 'hq-core-01' so the right inspector card is visible). */
   defaultSelectedDeviceId?: string | null;
   /** Start with left sidebar collapsed. */
   defaultSidebarCollapsed?: boolean;
@@ -39,6 +39,13 @@ function TopologyShellLayout({
       style={
         {
           "--fd-sidebar-col": sidebarCollapsed ? "0px" : "268px",
+          "--color-fd-background": "var(--background, #09090b)",
+          "--color-fd-foreground": "var(--foreground, #fafafa)",
+          "--color-fd-card": "var(--card, #121215)",
+          "--color-fd-border": "var(--border, #27272a)",
+          "--color-fd-muted-foreground": "var(--muted-foreground, #a1a1aa)",
+          "--color-fd-accent": "var(--accent, #27272a)",
+          "--color-fd-primary": "var(--primary, #f59e0b)",
           height,
           gridTemplate: `"sidebar main right" 1fr / var(--fd-sidebar-col) minmax(0, 1fr) auto`,
         } as React.CSSProperties
@@ -62,7 +69,7 @@ function TopologyShellLayout({
 
 export function TopologyShell({
   data = DEFAULT_TOPOLOGY_DATA,
-  defaultSelectedDeviceId = "core-sw-01",
+  defaultSelectedDeviceId = "hq-core-01",
   defaultSidebarCollapsed = false,
   height = "720px",
   className,

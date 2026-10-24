@@ -23,3 +23,8 @@ input/
 
 # Local Vercel link state (also gitignored)
 .vercel/
+
+# Packaged CLI artifacts and agent configurations
+dist-npm/
+.agents/
+.claude/

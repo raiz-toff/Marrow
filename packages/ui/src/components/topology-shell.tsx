@@ -62,7 +62,7 @@ function TopologyShellLayout({
 
 export function TopologyShell({
   data = DEFAULT_TOPOLOGY_DATA,
-  defaultSelectedDeviceId = "core-sw-01",
+  defaultSelectedDeviceId = "hq-core-01",
   defaultSidebarCollapsed = false,
   height = "720px",
   className,

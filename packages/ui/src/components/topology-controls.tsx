@@ -19,19 +19,21 @@ export function TopologyMinimap({ className }: { className?: string }) {
 
   if (!viewSettings.minimap) return null;
 
+  const totalWidth = data.width ?? 1200;
+  const totalHeight = data.height ?? 800;
   const miniW = 168;
-  const miniH = Math.round((data.height / data.width) * miniW);
+  const miniH = Math.round((totalHeight / totalWidth) * miniW);
 
   // Viewport indicator box inside minimap coordinates
-  const viewW = Math.min(data.width, data.width / camera.k);
-  const viewH = Math.min(data.height, data.height / camera.k);
+  const viewW = Math.min(totalWidth, totalWidth / camera.k);
+  const viewH = Math.min(totalHeight, totalHeight / camera.k);
   const viewX = Math.max(
     0,
-    Math.min(data.width - viewW, (data.width - viewW) / 2 - camera.x / camera.k),
+    Math.min(totalWidth - viewW, (totalWidth - viewW) / 2 - camera.x / camera.k),
   );
   const viewY = Math.max(
     0,
-    Math.min(data.height - viewH, (data.height - viewH) / 2 - camera.y / camera.k),
+    Math.min(totalHeight - viewH, (totalHeight - viewH) / 2 - camera.y / camera.k),
   );
 
   return (
@@ -66,16 +68,16 @@ export function TopologyMinimap({ className }: { className?: string }) {
           <svg
             width={miniW}
             height={miniH}
-            viewBox={`0 0 ${data.width} ${data.height}`}
+            viewBox={`0 0 ${totalWidth} ${totalHeight}`}
             className="block rounded-lg bg-fd-card/60 cursor-crosshair"
             onClick={(e) => {
               const rect = e.currentTarget.getBoundingClientRect();
-              const clickX = ((e.clientX - rect.left) / rect.width) * data.width;
-              const clickY = ((e.clientY - rect.top) / rect.height) * data.height;
+              const clickX = ((e.clientX - rect.left) / rect.width) * totalWidth;
+              const clickY = ((e.clientY - rect.top) / rect.height) * totalHeight;
               setCamera((prev) => ({
                 ...prev,
-                x: (data.width / 2 - clickX) * prev.k,
-                y: (data.height / 2 - clickY) * prev.k,
+                x: (totalWidth / 2 - clickX) * prev.k,
+                y: (totalHeight / 2 - clickY) * prev.k,
               }));
             }}
           >

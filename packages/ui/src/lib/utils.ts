@@ -29,8 +29,8 @@ export interface TopologyDevice {
   serial?: string;
   status: DeviceStatus;
   haPairWith?: string;
-  x: number;
-  y: number;
+  x?: number;
+  y?: number;
   interfaces: TopologyInterface[];
   customFields?: Record<string, string>;
   configSnippet?: string;
@@ -53,10 +53,10 @@ export interface TopologyZone {
   label: string;
   subtitle?: string;
   accent?: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
 }
 
 export interface TopologyData {
@@ -65,8 +65,8 @@ export interface TopologyData {
   version?: string;
   layoutArchetype?: string;
   rendererTier?: 'svg-hero' | 'canvas-scale';
-  width: number;
-  height: number;
+  width?: number;
+  height?: number;
   zones: TopologyZone[];
   devices: TopologyDevice[];
   links: TopologyLink[];
@@ -80,428 +80,440 @@ export interface TopologyViewSettings {
   watermark: 'full' | 'minimal' | 'blueprint' | 'off';
 }
 
+/**
+ * Authentic Marrow Topology Data matching `docs/demos/zoned.yaml` (Two Sites).
+ * Used as default state for the outer shell, sidebar inventory, and telemetry inspector.
+ */
 export const DEFAULT_TOPOLOGY_DATA: TopologyData = {
-  title: 'US-East Production Core & Campus Fabric',
-  subtitle: 'Dual-Core EVPN/VXLAN Spine-Leaf with Redundant WAN Edge & DMZ Perimeter',
-  version: '2026.10.2',
-  layoutArchetype: 'zoned-tiered',
+  title: 'Two Sites',
+  subtitle: 'HQ & Datacenter Interconnect — Zoned Mosaic',
+  version: '2.0.0',
+  layoutArchetype: 'zoned-mosaic',
   rendererTier: 'svg-hero',
-  width: 1120,
-  height: 680,
   zones: [
     {
-      id: 'wan-edge',
-      label: 'WAN & Peering Edge',
-      subtitle: 'AS 65001 · External Transit',
-      accent: '#f59e0b',
-      x: 60,
-      y: 40,
-      width: 680,
-      height: 155,
+      id: 'hq',
+      label: 'Headquarters',
+      subtitle: 'Campus Distribution & WAN Edge',
+      accent: '#7aa2ff',
     },
     {
-      id: 'dc-core',
-      label: 'Core Switching Fabric',
-      subtitle: 'EVPN VXLAN · Loopback0 10.255.0.0/24',
-      accent: '#3b82f6',
-      x: 60,
-      y: 230,
-      width: 680,
-      height: 175,
-    },
-    {
-      id: 'campus-access',
-      label: 'Distribution & Access Pods',
-      subtitle: 'VLANs 10, 20, 40, 100 · 802.1X',
-      accent: '#10b981',
-      x: 60,
-      y: 440,
-      width: 680,
-      height: 195,
-    },
-    {
-      id: 'dmz-sec',
-      label: 'Security & DMZ Enclave',
-      subtitle: 'Zero-Trust Inspection Zone',
-      accent: '#8b5cf6',
-      x: 780,
-      y: 40,
-      width: 280,
-      height: 595,
+      id: 'dc',
+      label: 'Datacenter',
+      subtitle: 'Core Fabric & Application Clusters',
+      accent: '#4fc3a1',
     },
   ],
   devices: [
     {
-      id: 'edge-rtr-01',
-      label: 'edge-rtr-01',
-      role: 'WAN Border Router',
-      tier: 'edge',
-      zone: 'wan-edge',
-      ip: '198.51.100.1/30',
-      asn: 65001,
-      model: 'Cisco ASR 1002-HX',
-      os: 'IOS-XE 17.12.03',
-      serial: 'FXS2340Q1A9',
-      status: 'up',
-      haPairWith: 'edge-rtr-02',
-      x: 240,
-      y: 118,
-      interfaces: [
-        { name: 'Te0/0/0', ip: '203.0.113.2/30', speed: '10G', mode: 'peering', status: 'up', peerDevice: 'ISP-A', peerPort: 'et-0/0/1' },
-        { name: 'Hu0/1/0', ip: '10.0.1.1/30', speed: '100G', mode: 'routed', status: 'up', peerDevice: 'core-sw-01', peerPort: 'Et1/1' },
-        { name: 'Te0/0/2', ip: '10.0.12.1/30', speed: '10G', mode: 'routed', status: 'up', peerDevice: 'fw-dmz-01', peerPort: 'ethernet1/1' },
-      ],
-      customFields: {
-        'BGP Peers': '4 Established (ISP-A, ISP-B, Core-01, Core-02)',
-        'Optic Hu0/1/0': 'QSFP28-100G-SR4 (Rx: -2.1 dBm / Tx: -1.4 dBm)',
-        'Rack Location': 'DC1-RowA-Rack02-U14',
-        'Circuit ID': 'LUMEN-884920-NYC',
-      },
-      configSnippet: `router bgp 65001
- bgp router-id 10.255.0.1
- bgp log-neighbor-changes
- neighbor 10.0.1.2 remote-as 65001
- neighbor 10.0.1.2 description core-sw-01
- !
- address-family ipv4
-  network 10.255.0.1 mask 255.255.255.255
-  neighbor 10.0.1.2 activate
- exit-address-family`,
-    },
-    {
-      id: 'edge-rtr-02',
-      label: 'edge-rtr-02',
-      role: 'WAN Border Router',
-      tier: 'edge',
-      zone: 'wan-edge',
-      ip: '198.51.100.2/30',
-      asn: 65001,
-      model: 'Cisco ASR 1002-HX',
-      os: 'IOS-XE 17.12.03',
-      serial: 'FXS2340Q1B2',
-      status: 'up',
-      haPairWith: 'edge-rtr-01',
-      x: 540,
-      y: 118,
-      interfaces: [
-        { name: 'Te0/0/0', ip: '198.51.100.6/30', speed: '10G', mode: 'peering', status: 'up', peerDevice: 'ISP-B', peerPort: 'xe-0/1/0' },
-        { name: 'Hu0/1/0', ip: '10.0.1.5/30', speed: '100G', mode: 'routed', status: 'up', peerDevice: 'core-sw-02', peerPort: 'Et1/1' },
-        { name: 'Te0/0/2', ip: '10.0.12.5/30', speed: '10G', mode: 'tunnel', status: 'degraded', peerDevice: 'fw-dmz-01', peerPort: 'ethernet1/2' },
-      ],
-      customFields: {
-        'BGP Peers': '3 Established, 1 Idle (DMZ IPSec backup)',
-        'Optic Hu0/1/0': 'QSFP28-100G-SR4 (Rx: -2.4 dBm / Tx: -1.5 dBm)',
-        'Rack Location': 'DC1-RowA-Rack03-U14',
-        'Circuit ID': 'ZAYO-441092-IAD',
-      },
-      configSnippet: `router bgp 65001
- bgp router-id 10.255.0.2
- neighbor 10.0.1.6 remote-as 65001
- neighbor 10.0.1.6 description core-sw-02`,
-    },
-    {
-      id: 'core-sw-01',
-      label: 'core-sw-01',
-      role: 'EVPN Spine Core',
+      id: 'hq-core-01',
+      label: 'HQ Core 1',
+      role: 'Campus Core Switch',
       tier: 'core',
-      zone: 'dc-core',
-      ip: '10.255.0.11/32',
+      zone: 'hq',
+      ip: '10.10.1.1/24',
       asn: 65100,
-      model: 'Arista 7050CX3-32S',
-      os: 'EOS 4.31.2F',
-      serial: 'JPE21190451',
+      model: 'Cisco Catalyst 9500-48Y4C',
+      os: 'Cisco IOS-XE 17.12.1',
+      serial: 'FCZ2418B0XA',
       status: 'up',
-      haPairWith: 'core-sw-02',
-      x: 240,
-      y: 318,
+      haPairWith: 'hq-core-02',
       interfaces: [
-        { name: 'Et1/1', ip: '10.0.1.2/30', speed: '100G', mode: 'routed', status: 'up', peerDevice: 'edge-rtr-01', peerPort: 'Hu0/1/0' },
-        { name: 'Et31/1', ip: '10.255.255.1/30', speed: '100G', mode: 'stack', status: 'up', peerDevice: 'core-sw-02', peerPort: 'Et31/1' },
-        { name: 'Po10', vlan: '10,20,40,100', speed: '40G', mode: 'trunk', status: 'up', peerDevice: 'dist-sw-01', peerPort: 'Po10' },
-        { name: 'Po20', vlan: '10,20,40,100', speed: '40G', mode: 'trunk', status: 'up', peerDevice: 'dist-sw-02', peerPort: 'Po10' },
+        {
+          name: 'Te1/0/1',
+          ip: '10.10.100.1/30',
+          speed: '10G',
+          mode: 'routed',
+          status: 'up',
+          peerDevice: 'hq-fw',
+          peerPort: 'eth1',
+        },
+        {
+          name: 'Te1/0/2',
+          speed: '40G',
+          mode: 'trunk',
+          status: 'up',
+          vlan: '10,20,30,99',
+          peerDevice: 'hq-core-02',
+          peerPort: 'Te1/0/2',
+        },
+        {
+          name: 'Gi1/0/1',
+          speed: '10G',
+          mode: 'trunk',
+          status: 'up',
+          vlan: '10,20,30',
+          peerDevice: 'hq-acc-01',
+          peerPort: 'Gi0/48',
+        },
       ],
       customFields: {
-        'MLAG Domain': 'mlag-core-peer (Active / Primary)',
-        'VXLAN VTEP': '10.255.0.11 (14 VNIs active)',
-        'Optic Et1/1': '100GBASE-SR4 (Temp: 38.4°C)',
-        'Rack Location': 'DC1-RowB-Rack01-U22',
+        'Stack Mode': 'Cisco StackWise-Virtual (Active)',
+        'Domain ID': '10',
+        'Uptime': '142 days, 18 hours',
       },
-      configSnippet: `interface Port-Channel10
- description Downlink to dist-sw-01
- switchport mode trunk
- switchport trunk allowed vlan 10,20,40,100
- mlag 10
+      configSnippet: `interface TenGigabitEthernet1/0/1
+ description UPLINK-TO-HQ-FIREWALL
+ no switchport
+ ip address 10.10.100.1 255.255.255.252
+ ip ospf 1 area 0
 !
-interface Vxlan1
- vxlan source-interface Loopback0
- vxlan udp-port 4789`,
+interface Port-channel1
+ description HA-INTER-CHASSIS-LINK
+ switchport mode trunk
+ switchport trunk allowed vlan 10,20,30,99
+!
+router bgp 65100
+ bgp router-id 10.10.1.1
+ neighbor 10.10.100.2 remote-as 65100
+ neighbor 10.10.100.2 activate`,
     },
     {
-      id: 'core-sw-02',
-      label: 'core-sw-02',
-      role: 'EVPN Spine Core',
+      id: 'hq-core-02',
+      label: 'HQ Core 2',
+      role: 'Campus Core Switch (Standby)',
       tier: 'core',
-      zone: 'dc-core',
-      ip: '10.255.0.12/32',
+      zone: 'hq',
+      ip: '10.10.1.2/24',
       asn: 65100,
-      model: 'Arista 7050CX3-32S',
-      os: 'EOS 4.31.2F',
-      serial: 'JPE21190488',
+      model: 'Cisco Catalyst 9500-48Y4C',
+      os: 'Cisco IOS-XE 17.12.1',
+      serial: 'FCZ2418B0XB',
       status: 'up',
-      haPairWith: 'core-sw-01',
-      x: 540,
-      y: 318,
+      haPairWith: 'hq-core-01',
       interfaces: [
-        { name: 'Et1/1', ip: '10.0.1.6/30', speed: '100G', mode: 'routed', status: 'up', peerDevice: 'edge-rtr-02', peerPort: 'Hu0/1/0' },
-        { name: 'Et31/1', ip: '10.255.255.2/30', speed: '100G', mode: 'stack', status: 'up', peerDevice: 'core-sw-01', peerPort: 'Et31/1' },
-        { name: 'Po20', vlan: '10,20,40,100', speed: '40G', mode: 'trunk', status: 'up', peerDevice: 'dist-sw-02', peerPort: 'Po20' },
-        { name: 'Et12/1', ip: '10.0.20.1/30', speed: '25G', mode: 'routed', status: 'up', peerDevice: 'fw-dmz-01', peerPort: 'ethernet1/3' },
+        {
+          name: 'Te1/0/2',
+          speed: '40G',
+          mode: 'trunk',
+          status: 'up',
+          vlan: '10,20,30,99',
+          peerDevice: 'hq-core-01',
+          peerPort: 'Te1/0/2',
+        },
       ],
       customFields: {
-        'MLAG Domain': 'mlag-core-peer (Active / Secondary)',
-        'VXLAN VTEP': '10.255.0.12 (14 VNIs active)',
-        'Rack Location': 'DC1-RowB-Rack02-U22',
+        'Stack Mode': 'Cisco StackWise-Virtual (Standby)',
+        'Domain ID': '10',
+        'Uptime': '142 days, 18 hours',
       },
-      configSnippet: `mlag configuration
- domain-id mlag-core-peer
- local-interface Vlan4094
- peer-address 10.255.255.1
- peer-link Port-Channel1000`,
+      configSnippet: `interface Port-channel1
+ description HA-INTER-CHASSIS-LINK
+ switchport mode trunk
+ switchport trunk allowed vlan 10,20,30,99`,
     },
     {
-      id: 'dist-sw-01',
-      label: 'dist-sw-01',
-      role: 'Campus Pod A Leaf',
-      tier: 'distribution',
-      zone: 'campus-access',
-      ip: '10.10.0.21/24',
-      model: 'Catalyst 9300-48UXM',
-      os: 'IOS-XE 17.09.04a',
-      serial: 'FCW2248G09L',
-      status: 'up',
-      x: 190,
-      y: 540,
-      interfaces: [
-        { name: 'Po10', vlan: '10,20,40,100', speed: '40G', mode: 'trunk', status: 'up', peerDevice: 'core-sw-01', peerPort: 'Po10' },
-        { name: 'Gi1/0/1-48', vlan: '10 (Corp), 20 (Voice)', speed: '1G', mode: 'access', status: 'up' },
-      ],
-      customFields: {
-        'PoE Budget': '1140W Total / 420W Allocated (37%)',
-        'Connected Endpoints': '42 Workstations, 6 Wi-Fi 6E APs',
-        'STP Root': 'Primary Root for VLAN 10, 20',
-      },
-      configSnippet: `interface TwentyFiveGigE1/1/1
- description Uplink to core-sw-01
- channel-group 10 mode active`,
-    },
-    {
-      id: 'dist-sw-02',
-      label: 'dist-sw-02',
-      role: 'Campus Pod B Leaf',
-      tier: 'distribution',
-      zone: 'campus-access',
-      ip: '10.10.0.22/24',
-      model: 'Catalyst 9300-48UXM',
-      os: 'IOS-XE 17.09.04a',
-      serial: 'FCW2248G09M',
-      status: 'degraded',
-      x: 420,
-      y: 540,
-      interfaces: [
-        { name: 'Po10', vlan: '10,20,40,100', speed: '40G', mode: 'trunk', status: 'up', peerDevice: 'core-sw-01', peerPort: 'Po20' },
-        { name: 'Po20', vlan: '10,20,40,100', speed: '40G', mode: 'trunk', status: 'degraded', peerDevice: 'core-sw-02', peerPort: 'Po20' },
-      ],
-      customFields: {
-        'Alert': 'SFP+ Rx Power Low (-14.8 dBm) on Te1/1/2 (Po20 member)',
-        'PoE Budget': '1140W Total / 610W Allocated (53%)',
-        'Connected Endpoints': '38 Workstations, 4 IP Cameras',
-      },
-      configSnippet: `! Alert: High CRC error rate detected on Te1/1/2
-interface TenGigabitEthernet1/1/2
- description Uplink to core-sw-02 (Check fiber patch)`,
-    },
-    {
-      id: 'acc-ap-cluster',
-      label: 'wifi-pod-east',
-      role: '802.11ax AP Cluster',
+      id: 'hq-acc-01',
+      label: 'HQ Access',
+      role: 'Wiring Closet Switch',
       tier: 'access',
-      zone: 'campus-access',
-      ip: '10.10.40.10/24',
-      model: 'Catalyst 9130AXI (x12)',
-      os: 'Capwap 17.09',
+      zone: 'hq',
+      ip: '10.10.10.5/24',
+      model: 'Cisco Catalyst 9300-48P',
+      os: 'Cisco IOS-XE 17.9.3',
+      serial: 'FOC2319S83A',
       status: 'up',
-      x: 630,
-      y: 540,
       interfaces: [
-        { name: 'Mgig0', vlan: '40,100', speed: '10G', mode: 'trunk', status: 'up', peerDevice: 'dist-sw-02', peerPort: 'Te1/0/48' },
+        {
+          name: 'Gi0/48',
+          speed: '10G',
+          mode: 'trunk',
+          status: 'up',
+          vlan: '10,20,30',
+          peerDevice: 'hq-core-01',
+          peerPort: 'Gi1/0/1',
+        },
       ],
       customFields: {
-        'SSIDs': 'Marrow-Corp (WPA3-Ent), Marrow-Guest (OWE)',
-        'Active Clients': '184 wireless clients associated',
+        'PoE Budget': '740W (182W utilized)',
+        'Active Clients': '42 endpoints',
       },
+      configSnippet: `interface GigabitEthernet0/48
+ description UPLINK-TO-HQ-CORE-01
+ switchport mode trunk
+ switchport trunk allowed vlan 10,20,30`,
     },
     {
-      id: 'fw-dmz-01',
-      label: 'fw-dmz-01',
-      role: 'Next-Gen Perimeter FW',
+      id: 'hq-fw',
+      label: 'HQ Firewall',
+      role: 'Perimeter Next-Gen Firewall',
       tier: 'edge',
-      zone: 'dmz-sec',
-      ip: '10.0.20.2/30',
-      model: 'Palo Alto PA-5220',
-      os: 'PAN-OS 11.1.2-h3',
-      serial: '013201009482',
+      zone: 'hq',
+      ip: '198.51.100.1/30',
+      model: 'Palo Alto PA-3220',
+      os: 'PAN-OS 11.0.2',
+      serial: '012901004918',
       status: 'up',
-      x: 920,
-      y: 230,
       interfaces: [
-        { name: 'ethernet1/1', ip: '10.0.12.2/30', speed: '10G', mode: 'routed', status: 'up', peerDevice: 'edge-rtr-01', peerPort: 'Te0/0/2' },
-        { name: 'ethernet1/2', ip: '10.0.12.6/30', speed: '10G', mode: 'tunnel', status: 'degraded', peerDevice: 'edge-rtr-02', peerPort: 'Te0/0/2' },
-        { name: 'ethernet1/3', ip: '10.0.20.2/30', speed: '25G', mode: 'routed', status: 'up', peerDevice: 'core-sw-02', peerPort: 'Et12/1' },
-        { name: 'ethernet1/8', ip: '172.16.10.1/24', speed: '10G', mode: 'routed', status: 'up', peerDevice: 'dmz-ingress-gw', peerPort: 'eth0' },
+        {
+          name: 'eth1',
+          ip: '10.10.100.2/30',
+          speed: '10G',
+          mode: 'routed',
+          status: 'up',
+          peerDevice: 'hq-core-01',
+          peerPort: 'Te1/0/1',
+        },
+        {
+          name: 'eth2',
+          ip: '198.51.100.1/30',
+          speed: '1G',
+          mode: 'routed',
+          status: 'up',
+          peerDevice: 'dc-rt',
+          peerPort: 'Gi0/0',
+        },
       ],
       customFields: {
-        'Active Sessions': '48,210 / 4,000,000 (1.2%)',
-        'Threat Prevention': 'App-ID + WildFire + URL Filtering Enabled',
-        'Throughput': '4.8 Gbps inspect / 1.1 Mpps',
+        'Threat Prevention': 'Active / Zero-Day Inspection',
+        'IPSec Tunnel': 'Phase 2 Established',
       },
-      configSnippet: `set network interface ethernet ethernet1/3 layer3 ip 10.0.20.2/30
-set zone DMZ-INGRESS network layer3 ethernet1/8
-set security rules ALLOW-HTTPS-INGRESS from UNTRUST to DMZ-INGRESS application ssl action allow`,
+      configSnippet: `set network interface ethernet ethernet1/1 layer3 ip 10.10.100.2/30
+set network interface ethernet ethernet1/2 layer3 ip 198.51.100.1/30
+set network tunnel ipsec SITE-TO-SITE-DC auto-key ike-crypto-profile IKE-AES256-SHA384`,
     },
     {
-      id: 'dmz-ingress-gw',
-      label: 'dmz-ingress-gw',
-      role: 'Envoy Ingress Cluster',
-      tier: 'endpoint',
-      zone: 'dmz-sec',
-      ip: '172.16.10.10/24',
-      model: 'Baremetal Envoy Proxy',
-      os: 'Talos Linux 1.8',
-      status: 'planned',
-      x: 920,
-      y: 480,
+      id: 'dc-rt',
+      label: 'DC Router',
+      role: 'Datacenter Edge Router',
+      tier: 'edge',
+      zone: 'dc',
+      ip: '198.51.100.2/30',
+      asn: 65200,
+      model: 'Cisco ASR 1001-HX',
+      os: 'Cisco IOS-XE 17.9.4',
+      serial: 'JAE2134001A',
+      status: 'up',
       interfaces: [
-        { name: 'eth0', ip: '172.16.10.10/24', speed: '10G', mode: 'routed', status: 'planned', peerDevice: 'fw-dmz-01', peerPort: 'ethernet1/8' },
+        {
+          name: 'Gi0/0',
+          ip: '198.51.100.2/30',
+          speed: '1G',
+          mode: 'routed',
+          status: 'up',
+          peerDevice: 'hq-fw',
+          peerPort: 'eth2',
+        },
+        {
+          name: 'Gi0/1',
+          ip: '10.20.100.1/30',
+          speed: '10G',
+          mode: 'routed',
+          status: 'up',
+          peerDevice: 'dc-sw',
+          peerPort: 'Te1/0/1',
+        },
       ],
       customFields: {
-        'Deployment': 'Scheduled Change Window CHG-2049',
-        'TLS Termination': 'mTLS + Let’s Encrypt ACME v2',
+        'BGP Status': 'Established (HQ eBGP Peering)',
+        'Throughput': '840 Mbps / Line Rate',
       },
+      configSnippet: `interface GigabitEthernet0/0
+ description WAN-INTERCONNECT-TO-HQ-FW
+ ip address 198.51.100.2 255.255.255.252
+!
+interface GigabitEthernet0/1
+ description CORE-INTERCONNECT-TO-DC-SW
+ ip address 10.20.100.1 255.255.255.252`,
+    },
+    {
+      id: 'dc-sw',
+      label: 'DC Switch',
+      role: 'Spine/Leaf Multilayer Switch',
+      tier: 'core',
+      zone: 'dc',
+      ip: '10.20.1.1/24',
+      asn: 65200,
+      model: 'Arista 7050CX3-32S',
+      os: 'Arista EOS 4.31.2F',
+      serial: 'JPE1942001',
+      status: 'up',
+      interfaces: [
+        {
+          name: 'Te1/0/1',
+          ip: '10.20.100.2/30',
+          speed: '10G',
+          mode: 'routed',
+          status: 'up',
+          peerDevice: 'dc-rt',
+          peerPort: 'Gi0/1',
+        },
+        {
+          name: 'Te1/0/2',
+          speed: '25G',
+          mode: 'access',
+          status: 'up',
+          vlan: '100',
+          peerDevice: 'dc-srv-01',
+          peerPort: 'eno1',
+        },
+        {
+          name: 'Te1/0/3',
+          speed: '25G',
+          mode: 'access',
+          status: 'up',
+          vlan: '200',
+          peerDevice: 'dc-srv-02',
+          peerPort: 'eno1',
+        },
+      ],
+      customFields: {
+        'Fabric Role': 'Leaf Switch / VTEP',
+        'Switching Capacity': '6.4 Tbps',
+      },
+      configSnippet: `interface Ethernet1/1
+ description UPLINK-TO-DC-ROUTER
+ no switchport
+ ip address 10.20.100.2/30
+!
+interface Ethernet2/1
+ description APP-CLUSTER-SRV-01
+ switchport access vlan 100
+!
+interface Ethernet3/1
+ description DATABASE-SRV-02
+ switchport access vlan 200`,
+    },
+    {
+      id: 'dc-srv-01',
+      label: 'App Cluster',
+      role: 'Kubernetes Worker Pool',
+      tier: 'endpoint',
+      zone: 'dc',
+      ip: '10.20.10.11/24',
+      model: 'Dell PowerEdge R760',
+      os: 'Ubuntu 24.04 LTS (Kernel 6.8)',
+      serial: '8X912F4',
+      status: 'up',
+      interfaces: [
+        {
+          name: 'eno1',
+          ip: '10.20.10.11/24',
+          speed: '25G',
+          mode: 'access',
+          status: 'up',
+          vlan: '100',
+          peerDevice: 'dc-sw',
+          peerPort: 'Te1/0/2',
+        },
+      ],
+      customFields: {
+        'K8s Pods': '64 running',
+        'Memory Usage': '68% of 512GB',
+      },
+      configSnippet: `network:
+  version: 2
+  ethernets:
+    eno1:
+      dhcp4: false
+      addresses: [10.20.10.11/24]
+      routes:
+        - to: default
+          via: 10.20.10.1`,
+    },
+    {
+      id: 'dc-srv-02',
+      label: 'Database',
+      role: 'PostgreSQL HA Primary',
+      tier: 'endpoint',
+      zone: 'dc',
+      ip: '10.20.10.12/24',
+      model: 'Dell PowerEdge R760',
+      os: 'Ubuntu 24.04 LTS (Kernel 6.8)',
+      serial: '8X912F5',
+      status: 'up',
+      interfaces: [
+        {
+          name: 'eno1',
+          ip: '10.20.10.12/24',
+          speed: '25G',
+          mode: 'access',
+          status: 'up',
+          vlan: '200',
+          peerDevice: 'dc-sw',
+          peerPort: 'Te1/0/3',
+        },
+      ],
+      customFields: {
+        'Replication': 'Synchronous Streaming to DR',
+        'Database Engine': 'PostgreSQL 16.2',
+        'Note': 'Primary — failover to DR nightly',
+      },
+      configSnippet: `network:
+  version: 2
+  ethernets:
+    eno1:
+      dhcp4: false
+      addresses: [10.20.10.12/24]
+      routes:
+        - to: default
+          via: 10.20.10.1`,
     },
   ],
   links: [
     {
-      id: 'lnk-edge1-core1',
-      from: { device: 'edge-rtr-01', port: 'Hu0/1/0', ip: '10.0.1.1' },
-      to: { device: 'core-sw-01', port: 'Et1/1', ip: '10.0.1.2' },
-      speed: '100G',
-      mode: 'routed',
-      status: 'up',
-      protocol: 'eBGP',
-      flow: true,
-    },
-    {
-      id: 'lnk-edge2-core2',
-      from: { device: 'edge-rtr-02', port: 'Hu0/1/0', ip: '10.0.1.5' },
-      to: { device: 'core-sw-02', port: 'Et1/1', ip: '10.0.1.6' },
-      speed: '100G',
-      mode: 'routed',
-      status: 'up',
-      protocol: 'eBGP',
-      flow: true,
-    },
-    {
-      id: 'lnk-edge1-edge2',
-      from: { device: 'edge-rtr-01', port: 'Te0/0/1' },
-      to: { device: 'edge-rtr-02', port: 'Te0/0/1' },
-      speed: '10G',
-      mode: 'peering',
-      status: 'up',
-      protocol: 'iBGP BFD',
-    },
-    {
-      id: 'lnk-core1-core2',
-      from: { device: 'core-sw-01', port: 'Et31/1' },
-      to: { device: 'core-sw-02', port: 'Et31/1' },
-      speed: '100G',
-      mode: 'stack',
-      status: 'up',
-      protocol: 'MLAG Peer',
-      flow: true,
-    },
-    {
-      id: 'lnk-core1-dist1',
-      from: { device: 'core-sw-01', port: 'Po10' },
-      to: { device: 'dist-sw-01', port: 'Po10' },
-      speed: '40G',
-      mode: 'trunk',
-      status: 'up',
-      vlan: 'VLAN 10,20,40',
-      flow: true,
-    },
-    {
-      id: 'lnk-core1-dist2',
-      from: { device: 'core-sw-01', port: 'Po20' },
-      to: { device: 'dist-sw-02', port: 'Po10' },
-      speed: '40G',
-      mode: 'trunk',
-      status: 'up',
-      vlan: 'VLAN 10,20,40',
-    },
-    {
-      id: 'lnk-core2-dist2',
-      from: { device: 'core-sw-02', port: 'Po20' },
-      to: { device: 'dist-sw-02', port: 'Po20' },
-      speed: '40G',
-      mode: 'trunk',
-      status: 'degraded',
-      vlan: 'Low Rx -14.8dBm',
-    },
-    {
-      id: 'lnk-dist2-ap',
-      from: { device: 'dist-sw-02', port: 'Te1/0/48' },
-      to: { device: 'acc-ap-cluster', port: 'Mgig0' },
-      speed: '10G',
-      mode: 'trunk',
-      status: 'up',
-      vlan: 'CAPWAP',
-    },
-    {
-      id: 'lnk-edge1-fw',
-      from: { device: 'edge-rtr-01', port: 'Te0/0/2' },
-      to: { device: 'fw-dmz-01', port: 'eth1/1' },
+      id: 'hq-fw--hq-core-01#1',
+      from: { device: 'hq-fw', port: 'eth1', ip: '10.10.100.2/30' },
+      to: { device: 'hq-core-01', port: 'Te1/0/1', ip: '10.10.100.1/30' },
       speed: '10G',
       mode: 'routed',
       status: 'up',
       protocol: 'OSPF Area 0',
     },
     {
-      id: 'lnk-edge2-fw',
-      from: { device: 'edge-rtr-02', port: 'Te0/0/2' },
-      to: { device: 'fw-dmz-01', port: 'eth1/2' },
-      speed: '10G',
-      mode: 'tunnel',
-      status: 'degraded',
-      protocol: 'IPSec IKEv2',
+      id: 'hq-core-01--hq-core-02#1',
+      from: { device: 'hq-core-01', port: 'Te1/0/2' },
+      to: { device: 'hq-core-02', port: 'Te1/0/2' },
+      speed: '40G',
+      mode: 'trunk',
+      status: 'up',
+      protocol: 'LACP (po1)',
+      vlan: '10,20,30,99',
     },
     {
-      id: 'lnk-core2-fw',
-      from: { device: 'core-sw-02', port: 'Et12/1' },
-      to: { device: 'fw-dmz-01', port: 'eth1/3' },
-      speed: '25G',
+      id: 'hq-core-01--hq-acc-01#1',
+      from: { device: 'hq-core-01', port: 'Gi1/0/1' },
+      to: { device: 'hq-acc-01', port: 'Gi0/48' },
+      speed: '10G',
+      mode: 'trunk',
+      status: 'up',
+      vlan: '10,20,30',
+    },
+    {
+      id: 'hq-fw--dc-rt#1',
+      from: { device: 'hq-fw', port: 'eth2', ip: '198.51.100.1/30' },
+      to: { device: 'dc-rt', port: 'Gi0/0', ip: '198.51.100.2/30' },
+      speed: '1G',
+      mode: 'tunnel',
+      status: 'up',
+      protocol: 'IPSec Site-to-Site',
+    },
+    {
+      id: 'dc-rt--dc-sw#1',
+      from: { device: 'dc-rt', port: 'Gi0/1', ip: '10.20.100.1/30' },
+      to: { device: 'dc-sw', port: 'Te1/0/1', ip: '10.20.100.2/30' },
+      speed: '10G',
       mode: 'routed',
       status: 'up',
-      protocol: 'PIM / BGP',
-      flow: true,
+      protocol: 'eBGP ASN 65200',
     },
     {
-      id: 'lnk-fw-dmzgw',
-      from: { device: 'fw-dmz-01', port: 'eth1/8' },
-      to: { device: 'dmz-ingress-gw', port: 'eth0' },
-      speed: '10G',
-      mode: 'routed',
-      status: 'planned',
-      protocol: 'mTLS Ingress',
+      id: 'dc-sw--dc-srv-01#1',
+      from: { device: 'dc-sw', port: 'Te1/0/2' },
+      to: { device: 'dc-srv-01', port: 'eno1', ip: '10.20.10.11/24' },
+      speed: '25G',
+      mode: 'access',
+      status: 'up',
+      vlan: '100',
+    },
+    {
+      id: 'dc-sw--dc-srv-02#1',
+      from: { device: 'dc-sw', port: 'Te1/0/3' },
+      to: { device: 'dc-srv-02', port: 'eno1', ip: '10.20.10.12/24' },
+      speed: '25G',
+      mode: 'access',
+      status: 'up',
+      vlan: '200',
     },
   ],
 };

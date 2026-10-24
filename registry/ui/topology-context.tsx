@@ -15,7 +15,7 @@ import {
   type TopologyDevice,
   type TopologyLink,
   type TopologyViewSettings,
-} from '../lib/utils.js';
+} from './topology-types.js';
 
 export type InspectorTab = 'overview' | 'interfaces' | 'neighbors' | 'metadata' | 'config';
 
@@ -79,7 +79,7 @@ export interface TopologyProviderProps {
 
 export function TopologyProvider({
   data = DEFAULT_TOPOLOGY_DATA,
-  defaultSelectedDeviceId = 'core-sw-01',
+  defaultSelectedDeviceId = 'hq-core-01',
   defaultSidebarCollapsed = false,
   children,
 }: TopologyProviderProps) {
@@ -166,12 +166,12 @@ export function TopologyProvider({
       const dev = deviceById.get(id);
       if (!dev) return;
       selectDevice(id);
-      const centerX = data.width / 2;
-      const centerY = data.height / 2;
+      const centerX = (data.width ?? 1000) / 2;
+      const centerY = (data.height ?? 600) / 2;
       const targetK = 1.25;
       setCamera({
-        x: (centerX - dev.x) * 0.65,
-        y: (centerY - dev.y) * 0.65,
+        x: (centerX - (dev.x ?? centerX)) * 0.65,
+        y: (centerY - (dev.y ?? centerY)) * 0.65,
         k: targetK,
       });
     },

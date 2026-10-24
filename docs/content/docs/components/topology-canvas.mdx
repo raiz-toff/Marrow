@@ -1,0 +1,70 @@
+---
+title: Topology Viewport
+description: Floating rounded-2xl main stage card that mounts and frames compiled Marrow network diagrams with in-stage demo switching, dark/light theme sync, fullscreen toggle, and floating camera HUD controls.
+---
+
+The **Topology Viewport** (`<TopologyViewport />` or `<TopologyCanvas />`) is the stage container that frames and mounts compiled Marrow network diagrams. Rather than faking layout or drawing mock SVG nodes, it renders real Marrow topologies compiled from declarative YAML, providing in-stage breadcrumbs, live dark/light mode synchronization via `postMessage`, built-in demo switching, fullscreen support, and floating HUD camera controls.
+
+---
+
+## Preview
+
+<ComponentPreview
+  name="topology-canvas"
+  title="Topology Viewport"
+  height="560px"
+  code={`import { TopologyProvider, TopologyViewport } from "@marrow/ui";
+
+export function NetworkCanvasDemo() {
+  return (
+    <TopologyProvider defaultSelectedDeviceId="hq-core-01">
+      <div className="w-full h-[520px]">
+        <TopologyCanvas />
+      </div>
+    </TopologyProvider>
+  );
+}`}
+>
+  <TopologyProvider defaultSelectedDeviceId="hq-core-01">
+    <div className="w-full h-[520px]">
+      <TopologyCanvas />
+    </div>
+  </TopologyProvider>
+</ComponentPreview>
+
+---
+
+## Installation
+
+```bash
+npx shadcn@latest add https://marrow.run/r/topology-canvas.json
+```
+
+Or via GitHub:
+
+```bash
+npx shadcn@latest add raiz-toff/Marrow/topology-canvas
+```
+
+---
+
+## Features
+
+- **Genuine Marrow Topologies**: Renders diagrams compiled by Marrow's compiler engine (`/demo/zoned-embed.html`, `/demo/tiered-embed.html`, etc.) with authentic ELK layouts, port channels, and vendor icon packs.
+- **In-Stage Demo Switcher**: Seamlessly switch between built-in Marrow presets: *Two Sites (Zoned Mosaic)*, *Three-Tier Campus (Orthogonal)*, *Hub & Spoke WAN*, *LACP PortChannel*, and *100+ Node Scale Matrix*.
+- **Live Theme Synchronization**: Automatically detects host theme changes (`dark` / `light`) and transmits `postMessage({ type: 'marrow:theme' })` to the embedded diagram in real time.
+- **Standalone Link**: Direct 1-click external link to view the complete standalone HTML diagram in a new tab.
+- **Full Viewport Pan & Zoom**: Smooth mouse wheel zoom, pan gestures, and double-click to fit.
+- **Fullscreen Mode**: Expand the viewport to occupy the full display for operations center and NOC wall displays.
+
+---
+
+## Props
+
+| Prop | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `src` | `string` | `undefined` | Custom URL of a compiled Marrow HTML diagram (e.g. `/diagrams/site-a.html`). Overrides `demo`. |
+| `demo` | `'zoned' \| 'tiered' \| 'hub-spoke' \| 'lacp' \| 'scale'` | `'zoned'` | Pre-compiled Marrow demo preset to display. |
+| `showToolbar` | `boolean` | `true` | Show the in-stage breadcrumb and demo switcher top bar. |
+| `showControls` | `boolean` | `true` | Show the floating camera controls HUD (+ / - / fit / fullscreen). |
+| `className` | `string` | `undefined` | Optional Tailwind/CSS classes applied to the stage card container. |

@@ -1,78 +1,47 @@
 ---
-title: Spacious Topology Shell
-description: Composable React, Next.js, and shadcn TSX components for interactive network topology workspaces using the Fumadocs Spacious card architecture.
+title: Introduction
+description: A shadcn-compatible component registry for network topology diagrams, hardware telemetry, and infrastructure engineering.
 ---
 
-Welcome to **Marrow UI** (`@marrow/ui`). Every component in the Marrow topology workspace is authored in **React / Next.js TSX** and distributed through our **shadcn-compatible registry** (`registry.json`).
+Welcome to **Marrow UI** (`@marrow/ui`). Every component in the Marrow topology ecosystem is authored in **React / Next.js TSX** and distributed through our **shadcn-compatible registry** (`registry.json`).
 
-## Live Interactive Demo
+Just like shadcn/ui, you can copy and paste these components directly into your own applications or install them with a single CLI command.
 
-Try clicking any hardware node or link, collapsing the left sidebar (`Ctrl+B`), switching security zones, toggling packet flow animation, or opening the command center (`Ctrl+K`):
+---
 
-<div className="my-6">
-  <TopologyShell height="680px" />
-</div>
+## Component Catalog
 
-## Spacious Shell Architecture
+Browse the individual components and blocks:
 
-The `<TopologyShell />` replicates the **Fumadocs Spacious** layout grid for interactive network engineering diagrams:
+### 🛠️ Interactive Workbench
+* **[Component Workbench](/docs/components/workbench)**: Zero-compiler testing studio to test, inspect, and evaluate every Marrow UI component in isolation and assembled.
 
-1. **Recessed Outer Frame (`bg-fd-card`)**: The outer CSS grid (`grid-template: "sidebar main right" 1fr / var(--fd-sidebar-col) minmax(0, 1fr) auto`) acts as a quiet surface that frames the active workspace cards.
-2. **Spacious Left Sidebar (`<TopologySidebar />`)**: Blends seamlessly into the outer frame with a `rounded-xl` security zone switcher dropdown, a `Ctrl+K` search pill, a smooth pointer-tracking gliding hover block, collapsible zone/device hierarchy, and canvas layer toggles.
-3. **Floating Main Canvas Card (`<TopologyCanvas />`)**: A `rounded-2xl border bg-fd-background shadow-sm` stage card (`my-2 me-2`) housing a translucent floating top command bar, interactive pan/zoom SVG viewport, floating `<TopologyControls />`, and `<TopologyMinimap />`.
-4. **Floating Sibling Inspector Card (`<TopologyInspector />`)**: A `w-[380px] my-2 me-2 rounded-2xl border bg-fd-background shadow-sm` sibling card with 5 segmented tabs (**Overview**, **Interfaces**, **Neighbors**, **Fields**, and **Config** with one-click CLI copy).
-5. **Command & Search Spotlight (`<TopologySearch />`)**: Keyboard-first `Ctrl+K` modal for jumping to devices, IPs, security zones, links, or canvas actions.
+### 🚀 Blocks
+* **[Topology Shell](/docs/components/topology-shell)**: The complete, pre-assembled network studio with card-in-card grid, sidebar, canvas, inspector, and command search.
 
-## Installation via shadcn CLI
+### 🧩 Workspace Components
+* **[Topology Viewport](/docs/components/topology-canvas)**: Interactive stage viewport that mounts and frames compiled Marrow network diagrams with in-stage demo switching, theme sync, and camera HUD controls.
+* **[Topology Inspector](/docs/components/topology-inspector)**: Floating 5-tab device telemetry drawer with interface tables, LLDP neighbors, and copyable CLI configurations.
+* **[Topology Sidebar](/docs/components/topology-sidebar)**: Collapsible left navigation rail with security zone switcher, gliding hover indicator, and layer toggles.
+* **[Topology Controls & Minimap](/docs/components/topology-controls)**: Floating vertical zoom/fit pill and interactive picture-in-picture minimap overlay.
+* **[Command Search](/docs/components/topology-search)**: Keyboard-first `Ctrl+K` spotlight modal for searching devices, IPs, zones, and interfaces.
 
-Install the complete Spacious Topology Shell or individual primitives into any Next.js / React project:
+---
+
+## Quickstart
+
+Add any Marrow UI component to your Next.js or React application using the shadcn CLI:
 
 ```bash
-# Install the complete Spacious Topology Shell block
+# Add the complete studio block
 npx shadcn@latest add https://marrow.run/r/topology-shell.json
 
-# Or install directly from the GitHub registry
+# Or add just the inspector card
+npx shadcn@latest add https://marrow.run/r/topology-inspector.json
+```
+
+Or install directly using the GitHub repository shorthand:
+
+```bash
 npx shadcn@latest add raiz-toff/Marrow/topology-shell
-```
-
-## Usage in Next.js / React (TSX)
-
-```tsx
-import { TopologyShell, type TopologyData } from "@marrow/ui";
-
-export default function NetworkDiagramPage() {
-  return (
-    <main className="p-4">
-      <TopologyShell
-        defaultSelectedDeviceId="core-sw-01"
-        height="calc(100dvh - 2rem)"
-      />
-    </main>
-  );
-}
-```
-
-### Customizing Slots
-
-Because `<TopologyShell />` is built on `<TopologyProvider />` and `useTopologyShell()`, you can compose or replace individual panels while keeping shared selection, hover neighborhood dimming, and camera state:
-
-```tsx
-import {
-  TopologyShell,
-  TopologySidebar,
-  TopologyCanvas,
-  TopologyInspector,
-  TopologySearch,
-} from "@marrow/ui";
-
-export function CustomTopologyWorkspace({ data }) {
-  return (
-    <TopologyShell data={data} height="760px">
-      <TopologySidebar />
-      <TopologyCanvas />
-      <TopologyInspector />
-      <TopologySearch />
-    </TopologyShell>
-  );
-}
 ```
