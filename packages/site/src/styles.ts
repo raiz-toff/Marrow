@@ -54,26 +54,26 @@ kbd {
 *::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 999px; }
 *::-webkit-scrollbar-track { background: transparent; }
 
-/* ── shell root & workspace: CAD / NOC viewport architecture ── */
+/* ── shell root & workspace: Fumadocs Spacious card viewport architecture ── */
 :root {
   --frame-top: 54px;
-  --frame-x: 14px;
-  --frame-bottom: 14px;
-  --frame-left: 14px;
-  --frame-right: 14px;
+  --frame-x: 12px;
+  --frame-bottom: 12px;
+  --frame-left: 12px;
+  --frame-right: 12px;
   --topbar-height: 48px;
   --inspector-w: 380px;
 }
 body:has(.m-sidebar.open) { --frame-left: 274px; }
 body:has(.m-sidebar.m-nav:not(.open)) { --frame-left: 64px; }
-body:has(.m-inspector:not([hidden])) { --frame-right: calc(var(--inspector-w) + 14px); }
-:root.has-selection { --frame-right: calc(var(--inspector-w) + 14px); }
+body:has(.m-inspector:not([hidden])) { --frame-right: calc(var(--inspector-w) + 20px); }
+:root.has-selection { --frame-right: calc(var(--inspector-w) + 20px); }
 
 #marrow-shell {
   position: fixed; inset: 0;
   display: flex; flex-direction: column;
   overflow: hidden;
-  background: var(--bg); color: var(--ink);
+  background: var(--panel); color: var(--ink);
 }
 .m-workspace {
   position: relative; flex: 1; display: flex; overflow: hidden; width: 100%;
@@ -83,11 +83,11 @@ body:has(.m-inspector:not([hidden])) { --frame-right: calc(var(--inspector-w) + 
   inset: var(--frame-top) var(--frame-right) var(--frame-bottom) var(--frame-left);
   cursor: grab; background: var(--bg);
   border: 1px solid var(--line);
-  border-radius: var(--radius-lg, 10px);
+  border-radius: 16px;
   box-shadow: var(--shadow);
   overflow: hidden;
   touch-action: none; user-select: none; -webkit-user-select: none;
-  transition: left .3s cubic-bezier(0.16, 1, 0.3, 1), right .3s cubic-bezier(0.16, 1, 0.3, 1), inset .3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: left .3s cubic-bezier(0.22, 1, 0.36, 1), right .3s cubic-bezier(0.22, 1, 0.36, 1), inset .3s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .m-stage.m-grabbing { cursor: grabbing; }
 .m-svg { width: 100%; height: 100%; display: block; touch-action: none; }
@@ -570,9 +570,9 @@ body:has(.m-rail-wrap) .m-sidebar:not(.open) .m-sidebar-inner { padding-top: 52p
 .m-side-nav { display: flex; flex-direction: column; gap: 1px; }
 /* SidebarMenuButton: h-8 gap-2 rounded-md p-2 text-sm; icons size-4 */
 .m-side-row {
-  display: flex; align-items: center; gap: 8px; height: 32px;
+  display: flex; align-items: center; gap: 8px; height: 34px;
   color: var(--sidebar-fg); text-decoration: none; font-size: 14px; font-weight: 400;
-  padding: 0 8px; border-radius: var(--radius-sm); transition: background .15s;
+  padding: 0 10px; border-radius: 12px; transition: background .15s, color .15s;
 }
 .m-side-row i { display: grid; place-items: center; color: color-mix(in srgb, var(--sidebar-fg) 65%, transparent); flex: none; }
 .m-side-row span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -684,22 +684,24 @@ a.m-side-row.active i, a.m-side-row.active em { color: var(--sidebar-fg); }
 .m-mini-dot.m-status-planned { fill: var(--planned); }
 .m-mini-view { fill: color-mix(in srgb, var(--m-accent) 13%, transparent); stroke: var(--m-accent); stroke-width: 1.3; }
 
-/* ── inspector: shadcn Drawer docked to the RIGHT edge (desktop) ── */
+/* ── inspector: Fumadocs Spacious floating rounded-2xl sibling card (desktop) ── */
 .m-inspector {
   position: fixed;
-  top: var(--topbar-height);
-  right: 0;
-  bottom: 0;
+  top: var(--frame-top);
+  right: var(--frame-x);
+  bottom: var(--frame-bottom);
   width: var(--inspector-w, 380px);
-  background: var(--panel);
-  border-left: 1px solid var(--line);
-  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.5);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
   z-index: 25;
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  animation: mSlideIn .3s cubic-bezier(0.16, 1, 0.3, 1);
-  transition: transform .25s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+  animation: mSlideIn .3s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform .25s cubic-bezier(0.22, 1, 0.36, 1);
 }
 @keyframes mSlideIn { from { transform: translateX(100%); } }
 .m-sheet-drag-handle { display: none; }

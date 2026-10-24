@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 
 const ROOT_DIR = resolve('.');
 const REGISTRY_DIR = join(ROOT_DIR, 'registry');
@@ -9,8 +9,139 @@ const PUBLIC_R_DIR = join(ROOT_DIR, 'docs', 'public', 'r');
 mkdirSync(PUBLIC_R_DIR, { recursive: true });
 mkdirSync(join(PUBLIC_R_DIR, 'styles', 'default'), { recursive: true });
 
-// Registry items are added here as components are built one by one.
-const REGISTRY_ITEMS = [];
+// Registry items for Marrow UI (shadcn / React / Next.js TSX)
+const REGISTRY_ITEMS = [
+  {
+    name: 'topology-shell',
+    type: 'registry:block',
+    title: 'Spacious Topology Shell',
+    description:
+      'Complete Fumadocs Spacious-inspired network topology workspace shell in React/Next.js TSX with recessed card frame, collapsible gliding-hover sidebar, interactive SVG pan/zoom canvas, floating controls + minimap, 5-tab right inspector card, and Ctrl+K command center.',
+    dependencies: [],
+    files: [
+      {
+        path: 'lib/utils.ts',
+        type: 'registry:lib',
+        target: 'lib/topology-utils.ts',
+      },
+      {
+        path: 'ui/topology-context.tsx',
+        type: 'registry:component',
+        target: 'components/marrow/topology-context.tsx',
+      },
+      {
+        path: 'ui/topology-sidebar.tsx',
+        type: 'registry:component',
+        target: 'components/marrow/topology-sidebar.tsx',
+      },
+      {
+        path: 'ui/topology-controls.tsx',
+        type: 'registry:component',
+        target: 'components/marrow/topology-controls.tsx',
+      },
+      {
+        path: 'ui/topology-canvas.tsx',
+        type: 'registry:component',
+        target: 'components/marrow/topology-canvas.tsx',
+      },
+      {
+        path: 'ui/topology-inspector.tsx',
+        type: 'registry:component',
+        target: 'components/marrow/topology-inspector.tsx',
+      },
+      {
+        path: 'ui/topology-search.tsx',
+        type: 'registry:component',
+        target: 'components/marrow/topology-search.tsx',
+      },
+      {
+        path: 'ui/topology-shell.tsx',
+        type: 'registry:component',
+        target: 'components/marrow/topology-shell.tsx',
+      },
+    ],
+  },
+  {
+    name: 'topology-sidebar',
+    type: 'registry:ui',
+    title: 'Topology Sidebar',
+    description:
+      'Spacious left navigation rail with zone switcher dropdown, Ctrl+K search trigger, gliding hover highlight block, collapsible device hierarchy, and canvas layer switches.',
+    dependencies: [],
+    registryDependencies: ['topology-shell'],
+    files: [
+      {
+        path: 'ui/topology-sidebar.tsx',
+        type: 'registry:ui',
+        target: 'components/marrow/topology-sidebar.tsx',
+      },
+    ],
+  },
+  {
+    name: 'topology-canvas',
+    type: 'registry:ui',
+    title: 'Topology Canvas',
+    description:
+      'Floating rounded-2xl main stage card with translucent header bar, breadcrumbs, SVG export, interactive pan/zoom topology graph, security zone hulls, animated flow links, and hardware nodes.',
+    dependencies: [],
+    registryDependencies: ['topology-shell'],
+    files: [
+      {
+        path: 'ui/topology-canvas.tsx',
+        type: 'registry:ui',
+        target: 'components/marrow/topology-canvas.tsx',
+      },
+    ],
+  },
+  {
+    name: 'topology-inspector',
+    type: 'registry:ui',
+    title: 'Topology Inspector',
+    description:
+      'Floating rounded-2xl right sibling card with 5 segmented tabs (Overview, Interfaces, Neighbors, Fields, Config) and copyable CLI configuration stanzas.',
+    dependencies: [],
+    registryDependencies: ['topology-shell'],
+    files: [
+      {
+        path: 'ui/topology-inspector.tsx',
+        type: 'registry:ui',
+        target: 'components/marrow/topology-inspector.tsx',
+      },
+    ],
+  },
+  {
+    name: 'topology-controls',
+    type: 'registry:ui',
+    title: 'Topology Controls & Minimap',
+    description:
+      'Floating vertical zoom/fit/command pill and interactive SVG minimap overlay.',
+    dependencies: [],
+    registryDependencies: ['topology-shell'],
+    files: [
+      {
+        path: 'ui/topology-controls.tsx',
+        type: 'registry:ui',
+        target: 'components/marrow/topology-controls.tsx',
+      },
+    ],
+  },
+  {
+    name: 'topology-search',
+    type: 'registry:ui',
+    title: 'Topology Command & Search',
+    description:
+      'Ctrl+K spotlight modal for searching devices, IPs, security zones, links, and canvas actions.',
+    dependencies: [],
+    registryDependencies: ['topology-shell'],
+    files: [
+      {
+        path: 'ui/topology-search.tsx',
+        type: 'registry:ui',
+        target: 'components/marrow/topology-search.tsx',
+      },
+    ],
+  },
+];
 
 // Enrich each item with inlined file contents
 const builtItems = REGISTRY_ITEMS.map((item) => {
