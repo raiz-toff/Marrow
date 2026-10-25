@@ -176,6 +176,25 @@ export function MarrowEmbed({
     return buildEmbedUrl(activeSrc, { chrome, inspector, minimap, theme });
   }, [activeSrc, chrome, inspector, minimap, theme]);
 
+  // The iframe is server-rendered, so it can finish loading before hydration
+  // attaches onLoad, and that load event is then lost. Check the frame directly
+  // after mount; fall back to a short timer for cross-origin frames we can't read.
+  useEffect(() => {
+    const frame = iframeRef.current;
+    if (!frame) return;
+    try {
+      const doc = frame.contentDocument;
+      if (doc && doc.readyState === 'complete' && doc.URL !== 'about:blank') {
+        setIsLoading(false);
+        return;
+      }
+    } catch {
+      // cross-origin: rely on onLoad / the timer below
+    }
+    const timer = setTimeout(() => setIsLoading(false), 3000);
+    return () => clearTimeout(timer);
+  }, [effectiveSrc, html]);
+
   // Fullscreen support
   const toggleFullscreen = () => {
     if (!containerRef.current) return;
@@ -327,11 +346,9 @@ export function MarrowEmbed({
       <div className="relative w-full h-full min-h-0 bg-transparent overflow-hidden">
         {/* Loading Spinner Indicator */}
         {isLoading && (
-          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-fd-background/60 backdrop-blur-xs transition-opacity duration-300">
-            <Loader2 className="size-5 animate-spin text-fd-primary" />
-            <span className="text-xs font-mono text-fd-muted-foreground">
-              Initializing Marrow layout engine…
-            </span>
+          <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 bg-fd-background/60">
+            <Loader2 className="size-4 animate-spin text-fd-muted-foreground" />
+            <span className="text-xs text-fd-muted-foreground">Loading diagram…</span>
           </div>
         )}
 
