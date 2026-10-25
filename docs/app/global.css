@@ -10,25 +10,25 @@
 
 @theme {
   --spacing-page: 1436px;
-  --color-brand: hsl(26, 73%, 51%);
+  --color-brand: #09090b;
   --color-brand-foreground: white;
-  --color-brand-secondary: #c6bb58;
-  --color-brand-secondary-foreground: #97890c;
-  --color-brand-200: hsl(33, 100%, 50%);
+  --color-brand-secondary: #71717a;
+  --color-brand-secondary-foreground: #ffffff;
+  --color-brand-200: #27272a;
 
-  --color-landing-foreground: #59592a;
-  --color-landing-foreground-200: #a8a866;
+  --color-landing-foreground: #09090b;
+  --color-landing-foreground-200: #71717a;
 }
 
 .dark {
-  --color-landing-foreground: #e4e2d0;
-  --color-landing-foreground-200: #b7af7e;
+  --color-landing-foreground: #ffffff;
+  --color-landing-foreground-200: #d4d4d8;
 
-  --color-brand: #fff383;
-  --color-brand-secondary: #fc7744;
-  --color-brand-secondary-foreground: #521700;
+  --color-brand: #ffffff;
+  --color-brand-secondary: #a1a1aa;
+  --color-brand-secondary-foreground: #09090b;
   --color-brand-foreground: black;
-  --color-brand-200: #fff7c8;
+  --color-brand-200: #ffffff;
 }
 
 @theme inline {
@@ -54,16 +54,16 @@
 }
 
 :root {
-  --marrow-color: hsl(41, 100%, 40%);
-  --studio-color: hsl(41, 100%, 40%);
+  --marrow-color: #09090b;
+  --studio-color: #09090b;
   --components-color: hsl(217, 100%, 58%);
   --agents-color: hsl(250, 80%, 54%);
   --decisions-color: hsl(160, 84%, 39%);
 }
 
 .dark {
-  --marrow-color: #fff383;
-  --studio-color: #fff383;
+  --marrow-color: #ffffff;
+  --studio-color: #ffffff;
   --components-color: #a9ceff;
   --agents-color: hsl(250 100% 80%);
   --decisions-color: #6ee7b7;

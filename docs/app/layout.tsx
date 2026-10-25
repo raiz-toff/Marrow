@@ -50,7 +50,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={`${geist.variable} ${mono.variable}`} suppressHydrationWarning>
       <body className="relative flex min-h-screen flex-col">
-        <RootProvider>
+        <RootProvider theme={{ defaultTheme: 'system', enableSystem: true }}>
           <Body>{children}</Body>
         </RootProvider>
       </body>

@@ -66,8 +66,8 @@ export default function HomePage() {
           </h2>
           <DemoExample />
           <p className="mt-3 text-sm text-fd-muted-foreground">
-            Left is the kind of file your agent writes. Right is what Marrow builds from it. Click a
-            device or a link to inspect it.
+            Click any device or cable in the diagram to inspect its interfaces, telemetry, and
+            operational state. Toggle <strong className="text-fd-foreground font-medium">View YAML</strong> to inspect the declarative code.
           </p>
         </section>
 

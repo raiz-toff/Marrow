@@ -46,7 +46,7 @@ export function MarrowIcon(props: React.SVGProps<SVGSVGElement>) {
         <path d="M17 26V13" />
       </g>
       {/* Second "r" curve with Marrow's signature arrow terminal: branded primary accent */}
-      <g stroke="var(--color-fd-primary, #3b82f6)" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
+      <g stroke="var(--color-fd-primary, currentColor)" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
         <path d="M17 13a5 5 0 0 1 5-5h3" />
         <path d="M22.8 5.8L25 8l-2.2 2.2" />
       </g>
