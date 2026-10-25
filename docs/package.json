@@ -7,7 +7,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "docs:build": "next build"
+    "docs:build": "npx tsc -b ../packages/ui && next build"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",

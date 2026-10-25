@@ -4,10 +4,15 @@
   "private": true,
   "type": "module",
   "description": "Composable, shadcn-style component ecosystem for network engineering documentation.",
+  "scripts": {
+    "build": "tsc -b",
+    "compile": "tsc -b"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
     }
   },
   "main": "./dist/index.js",

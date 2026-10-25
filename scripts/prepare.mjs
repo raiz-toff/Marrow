@@ -1,15 +1,13 @@
 // Root `prepare` hook, run automatically after `npm install`.
 //
-// Locally we compile the TypeScript toolchain so the CLI and tests are ready to
-// run straight after install. On Vercel we skip it: the only thing deployed
-// there is the docs site (docs/), which is fully self-contained — it imports no
-// @marrow/* package — so a full `tsc -b` of the toolchain would just add minutes
-// and fail the deploy whenever the toolchain is mid-change. The toolchain is
-// still compiled and tested by its own CI workflow (which does not set VERCEL).
+// Locally we compile the full TypeScript toolchain.
+// On Vercel we compile strictly @marrow/ui which is imported by docs/,
+// skipping the rest of the CLI/compiler toolchain to keep deploys fast.
 import { execSync } from 'node:child_process';
 
 if (process.env.VERCEL) {
-  console.log('[prepare] VERCEL detected — skipping toolchain compile (docs site needs none of it)');
+  console.log('[prepare] VERCEL detected — compiling @marrow/ui for docs site');
+  execSync('npx tsc -b packages/ui', { stdio: 'inherit' });
   process.exit(0);
 }
 
