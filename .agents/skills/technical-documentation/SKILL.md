@@ -61,6 +61,7 @@ Must format using these exact Markdown headings:
 * **Density Presets & Scale**: Illustrate `compact` (48px nodes, tight spacing), `standard` (64px nodes, 48px gap), and `spacious` (80px nodes, 64px gap) using side-by-side visual node grids.
 * **Drawer & Inspector Metadata**: Render real interactive HTML tables (`<table class="m-table">`) and native collapsible drawers (`<details>`) showing `custom_fields` (transceivers, optics, serials) and `sections` (BGP tables, interface statuses) rather than unrendered markdown snippets.
 * **Embed & Kiosk Modes**: Render side-by-side frames demonstrating the UI differences between full standalone browser chrome, iframe embedding (`#embed=true` / `?chrome=minimal`), and kiosk presentation mode.
+* **Micro-Topologies & Inline Links**: When illustrating 2–3 connected devices (e.g., Spine to Leaf, Router to Firewall) in prose or runbooks, render `<DeviceLink />` or `<CableBadge />` instead of launching an entire canvas or iframe. Support vendor SVGs (`icon="/icons/cisco/router.svg"`), port labels, and cable modes.
 * **The Four-Layer Engine**: Illustrate the internal rendering pipeline as an exploded visual layer stack: Canvas Host → Grouping (Zones & Tiers) → Nodes & Chips → Links & Port Labels.
 
 ## Global Anti-Slop Checklist

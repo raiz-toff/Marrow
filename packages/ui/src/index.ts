@@ -29,3 +29,11 @@ export {
   CableBadge,
   type CableBadgeProps,
 } from "./components/cable-badge.js";
+
+export {
+  DeviceLink,
+  type DeviceLinkProps,
+  type InlineDevice,
+  type InlineCable,
+  type DeviceRole,
+} from "./components/device-link.js";

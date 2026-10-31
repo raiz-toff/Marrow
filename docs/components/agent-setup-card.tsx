@@ -24,24 +24,28 @@ Repo: https://github.com/raiz-toff/Marrow
 
 When setup passes, ask me what network I want to diagram.`;
 
+import { copyToClipboard } from '../lib/copy';
+
 export function SetupPrompt() {
   const [copied, setCopied] = useState(false);
   const [open, setOpen] = useState(false);
 
   const copy = async () => {
-    await navigator.clipboard.writeText(AGENT_SETUP_PROMPT);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    const success = await copyToClipboard(AGENT_SETUP_PROMPT);
+    if (success) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+      <div className="flex flex-wrap items-center gap-3">
         <button
           id="copy-setup-prompt"
           type="button"
           onClick={copy}
-          className="inline-flex items-center gap-2 rounded-lg bg-fd-primary px-4 py-2 text-sm font-medium text-fd-primary-foreground transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fd-ring"
+          className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-lg bg-fd-primary px-4 py-2.5 text-sm font-medium text-fd-primary-foreground transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fd-ring cursor-pointer"
         >
           {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
           {copied ? 'Copied' : 'Copy setup prompt'}
@@ -51,17 +55,17 @@ export function SetupPrompt() {
           type="button"
           aria-expanded={open}
           onClick={() => setOpen((v) => !v)}
-          className="text-sm text-fd-muted-foreground underline-offset-4 hover:text-fd-foreground hover:underline"
+          className="text-sm text-fd-muted-foreground underline-offset-4 hover:text-fd-foreground hover:underline py-1 cursor-pointer"
         >
           {open ? 'Hide prompt' : 'Read it first'}
         </button>
       </div>
-      <p className="max-w-xl text-sm text-fd-muted-foreground">
+      <p className="max-w-xl text-xs sm:text-sm text-fd-muted-foreground leading-relaxed">
         Paste it into your agent. It clones the repo, runs setup and the tests, then asks what you
         want to draw.
       </p>
       {open && (
-        <pre className="max-w-3xl overflow-x-auto rounded-lg border bg-fd-secondary p-4 text-[13px] leading-relaxed whitespace-pre-wrap text-fd-secondary-foreground">
+        <pre className="max-w-3xl overflow-x-auto rounded-lg border bg-fd-secondary p-3 sm:p-4 font-mono text-xs sm:text-[13px] leading-relaxed whitespace-pre-wrap text-fd-secondary-foreground">
           {AGENT_SETUP_PROMPT}
         </pre>
       )}

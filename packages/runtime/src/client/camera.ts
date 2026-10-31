@@ -40,7 +40,7 @@ export class Camera {
     return { ...this.state };
   }
 
-  private visibleArea(): { x: number; y: number; w: number; h: number } {
+  visibleArea(): { x: number; y: number; w: number; h: number } {
     const vp = this.viewport();
     const ins = this.insets();
     const x = ins.left;
@@ -48,6 +48,24 @@ export class Camera {
     const w = Math.max(10, vp.w - ins.left - ins.right);
     const h = Math.max(10, vp.h - ins.top - ins.bottom);
     return { x, y, w, h };
+  }
+
+  /** Center viewport on world coordinates. */
+  centerOn(worldX: number, worldY: number, animate = false): void {
+    const vis = this.visibleArea();
+    const k = this.state.k;
+    const target: CameraState = {
+      x: vis.x + vis.w / 2 - worldX * k,
+      y: vis.y + vis.h / 2 - worldY * k,
+      k,
+    };
+    if (!animate) {
+      this.cancelAnim();
+      this.state = target;
+      this.apply();
+      return;
+    }
+    this.animateTo(target, 280);
   }
 
   set(next: Partial<CameraState>, animate = false): void {

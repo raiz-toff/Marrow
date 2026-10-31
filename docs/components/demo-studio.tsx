@@ -8,6 +8,7 @@ import {
   Copy,
 } from 'lucide-react';
 import { MarrowEmbed, cn } from '@marrow/ui';
+import { copyToClipboard } from '../lib/copy';
 
 export interface TopologyDemoPreset {
   id: string;
@@ -92,12 +93,14 @@ export function DemoStudio() {
 
   const activeSrc = chromeMode === 'minimal' ? activePreset.src : activePreset.fullSrc;
 
-  const copyUrl = () => {
+  const copyUrl = async () => {
     if (typeof window === 'undefined') return;
     const url = `${window.location.origin}${activeSrc}#chrome=${chromeMode}`;
-    navigator.clipboard?.writeText(url);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    const success = await copyToClipboard(url);
+    if (success) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   return (

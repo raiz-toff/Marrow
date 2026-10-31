@@ -52,6 +52,26 @@ const REGISTRY_ITEMS = [
       },
     ],
   },
+  {
+    name: 'device-link',
+    type: 'registry:ui',
+    title: 'Device Link & Micro-Topology',
+    description:
+      'Compact, inline network link component for rendering peer-to-peer device interconnections without canvas or iframe overhead.',
+    dependencies: ['lucide-react'],
+    files: [
+      {
+        path: 'ui/topology-types.ts',
+        type: 'registry:component',
+        target: 'components/marrow/topology-types.ts',
+      },
+      {
+        path: 'ui/device-link.tsx',
+        type: 'registry:ui',
+        target: 'components/marrow/device-link.tsx',
+      },
+    ],
+  },
 ];
 
 // Enrich each item with inlined file contents

@@ -49,6 +49,8 @@
     "icons:index": "node packages/cli/dist/index.js icons index",
     "registry:build": "node scripts/build-registry.mjs",
     "docs": "npm run dev -w @marrow/docs",
+    "docs:dev": "npm run dev -w @marrow/docs",
+    "docs:lan": "npm run dev -w @marrow/docs -- --hostname 0.0.0.0",
     "docs:build": "npm run registry:build && npm run build -w @marrow/docs",
     "demos": "node docs/scripts/build-demos.mjs",
     "build:npm": "npm run compile && node scripts/build-npm.mjs"

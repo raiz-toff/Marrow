@@ -81,3 +81,26 @@ html > body[data-scroll-locked] {
 body {
   background-color: var(--color-fd-background);
 }
+
+/* ── Performance & INP Optimizations for Docs Sidebar ── */
+#nd-sidebar {
+  contain: layout paint;
+}
+
+#nd-sidebar > div {
+  will-change: opacity, transform;
+}
+
+main,
+article {
+  contain: layout;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  #nd-sidebar,
+  #nd-sidebar > div {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+  }
+}
+

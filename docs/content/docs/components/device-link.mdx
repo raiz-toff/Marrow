@@ -1,0 +1,320 @@
+---
+title: Device Link & Micro-Topology
+description: Compact, inline network link component for rendering peer-to-peer device interconnections without canvas or iframe overhead.
+---
+
+The **Device Link** (`<DeviceLink />`) component renders clean, lightweight peer-to-peer network connections directly in your documentation, dashboards, or runbooks without loading an entire iframe or SVG canvas.
+
+It supports device role icons, interface port chips, IP badges, operational status LEDs, cable line styles (trunk, routed, tunnel, peering), and traffic flow animations.
+
+---
+
+## Interactive Previews
+
+### 1. Card Micro-Topology
+
+A compact card layout designed for architecture callouts, runbooks, and interface relationship cards.
+
+<ComponentPreview
+  name="device-link"
+  title="Micro-Topology Card"
+  height="200px"
+  code={`import { DeviceLink } from "@marrow/ui";
+
+export function Demo() {
+  return (
+    <DeviceLink
+      from={{
+        name: "spine-01.ord",
+        role: "switch",
+        ip: "10.100.0.1",
+        port: "Eth1/48",
+        status: "up",
+      }}
+      to={{
+        name: "leaf-01.ord",
+        role: "switch",
+        ip: "10.100.0.2",
+        port: "Eth1/1",
+        status: "up",
+      }}
+      cable={{
+        mode: "trunk",
+        speed: "100G",
+        status: "up",
+        animated: true,
+      }}
+    />
+  );
+}`}
+>
+  <div className="flex flex-col gap-4 p-4 items-center justify-center">
+    <DeviceLink
+      from={{
+        name: "spine-01.ord",
+        role: "switch",
+        ip: "10.100.0.1",
+        port: "Eth1/48",
+        status: "up",
+      }}
+      to={{
+        name: "leaf-01.ord",
+        role: "switch",
+        ip: "10.100.0.2",
+        port: "Eth1/1",
+        status: "up",
+      }}
+      cable={{
+        mode: "trunk",
+        speed: "100G",
+        status: "up",
+        animated: true,
+      }}
+    />
+  </div>
+</ComponentPreview>
+
+---
+
+### 2. Multi-Mode Interconnects
+
+Compare routed L3 links, VPN overlay tunnels, and edge peering sessions side-by-side.
+
+<div className="flex flex-col gap-3 my-6">
+  <DeviceLink
+    from={{
+      name: "border-gw-01",
+      role: "router",
+      ip: "198.51.100.1",
+      port: "Te0/0/0",
+      status: "up",
+    }}
+    to={{
+      name: "edge-firewall",
+      role: "firewall",
+      ip: "198.51.100.2",
+      port: "ge-0/0/0",
+      status: "up",
+    }}
+    cable={{
+      mode: "routed",
+      speed: "25G",
+      status: "up",
+    }}
+  />
+
+  <DeviceLink
+    from={{
+      name: "branch-fw-01",
+      role: "firewall",
+      ip: "192.168.10.1",
+      port: "wan0",
+      status: "degraded",
+    }}
+    to={{
+      name: "aws-transit-gw",
+      role: "cloud",
+      ip: "10.200.0.1",
+      port: "vpn-0a1b2c",
+      status: "up",
+    }}
+    cable={{
+      mode: "tunnel",
+      label: "IPsec Tunnel",
+      speed: "1G",
+      status: "degraded",
+    }}
+  />
+</div>
+
+---
+
+### 3. Inline Paragraph Flow
+
+Use `variant="inline"` to place host-to-host links directly into prose, incident notes, or table cells.
+
+<ComponentPreview
+  name="device-link"
+  title="Inline Paragraph Variant"
+  height="160px"
+  code={`import { DeviceLink } from "@marrow/ui";
+
+export function InlineDemo() {
+  return (
+    <p className="text-sm text-fd-muted-foreground leading-relaxed">
+      Traffic originating from{" "}
+      <DeviceLink
+        variant="inline"
+        from={{ name: "app-prod-01", role: "server", port: "eth0", status: "up" }}
+        to={{ name: "db-primary", role: "storage", port: "eth0", status: "up" }}
+        cable={{ mode: "routed", speed: "10G", status: "up", animated: true }}
+      />{" "}
+      transits directly across the private VPC peering circuit.
+    </p>
+  );
+}`}
+>
+  <div className="p-4 bg-fd-muted/30 rounded-xl">
+    <div className="text-sm text-fd-muted-foreground leading-relaxed">
+      Traffic originating from{" "}
+      <DeviceLink
+        variant="inline"
+        from={{ name: "app-prod-01", role: "server", port: "eth0", status: "up" }}
+        to={{ name: "db-primary", role: "storage", port: "eth0", status: "up" }}
+        cable={{ mode: "routed", speed: "10G", status: "up", animated: true }}
+      />{" "}
+      transits directly across the private VPC peering circuit without entering the public transit hub.
+    </div>
+  </div>
+</ComponentPreview>
+
+---
+
+### 4. Custom Vendor SVGs (Cisco Switches & Routers)
+
+You can pass vendor SVGs from your library directly into the `icon` property. The component automatically handles:
+- **SVG file paths**: `/icons/cisco/nexus-switch.svg`, `/icons/cisco/router.svg`, or any hosted URL.
+- **Raw inline SVG strings**: `'<svg viewBox="0 0 50 50">...</svg>'`.
+- **Custom React components**: `<CiscoRouterIcon />` or Lucide icons.
+
+<ComponentPreview
+  name="device-link"
+  title="Cisco Switches & Routers Demo"
+  height="240px"
+  code={`import { DeviceLink } from "@marrow/ui";
+
+export function CiscoDemo() {
+  return (
+    <div className="flex flex-col gap-4">
+      {/* Cisco Nexus Spine to Cisco Catalyst Distribution Switch */}
+      <DeviceLink
+        from={{
+          name: "nexus-spine-01",
+          icon: "/icons/cisco/nexus-switch.svg",
+          role: "Nexus 9336C",
+          ip: "10.0.0.1",
+          port: "Eth1/1",
+          status: "up",
+        }}
+        to={{
+          name: "catalyst-core-01",
+          icon: "/icons/cisco/catalyst-switch.svg",
+          role: "Catalyst 9500",
+          ip: "10.0.0.2",
+          port: "Te1/0/48",
+          status: "up",
+        }}
+        cable={{
+          mode: "trunk",
+          speed: "100G",
+          status: "up",
+          animated: true,
+        }}
+      />
+
+      {/* Cisco Catalyst Core to Cisco ASR Edge Router */}
+      <DeviceLink
+        from={{
+          name: "catalyst-core-01",
+          icon: "/icons/cisco/catalyst-switch.svg",
+          role: "Catalyst 9500",
+          ip: "172.16.1.1",
+          port: "Gi1/0/1",
+          status: "up",
+        }}
+        to={{
+          name: "asr-border-gw-01",
+          icon: "/icons/cisco/router.svg",
+          role: "ASR 1001-HX",
+          ip: "172.16.1.2",
+          port: "Gi0/0/0",
+          status: "up",
+        }}
+        cable={{
+          mode: "routed",
+          speed: "10G",
+          status: "up",
+        }}
+      />
+    </div>
+  );
+}`}
+>
+  <div className="flex flex-col gap-4 p-4 w-full max-w-2xl mx-auto">
+    {/* Cisco Nexus Spine to Cisco Catalyst Distribution Switch */}
+    <DeviceLink
+      from={{
+        name: "nexus-spine-01",
+        icon: "/icons/cisco/nexus-switch.svg",
+        role: "Nexus 9336C",
+        ip: "10.0.0.1",
+        port: "Eth1/1",
+        status: "up",
+      }}
+      to={{
+        name: "catalyst-core-01",
+        icon: "/icons/cisco/catalyst-switch.svg",
+        role: "Catalyst 9500",
+        ip: "10.0.0.2",
+        port: "Te1/0/48",
+        status: "up",
+      }}
+      cable={{
+        mode: "trunk",
+        speed: "100G",
+        status: "up",
+        animated: true,
+      }}
+    />
+
+    {/* Cisco Catalyst Core to Cisco ASR Edge Router */}
+    <DeviceLink
+      from={{
+        name: "catalyst-core-01",
+        icon: "/icons/cisco/catalyst-switch.svg",
+        role: "Catalyst 9500",
+        ip: "172.16.1.1",
+        port: "Gi1/0/1",
+        status: "up",
+      }}
+      to={{
+        name: "asr-border-gw-01",
+        icon: "/icons/cisco/router.svg",
+        role: "ASR 1001-HX",
+        ip: "172.16.1.2",
+        port: "Gi0/0/0",
+        status: "up",
+      }}
+      cable={{
+        mode: "routed",
+        speed: "10G",
+        status: "up",
+      }}
+    />
+  </div>
+</ComponentPreview>
+
+---
+
+## Props Reference
+
+### Device Properties (`from` / `to`)
+
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `name` | `string` | Device hostname or display label. |
+| `role` | `string` | Subtitle role or model label (e.g. `Catalyst 9500`, `router`, `switch`). |
+| `icon` | `ReactNode \| string` | Vendor SVG URL (`/icons/...`), raw SVG markup (`<svg...`), or custom React element. |
+| `port` | `string` | Interface identifier (e.g. `Eth1/48`, `Gi0/1`, `eth0`). |
+| `ip` | `string` | IP address badge displayed beside the device name. |
+| `status` | `'up' \| 'degraded' \| 'down' \| 'planned'` | Status LED dot indicator. |
+
+### Cable Properties (`cable`)
+
+| Property | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `mode` | `'routed' \| 'trunk' \| 'tunnel' \| 'peering' \| 'access'` | `'routed'` | Visual line wire style (solid, double-line, dashed, dotted). |
+| `speed` | `string` | `'10G'` | Line rate badge label (e.g. `1G`, `10G`, `100G`). |
+| `label` | `string` | - | Optional custom overlay text (e.g. `IPsec Tunnel`, `VLAN 20`). |
+| `status` | `'up' \| 'degraded' \| 'down' \| 'planned'` | `'up'` | Operational color applied to the cable wire. |
+| `animated` | `boolean` | `false` | Enables live packet flow pulse indicator. |

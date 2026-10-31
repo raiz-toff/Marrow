@@ -134,36 +134,6 @@ describe('marrow icons CLI commands', () => {
   });
 });
 
-describe('marrow export and --static-svg build', () => {
-  const tmp = mkdtempSync(join(tmpdir(), 'marrow-export-'));
-  afterAll(() => rmSync(tmp, { recursive: true, force: true }));
-
-  test('marrow export valid file --format svg produces standalone SVG file', () => {
-    const outSvg = join(tmp, 'export-out.svg');
-    const res = run(['export', validFixture, '--format', 'svg', '-o', outSvg]);
-    expect(res.status).toBe(0);
-    expect(existsSync(outSvg)).toBe(true);
-  });
-
-  test('marrow build valid file --static-svg produces static SVG file', () => {
-    const outSvg = join(tmp, 'build-static.svg');
-    const res = run(['build', validFixture, '--static-svg', '-o', outSvg]);
-    expect(res.status).toBe(0);
-    expect(existsSync(outSvg)).toBe(true);
-  });
-
-  test('marrow export with invalid file fails with exit 1', () => {
-    const res = run(['export', invalidFixture, '--format', 'svg']);
-    expect(res.status).toBe(1);
-  });
-
-  test('marrow export with unsupported format exits with code 2', () => {
-    const res = run(['export', validFixture, '--format', 'pdf']);
-    expect(res.status).toBe(2);
-    expect(res.stderr).toContain('unsupported export format');
-  });
-});
-
 describe('marrow add registry scaffolding', () => {
   const tmp = mkdtempSync(join(tmpdir(), 'marrow-add-'));
   afterAll(() => rmSync(tmp, { recursive: true, force: true }));

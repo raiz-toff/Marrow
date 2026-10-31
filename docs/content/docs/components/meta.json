@@ -6,6 +6,7 @@
   "pages": [
     "index",
     "topology-canvas",
-    "cable-badge"
+    "cable-badge",
+    "device-link"
   ]
 }

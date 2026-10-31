@@ -6,6 +6,7 @@ import {
   TopologyCanvas,
   TopologyViewport,
   CableBadge,
+  DeviceLink,
 } from '@marrow/ui';
 import { ComponentPreview } from './component-preview';
 import { DemoStudio } from './demo-studio';
@@ -40,6 +41,7 @@ export function getMDXComponents(components?: MDXComponents) {
     TopologyCanvas: MarrowEmbed,
     TopologyViewport: MarrowEmbed,
     CableBadge,
+    DeviceLink,
     ...components,
   } satisfies MDXComponents;
 }

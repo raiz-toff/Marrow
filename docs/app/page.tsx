@@ -41,61 +41,61 @@ npm run build -- input/network.yaml --single -o network.html`;
 export default function HomePage() {
   return (
     <HomeLayout {...baseOptions()}>
-      <main className="mx-auto w-full max-w-5xl px-4 sm:px-6">
-        <section className="pt-16 pb-12 md:pt-24">
-          <h1 className="text-4xl font-semibold tracking-tight text-fd-foreground md:text-5xl">
+      <main className="mx-auto w-full max-w-5xl px-3 sm:px-6">
+        <section className="pt-10 pb-8 sm:pt-16 sm:pb-12 md:pt-24">
+          <h1 className="text-3xl font-semibold tracking-tight text-fd-foreground sm:text-4xl md:text-5xl">
             Marrow
           </h1>
-          <p className="mt-4 max-w-2xl text-lg leading-relaxed text-fd-muted-foreground md:text-xl">
+          <p className="mt-3 sm:mt-4 max-w-2xl text-base sm:text-lg leading-relaxed text-fd-muted-foreground md:text-xl">
             Network diagrams you make by talking to your coding agent. Describe the network, the
             agent writes and checks the topology, and Marrow turns it into an interactive diagram
             that works offline.
           </p>
-          <p className="mt-3 max-w-2xl text-fd-muted-foreground">
+          <p className="mt-2.5 sm:mt-3 max-w-2xl text-xs sm:text-base text-fd-muted-foreground leading-relaxed">
             There is no drawing canvas. Works with Claude Code, Cursor, Cline, Windsurf, Antigravity
             or any agent that can run commands.
           </p>
-          <div className="mt-8">
+          <div className="mt-6 sm:mt-8">
             <SetupPrompt />
           </div>
         </section>
 
-        <section aria-labelledby="example-heading" className="pb-20">
+        <section aria-labelledby="example-heading" className="pb-12 sm:pb-20">
           <h2 id="example-heading" className="sr-only">
             Example
           </h2>
           <DemoExample />
-          <p className="mt-3 text-sm text-fd-muted-foreground">
+          <p className="mt-2.5 sm:mt-3 text-xs sm:text-sm text-fd-muted-foreground leading-relaxed">
             Click any device or cable in the diagram to inspect its interfaces, telemetry, and
             operational state. Toggle <strong className="text-fd-foreground font-medium">View YAML</strong> to inspect the declarative code.
           </p>
         </section>
 
-        <section aria-labelledby="how-heading" className="border-t py-16">
-          <h2 id="how-heading" className="text-2xl font-semibold tracking-tight text-fd-foreground">
+        <section aria-labelledby="how-heading" className="border-t py-10 sm:py-16">
+          <h2 id="how-heading" className="text-xl sm:text-2xl font-semibold tracking-tight text-fd-foreground">
             How a diagram gets made
           </h2>
-          <p className="mt-3 max-w-2xl text-fd-muted-foreground">
-            The repo ships an <code className="font-mono text-sm text-fd-foreground">AGENTS.md</code>{' '}
+          <p className="mt-2 sm:mt-3 max-w-2xl text-xs sm:text-base text-fd-muted-foreground">
+            The repo ships an <code className="font-mono text-xs sm:text-sm text-fd-foreground">AGENTS.md</code>{' '}
             and a topology skill, so your agent already knows the rules when it opens the folder.
           </p>
-          <ol className="mt-10 grid gap-x-12 gap-y-8 sm:grid-cols-2">
+          <ol className="mt-8 sm:mt-10 grid gap-x-12 gap-y-6 sm:gap-y-8 sm:grid-cols-2">
             {LOOP.map((step, i) => (
-              <li key={step.title} className="flex gap-4">
-                <span className="font-mono text-sm text-fd-muted-foreground tabular-nums">{i + 1}</span>
+              <li key={step.title} className="flex gap-3 sm:gap-4">
+                <span className="font-mono text-xs sm:text-sm text-fd-muted-foreground tabular-nums shrink-0 pt-0.5">{i + 1}</span>
                 <div>
-                  <p className="font-medium text-fd-foreground">{step.title}</p>
-                  <p className="mt-2 text-sm leading-relaxed text-fd-muted-foreground">{step.body}</p>
+                  <p className="text-sm sm:text-base font-medium text-fd-foreground">{step.title}</p>
+                  <p className="mt-1.5 sm:mt-2 text-xs sm:text-sm leading-relaxed text-fd-muted-foreground">{step.body}</p>
                 </div>
               </li>
             ))}
           </ol>
 
-          <h3 className="mt-14 font-medium text-fd-foreground">What you might ask it</h3>
-          <pre className="mt-3 max-w-3xl overflow-x-auto rounded-lg border bg-fd-secondary p-4 text-[13px] leading-relaxed whitespace-pre-wrap text-fd-secondary-foreground">
+          <h3 className="mt-10 sm:mt-14 text-sm sm:text-base font-medium text-fd-foreground">What you might ask it</h3>
+          <pre className="mt-2.5 sm:mt-3 max-w-3xl overflow-x-auto rounded-lg border bg-fd-secondary p-3 sm:p-4 font-mono text-xs sm:text-[13px] leading-relaxed whitespace-pre-wrap text-fd-secondary-foreground">
             {EXAMPLE_ASK}
           </pre>
-          <p className="mt-4 text-sm text-fd-muted-foreground">
+          <p className="mt-3 sm:mt-4 text-xs sm:text-sm text-fd-muted-foreground">
             More on this in{' '}
             <Link href="/docs/agents/golden-loop" className="text-fd-foreground underline underline-offset-4">
               the agent loop
@@ -108,18 +108,18 @@ export default function HomePage() {
           </p>
         </section>
 
-        <section aria-labelledby="run-heading" className="border-t py-16">
-          <h2 id="run-heading" className="text-2xl font-semibold tracking-tight text-fd-foreground">
+        <section aria-labelledby="run-heading" className="border-t py-10 sm:py-16">
+          <h2 id="run-heading" className="text-xl sm:text-2xl font-semibold tracking-tight text-fd-foreground">
             Without an agent
           </h2>
-          <p className="mt-3 max-w-2xl text-fd-muted-foreground">
+          <p className="mt-2 sm:mt-3 max-w-2xl text-xs sm:text-base text-fd-muted-foreground">
             Everything the agent does is a plain command, so you can run it by hand. It is a local
             tool, not a hosted service, and needs Node.js 24 or newer.
           </p>
-          <pre className="mt-6 overflow-x-auto rounded-lg border bg-fd-secondary p-4 font-mono text-[13px] leading-relaxed text-fd-secondary-foreground">
+          <pre className="mt-4 sm:mt-6 overflow-x-auto rounded-lg border bg-fd-secondary p-3 sm:p-4 font-mono text-xs sm:text-[13px] leading-relaxed text-fd-secondary-foreground">
             <code>{RUN_LOCALLY}</code>
           </pre>
-          <p className="mt-4 text-sm text-fd-muted-foreground">
+          <p className="mt-3 sm:mt-4 text-xs sm:text-sm text-fd-muted-foreground">
             Next:{' '}
             <Link href="/docs/getting-started/first-diagram" className="text-fd-foreground underline underline-offset-4">
               your first diagram
@@ -136,7 +136,7 @@ export default function HomePage() {
           </p>
         </section>
 
-        <footer className="flex flex-col gap-2 border-t py-8 text-sm text-fd-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+        <footer className="flex flex-col gap-3 border-t py-6 sm:py-8 text-xs sm:text-sm text-fd-muted-foreground sm:flex-row sm:items-center sm:justify-between">
           <p>Marrow is a hobby project by rajkumar, released under the MIT license.</p>
           <div className="flex gap-4">
             <a href={REPO} className="hover:text-fd-foreground">

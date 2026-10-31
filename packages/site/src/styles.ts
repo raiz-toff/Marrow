@@ -776,18 +776,27 @@ a.m-side-row.active i, a.m-side-row.active em { color: var(--sidebar-fg); }
 /* ── minimap ── */
 .m-minimap {
   position: fixed;
-  right: calc(var(--frame-x) + 58px);
-  bottom: calc(var(--frame-bottom) + 12px);
+  right: calc(var(--frame-x, 0px) + 58px);
+  bottom: calc(var(--frame-bottom, 0px) + 12px);
   z-index: 20;
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-lg, 10px);
   padding: 5px;
   box-shadow: var(--shadow);
   transition: right .25s ease, border-color .15s;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 .m-minimap:hover { border-color: var(--line-strong); }
-.m-minimap > svg { display: block; cursor: crosshair; }
+.m-minimap > svg {
+  display: block;
+  cursor: crosshair;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
 .m-mini-toggle {
   position: absolute; top: 4px; right: 4px; z-index: 1;
   width: 20px; height: 20px; display: grid; place-items: center;
@@ -821,7 +830,19 @@ a.m-side-row.active i, a.m-side-row.active em { color: var(--sidebar-fg); }
 .m-mini-dot.m-status-down { fill: var(--down); }
 .m-mini-dot.m-status-degraded { fill: var(--degraded); }
 .m-mini-dot.m-status-planned { fill: var(--planned); }
-.m-mini-view { fill: color-mix(in srgb, var(--m-accent) 13%, transparent); stroke: var(--m-accent); stroke-width: 1.3; }
+.m-mini-view {
+  fill: color-mix(in srgb, var(--m-accent) 13%, transparent);
+  stroke: var(--m-accent);
+  stroke-width: 1.3;
+  cursor: grab;
+  touch-action: none;
+  pointer-events: all;
+}
+.m-minimap.m-dragging,
+.m-minimap.m-dragging > svg,
+.m-minimap.m-dragging .m-mini-view {
+  cursor: grabbing !important;
+}
 
 /* ── inspector: Fumadocs TOC Inspector docked inside Master Island ── */
 .m-inspector {
@@ -964,49 +985,7 @@ a.m-side-row.active i, a.m-side-row.active em { color: var(--sidebar-fg); }
   margin: 2px 4px;
 }
 
-/* ── minimap: docked beside the zoom controls ── */
-.m-minimap {
-  position: absolute;
-  right: 64px;
-  bottom: 16px;
-  z-index: 20;
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-lg, 10px);
-  padding: 5px;
-  box-shadow: var(--shadow);
-  transition: right .25s ease, border-color .15s;
-}
-.m-minimap:hover {
-  border-color: var(--line-strong);
-}
-.m-minimap.collapsed {
-  padding: 0;
-}
-.m-minimap.collapsed svg {
-  display: none;
-}
-.m-minimap .m-mini-toggle {
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  border: none;
-  background: transparent;
-  color: var(--ink-dim);
-  cursor: pointer;
-  border-radius: var(--radius-sm, 6px);
-  transition: background .15s, color .15s;
-}
-.m-minimap .m-mini-toggle:hover {
-  background: var(--bg-raise);
-  color: var(--ink);
-}
-.m-minimap svg {
-  display: block;
-  cursor: crosshair;
-}
+
 
 /* ── Tablet overrides (768px - 1024px) ── */
 @media (max-width: 1024px) and (min-width: 768px) {
@@ -1988,6 +1967,20 @@ html[data-chrome="minimal"] .m-inspector:not([hidden]) {
   border-left: 1px solid var(--line) !important;
   background: var(--panel) !important;
   z-index: 25;
+}
+
+@media (max-width: 767px) {
+  html[data-chrome="minimal"] .m-inspector:not([hidden]) {
+    position: absolute !important;
+    inset: auto 0 0 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 55% !important;
+    border-left: none !important;
+    border-top: 1px solid var(--line) !important;
+    border-radius: 14px 14px 0 0 !important;
+    box-shadow: 0 -4px 18px rgba(0, 0, 0, 0.3) !important;
+  }
 }
 
 html[data-inspector="off"] .m-inspector {

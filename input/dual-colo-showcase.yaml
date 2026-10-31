@@ -1,0 +1,1063 @@
+marrow: 2
+name: Dual-Colocation Enterprise Showcase
+description: Curated active-active dual colocation network architecture spanning
+  Ashburn DC-1 (US-East) and Santa Clara DC-2 (US-West) with 100G MACsec DCI,
+  EVPN-VXLAN spine-leaf fabric, perimeter NGFW security, and replicated
+  enterprise data tiers.
+density: standard
+scale: 1.05
+hero: east-spine-01
+author: Enterprise Infrastructure & Cloud Architecture
+revision: v2.0
+date: 2026-10-25
+title_block:
+  title: Dual-Colocation Enterprise Architecture
+  author: Enterprise Architecture & NetOps
+  revision: v2.0
+  date: 2026-10-25
+about:
+  Overview: Executive showcase topology illustrating an enterprise active-active
+    dual-colocation architecture across Equinix Ashburn (DC-1) and Equinix Santa
+    Clara (DC-2).
+  Fabric & Underlay: >-
+    - BGP unnumbered EVPN-VXLAN fabric with redundant spines and MLAG/vPC leaf
+    pairs
+
+    - 100Gbps non-blocking backplane with sub-microsecond latency
+
+    - Anycast gateway routing across DC-1 and DC-2
+  Security & Ingress: |-
+    - Perimeter Palo Alto PA-5450 HA clusters with active threat prevention
+    - Unified F5 WAF & LTM ADC application delivery in dedicated DMZ
+    - Strict Tier-0 jump bastions with hardware MFA
+  Data Center Interconnect (DCI): >-
+    - Dual diverse optical dark fiber paths with line-rate IEEE 802.1AE MACsec
+    256-bit encryption
+
+    - Sub-35ms round-trip latency supporting synchronous storage mirroring and
+    active database replication
+zones:
+  - id: wan
+    name: Global WAN & Carrier Edge
+    accent: "#64748b"
+    note: Tier-1 Carrier Transit & 100G Encrypted DCI Backbone
+  - id: wan-transit
+    name: Carrier IP Transit
+    parent: wan
+    accent: "#64748b"
+    note: Lumen & Telia Redundant BGP Peering
+  - id: wan-dci
+    name: Inter-Colo 100G DCI Backbone
+    parent: wan
+    accent: "#a855f7"
+    note: Diverse Dark Fiber Paths with Line-Rate MACsec
+  - id: dc-east
+    name: Ashburn DC-1 (US-East)
+    accent: "#38bdf8"
+    note: Primary Production Hub (AS65100)
+  - id: east-edge
+    name: Perimeter & WAN Edge
+    parent: dc-east
+    accent: "#f43f5e"
+    note: Dual BGP Edge Routers & Active/Passive NGFW Cluster
+  - id: east-fabric
+    name: EVPN-VXLAN Fabric
+    parent: dc-east
+    accent: "#0284c7"
+    note: Nexus 9508 Spine Pair & 100G Leaf Pair
+  - id: east-services
+    name: DMZ & Core Services
+    parent: dc-east
+    accent: "#f59e0b"
+    note: F5 WAF/LB, Infoblox DNS/IPAM, Active Directory & Bastion
+  - id: east-workloads
+    name: Compute & Data Tier
+    parent: dc-east
+    accent: "#10b981"
+    note: ESXi Virtualization, Enterprise App Servers, PostgreSQL HA & Pure SAN
+  - id: dc-west
+    name: Santa Clara DC-2 (US-West)
+    accent: "#10b981"
+    note: Active Secondary & DR Hub (AS65200)
+  - id: west-edge
+    name: Perimeter & WAN Edge
+    parent: dc-west
+    accent: "#f43f5e"
+    note: Dual BGP Edge Routers & Active/Passive NGFW Cluster
+  - id: west-fabric
+    name: EVPN-VXLAN Fabric
+    parent: dc-west
+    accent: "#059669"
+    note: Nexus 9508 Spine Pair & 100G Leaf Pair
+  - id: west-services
+    name: DMZ & Core Services
+    parent: dc-west
+    accent: "#f59e0b"
+    note: F5 WAF/LB, Infoblox DNS/IPAM, Active Directory & Bastion
+  - id: west-workloads
+    name: Compute & Data Tier
+    parent: dc-west
+    accent: "#10b981"
+    note: ESXi Virtualization, Enterprise App Servers, PostgreSQL Replicas & Pure SAN
+devices:
+  - id: wan-lumen-pe
+    name: Lumen Tier-1 Transit (AS3356)
+    icon: cisco/routers/router
+    tier: edge
+    zone: wan-transit
+    role: router
+    status: up
+    mgmt_ip: 198.51.100.1
+    custom_fields:
+      Provider: Lumen Technologies
+      Speed: 100 Gbps DIA
+      Protocol: eBGP AS3356
+  - id: wan-telia-pe
+    name: Arelion/Telia Transit (AS1299)
+    icon: cisco/routers/router
+    tier: edge
+    zone: wan-transit
+    role: router
+    status: up
+    mgmt_ip: 198.51.100.5
+    custom_fields:
+      Provider: Arelion / Telia
+      Speed: 100 Gbps DIA
+      Protocol: eBGP AS1299
+  - id: dci-mux-east
+    name: Ashburn DWDM Terminal
+    icon: cisco/switches/layer-3-switch
+    tier: edge
+    zone: wan-dci
+    role: switch
+    status: up
+    mgmt_ip: 10.100.254.1
+    ha_pair_with: dci-mux-west
+    custom_fields:
+      Hardware: Ciena Waveserver 5
+      Capacity: 100 Gbps ZR+
+      Encryption: MACsec IEEE 802.1AE
+  - id: dci-mux-west
+    name: Santa Clara DWDM Terminal
+    icon: cisco/switches/layer-3-switch
+    tier: edge
+    zone: wan-dci
+    role: switch
+    status: up
+    mgmt_ip: 10.200.254.1
+    ha_pair_with: dci-mux-east
+    custom_fields:
+      Hardware: Ciena Waveserver 5
+      Capacity: 100 Gbps ZR+
+      Encryption: MACsec IEEE 802.1AE
+  - id: east-edge-01
+    name: Ashburn Edge Router 01
+    icon: cisco/routers/router
+    tier: edge
+    zone: east-edge
+    role: router
+    status: up
+    mgmt_ip: 10.100.1.1
+    ha_pair_with: east-edge-02
+    custom_fields:
+      Model: Cisco ASR 9904
+      BGP_AS: "65100"
+      Throughput: 400 Gbps
+  - id: east-edge-02
+    name: Ashburn Edge Router 02
+    icon: cisco/routers/router
+    tier: edge
+    zone: east-edge
+    role: router
+    status: up
+    mgmt_ip: 10.100.1.2
+    ha_pair_with: east-edge-01
+    custom_fields:
+      Model: Cisco ASR 9904
+      BGP_AS: "65100"
+      Throughput: 400 Gbps
+  - id: east-ngfw-01
+    name: Ashburn Perimeter NGFW 01 (Active)
+    icon: cisco/security/firewall
+    tier: edge
+    zone: east-edge
+    role: firewall
+    status: up
+    mgmt_ip: 10.100.1.11
+    ha_pair_with: east-ngfw-02
+    custom_fields:
+      Model: Palo Alto PA-5450
+      State: Active
+      Inspection: Full Layer-7 SSL Decrypt
+  - id: east-ngfw-02
+    name: Ashburn Perimeter NGFW 02 (Standby)
+    icon: cisco/security/firewall
+    tier: edge
+    zone: east-edge
+    role: firewall
+    status: up
+    mgmt_ip: 10.100.1.12
+    ha_pair_with: east-ngfw-01
+    custom_fields:
+      Model: Palo Alto PA-5450
+      State: Standby
+      Inspection: HA State Synchronization
+  - id: east-spine-01
+    name: Ashburn EVPN Spine 01
+    icon: cisco/design/aci-spine-switch
+    tier: core
+    zone: east-fabric
+    role: core
+    status: up
+    mgmt_ip: 10.100.2.1
+    ha_pair_with: east-spine-02
+    custom_fields:
+      Model: Cisco Nexus 9508 Chassis
+      Fabric_AS: "65100"
+      Backplane: 100G Non-blocking
+  - id: east-spine-02
+    name: Ashburn EVPN Spine 02
+    icon: cisco/design/aci-spine-switch
+    tier: core
+    zone: east-fabric
+    role: core
+    status: up
+    mgmt_ip: 10.100.2.2
+    ha_pair_with: east-spine-01
+    custom_fields:
+      Model: Cisco Nexus 9508 Chassis
+      Fabric_AS: "65100"
+      Backplane: 100G Non-blocking
+  - id: east-leaf-01
+    name: Ashburn Server Leaf 01
+    icon: cisco/switches/layer-3-switch
+    tier: distribution
+    zone: east-fabric
+    role: switch
+    status: up
+    mgmt_ip: 10.100.2.11
+    ha_pair_with: east-leaf-02
+    custom_fields:
+      Model: Cisco Nexus 93180YC-FX3
+      Role: Top-of-Rack vPC Pair
+  - id: east-leaf-02
+    name: Ashburn Server Leaf 02
+    icon: cisco/switches/layer-3-switch
+    tier: distribution
+    zone: east-fabric
+    role: switch
+    status: up
+    mgmt_ip: 10.100.2.12
+    ha_pair_with: east-leaf-01
+    custom_fields:
+      Model: Cisco Nexus 93180YC-FX3
+      Role: Top-of-Rack vPC Pair
+  - id: east-waf-lb
+    name: Ashburn F5 WAF & ADC
+    icon: cisco/datacenter/load-balancer
+    tier: access
+    zone: east-services
+    role: load-balancer
+    status: up
+    mgmt_ip: 10.100.3.10
+    custom_fields:
+      Model: F5 BIG-IP i5800
+      Services: Advanced WAF + TLS 1.3 Offload + GSLB
+  - id: east-dns
+    name: Ashburn Infoblox DNS/IPAM
+    icon: cisco/datacenter/dns-server
+    tier: endpoint
+    zone: east-services
+    role: server
+    status: up
+    mgmt_ip: 10.100.4.10
+    custom_fields:
+      Product: Infoblox Grid Appliance
+      Services: Enterprise DNS / DHCP / IPAM
+  - id: east-dc
+    name: Ashburn AD Domain Controller
+    icon: cisco/servers/directory-server
+    tier: endpoint
+    zone: east-services
+    role: server
+    status: up
+    mgmt_ip: 10.100.4.20
+    custom_fields:
+      OS: Windows Server 2022
+      Role: Active Directory, Kerberos, LDAP
+  - id: east-jump
+    name: Ashburn Bastion Jump Host
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: east-services
+    role: security
+    status: up
+    mgmt_ip: 10.100.4.30
+    custom_fields:
+      Auth: Hardware YubiKey MFA
+      Protocols: Hardened SSH & Guacamole Web RDP
+  - id: east-esxi-01
+    name: Ashburn ESXi Compute Host 01
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: east-workloads
+    role: server
+    status: up
+    mgmt_ip: 10.100.5.11
+    ha_pair_with: east-esxi-02
+    custom_fields:
+      Model: Dell PowerEdge R750
+      CPU: 2x 64-Core Xeon Platinum
+      RAM: 1024 GB
+      Hypervisor: VMware ESXi 8.0U3
+  - id: east-esxi-02
+    name: Ashburn ESXi Compute Host 02
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: east-workloads
+    role: server
+    status: up
+    mgmt_ip: 10.100.5.12
+    ha_pair_with: east-esxi-01
+    custom_fields:
+      Model: Dell PowerEdge R750
+      CPU: 2x 64-Core Xeon Platinum
+      RAM: 1024 GB
+      Hypervisor: VMware ESXi 8.0U3
+  - id: east-app-01
+    name: Ashburn Enterprise ERP Service
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: east-workloads
+    role: server
+    status: up
+    mgmt_ip: 10.100.5.21
+    custom_fields:
+      Workload: Core ERP & Financial Processing
+      Host: east-esxi-01
+  - id: east-app-02
+    name: Ashburn API Gateway Microservice
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: east-workloads
+    role: server
+    status: up
+    mgmt_ip: 10.100.5.22
+    custom_fields:
+      Workload: REST/GraphQL Ingress Cluster
+      Host: east-esxi-02
+  - id: east-pg-01
+    name: Ashburn PostgreSQL Primary
+    icon: cisco/storage/relational-database
+    tier: endpoint
+    zone: east-workloads
+    role: database
+    status: up
+    mgmt_ip: 10.100.7.11
+    ha_pair_with: east-pg-02
+    custom_fields:
+      Engine: PostgreSQL 16.3 Patroni HA
+      Role: Read/Write Primary
+  - id: east-pg-02
+    name: Ashburn PostgreSQL Standby
+    icon: cisco/storage/relational-database
+    tier: endpoint
+    zone: east-workloads
+    role: database
+    status: up
+    mgmt_ip: 10.100.7.12
+    ha_pair_with: east-pg-01
+    custom_fields:
+      Engine: PostgreSQL 16.3 Patroni HA
+      Role: Synchronous Standby
+  - id: east-san-01
+    name: Ashburn Pure FlashArray All-Flash SAN
+    icon: cisco/storage/fc-storage
+    tier: endpoint
+    zone: east-workloads
+    role: storage
+    status: up
+    mgmt_ip: 10.100.7.40
+    custom_fields:
+      Model: Pure Storage FlashArray//X90
+      Protocol: NVMe-oF RoCEv2
+      Usable: 450 TB
+  - id: west-edge-01
+    name: Santa Clara Edge Router 01
+    icon: cisco/routers/router
+    tier: edge
+    zone: west-edge
+    role: router
+    status: up
+    mgmt_ip: 10.200.1.1
+    ha_pair_with: west-edge-02
+    custom_fields:
+      Model: Cisco ASR 9904
+      BGP_AS: "65200"
+      Throughput: 400 Gbps
+  - id: west-edge-02
+    name: Santa Clara Edge Router 02
+    icon: cisco/routers/router
+    tier: edge
+    zone: west-edge
+    role: router
+    status: up
+    mgmt_ip: 10.200.1.2
+    ha_pair_with: west-edge-01
+    custom_fields:
+      Model: Cisco ASR 9904
+      BGP_AS: "65200"
+      Throughput: 400 Gbps
+  - id: west-ngfw-01
+    name: Santa Clara Perimeter NGFW 01 (Active)
+    icon: cisco/security/firewall
+    tier: edge
+    zone: west-edge
+    role: firewall
+    status: up
+    mgmt_ip: 10.200.1.11
+    ha_pair_with: west-ngfw-02
+    custom_fields:
+      Model: Palo Alto PA-5450
+      State: Active
+      Inspection: Full Layer-7 SSL Decrypt
+  - id: west-ngfw-02
+    name: Santa Clara Perimeter NGFW 02 (Standby)
+    icon: cisco/security/firewall
+    tier: edge
+    zone: west-edge
+    role: firewall
+    status: up
+    mgmt_ip: 10.200.1.12
+    ha_pair_with: west-ngfw-01
+    custom_fields:
+      Model: Palo Alto PA-5450
+      State: Standby
+      Inspection: HA State Synchronization
+  - id: west-spine-01
+    name: Santa Clara EVPN Spine 01
+    icon: cisco/design/aci-spine-switch
+    tier: core
+    zone: west-fabric
+    role: core
+    status: up
+    mgmt_ip: 10.200.2.1
+    ha_pair_with: west-spine-02
+    custom_fields:
+      Model: Cisco Nexus 9508 Chassis
+      Fabric_AS: "65200"
+      Backplane: 100G Non-blocking
+  - id: west-spine-02
+    name: Santa Clara EVPN Spine 02
+    icon: cisco/design/aci-spine-switch
+    tier: core
+    zone: west-fabric
+    role: core
+    status: up
+    mgmt_ip: 10.200.2.2
+    ha_pair_with: west-spine-01
+    custom_fields:
+      Model: Cisco Nexus 9508 Chassis
+      Fabric_AS: "65200"
+      Backplane: 100G Non-blocking
+  - id: west-leaf-01
+    name: Santa Clara Server Leaf 01
+    icon: cisco/switches/layer-3-switch
+    tier: distribution
+    zone: west-fabric
+    role: switch
+    status: up
+    mgmt_ip: 10.200.2.11
+    ha_pair_with: west-leaf-02
+    custom_fields:
+      Model: Cisco Nexus 93180YC-FX3
+      Role: Top-of-Rack vPC Pair
+  - id: west-leaf-02
+    name: Santa Clara Server Leaf 02
+    icon: cisco/switches/layer-3-switch
+    tier: distribution
+    zone: west-fabric
+    role: switch
+    status: up
+    mgmt_ip: 10.200.2.12
+    ha_pair_with: west-leaf-01
+    custom_fields:
+      Model: Cisco Nexus 93180YC-FX3
+      Role: Top-of-Rack vPC Pair
+  - id: west-waf-lb
+    name: Santa Clara F5 WAF & ADC
+    icon: cisco/datacenter/load-balancer
+    tier: access
+    zone: west-services
+    role: load-balancer
+    status: up
+    mgmt_ip: 10.200.3.10
+    custom_fields:
+      Model: F5 BIG-IP i5800
+      Services: Advanced WAF + TLS 1.3 Offload + GSLB
+  - id: west-dns
+    name: Santa Clara Infoblox DNS/IPAM
+    icon: cisco/datacenter/dns-server
+    tier: endpoint
+    zone: west-services
+    role: server
+    status: up
+    mgmt_ip: 10.200.4.10
+    custom_fields:
+      Product: Infoblox Grid Appliance
+      Services: Enterprise DNS / DHCP / IPAM
+  - id: west-dc
+    name: Santa Clara AD Domain Controller
+    icon: cisco/servers/directory-server
+    tier: endpoint
+    zone: west-services
+    role: server
+    status: up
+    mgmt_ip: 10.200.4.20
+    custom_fields:
+      OS: Windows Server 2022
+      Role: Active Directory, Kerberos, LDAP
+  - id: west-jump
+    name: Santa Clara Bastion Jump Host
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: west-services
+    role: security
+    status: up
+    mgmt_ip: 10.200.4.30
+    custom_fields:
+      Auth: Hardware YubiKey MFA
+      Protocols: Hardened SSH & Guacamole Web RDP
+  - id: west-esxi-01
+    name: Santa Clara ESXi Compute Host 01
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: west-workloads
+    role: server
+    status: up
+    mgmt_ip: 10.200.5.11
+    ha_pair_with: west-esxi-02
+    custom_fields:
+      Model: Dell PowerEdge R750
+      CPU: 2x 64-Core Xeon Platinum
+      RAM: 1024 GB
+      Hypervisor: VMware ESXi 8.0U3
+  - id: west-esxi-02
+    name: Santa Clara ESXi Compute Host 02
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: west-workloads
+    role: server
+    status: up
+    mgmt_ip: 10.200.5.12
+    ha_pair_with: west-esxi-01
+    custom_fields:
+      Model: Dell PowerEdge R750
+      CPU: 2x 64-Core Xeon Platinum
+      RAM: 1024 GB
+      Hypervisor: VMware ESXi 8.0U3
+  - id: west-app-01
+    name: Santa Clara Enterprise ERP Service
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: west-workloads
+    role: server
+    status: up
+    mgmt_ip: 10.200.5.21
+    custom_fields:
+      Workload: Core ERP & Financial Processing
+      Host: west-esxi-01
+  - id: west-app-02
+    name: Santa Clara API Gateway Microservice
+    icon: cisco/servers/host
+    tier: endpoint
+    zone: west-workloads
+    role: server
+    status: up
+    mgmt_ip: 10.200.5.22
+    custom_fields:
+      Workload: REST/GraphQL Ingress Cluster
+      Host: west-esxi-02
+  - id: west-pg-01
+    name: Santa Clara PostgreSQL Replica 01
+    icon: cisco/storage/relational-database
+    tier: endpoint
+    zone: west-workloads
+    role: database
+    status: up
+    mgmt_ip: 10.200.7.11
+    ha_pair_with: west-pg-02
+    custom_fields:
+      Engine: PostgreSQL 16.3 Patroni HA
+      Role: Read-Only Replica
+  - id: west-pg-02
+    name: Santa Clara PostgreSQL Replica 02
+    icon: cisco/storage/relational-database
+    tier: endpoint
+    zone: west-workloads
+    role: database
+    status: up
+    mgmt_ip: 10.200.7.12
+    ha_pair_with: west-pg-01
+    custom_fields:
+      Engine: PostgreSQL 16.3 Patroni HA
+      Role: Read-Only Replica
+  - id: west-san-01
+    name: Santa Clara Pure FlashArray All-Flash SAN
+    icon: cisco/storage/fc-storage
+    tier: endpoint
+    zone: west-workloads
+    role: storage
+    status: up
+    mgmt_ip: 10.200.7.40
+    custom_fields:
+      Model: Pure Storage FlashArray//X90
+      Protocol: NVMe-oF RoCEv2
+      Usable: 450 TB
+links:
+  - from: dci-mux-east:Line-1
+    to: dci-mux-west:Line-1
+    kind: fiber
+    speed: 100G
+    mode: routed
+    protocol: static
+    custom_fields:
+      Latency: 34.2 ms
+      Span: Primary North Optical Path
+  - from: dci-mux-east:Line-2
+    to: dci-mux-west:Line-2
+    kind: fiber
+    speed: 100G
+    mode: routed
+    protocol: static
+    custom_fields:
+      Latency: 36.8 ms
+      Span: Geodiverse South Optical Path
+  - from: east-edge-01:Te0/0/0
+    to: wan-lumen-pe:Eth1/1
+    kind: fiber
+    speed: 100G
+    mode: peering
+    protocol: ebgp
+  - from: east-edge-02:Te0/0/0
+    to: dci-mux-east:Client-1
+    kind: fiber
+    speed: 100G
+    mode: routed
+    protocol: ebgp
+  - from: east-edge-01:Te0/1/0
+    to: east-edge-02:Te0/1/0
+    lag: po-edge-east
+    lacp: active
+    kind: fiber
+    speed: 100G
+    mode: routed
+    protocol: ibgp
+  - from: east-ngfw-01:Eth1/1
+    to: east-edge-01:Te0/2/0
+    kind: fiber
+    speed: 40G
+    mode: routed
+    protocol: ospf
+  - from: east-ngfw-02:Eth1/1
+    to: east-edge-02:Te0/2/0
+    kind: fiber
+    speed: 40G
+    mode: routed
+    protocol: ospf
+  - from: east-ngfw-01:HA1
+    to: east-ngfw-02:HA1
+    kind: dac
+    speed: 10G
+    mode: access
+  - from: east-leaf-01:Eth1/49
+    to: east-spine-01:Eth1/1
+    kind: fiber
+    speed: 100G
+    mode: routed
+    protocol: ibgp
+  - from: east-leaf-01:Eth1/50
+    to: east-spine-02:Eth1/1
+    kind: fiber
+    speed: 100G
+    mode: routed
+    protocol: ibgp
+  - from: east-leaf-02:Eth1/49
+    to: east-spine-01:Eth2/1
+    kind: fiber
+    speed: 100G
+    mode: routed
+    protocol: ibgp
+  - from: east-leaf-02:Eth1/50
+    to: east-spine-02:Eth2/1
+    kind: fiber
+    speed: 100G
+    mode: routed
+    protocol: ibgp
+  - from: east-leaf-01:Eth1/47
+    to: east-leaf-02:Eth1/47
+    lag: vpc-east-peer
+    lacp: active
+    kind: dac
+    speed: 100G
+    mode: trunk
+    vlans: all
+  - from: east-ngfw-01:Eth1/2
+    to: east-spine-01:Eth1/24
+    kind: fiber
+    speed: 40G
+    mode: routed
+    protocol: ospf
+  - from: east-ngfw-02:Eth1/2
+    to: east-spine-02:Eth1/24
+    kind: fiber
+    speed: 40G
+    mode: routed
+    protocol: ospf
+  - from: east-waf-lb:eth0
+    to: east-leaf-01:Eth1/1
+    lag: po-waf-east
+    lacp: active
+    kind: fiber
+    speed: 25G
+    mode: trunk
+    vlans: 30,31
+  - from: east-waf-lb:eth1
+    to: east-leaf-02:Eth1/1
+    lag: po-waf-east
+    lacp: active
+    kind: fiber
+    speed: 25G
+    mode: trunk
+    vlans: 30,31
+  - from: east-dns:eth0
+    to: east-leaf-01:Eth1/2
+    kind: dac
+    speed: 10G
+    mode: access
+    vlans: "40"
+  - from: east-dc:eth0
+    to: east-leaf-01:Eth1/3
+    kind: dac
+    speed: 10G
+    mode: access
+    vlans: "40"
+  - from: east-jump:eth0
+    to: east-leaf-02:Eth1/3
+    kind: dac
+    speed: 10G
+    mode: access
+    vlans: "40"
+  - from: east-esxi-01:vmnic0
+    to: east-leaf-01:Eth1/10
+    lag: po-esxi01-east
+    lacp: active
+    kind: fiber
+    speed: 25G
+    mode: trunk
+    vlans: 50,60,80
+  - from: east-esxi-01:vmnic1
+    to: east-leaf-02:Eth1/10
+    lag: po-esxi01-east
+    lacp: active
+    kind: fiber
+    speed: 25G
+    mode: trunk
+    vlans: 50,60,80
+  - from: east-esxi-02:vmnic0
+    to: east-leaf-01:Eth1/11
+    lag: po-esxi02-east
+    lacp: active
+    kind: fiber
+    speed: 25G
+    mode: trunk
+    vlans: 50,60,80
+  - from: east-esxi-02:vmnic1
+    to: east-leaf-02:Eth1/11
+    lag: po-esxi02-east
+    lacp: active
+    kind: fiber
+    speed: 25G
+    mode: trunk
+    vlans: 50,60,80
+  - from: east-app-01:eth0
+    to: east-esxi-01:vSwitch0
+    kind: virtual
+    speed: 10G
+    mode: access
+    vlans: "50"
+  - from: east-app-02:eth0
+    to: east-esxi-02:vSwitch0
+    kind: virtual
+    speed: 10G
+    mode: access
+    vlans: "60"
+  - from: east-pg-01:bond0
+    to: east-leaf-01:Eth1/20
+    lag: po-pg01-east
+    lacp: active
+    kind: fiber
+    speed: 25G
+    mode: access
+    vlans: "80"
+  - from: east-pg-01:bond1
+    to: east-leaf-02:Eth1/20
+    lag: po-pg01-east
+    lacp: active
+    kind: fiber
+    speed: 25G
+    mode: access
+    vlans: "80"
+  - from: east-pg-02:bond0
+    to: east-leaf-01:Eth1/21
+    lag: po-pg02-east
+    lacp: active
+    kind: fiber
+    speed: 25G
+    mode: access
+    vlans: "80"
+  - from: east-pg-02:bond1
+    to: east-leaf-02:Eth1/21
+    lag: po-pg02-east
+    lacp: active
+    kind: fiber
+    speed: 25G
+    mode: access
+    vlans: "80"
+  - from: east-san-01:CT0.FC1
+    to: east-leaf-01:Eth1/25
+    kind: fiber
+    speed: 100G
+    mode: routed
+    custom_fields:
+      Fabric: A-Side RoCEv2
+  - from: east-san-01:CT1.FC1
+    to: east-leaf-02:Eth1/25
+    kind: fiber
+    speed: 100G
+    mode: routed
+    custom_fields:
+      Fabric: B-Side RoCEv2
+  - from: west-edge-01:Te0/0/0
+    to: wan-telia-pe:Eth1/1
+    kind: fiber
+    speed: 100G
+    mode: peering
+    protocol: ebgp
+  - from: west-edge-02:Te0/0/0
+    to: dci-mux-west:Client-1
+    kind: fiber
+    speed: 100G
+    mode: routed
+    protocol: ebgp
+  - from: west-edge-01:Te0/1/0
+    to: west-edge-02:Te0/1/0
+    lag: po-edge-west
+    lacp: active
+    kind: fiber
+    speed: 100G
+    mode: routed
+    protocol: ibgp
+  - from: west-ngfw-01:Eth1/1
+    to: west-edge-01:Te0/2/0
+    kind: fiber
+    speed: 40G
+    mode: routed
+    protocol: ospf
+  - from: west-ngfw-02:Eth1/1
+    to: west-edge-02:Te0/2/0
+    kind: fiber
+    speed: 40G
+    mode: routed
+    protocol: ospf
+  - from: west-ngfw-01:HA1
+    to: west-ngfw-02:HA1
+    kind: dac
+    speed: 10G
+    mode: access
+  - from: west-leaf-01:Eth1/49
+    to: west-spine-01:Eth1/1
+    kind: fiber
+    speed: 100G
+    mode: routed
+    protocol: ibgp
+  - from: west-leaf-01:Eth1/50
+    to: west-spine-02:Eth1/1
+    kind: fiber
+    speed: 100G
+    mode: routed
+    protocol: ibgp
+  - from: west-leaf-02:Eth1/49
+    to: west-spine-01:Eth2/1
+    kind: fiber
+    speed: 100G
+    mode: routed
+    protocol: ibgp
+  - from: west-leaf-02:Eth1/50
+    to: west-spine-02:Eth2/1
+    kind: fiber
+    speed: 100G
+    mode: routed
+    protocol: ibgp
+  - from: west-leaf-01:Eth1/47
+    to: west-leaf-02:Eth1/47
+    lag: vpc-west-peer
+    lacp: active
+    kind: dac
+    speed: 100G
+    mode: trunk
+    vlans: all
+  - from: west-ngfw-01:Eth1/2
+    to: west-spine-01:Eth1/24
+    kind: fiber
+    speed: 40G
+    mode: routed
+    protocol: ospf
+  - from: west-ngfw-02:Eth1/2
+    to: west-spine-02:Eth1/24
+    kind: fiber
+    speed: 40G
+    mode: routed
+    protocol: ospf
+  - from: west-waf-lb:eth0
+    to: west-leaf-01:Eth1/1
+    lag: po-waf-west
+    lacp: active
+    kind: fiber
+    speed: 25G
+    mode: trunk
+    vlans: 30,31
+  - from: west-waf-lb:eth1
+    to: west-leaf-02:Eth1/1
+    lag: po-waf-west
+    lacp: active
+    kind: fiber
+    speed: 25G
+    mode: trunk
+    vlans: 30,31
+  - from: west-dns:eth0
+    to: west-leaf-01:Eth1/2
+    kind: dac
+    speed: 10G
+    mode: access
+    vlans: "40"
+  - from: west-dc:eth0
+    to: west-leaf-01:Eth1/3
+    kind: dac
+    speed: 10G
+    mode: access
+    vlans: "40"
+  - from: west-jump:eth0
+    to: west-leaf-02:Eth1/3
+    kind: dac
+    speed: 10G
+    mode: access
+    vlans: "40"
+  - from: west-esxi-01:vmnic0
+    to: west-leaf-01:Eth1/10
+    lag: po-esxi01-west
+    lacp: active
+    kind: fiber
+    speed: 25G
+    mode: trunk
+    vlans: 50,60,80
+  - from: west-esxi-01:vmnic1
+    to: west-leaf-02:Eth1/10
+    lag: po-esxi01-west
+    lacp: active
+    kind: fiber
+    speed: 25G
+    mode: trunk
+    vlans: 50,60,80
+  - from: west-esxi-02:vmnic0
+    to: west-leaf-01:Eth1/11
+    lag: po-esxi02-west
+    lacp: active
+    kind: fiber
+    speed: 25G
+    mode: trunk
+    vlans: 50,60,80
+  - from: west-esxi-02:vmnic1
+    to: west-leaf-02:Eth1/11
+    lag: po-esxi02-west
+    lacp: active
+    kind: fiber
+    speed: 25G
+    mode: trunk
+    vlans: 50,60,80
+  - from: west-app-01:eth0
+    to: west-esxi-01:vSwitch0
+    kind: virtual
+    speed: 10G
+    mode: access
+    vlans: "50"
+  - from: west-app-02:eth0
+    to: west-esxi-02:vSwitch0
+    kind: virtual
+    speed: 10G
+    mode: access
+    vlans: "60"
+  - from: west-pg-01:bond0
+    to: west-leaf-01:Eth1/20
+    lag: po-pg01-west
+    lacp: active
+    kind: fiber
+    speed: 25G
+    mode: access
+    vlans: "80"
+  - from: west-pg-01:bond1
+    to: west-leaf-02:Eth1/20
+    lag: po-pg01-west
+    lacp: active
+    kind: fiber
+    speed: 25G
+    mode: access
+    vlans: "80"
+  - from: west-pg-02:bond0
+    to: west-leaf-01:Eth1/21
+    lag: po-pg02-west
+    lacp: active
+    kind: fiber
+    speed: 25G
+    mode: access
+    vlans: "80"
+  - from: west-pg-02:bond1
+    to: west-leaf-02:Eth1/21
+    lag: po-pg02-west
+    lacp: active
+    kind: fiber
+    speed: 25G
+    mode: access
+    vlans: "80"
+  - from: west-san-01:CT0.FC1
+    to: west-leaf-01:Eth1/25
+    kind: fiber
+    speed: 100G
+    mode: routed
+    custom_fields:
+      Fabric: A-Side RoCEv2
+  - from: west-san-01:CT1.FC1
+    to: west-leaf-02:Eth1/25
+    kind: fiber
+    speed: 100G
+    mode: routed
+    custom_fields:
+      Fabric: B-Side RoCEv2
+  - from: east-pg-01:repl
+    to: west-pg-01:repl
+    kind: fiber
+    speed: 40G
+    mode: tunnel
+    encap: ipsec
+    custom_fields:
+      Service: PostgreSQL WAL Streaming Replication
+      SLA: RPO < 3s, RTO < 30s
+  - from: east-san-01:repl0
+    to: west-san-01:repl0
+    kind: fiber
+    speed: 100G
+    mode: tunnel
+    encap: vxlan
+    custom_fields:
+      Service: Pure Storage ActiveCluster Replication
+      Sync: Zero Data Loss Synchronous Replication

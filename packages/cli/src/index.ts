@@ -3,8 +3,6 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node
 import { basename, dirname, join } from 'node:path';
 import { parseArgs } from 'node:util';
 import { formatPretty, toJsonReport, type JsonReport } from '@marrow/diagnostics';
-import { layoutTopology } from '@marrow/layout';
-import { renderStandaloneSvg } from '@marrow/render-svg';
 import { topologyJsonSchema, validateSource } from '@marrow/schema';
 import { buildSingleFile, buildSite, planSite, type Brand, type ThemeConfig } from '@marrow/site';
 import { loadConfig, type LayoutConfig } from './config.js';
@@ -15,8 +13,7 @@ const USAGE = `marrow — agent-driven network topology studio (v2)
 
 usage:
   marrow validate <file...> [--json] [--no-icons] [--packs <dir>]
-  marrow build <file> [-o <out.html>] [--single] [--static-svg] [--packs <dir>]
-  marrow export <file> [--format svg] [-o <out.svg>] [--theme <dark|light>] [--transparent] [--packs <dir>]
+  marrow build <file> [-o <out.html>] [--single] [--packs <dir>]
   marrow add <component...> [--out <dir>]
   marrow serve [file-or-dir] [--port <n>] [--packs <dir>]      (defaults to ./input)
   marrow import <v1-file> [-o <out.yaml>] [--packs <dir>]
@@ -53,8 +50,6 @@ function main(argv: string[]): number | Promise<number> {
       return cmdImport(rest);
     case 'snapshot':
       return cmdSnapshot(rest);
-    case 'export':
-      return cmdExport(rest);
     case 'add':
       return cmdAdd(rest);
     case 'icons':
@@ -160,14 +155,13 @@ async function cmdBuild(rest: string[]): Promise<number> {
         config: { type: 'string' },
         embed: { type: 'boolean', default: false },
         chrome: { type: 'string' },
-        'static-svg': { type: 'boolean', default: false },
       },
       allowPositionals: true,
     }),
   );
   if (!parsed.ok) {
     console.error(
-      `${parsed.message}\n\nusage: marrow build <file> [-o <out>] [--single] [--static-svg] [--embed] [--chrome minimal|full] [--packs <dir>] [--config <file.yaml>]`,
+      `${parsed.message}\n\nusage: marrow build <file> [-o <out>] [--single] [--embed] [--chrome minimal|full] [--packs <dir>] [--config <file.yaml>]`,
     );
     return 2;
   }
@@ -213,18 +207,6 @@ async function cmdBuild(rest: string[]): Promise<number> {
     result.topology.scale = config.layout.scale;
   }
 
-  if (values['static-svg']) {
-    const outPath = values.out ?? join('output', `${baseName}.svg`);
-    const scene = await layoutTopology(result.topology);
-    const theme = result.topology.theme === 'light' ? 'light' : 'dark';
-    const svg = renderStandaloneSvg(scene, { icons: iconSource(packs.catalog), theme });
-    mkdirSync(dirname(outPath), { recursive: true });
-    writeFileSync(outPath, svg);
-    const kb = Math.round(Buffer.byteLength(svg) / 1024);
-    console.log(`exported static svg ${outPath} — ${scene.nodes.length} nodes, ${scene.edges.length} edges, ${kb} KB`);
-    return 0;
-  }
-
   const plan = planSite(result.topology);
   const buildOpts: import('@marrow/site').BuildOptions = {
     icons: packs.catalog,
@@ -266,93 +248,6 @@ async function cmdBuild(rest: string[]): Promise<number> {
     console.error(`build failed: ${(err as Error).message}`);
     return 1;
   }
-}
-
-async function cmdExport(rest: string[]): Promise<number> {
-  const parsed = safeParseArgs(() =>
-    parseArgs({
-      args: rest,
-      options: {
-        out: { type: 'string', short: 'o' },
-        format: { type: 'string', default: 'svg' },
-        theme: { type: 'string' },
-        transparent: { type: 'boolean', default: false },
-        packs: { type: 'string' },
-        config: { type: 'string' },
-      },
-      allowPositionals: true,
-    }),
-  );
-  if (!parsed.ok) {
-    console.error(
-      `${parsed.message}\n\nusage: marrow export <file> [--format svg] [-o <out.svg>] [--theme dark|light] [--transparent] [--packs <dir>]`,
-    );
-    return 2;
-  }
-  const { values, positionals } = parsed.args;
-  const file = positionals[0];
-  if (!file || positionals.length > 1) {
-    console.error('usage: marrow export <file> [--format svg] [-o <out.svg>]');
-    return 2;
-  }
-  if (values.format !== 'svg') {
-    console.error(`unsupported export format "${values.format}" — currently supported: svg`);
-    return 2;
-  }
-  let source: string;
-  try {
-    source = readFileSync(file, 'utf8');
-  } catch (err) {
-    console.error(`cannot read ${file}: ${(err as Error).message}`);
-    return 2;
-  }
-  const packs = loadIconCatalog(values.packs);
-  if (packs.error) {
-    console.error(packs.error);
-    return 2;
-  }
-  const result = validateSource(source, { icons: packs.catalog });
-  if (!result.topology) {
-    console.error(formatPretty(result.diagnostics, { color: process.stderr.isTTY ?? false, filename: file }));
-    return 1;
-  }
-  const baseName = basename(file).replace(/\.ya?ml$/i, '');
-  const outPath = values.out ?? join('output', `${baseName}.svg`);
-  const scene = await layoutTopology(result.topology);
-  const theme =
-    values.theme === 'light' || values.theme === 'dark'
-      ? values.theme
-      : result.topology.theme === 'light'
-      ? 'light'
-      : 'dark';
-  const svg = renderStandaloneSvg(scene, {
-    icons: iconSource(packs.catalog),
-    theme,
-    transparent: values.transparent,
-  });
-  if (outPath === '-') {
-    process.stdout.write(svg);
-    return 0;
-  }
-  mkdirSync(dirname(outPath), { recursive: true });
-  writeFileSync(outPath, svg);
-  const kb = Math.round(Buffer.byteLength(svg) / 1024);
-  console.log(`exported ${outPath} — ${scene.nodes.length} nodes, ${scene.edges.length} edges, ${kb} KB`);
-  return 0;
-}
-
-function iconSource(icons: import('@marrow/icons').IconCatalog): import('@marrow/render-svg').IconSource {
-  return {
-    svg: (id: string) => {
-      const entry = icons.get(id);
-      if (!entry) return undefined;
-      try {
-        return readFileSync(join(entry.packDir, entry.file), 'utf8');
-      } catch {
-        return undefined;
-      }
-    },
-  };
 }
 
 function cmdAdd(rest: string[]): number {

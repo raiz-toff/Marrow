@@ -83,6 +83,9 @@ function boot(): void {
     sceneSize = scene.size;
   }
 
+  let minimapSync: () => void = () => {};
+  let hashSyncSoon: () => void = () => {};
+
   const cameraTarget = svg?.querySelector<SVGGElement>('.m-camera') ?? undefined;
   const camera = new Camera(
     cameraTarget ?? (document.createElementNS('http://www.w3.org/2000/svg', 'g') as SVGGElement),
@@ -151,11 +154,11 @@ function boot(): void {
   setupMenubar(ctx);
   setupShortcutsDialog();
   setupAboutDialog(ctx);
-  const minimapSync = setupMinimap(ctx, stage);
+  minimapSync = setupMinimap(ctx, stage);
   setupSidebar(ctx);
   setupClickAway(ctx);
   setupMobileNav(ctx);
-  const hashSyncSoon = setupHash(ctx);
+  hashSyncSoon = setupHash(ctx);
   syncModularParams(ctx);
   addEventListener('hashchange', () => syncModularParams(ctx));
 
@@ -3162,6 +3165,7 @@ function setupMinimap(ctx: Ctx, stage: HTMLElement): () => void {
   const CHMAX = 130;
   const PAD = 7;
   const k = Math.min((CW - PAD * 2) / geo.sceneW, (CHMAX - PAD * 2) / geo.sceneH);
+  if (!(k > 0)) return () => {};
   const W = Math.round(geo.sceneW * k + PAD * 2);
   const H = Math.round(geo.sceneH * k + PAD * 2);
 
@@ -3191,38 +3195,106 @@ function setupMinimap(ctx: Ctx, stage: HTMLElement): () => void {
 
   const mini = wrap.querySelector('svg')!;
   const view = wrap.querySelector<SVGRectElement>('.m-mini-view')!;
+
   const sync = (): void => {
     const cam = ctx.camera.get();
     if (!(cam.k > 0)) return; // never write invalid geometry mid-animation
-    const rect = stage.getBoundingClientRect();
-    view.setAttribute('x', String(PAD + (-cam.x / cam.k) * k));
-    view.setAttribute('y', String(PAD + (-cam.y / cam.k) * k));
-    view.setAttribute('width', String(Math.max(0, (rect.width / cam.k) * k)));
-    view.setAttribute('height', String(Math.max(0, (rect.height / cam.k) * k)));
+    const vis = ctx.camera.visibleArea();
+    const vx = PAD + ((vis.x - cam.x) / cam.k) * k;
+    const vy = PAD + ((vis.y - cam.y) / cam.k) * k;
+    const vw = (vis.w / cam.k) * k;
+    const vh = (vis.h / cam.k) * k;
+    view.setAttribute('x', vx.toFixed(1));
+    view.setAttribute('y', vy.toFixed(1));
+    view.setAttribute('width', Math.max(0, vw).toFixed(1));
+    view.setAttribute('height', Math.max(0, vh).toFixed(1));
   };
 
   let dragging = false;
-  const moveTo = (ev: PointerEvent, animate: boolean): void => {
-    const box = mini.getBoundingClientRect();
-    const wx = (ev.clientX - box.left - PAD) / k;
-    const wy = (ev.clientY - box.top - PAD) / k;
-    const cam = ctx.camera.get();
-    const rect = stage.getBoundingClientRect();
-    ctx.camera.set({ x: rect.width / 2 - wx * cam.k, y: rect.height / 2 - wy * cam.k }, animate);
+  let dragStart = { x: 0, y: 0 };
+  let initialCam = ctx.camera.get();
+
+  const clampTarget = (targetX: number, targetY: number, camK: number): { x: number; y: number } => {
+    const vis = ctx.camera.visibleArea();
+    const minX = vis.x + vis.w - (geo.sceneW + 400) * camK;
+    const maxX = vis.x + 400 * camK;
+    const minY = vis.y + vis.h - (geo.sceneH + 400) * camK;
+    const maxY = vis.y + 400 * camK;
+    return {
+      x: Math.max(Math.min(minX, maxX), Math.min(Math.max(minX, maxX), targetX)),
+      y: Math.max(Math.min(minY, maxY), Math.min(Math.max(minY, maxY), targetY)),
+    };
   };
-  mini.addEventListener('pointerdown', (ev) => {
+
+  const onPointerDown = (ev: PointerEvent): void => {
+    if (ev.button !== 0 && ev.pointerType === 'mouse') return;
+    ev.preventDefault();
+    ev.stopPropagation();
+
     dragging = true;
-    mini.setPointerCapture(ev.pointerId);
-    moveTo(ev, true);
-  });
-  mini.addEventListener('pointermove', (ev) => {
-    if (dragging) moveTo(ev, false);
-  });
-  mini.addEventListener('pointerup', () => {
+    dragStart = { x: ev.clientX, y: ev.clientY };
+    initialCam = ctx.camera.get();
+    wrap.classList.add('m-dragging');
+
+    try {
+      mini.setPointerCapture(ev.pointerId);
+    } catch {}
+
+    const viewRect = view.getBoundingClientRect();
+    const isInsideView =
+      ev.target === view ||
+      (ev.clientX >= viewRect.left &&
+        ev.clientX <= viewRect.right &&
+        ev.clientY >= viewRect.top &&
+        ev.clientY <= viewRect.bottom);
+
+    if (!isInsideView) {
+      // Clicked outside view rect: center camera directly on clicked world point
+      const box = mini.getBoundingClientRect();
+      const wx = (ev.clientX - box.left - PAD) / k;
+      const wy = (ev.clientY - box.top - PAD) / k;
+      ctx.camera.centerOn(wx, wy, false);
+      initialCam = ctx.camera.get();
+      dragStart = { x: ev.clientX, y: ev.clientY };
+    }
+  };
+
+  const onPointerMove = (ev: PointerEvent): void => {
+    if (!dragging) return;
+    ev.preventDefault();
+    ev.stopPropagation();
+
+    const dx = ev.clientX - dragStart.x;
+    const dy = ev.clientY - dragStart.y;
+    if (!(initialCam.k > 0) || !(k > 0)) return;
+
+    // Moving minimap view by dx minimap pixels corresponds to moving world by dx / k.
+    // In camera screen coordinates, target is initialCam - (dx / k) * initialCam.k.
+    const worldDeltaX = dx / k;
+    const worldDeltaY = dy / k;
+    const nextX = initialCam.x - worldDeltaX * initialCam.k;
+    const nextY = initialCam.y - worldDeltaY * initialCam.k;
+
+    const clamped = clampTarget(nextX, nextY, initialCam.k);
+    ctx.camera.set({ x: clamped.x, y: clamped.y }, false);
+  };
+
+  const onPointerUp = (ev: PointerEvent): void => {
+    if (!dragging) return;
     dragging = false;
-  });
+    wrap.classList.remove('m-dragging');
+    try {
+      mini.releasePointerCapture(ev.pointerId);
+    } catch {}
+  };
+
+  mini.addEventListener('pointerdown', onPointerDown);
+  mini.addEventListener('pointermove', onPointerMove);
+  mini.addEventListener('pointerup', onPointerUp);
+  mini.addEventListener('pointercancel', onPointerUp);
 
   const toggle = wrap.querySelector<HTMLButtonElement>('.m-mini-toggle')!;
+  toggle.addEventListener('pointerdown', (ev) => ev.stopPropagation());
   const applyCollapsed = (collapsed: boolean): void => {
     wrap.classList.toggle('collapsed', collapsed);
     toggle.innerHTML = collapsed ? GLYPH_MAP : GLYPH_CHEVRON;
@@ -3239,6 +3311,7 @@ function setupMinimap(ctx: Ctx, stage: HTMLElement): () => void {
   sync();
   return sync;
 }
+
 
 // ─── deep links ─────────────────────────────────────────────────────────────
 

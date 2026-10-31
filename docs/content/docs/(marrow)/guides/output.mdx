@@ -148,26 +148,9 @@ Under the hood there are two renderers, chosen by size:
 Both draw the same scene and are kept visually identical; you shouldn't be able
 to tell which one you got except by the device count.
 
-## Static blueprint exports (SVG and PNG)
+## Static blueprint exports (Snapshots)
 
-Marrow diagrams can be exported to standalone vector SVG or high-resolution 2x Retina PNG documents directly from the UI menubar (**Export > Export SVG / Export PNG**), the Command Center (`⌘K` > **Export**), or programmatically via headless CLI commands.
-
-### Headless Static SVG Export (Zero Browser Overhead)
-
-When generating diagrams in CI/CD, documentation pipelines, or embedding directly into GitHub READMEs, Marrow can compile vector SVGs directly without launching a headless browser:
-
-```bash
-# Instantaneous standalone SVG export
-npm run marrow -- export input/branch-hq.yaml --format svg -o output/branch.svg
-
-# Or directly during build
-npm run marrow -- build input/branch-hq.yaml --static-svg -o output/branch.svg
-```
-
-The resulting `.svg` file is fully self-contained:
-- **Tight Bounding-Box Calculation**: Automatically trims outer canvas gutters and sets an accurate `viewBox`.
-- **Inlined Design Tokens**: Embeds light and dark theme CSS custom properties (`--bg`, `--ink`, `--line`) so the graphic renders cleanly without external dependencies.
-- **Embedded Vector Symbols**: Resolves all hardware icons into `<symbol>` definitions in `<defs>`.
+Marrow diagrams can be exported to high-resolution 2x Retina PNG documents directly from the UI menubar (**Export > Export PNG**), the Command Center (`⌘K` > **Export**), or programmatically via headless CLI commands.
 
 ### Headless Snapshotting (Playwright)
 

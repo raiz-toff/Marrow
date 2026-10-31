@@ -3,10 +3,12 @@
 import { useState } from 'react';
 import { MarrowEmbed } from '@marrow/ui';
 import { Check, Copy, ExternalLink, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { copyToClipboard } from '../lib/copy';
 
 interface Example {
   id: string;
   label: string;
+  shortLabel?: string;
   file: string;
   src: string;
   yaml: string;
@@ -17,6 +19,7 @@ const EXAMPLES: Example[] = [
   {
     id: 'tiered',
     label: 'Enterprise backbone',
+    shortLabel: 'Backbone',
     file: 'tiered.yaml',
     src: '/demo/tiered-embed.html',
     yaml: `marrow: 2
@@ -268,6 +271,7 @@ links:
   {
     id: 'trunks',
     label: 'VLAN trunks',
+    shortLabel: 'Trunks',
     file: 'trunk-vlans.yaml',
     src: '/demo/trunk-vlans-embed.html',
     yaml: `marrow: 2
@@ -296,6 +300,7 @@ links:
   {
     id: 'hub',
     label: 'WAN hub',
+    shortLabel: 'Hub',
     file: 'hub-spoke.yaml',
     src: '/demo/hub-spoke-embed.html',
     yaml: `marrow: 2
@@ -347,21 +352,24 @@ export function DemoExample() {
   const [isYamlOpen, setIsYamlOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const handleCopy = () => {
-    if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText(active.yaml).then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      });
+  const handleCopy = async () => {
+    const success = await copyToClipboard(active.yaml);
+    if (success) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     }
   };
 
   return (
     <div className="overflow-hidden rounded-xl border border-fd-border/70 bg-fd-card shadow-lg transition-all">
       {/* Header Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-fd-border/70 bg-fd-card/70 px-3 py-2 backdrop-blur-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-fd-border/70 bg-fd-card/70 px-2.5 sm:px-3 py-2 backdrop-blur-xs">
         {/* Topology selection tabs */}
-        <div role="tablist" aria-label="Example topologies" className="flex items-center gap-1">
+        <div
+          role="tablist"
+          aria-label="Example topologies"
+          className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0 scrollbar-none"
+        >
           {EXAMPLES.map((ex) => {
             const selected = ex.id === active.id;
             return (
@@ -372,65 +380,70 @@ export function DemoExample() {
                 role="tab"
                 aria-selected={selected}
                 onClick={() => setActive(ex)}
-                className={`rounded-lg px-3 py-1.5 text-xs sm:text-sm font-medium transition-all cursor-pointer ${
+                className={`shrink-0 rounded-lg px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm font-medium transition-all cursor-pointer whitespace-nowrap ${
                   selected
                     ? 'bg-fd-accent text-fd-foreground font-semibold shadow-2xs'
                     : 'text-fd-muted-foreground hover:bg-fd-accent/60 hover:text-fd-foreground'
                 }`}
               >
-                {ex.label}
+                <span className="sm:hidden">{ex.shortLabel ?? ex.label}</span>
+                <span className="hidden sm:inline">{ex.label}</span>
               </button>
             );
           })}
         </div>
 
         {/* Interactive Actions & YAML Toggle */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between sm:justify-end gap-1.5 sm:gap-2 pt-1 sm:pt-0 border-t sm:border-t-0 border-fd-border/40">
           {/* Subtle live indicator */}
-          <span className="hidden md:inline-flex items-center gap-1.5 text-xs text-fd-muted-foreground mr-1 select-none">
+          <span className="inline-flex items-center gap-1.5 text-[11px] sm:text-xs text-fd-muted-foreground select-none">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
             </span>
-            Click devices or cables to inspect
+            <span className="hidden sm:inline">Tap devices or cables to inspect</span>
+            <span className="sm:hidden">Interactive</span>
           </span>
 
-          {/* Expandable YAML button */}
-          <button
-            type="button"
-            onClick={() => setIsYamlOpen(!isYamlOpen)}
-            className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-all cursor-pointer ${
-              isYamlOpen
-                ? 'border-fd-primary bg-fd-primary/10 text-fd-foreground shadow-2xs'
-                : 'border-fd-border/70 bg-fd-background/80 text-fd-muted-foreground hover:border-fd-foreground/40 hover:text-fd-foreground'
-            }`}
-            title={isYamlOpen ? 'Collapse YAML panel' : 'Expand YAML panel'}
-          >
-            {isYamlOpen ? <PanelLeftClose className="size-3.5" /> : <PanelLeftOpen className="size-3.5" />}
-            <span>{isYamlOpen ? 'Hide YAML' : 'View YAML'}</span>
-            <span className="font-mono text-[10px] text-fd-muted-foreground">({active.file})</span>
-          </button>
+          <div className="flex items-center gap-1.5">
+            {/* Expandable YAML button */}
+            <button
+              type="button"
+              onClick={() => setIsYamlOpen(!isYamlOpen)}
+              className={`inline-flex items-center gap-1.5 rounded-lg border px-2 sm:px-2.5 py-1.5 text-xs font-medium transition-all cursor-pointer ${
+                isYamlOpen
+                  ? 'border-fd-primary bg-fd-primary/10 text-fd-foreground shadow-2xs'
+                  : 'border-fd-border/70 bg-fd-background/80 text-fd-muted-foreground hover:border-fd-foreground/40 hover:text-fd-foreground'
+              }`}
+              title={isYamlOpen ? 'Collapse YAML panel' : 'Expand YAML panel'}
+            >
+              {isYamlOpen ? <PanelLeftClose className="size-3.5" /> : <PanelLeftOpen className="size-3.5" />}
+              <span className="hidden sm:inline">{isYamlOpen ? 'Hide YAML' : 'View YAML'}</span>
+              <span className="sm:hidden">YAML</span>
+              <span className="hidden md:inline font-mono text-[10px] text-fd-muted-foreground">({active.file})</span>
+            </button>
 
-          {/* Standalone Link */}
-          <a
-            href={active.src.replace('-embed.html', '.html')}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center p-1.5 rounded-lg border border-fd-border/70 bg-fd-background/80 text-fd-muted-foreground hover:text-fd-foreground hover:border-fd-foreground/40 transition-all cursor-pointer"
-            title="Open standalone full diagram in new tab"
-          >
-            <ExternalLink className="size-3.5" />
-            <span className="sr-only">Open standalone</span>
-          </a>
+            {/* Standalone Link */}
+            <a
+              href={active.src.replace('-embed.html', '.html')}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center p-1.5 rounded-lg border border-fd-border/70 bg-fd-background/80 text-fd-muted-foreground hover:text-fd-foreground hover:border-fd-foreground/40 transition-all cursor-pointer"
+              title="Open standalone full diagram in new tab"
+            >
+              <ExternalLink className="size-3.5" />
+              <span className="sr-only">Open standalone</span>
+            </a>
+          </div>
         </div>
       </div>
 
       {/* Main Content: Hero Diagram + Expandable YAML */}
-      <div className="flex flex-col lg:flex-row min-h-[540px] sm:min-h-[620px] lg:min-h-[700px]">
+      <div className="flex flex-col lg:flex-row min-h-[360px] sm:min-h-[480px] md:min-h-[580px] lg:min-h-[680px]">
         {/* Expandable YAML Drawer / Sidebar */}
         {isYamlOpen && (
           <div className="flex flex-col w-full lg:w-[320px] shrink-0 border-b lg:border-r lg:border-b-0 bg-fd-card/40 transition-all">
-            <div className="flex items-center justify-between border-b border-fd-border/50 px-3.5 py-2 bg-fd-muted/20">
+            <div className="flex items-center justify-between border-b border-fd-border/50 px-3 py-1.5 sm:px-3.5 sm:py-2 bg-fd-muted/20">
               <div className="flex items-center gap-1.5 font-mono text-xs text-fd-muted-foreground">
                 <span className="font-semibold text-fd-foreground">{active.file}</span>
                 <span>·</span>
@@ -446,20 +459,21 @@ export function DemoExample() {
                 <span>{copied ? 'Copied' : 'Copy'}</span>
               </button>
             </div>
-            <pre className="h-[280px] lg:h-full max-h-[700px] overflow-auto p-3.5 font-mono text-[11.5px] leading-relaxed text-fd-foreground/90 select-text">
+            <pre className="h-[200px] sm:h-[260px] lg:h-full max-h-[680px] overflow-auto p-3 sm:p-3.5 font-mono text-[11px] sm:text-[11.5px] leading-relaxed text-fd-foreground/90 select-text">
               <code>{active.yaml}</code>
             </pre>
           </div>
         )}
 
         {/* Hero Interactive Diagram (Dominant / Full-Width) */}
-        <div className="relative min-w-0 flex-1 h-[540px] sm:h-[620px] lg:h-[700px] bg-fd-background">
+        <div className="relative min-w-0 flex-1 h-[360px] sm:h-[480px] md:h-[580px] lg:h-[680px] bg-fd-background">
           <MarrowEmbed
             key={active.src}
             src={active.src}
             title={`${active.label} diagram compiled by Marrow`}
             chrome="minimal"
             height="100%"
+            floatingActions={false}
             className="h-full min-h-0 rounded-none border-0"
           />
         </div>

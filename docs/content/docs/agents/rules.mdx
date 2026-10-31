@@ -94,7 +94,8 @@ When importing device metadata, CMDB attributes, or network operational state:
 ## Demonstrate visually in documentation; never rely on text or ASCII
 
 When writing technical guides, decision records, or references:
-- Render live visual components (such as `` and ``) rather than writing descriptive words like "plain line", "double rail", or "green LED".
+- Render live visual components (such as `<DeviceLink />` and `<CableBadge />`) rather than writing descriptive words like "plain line", "double rail", or "green LED".
+- For micro-topologies (2–3 devices), use `<DeviceLink />` with vendor SVGs (e.g. Cisco switches and routers) instead of embedding a full canvas or iframe.
 - Replace ASCII diagrams with real vector schemas, blueprint title blocks, or live component previews.
 - Ensure visual meaning is immediately recognizable at a glance without reading prose descriptions.
 

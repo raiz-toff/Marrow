@@ -6,6 +6,7 @@ const withMDX = createMDX();
 const config = {
   reactStrictMode: true,
   transpilePackages: ['@marrow/ui'],
+  allowedDevOrigins: ['10.10.20.110', '10.10.20.110:3000'],
   async redirects() {
     return [
       {
