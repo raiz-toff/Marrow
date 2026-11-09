@@ -1,6 +1,6 @@
 ---
 title: Package map
-description: What lives in each of the thirteen packages, and where to make a given change.
+description: What lives in each of the fifteen packages, and where to make a given change.
 ---
 
 A TypeScript monorepo under `packages/*`, built with project references
@@ -11,6 +11,7 @@ packages/
 ├─ diagnostics   error/warning format, codes (MRW-Exxx), snippets, suggestions
 ├─ model         the normalized in-memory topology every module speaks
 ├─ scene         the geometric contract (boxes, polylines) + geometry helpers
+├─ visual        the visual language: paint, theme tokens, generated edge/node CSS
 ├─ metrics       deterministic text measurement (static glyph tables)
 ├─ icons         icon packs: manifest, generator, search, suggestions
 ├─ schema        YAML parse → strict validation (line/col, did-you-mean) → model
@@ -49,7 +50,8 @@ legacy-v1/    archived Python v1, untracked, reference only
 | Edge routing or the tidy pass | `layout/router.ts`, `tidy.ts` | |
 | Port chip placement | `layout/portchips.ts` | L1 rule `port-chip-overlap` guards it |
 | What fails a build | `lint` | Moving a rule between L1 and L3 is a breaking change in practice |
-| How something looks | `render-svg` **and** `runtime/client/canvas-engine.ts` **and** `site/styles.ts` | All three, always |
+| How something looks | `visual` | Symbols, px widths and dashes, status colours and draw order, chip/LED proportions, theme tokens. Both tiers pick it up; touch `render-svg` / `runtime/client/canvas-engine.ts` only for markup or draw-call plumbing |
+| A theme token or its default | `visual/src/tokens.ts` | The token table is the only place a CSS variable name is spelled; `site/tokens.ts` only merges `marrow.config.yaml` overrides |
 | Interaction, chrome, keyboard | `runtime/client/main.ts` + `site/shell.ts` + `site/styles.ts` | Vanilla only — no React |
 | Page splitting, what earns a page | `site/planner.ts` | Thresholds are exported constants; the planner alone decides the shape |
 | How pages are compiled or packaged, a new build option | `site/builder.ts` | `createSiteBuilder` is the one entry for Single file and Site; callers only pass `BuildOptions` |
@@ -65,7 +67,9 @@ legacy-v1/    archived Python v1, untracked, reference only
 | `packages/layout/src/classify.ts` | The six archetypes and their precedence |
 | `packages/site/src/builder.ts` | `createSiteBuilder` and `BuildOptions` — the one compile entry for both output shapes |
 | `packages/site/src/planner.ts` | `SITE_DEVICE_THRESHOLD = 150`, `SITE_ZONE_THRESHOLD = 5`; honors a forced `shape` |
-| `packages/site/src/styles.ts` | The complete diagram stylesheet and design system |
+| `packages/visual/src/spec.ts` | The visual language as tables: statuses (in draw order), modes, speeds, chip proportions |
+| `packages/visual/src/rules.ts` | The one ordered paint rule list; folded by the canvas, printed as CSS for SVG |
+| `packages/site/src/styles.ts` | The chrome stylesheet; splices in `visualCss()` for the diagram itself |
 | `packages/site/src/brand.ts` | Branding types and logo sanitizing |
 | `packages/schema/src/zodSchema.ts` | The validation shape |
 | `packages/cli/src/index.ts` | Usage strings and exit codes |

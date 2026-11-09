@@ -13,5 +13,9 @@
   "types": "./dist/index.d.ts",
   "scripts": {
     "bundle": "esbuild src/client/main.ts --bundle --minify --format=iife --outfile=dist/runtime.js --log-level=warning"
+  },
+  "dependencies": {
+    "@marrow/scene": "0.0.1",
+    "@marrow/visual": "0.0.1"
   }
 }

@@ -16,6 +16,7 @@ export {
 export { buildStylesheet, SITE_CSS } from './styles.js';
 export {
   generateThemeCss,
+  parseDashOverride,
   DEFAULT_DARK_PALETTE,
   DEFAULT_LIGHT_PALETTE,
   DEFAULT_DARK_STATUS,
@@ -25,5 +26,6 @@ export {
   type PaletteTokens,
   type StatusTokens,
   type LinkStyleTokens,
+  type LinkStyleOverrides,
 } from './tokens.js';
 export { renderShell, type ShellOptions } from './shell.js';

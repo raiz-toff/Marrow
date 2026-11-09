@@ -55,16 +55,32 @@ node overlap on label-inclusive boxes, edge segments through foreign node
 interiors, endpoints not touching their node's box, port-chip overlap. L2
 auto-repairs; L3 advises.
 
-### render-svg and canvas-engine — geometry to pixels
+### visual — how geometry is painted
+
+`@marrow/visual` owns the visual language: link semantics → symbol, px widths
+and dashes, status colours and draw order, chip/LED proportions, and the theme
+tokens behind them. Its per-dimension tables compile into one ordered paint
+rule list (base → speed → mode → flow → status → path/selection). The list has
+two interpreters: `resolveScene` / `interactEdge` fold it for imperative
+drawing, and `visualCss()` prints it as class-driven CSS that only references
+theme variables. Because both read the same list, the tiers cannot disagree —
+a parity test evaluates the generated cascade against the fold for every
+combination.
+
+### render-svg and canvas-engine — paint to pixels
 
 Two renderers, one visual language. SVG is the hero tier — full fidelity,
 crisp at any zoom, SVG export. The canvas host is the scale tier, used when the
-node count would make SVG unusable. **Every visual change must land in both**,
-plus the shared stylesheet.
+node count would make SVG unusable. **Both consume `@marrow/visual`**:
+render-svg translates the resolved paint into classed markup; the canvas engine
+turns the same paint into draw calls (a cached `Path2D` per edge from the shared
+path `d`, so both tiers draw the exact same curve). A visual change lands in
+`visual`; the renderers only change for markup or draw-call plumbing.
 
 Shared conventions worth knowing before touching either:
 
-- **Corner-anchored indicators.** Status LED and badge sit centered on the chip's corner arc at 45°, offset `r·(1−1/√2)`. Both get a 2 px background halo ring.
+- **Corner-anchored indicators.** Status LED and badge sit centered on the chip's corner arc at 45°, offset `r·(1−1/√2)` (computed once in `visual`). Both get a 2 px background halo ring.
+- **Dashes are px.** Edges carry their own `--len` for the draw-in; nothing uses `pathLength`, so status and mode dashes render at a fixed rhythm on any edge length.
 - **Background-halo knockout.** Anything an edge may cross — node labels, zone titles — uses `paint-order: stroke; stroke: var(--bg)` in SVG and `strokeText` on canvas, and sits in a layer above the edges. A crossing link is knocked out cleanly instead of slicing through letters.
 - **Measure what you draw.** SVG pins labels with `textLength`; canvas condenses (never stretches) using a cached `measureText`.
 

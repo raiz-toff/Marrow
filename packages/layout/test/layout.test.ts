@@ -5,7 +5,7 @@ import { describe, expect, test } from 'vitest';
 import { validateSource } from '@marrow/schema';
 import { classify, layoutTopology, sizeNode } from '@marrow/layout';
 import { lintScene } from '@marrow/lint';
-import { linkPresentation } from '@marrow/scene';
+import { linkPresentation } from '@marrow/visual';
 import type { Topology } from '@marrow/model';
 
 const repoRoot = fileURLToPath(new URL('../../..', import.meta.url));

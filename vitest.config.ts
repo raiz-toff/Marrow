@@ -9,6 +9,7 @@ export default defineConfig({
       '@marrow/diagnostics': p('./packages/diagnostics/src/index.ts'),
       '@marrow/model': p('./packages/model/src/index.ts'),
       '@marrow/scene': p('./packages/scene/src/index.ts'),
+      '@marrow/visual': p('./packages/visual/src/index.ts'),
       '@marrow/metrics': p('./packages/metrics/src/index.ts'),
       '@marrow/icons': p('./packages/icons/src/index.ts'),
       '@marrow/schema': p('./packages/schema/src/index.ts'),

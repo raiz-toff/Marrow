@@ -1,6 +1,7 @@
 import { Camera } from './camera.js';
-import { CanvasEngine, type CScene } from './canvas-engine.js';
-import { linkSemanticsWords } from './link.js';
+import type { Scene } from '@marrow/scene';
+import { edgeClasses, linkSemanticsWords } from '@marrow/visual';
+import { CanvasEngine } from './canvas-engine.js';
 import { devicePageIds, globalSearchDocs, loadData, type DataDevice, type DataLink, type DataTitleBlock, type EmbeddedData } from './data.js';
 import { parseHash, parseModularParams, serializeHash } from '../shared/hash.js';
 import { searchDocs, type SearchDoc } from '../shared/search.js';
@@ -77,7 +78,7 @@ function boot(): void {
     for (const el of svg.querySelectorAll<SVGPathElement>('.m-edge[data-edge]')) edgeEls.set(el.dataset['edge']!, el);
   }
   if (canvas) {
-    const scene = (data as { scene?: CScene }).scene;
+    const scene = (data as { scene?: Scene }).scene;
     if (!scene) throw new Error('marrow: canvas page without embedded scene');
     engine = new CanvasEngine(canvas, stage, scene);
     sceneSize = scene.size;
@@ -2219,13 +2220,15 @@ function renderAutoLegend(
     const ey = y + 26 + row * rowH + 8;
 
     const mode = entry.mode;
-    const speedClass = entry.speed ? ` m-speed-${cssSafe(entry.speed)}` : '';
-    const modeClass = mode ? ` m-mode-${cssSafe(mode)}` : '';
-    const statusClass = ` m-status-${cssSafe(entry.status)}`;
+    const cls = edgeClasses({
+      status: entry.status,
+      ...(entry.speed !== undefined ? { speed: entry.speed } : {}),
+      ...(mode !== undefined ? { mode } : {}),
+    });
     const lineX1 = ex;
     const lineX2 = ex + 32;
 
-    const baseLine = `<line x1="${lineX1}" y1="${ey}" x2="${lineX2}" y2="${ey}" class="m-edge${speedClass}${modeClass}${statusClass}"/>`;
+    const baseLine = `<line x1="${lineX1}" y1="${ey}" x2="${lineX2}" y2="${ey}" class="${cls}"/>`;
     const railLine = mode === 'trunk' ? `<line x1="${lineX1}" y1="${ey}" x2="${lineX2}" y2="${ey}" class="m-edge-rail"/>` : '';
 
     content +=
@@ -3336,27 +3339,15 @@ function html(s: string): string {
 }
 
 /**
- * A miniature of the link exactly as the canvas draws it.
+ * A miniature of the link exactly as the diagram draws it.
  *
- * It reuses the real edge classes (`m-edge`, `m-speed-*`, `m-status-*`,
- * `m-flow`) rather than restating them, so the swatch inherits stroke width
- * from speed, colour/dash from status, and the flowing-dash animation — and
- * can never drift out of sync with the diagram.
+ * It carries the real edge classes from @marrow/visual (`edgeClasses`), so
+ * the swatch inherits width from speed, colour/dash from status and mode, and
+ * the flowing-dash animation — and can never drift out of sync with the
+ * diagram. Dashes are px, so a plain 56px line shows them as drawn.
  */
 function linkSwatch(l: DataLink): string {
-  const mode = l.mode ?? (l.encap !== undefined ? 'tunnel' : undefined);
-  const cls =
-    'm-edge' +
-    ` m-status-${cssSafe(l.status)}` +
-    (l.speed ? ` m-speed-${cssSafe(l.speed)}` : '') +
-    (mode ? ` m-mode-${cssSafe(mode)}` : '') +
-    (l.animated ? ' m-flow' : '');
-  return (
-    // no pathLength here: the swatch is a real 56px line, so the px dash
-    // patterns render as drawn (a normalised path would swallow them whole)
-    `<svg class="m-swatch" viewBox="0 0 56 10" aria-hidden="true">` +
-    `<path class="${cls}" d="M1 5H55"/></svg>`
-  );
+  return `<svg class="m-swatch" viewBox="0 0 56 10" aria-hidden="true"><path class="${edgeClasses(l)}" d="M1 5H55"/></svg>`;
 }
 
 function cssSafe(s: string): string {

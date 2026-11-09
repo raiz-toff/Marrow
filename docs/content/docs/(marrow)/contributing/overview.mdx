@@ -50,9 +50,10 @@ from the registry, a YAML path, line and column, a fix hint, and did-you-mean
 suggestions where they help. Codes are never renumbered or reused — agents and
 tests key off them.
 
-**Both renderers must match.** Every visual change lands in `render-svg` **and**
-`canvas-engine`, plus `packages/site/src/styles.ts`. A change in one renderer
-only is a bug that appears at a device-count threshold.
+**Both renderers must match.** Every visual change lands in `@marrow/visual`,
+which both `render-svg` and `canvas-engine` consume, and whose generated CSS
+`packages/site/src/styles.ts` splices in. Restating paint in one renderer only
+is a bug that appears at a device-count threshold.
 
 **Never hand-edit generated trees.** `output/`, `**/dist/`, fetched vendor icon
 SVGs.

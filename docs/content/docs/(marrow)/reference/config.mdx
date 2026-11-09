@@ -50,7 +50,7 @@ render fully offline.
 
 ## `theme`
 
-Override default palette colors, device status badges, and link stroke widths. Both SVG and Canvas renderers read these values dynamically via CSS custom properties.
+Override default palette colors, device status badges, and link stroke widths and dash patterns. Both SVG and Canvas renderers read these values dynamically via CSS custom properties.
 
 ```yaml title="marrow.config.yaml"
 theme:
@@ -64,19 +64,23 @@ theme:
     bg: "#ffffff"
     accent: "#2563eb"
   links:
-    default_stroke: 1.5
-    ten_g_stroke: 2.5
-    forty_g_stroke: 4.0
-    trunk_stroke: 3.0
-    slot_stroke: 1.0
-    stack_stroke: 5.0
+    width_default: 1.5
+    width_10g: 2.5
+    width_40g: 4.0
+    width_trunk: 3.0
+    width_slot: 1.0
+    width_stack: 5.0
+    dash_tunnel: "9 6"
+    dash_peering: "1.5 5"
+    dash_degraded: "14 7"
+    dash_planned: "2 7"
 ```
 
 | Key | Type | Notes |
 | --- | --- | --- |
-| `dark` | map | Palette tokens (`bg`, `panel`, `surface`, `line`, `subtle`, `ink`, `muted`, `faint`, `accent`, `accent_hover`, `accent_subtle`, `accent_ink`) and status tokens (`up`, `down`, `degraded`, `admin_down`, `unknown`) |
+| `dark` | map | Palette tokens (`bg`, `panel`, `surface`, `line`, `subtle`, `ink`, `muted`, `faint`, `accent`, `accent_hover`, `accent_subtle`, `accent_ink`) and status tokens (`up`, `down`, `degraded`, `planned`, `admin_down`, `unknown`) |
 | `light` | map | Same token keys for light theme |
-| `links` | map | Stroke widths in pixels: `default_stroke`, `ten_g_stroke`, `forty_g_stroke`, `trunk_stroke`, `slot_stroke`, `stack_stroke` |
+| `links` | map | All values in **px**. Widths (positive numbers): `width_default`, `width_10g`, `width_40g`, `width_trunk`, `width_slot`, `width_stack`. Dash patterns (a `"9 6"` string or a `[9, 6]` list of px runs): `dash_tunnel`, `dash_peering`, `dash_degraded`, `dash_planned`, `dash_flow`. camelCase spellings (`width10g`, `dashTunnel`) and the older `default_stroke` / `ten_g_stroke` / `forty_g_stroke` / `trunk_stroke` / `slot_stroke` / `stack_stroke` aliases are accepted. A dash whose every value is below 1 warns as a legacy normalized value |
 
 Color values are validated against CSS injection (`SAFE_COLOR_REGEX`). Values containing semicolons, braces, or angle brackets are rejected with warnings.
 

@@ -13,6 +13,7 @@
   "types": "./dist/index.d.ts",
   "dependencies": {
     "@marrow/metrics": "0.0.1",
-    "@marrow/scene": "0.0.1"
+    "@marrow/scene": "0.0.1",
+    "@marrow/visual": "0.0.1"
   }
 }

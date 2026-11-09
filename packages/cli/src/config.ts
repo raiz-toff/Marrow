@@ -31,6 +31,7 @@ import {
 import {
   hasBrand,
   isSafeLink,
+  parseDashOverride,
   sanitizeLogo,
   type Brand,
   type LayoutDefaults,
@@ -38,6 +39,7 @@ import {
   type PaletteTokens,
   type StatusTokens,
   type LinkStyleTokens,
+  type LinkStyleOverrides,
 } from '@marrow/site';
 
 export const DEFAULT_CONFIG_FILE = 'marrow.config.yaml';
@@ -80,33 +82,61 @@ const PALETTE_STATUS_MAP: Record<string, string> = {
   up: 'up',
   down: 'down',
   degraded: 'degraded',
+  planned: 'planned',
   admindown: 'adminDown',
   admin_down: 'adminDown',
   adminDown: 'adminDown',
   unknown: 'unknown',
 };
 
-const LINK_STYLE_MAP: Record<string, string> = {
-  default_stroke: 'defaultStrokeWidth',
-  default_stroke_width: 'defaultStrokeWidth',
-  defaultStrokeWidth: 'defaultStrokeWidth',
-  teng_stroke: 'tenGStrokeWidth',
-  ten_g_stroke: 'tenGStrokeWidth',
-  ten_g_stroke_width: 'tenGStrokeWidth',
-  tenGStrokeWidth: 'tenGStrokeWidth',
-  fortyg_stroke: 'fortyGStrokeWidth',
-  forty_g_stroke: 'fortyGStrokeWidth',
-  forty_g_stroke_width: 'fortyGStrokeWidth',
-  fortyGStrokeWidth: 'fortyGStrokeWidth',
-  trunk_stroke: 'trunkStrokeWidth',
-  trunk_stroke_width: 'trunkStrokeWidth',
-  trunkStrokeWidth: 'trunkStrokeWidth',
-  slot_stroke: 'slotStrokeWidth',
-  slot_stroke_width: 'slotStrokeWidth',
-  slotStrokeWidth: 'slotStrokeWidth',
-  stack_stroke: 'stackStrokeWidth',
-  stack_stroke_width: 'stackStrokeWidth',
-  stackStrokeWidth: 'stackStrokeWidth',
+/**
+ * `theme.links` keys → LinkTokens fields. Every value is px. The canonical
+ * keys are `width_*` / `dash_*` (snake or camel case); the older `*_stroke`
+ * spellings stay accepted as aliases.
+ */
+const LINK_STYLE_MAP: Record<string, keyof LinkStyleTokens> = {
+  width_default: 'widthDefault',
+  widthDefault: 'widthDefault',
+  default_stroke: 'widthDefault',
+  default_stroke_width: 'widthDefault',
+  defaultStrokeWidth: 'widthDefault',
+  width_10g: 'width10g',
+  width10g: 'width10g',
+  teng_stroke: 'width10g',
+  ten_g_stroke: 'width10g',
+  ten_g_stroke_width: 'width10g',
+  tenGStrokeWidth: 'width10g',
+  width_40g: 'width40g',
+  width40g: 'width40g',
+  fortyg_stroke: 'width40g',
+  forty_g_stroke: 'width40g',
+  forty_g_stroke_width: 'width40g',
+  fortyGStrokeWidth: 'width40g',
+  width_trunk: 'widthTrunk',
+  widthTrunk: 'widthTrunk',
+  trunk_stroke: 'widthTrunk',
+  trunk_stroke_width: 'widthTrunk',
+  trunkStrokeWidth: 'widthTrunk',
+  width_slot: 'widthSlot',
+  widthSlot: 'widthSlot',
+  slot_stroke: 'widthSlot',
+  slot_stroke_width: 'widthSlot',
+  slotStrokeWidth: 'widthSlot',
+  width_stack: 'widthStack',
+  widthStack: 'widthStack',
+  stack_stroke: 'widthStack',
+  stack_stroke_width: 'widthStack',
+  stackStrokeWidth: 'widthStack',
+  dash_tunnel: 'dashTunnel',
+  dashTunnel: 'dashTunnel',
+  dash_peering: 'dashPeering',
+  dashPeering: 'dashPeering',
+  dash_degraded: 'dashDegraded',
+  dashDegraded: 'dashDegraded',
+  dash_planned: 'dashPlanned',
+  dashPlanned: 'dashPlanned',
+  dash_flow: 'dashFlow',
+  dashFlow: 'dashFlow',
 };
 
 const RASTER_MIME: Record<string, string> = {
@@ -155,22 +185,31 @@ function parseTokensBlock(
   return Object.keys(result).length > 0 ? (result as Partial<PaletteTokens> & Partial<StatusTokens>) : undefined;
 }
 
-function parseLinksBlock(
-  raw: unknown,
-  problems: string[],
-): Partial<LinkStyleTokens> | undefined {
+function parseLinksBlock(raw: unknown, problems: string[]): LinkStyleOverrides | undefined {
   if (raw === undefined || raw === null) return undefined;
   if (typeof raw !== 'object' || Array.isArray(raw)) {
     problems.push('`theme.links:` must be a mapping');
     return undefined;
   }
-  const result: Record<string, number> = {};
+  const result: Record<string, number | number[]> = {};
   const map = raw as Record<string, unknown>;
   for (const [key, val] of Object.entries(map)) {
     if (key.startsWith('x-')) continue;
     const target = LINK_STYLE_MAP[key];
     if (!target) {
       problems.push(`unknown key "theme.links.${key}"`);
+      continue;
+    }
+    if (target.startsWith('dash')) {
+      const dash = parseDashOverride(val);
+      if (dash === undefined) {
+        problems.push(`theme.links.${key}: must be a px dash pattern like "9 6", got "${String(val)}"`);
+        continue;
+      }
+      if (dash.every((n) => n < 1)) {
+        problems.push(`theme.links.${key}: "${dash.join(' ')}" looks like a legacy normalized value; dashes are px now (e.g. "9 6")`);
+      }
+      result[target] = dash;
       continue;
     }
     const num = typeof val === 'number' ? val : typeof val === 'string' ? parseFloat(val.trim()) : NaN;
@@ -180,7 +219,7 @@ function parseLinksBlock(
       problems.push(`theme.links.${key}: must be a positive number, got "${String(val)}"`);
     }
   }
-  return Object.keys(result).length > 0 ? (result as Partial<LinkStyleTokens>) : undefined;
+  return Object.keys(result).length > 0 ? (result as LinkStyleOverrides) : undefined;
 }
 
 function parseTheme(rawTheme: unknown, problems: string[]): ThemeConfig | undefined {

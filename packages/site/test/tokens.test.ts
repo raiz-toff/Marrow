@@ -58,3 +58,25 @@ describe('Design Token Contract & CSS Generation', () => {
     expect(customCss).toContain('.m-chip-btn');
   });
 });
+
+describe('stylesheet ⇄ visual language', () => {
+  test('buildStylesheet splices visualCss() exactly once, with px dashes only', async () => {
+    const { visualCss } = await import('@marrow/visual');
+    const css = buildStylesheet();
+    const vc = visualCss();
+    expect(css.split(vc).length - 1).toBe(1);
+    expect(css).not.toContain('pathLength');
+  });
+
+  test('link overrides accept px dash strings or lists', () => {
+    const css = generateThemeCss({ links: { dashTunnel: '10 5', dashPeering: [2, 4], width10g: 4 } });
+    expect(css).toContain('--dash-tunnel: 10 5;');
+    expect(css).toContain('--dash-peering: 2 4;');
+    expect(css).toContain('--edge-width-10g: 4px;');
+  });
+
+  test('status colours are honoured flat or nested', () => {
+    expect(generateThemeCss({ dark: { up: '#00ff01' } })).toContain('--up: #00ff01;');
+    expect(generateThemeCss({ dark: { status: { down: '#ff0001' } } })).toContain('--down: #ff0001;');
+  });
+});

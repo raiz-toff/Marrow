@@ -21,6 +21,7 @@ packages/
 ├─ diagnostics   error/warning format, codes (MRW-Exxx), snippets, suggestions
 ├─ model         the normalized in-memory topology every module speaks
 ├─ scene         the geometric contract (boxes, polylines) + geometry helpers
+├─ visual        the visual language: paint, theme tokens, generated edge/node CSS
 ├─ metrics       deterministic text measurement (static glyph tables)
 ├─ icons         icon packs: manifest, generator, search, suggestions
 ├─ schema        YAML parse → strict validation (line/col, did-you-mean) → model
@@ -48,7 +49,7 @@ npm test                 # 244 tests (vitest)
 - Unknown keys are errors (except `x-`-prefixed annotations, which are ignored).
 - Meaning is **declared** in YAML, never guessed from names.
 - Determinism everywhere; builds must be reproducible byte-for-byte.
-- Every visual change lands in `render-svg` **and** the canvas engine **and**
-  `site/styles.ts` — never just one.
+- Every visual change lands in `visual`, which both tiers (`render-svg` and the
+  canvas engine) consume — never restated in one renderer.
 - No framework dependencies in the viewer: the chrome is shadcn/ui *ported* to
   vanilla CSS and TypeScript, because output must stay single-file and offline.

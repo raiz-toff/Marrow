@@ -18,6 +18,7 @@
     "@marrow/model": "0.0.1",
     "@marrow/render-svg": "0.0.1",
     "@marrow/runtime": "0.0.1",
-    "@marrow/scene": "0.0.1"
+    "@marrow/scene": "0.0.1",
+    "@marrow/visual": "0.0.1"
   }
 }

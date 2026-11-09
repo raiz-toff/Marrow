@@ -1,10 +1,12 @@
 import { truncateToWidth } from '@marrow/metrics';
-import { linkPresentation, type Scene, type SceneEdge, type SceneNode, type ScenePortChip, type SceneZone } from '@marrow/scene';
+import type { Scene, SceneEdge, SceneNode, ScenePortChip, SceneZone } from '@marrow/scene';
+import { linkPresentation, resolveScene, type EdgePaint, type NodePaint } from '@marrow/visual';
 
 /**
  * @marrow/render-svg — the "lush tier" renderer: Scene → classed, data-attributed
- * SVG markup. Pure string generation; all styling/motion lives in the site
- * stylesheet, all behavior in the runtime. The renderer's contract:
+ * SVG markup. Pure string generation: WHAT to paint (paths, proportions, draw
+ * order, classes) comes resolved from @marrow/visual; HOW classes look is its
+ * generated stylesheet; behavior lives in the runtime. The renderer's contract:
  *  - every node/edge/zone carries data-* ids the runtime binds to;
  *  - entrance choreography is expressed as per-element `--d` delay vars;
  *  - icons are referenced via <use> against a subset sprite built from ONLY
@@ -39,17 +41,9 @@ export function renderCanvasHost(scene: Scene, options: RenderOptions): Rendered
   return { svg, usedIcons: sprite.used };
 }
 
-const TIER_ORDER: Record<string, number> = {
-  edge: 0,
-  core: 1,
-  distribution: 2,
-  access: 3,
-  endpoint: 4,
-  management: 4,
-};
-
 export function renderScene(scene: Scene, options: RenderOptions): RenderedSvg {
   const sprite = buildSprite(scene, options.icons);
+  const visual = resolveScene(scene);
   const parts: string[] = [];
   // Deliberately NO viewBox: the runtime camera owns the entire world→screen
   // mapping. A viewBox would add a second, competing transform.
@@ -72,14 +66,13 @@ export function renderScene(scene: Scene, options: RenderOptions): RenderedSvg {
   parts.push('</g>');
 
   parts.push('<g class="m-edges">');
-  const tierOf = new Map(scene.nodes.map((n) => [n.id, n.tier]));
-  const statusRank: Record<string, number> = { up: 0, unknown: 1, planned: 2, degraded: 3, down: 4 };
-  const drawOrder = [...scene.edges].sort(
-    (a, b) => (statusRank[a.status] ?? 0) - (statusRank[b.status] ?? 0) || a.id.localeCompare(b.id),
-  );
-  for (const e of drawOrder) {
-    const leaf = tierOf.get(e.from.node) === 'endpoint' || tierOf.get(e.to.node) === 'endpoint';
-    parts.push(renderEdge(e, leaf));
+  // paints arrive in draw order (healthy first, alarms on top); map each back
+  // to its scene edge for the data-* attributes the runtime binds to
+  const byId = new Map<string, SceneEdge[]>();
+  for (const e of scene.edges) (byId.get(e.id) ?? byId.set(e.id, []).get(e.id)!).push(e);
+  for (const p of visual.edges) {
+    const e = byId.get(p.id)?.shift();
+    if (e !== undefined) parts.push(renderEdge(e, p));
   }
   parts.push('</g>');
 
@@ -94,13 +87,7 @@ export function renderScene(scene: Scene, options: RenderOptions): RenderedSvg {
   parts.push('</g>');
 
   parts.push('<g class="m-nodes">');
-  const rankIndex = new Map<number, number>();
-  for (const n of scene.nodes) {
-    const rank = TIER_ORDER[n.tier ?? ''] ?? 2;
-    const idx = rankIndex.get(rank) ?? 0;
-    rankIndex.set(rank, idx + 1);
-    parts.push(renderNode(n, rank, idx, sprite.symbolOf));
-  }
+  scene.nodes.forEach((n, i) => parts.push(renderNode(n, visual.nodes[i]!, sprite.symbolOf)));
   parts.push('</g>');
 
   parts.push('</g>'); // m-camera
@@ -134,13 +121,8 @@ function renderZoneTitle(z: SceneZone): string {
   );
 }
 
-function renderEdge(e: SceneEdge, leaf = false): string {
-  const d = roundedPath(e.points);
+function renderEdge(e: SceneEdge, p: EdgePaint): string {
   const pres = linkPresentation(e);
-  const speedClass = e.speed ? ` m-speed-${cssSafe(e.speed)}` : '';
-  const animated = e.animated ? ' m-flow' : '';
-  const leafClass = leaf ? ' m-leaf' : '';
-  const modeClass = pres.mode ? ` m-mode-${cssSafe(pres.mode)}` : '';
   const meta = [e.from.port, e.to.port, e.speed, e.kind, pres.mode, pres.chip].filter(Boolean).join(' · ');
   const data =
     `data-edge="${esc(e.id)}" data-from="${esc(e.from.node)}" data-to="${esc(e.to.node)}"` +
@@ -154,51 +136,36 @@ function renderEdge(e: SceneEdge, leaf = false): string {
     `${e.vlans !== undefined ? ` data-vlans="${esc(e.vlans)}"` : ''}` +
     `${e.lacp !== undefined ? ` data-lacp="${esc(e.lacp)}"` : ''}` +
     `${e.lag !== undefined ? ` data-lag="${esc(e.lag)}"` : ''}`;
-  const path =
-    `<path class="m-edge m-status-${cssSafe(e.status)}${speedClass}${modeClass}${animated}${leafClass}" pathLength="1" d="${d}" ` +
-    `${data} data-meta="${esc(meta)}"/>`;
+  // --len sizes the px draw-in dashes (geometry, like --d on nodes)
+  const geom = `style="--len:${p.len}" d="${p.d}"`;
+  const path = `<path class="${esc(p.classes)}" ${geom} ${data} data-meta="${esc(meta)}"/>`;
   // trunk = double rail: a thin bg-coloured slot carved down the casing
-  const rail =
-    pres.pattern === 'double' ? `<path class="m-edge-rail${leafClass}" pathLength="1" d="${d}" data-edge="${esc(e.id)}"/>` : '';
-  const hit = `<path class="m-edge-hit" pathLength="1" d="${d}" data-edge="${esc(e.id)}"/>`;
+  const leaf = p.classes.split(' ').includes('m-leaf') ? ' m-leaf' : '';
+  const rail = p.rail ? `<path class="m-edge-rail${leaf}" ${geom} data-edge="${esc(e.id)}"/>` : '';
+  const hit = `<path class="m-edge-hit" d="${p.d}" data-edge="${esc(e.id)}"/>`;
   let extras = '';
   // aggregate labels ("×24") ride the midpoint of the polyline
-  const hasAgg = e.label !== undefined && e.label.length <= 6;
-  if (hasAgg) {
-    const mid = polylineMidpoint(e.points);
+  if (p.label) {
+    const l = p.label;
     extras +=
-      `<g class="m-edge-label" data-edge="${esc(e.id)}"><rect x="${mid.x - e.label!.length * 4 - 6}" y="${mid.y - 9}" width="${e.label!.length * 8 + 12}" height="18" rx="9"/>` +
-      `<text x="${mid.x}" y="${mid.y + 4}" text-anchor="middle">${esc(e.label!)}</text></g>`;
+      `<g class="m-edge-label" data-edge="${esc(e.id)}"><rect x="${l.x}" y="${l.y}" width="${l.w}" height="${l.h}" rx="${l.r}"/>` +
+      `<text x="${l.textX}" y="${l.textY}" text-anchor="middle">${esc(l.text)}</text></g>`;
   }
   // semantic chip (VLANs / encap / protocol / lag), with an optional glyph
-  if (pres.chip !== undefined) {
-    const mid = polylineMidpoint(e.points);
-    extras += edgeChip(mid.x, mid.y + (hasAgg ? 16 : 0), pres.chip, pres.glyph, e.id);
+  if (p.chip) {
+    const c = p.chip;
+    const drawGlyph = c.glyph === 'lock' || c.glyph === 'bundle';
+    extras +=
+      `<g class="m-edge-chip"${c.glyph ? ` data-glyph="${esc(c.glyph)}"` : ''} data-edge="${esc(e.id)}">` +
+      `<rect x="${c.x}" y="${c.y}" width="${c.w}" height="${c.h}" rx="${c.r}"/>` +
+      (drawGlyph ? chipGlyph(c.glyph!, c.glyphX, c.y + c.h / 2) : '') +
+      `<text x="${c.textX}" y="${c.textY}" text-anchor="middle">${esc(c.text)}</text>` +
+      `</g>`;
   }
   return path + rail + hit + extras;
 }
 
 const n2 = (v: number): string => String(Math.round(v * 100) / 100);
-
-/** A midpoint pill carrying a link's semantics, with an optional left glyph. */
-function edgeChip(cx: number, cy: number, text: string, glyph?: string, edgeId?: string): string {
-  const hasGlyph = glyph === 'lock' || glyph === 'bundle';
-  const glyphW = hasGlyph ? 12 : 0;
-  const padX = 7;
-  const textW = Math.max(text.length * 6.3, 5);
-  const w = padX * 2 + glyphW + textW;
-  const h = 16;
-  const x = cx - w / 2;
-  const y = cy - h / 2;
-  const tx = x + padX + glyphW + textW / 2;
-  return (
-    `<g class="m-edge-chip"${glyph ? ` data-glyph="${esc(glyph)}"` : ''}${edgeId !== undefined ? ` data-edge="${esc(edgeId)}"` : ''}>` +
-    `<rect x="${n2(x)}" y="${n2(y)}" width="${n2(w)}" height="${h}" rx="8"/>` +
-    (hasGlyph ? chipGlyph(glyph!, x + padX, cy) : '') +
-    `<text x="${n2(tx)}" y="${n2(cy + 3.6)}" text-anchor="middle">${esc(text)}</text>` +
-    `</g>`
-  );
-}
 
 /** Tiny inline glyphs drawn at (x, cy) spanning ~9px wide, vertically centred. */
 function chipGlyph(kind: string, x: number, cy: number): string {
@@ -233,72 +200,37 @@ function portChip(c: ScenePortChip): string {
   );
 }
 
-function polylineMidpoint(points: readonly { x: number; y: number }[]): { x: number; y: number } {
-  let total = 0;
-  for (let i = 0; i < points.length - 1; i++) {
-    total += Math.abs(points[i + 1]!.x - points[i]!.x) + Math.abs(points[i + 1]!.y - points[i]!.y);
-  }
-  let remaining = total / 2;
-  for (let i = 0; i < points.length - 1; i++) {
-    const a = points[i]!;
-    const b = points[i + 1]!;
-    const seg = Math.abs(b.x - a.x) + Math.abs(b.y - a.y);
-    if (seg >= remaining && seg > 0) {
-      const t = remaining / seg;
-      return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
-    }
-    remaining -= seg;
-  }
-  return points[0] ?? { x: 0, y: 0 };
-}
-
-function renderNode(
-  n: SceneNode,
-  rank: number,
-  indexInRank: number,
-  symbolOf: (iconId: string) => string | undefined,
-): string {
-  const delay = Math.min(0.15 + rank * 0.13 + indexInRank * 0.03, 1.4);
-  const hero = n.hero ? ' m-hero' : '';
-  const ghost = n.ghost ? ' m-ghost' : '';
-  const accent = n.accent ? ` style="--d:${delay}s;--m-accent:${esc(n.accent)}"` : ` style="--d:${delay}s"`;
-  const rx = Math.round(n.chip.w * (13 / 64));
-  const iconInset = Math.round(n.chip.w * (8 / 64));
-  const iconW = n.chip.w - 2 * iconInset;
-  const iconH = n.chip.h - 2 * iconInset;
-  const cornerArc = Math.round(rx * (1 - 1 / Math.SQRT2) * 10) / 10;
-  const ledR = Math.max(2.5, Math.round(n.chip.w * (4.2 / 64) * 10) / 10);
-
+function renderNode(n: SceneNode, p: NodePaint, symbolOf: (iconId: string) => string | undefined): string {
+  const accent = n.accent ? ` style="--d:${p.delay}s;--m-accent:${esc(n.accent)}"` : ` style="--d:${p.delay}s"`;
   const symbol = symbolOf(n.icon);
   const iconMarkup = symbol
-    ? `<use href="#${symbol}" x="${n.chip.x + iconInset}" y="${n.chip.y + iconInset}" width="${iconW}" height="${iconH}"/>`
+    ? `<use href="#${symbol}" x="${p.icon.x}" y="${p.icon.y}" width="${p.icon.w}" height="${p.icon.h}"/>`
     : `<text x="${n.chip.x + n.chip.w / 2}" y="${n.chip.y + n.chip.h / 2 + 5}" text-anchor="middle" class="m-icon-fallback">${esc(
         n.label.slice(0, 2).toUpperCase(),
       )}</text>`;
-  const badgeW = n.badge ? Math.max(17, n.badge.length * 7 + 12) : 0;
-  const badge = n.badge
-    ? `<g class="m-badge"><rect x="${n.chip.x + n.chip.w - cornerArc + 8.5 - badgeW}" y="${n.chip.y + n.chip.h - 12.3}" width="${badgeW}" height="17" rx="8.5"/><text x="${n.chip.x + n.chip.w - cornerArc + 8.5 - badgeW / 2}" y="${n.chip.y + n.chip.h + 0.2}" text-anchor="middle">${esc(n.badge)}</text></g>`
+  const b = p.badge;
+  const badge = b
+    ? `<g class="m-badge"><rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" rx="${b.r}"/><text x="${b.textX}" y="${b.textY}" text-anchor="middle">${esc(b.text)}</text></g>`
     : '';
-  const labelStyle = n.labelSize && n.labelSize !== 12 ? ` style="font-size:${n.labelSize}px"` : '';
+  const l = p.label;
+  const labelStyle = l.size !== 12 ? ` style="font-size:${l.size}px"` : '';
   return (
-    `<g class="m-node m-status-${cssSafe(n.status)}${hero}${ghost}" data-node="${esc(n.id)}"` +
+    `<g class="${esc(p.classes)}" data-node="${esc(n.id)}"` +
     `${n.tier !== undefined ? ` data-tier="${esc(n.tier)}"` : ''}` +
     `${n.zone !== undefined ? ` data-zone="${esc(n.zone)}"` : ''}` +
     `${n.href !== undefined ? ` data-href="${esc(n.href)}"` : ''}${accent} tabindex="0" role="button" aria-label="${esc(n.title ?? n.label)}">` +
     `${n.title !== undefined ? `<title>${esc(n.title)}</title>` : ''}` +
     `<g class="m-node-inner m-enter-node">` +
-    `<rect class="m-chip" x="${n.chip.x}" y="${n.chip.y}" width="${n.chip.w}" height="${n.chip.h}" rx="${rx}"/>` +
+    `<rect class="m-chip" x="${p.chip.x}" y="${p.chip.y}" width="${p.chip.w}" height="${p.chip.h}" rx="${p.chip.r}"/>` +
     iconMarkup +
-    `<circle class="m-led" cx="${n.chip.x + n.chip.w - cornerArc}" cy="${n.chip.y + cornerArc}" r="${ledR}"/>` +
+    `<circle class="m-led" cx="${p.led.cx}" cy="${p.led.cy}" r="${p.led.r}"/>` +
     badge +
     // textLength pins the client's font to the width layout reserved — the
     // label cannot overflow its box no matter which system font renders it.
-    // Not for emoji labels: the metrics table counts each codepoint of a
-    // ZWJ sequence, so pinning would visibly stretch the single drawn glyph.
-    `<text class="m-label"${labelStyle} x="${n.labelBox.x + n.labelBox.w / 2}" y="${n.labelBox.y + n.labelBox.h - 4}" text-anchor="middle"${
-      /[\u200d\ufe0f]|\p{Extended_Pictographic}/u.test(n.label)
-        ? ''
-        : ` textLength="${n.labelBox.w}" lengthAdjust="spacingAndGlyphs"`
+    // Not for emoji labels (`pin` false): the metrics table counts each
+    // codepoint of a ZWJ sequence, so pinning would stretch the single glyph.
+    `<text class="m-label"${labelStyle} x="${l.x}" y="${l.y}" text-anchor="middle"${
+      l.pin ? ` textLength="${l.w}" lengthAdjust="spacingAndGlyphs"` : ''
     }>${esc(n.label)}</text>` +
     `</g></g>`
   );
@@ -330,39 +262,6 @@ function buildSprite(scene: Scene, icons: IconSource): Sprite {
     used: [...map.keys()],
     symbolOf: (iconId) => map.get(iconId),
   };
-}
-
-/** Corner radius for edge bends — the chrome's --radius, so wires follow the
- *  same rounding language as every panel and chip. */
-const EDGE_BEND_RADIUS = 8;
-
-/** Polyline → path with filleted corners (quadratic curves at each bend). */
-export function roundedPath(points: ReadonlyArray<{ x: number; y: number }>, radius = EDGE_BEND_RADIUS): string {
-  if (points.length < 3) return 'M' + points.map((p) => `${p.x} ${p.y}`).join(' L');
-  const fmt = (v: number): string => String(Math.round(v * 100) / 100);
-  let d = `M${fmt(points[0]!.x)} ${fmt(points[0]!.y)}`;
-  for (let i = 1; i < points.length - 1; i++) {
-    const prev = points[i - 1]!;
-    const p = points[i]!;
-    const next = points[i + 1]!;
-    const inLen = Math.hypot(p.x - prev.x, p.y - prev.y);
-    const outLen = Math.hypot(next.x - p.x, next.y - p.y);
-    // collinear or degenerate corners stay straight
-    const cross = (p.x - prev.x) * (next.y - p.y) - (p.y - prev.y) * (next.x - p.x);
-    const r = Math.min(radius, inLen / 2, outLen / 2);
-    if (inLen === 0 || outLen === 0 || Math.abs(cross) < 0.01 || r < 0.5) {
-      d += ` L${fmt(p.x)} ${fmt(p.y)}`;
-      continue;
-    }
-    const inX = p.x - ((p.x - prev.x) / inLen) * r;
-    const inY = p.y - ((p.y - prev.y) / inLen) * r;
-    const outX = p.x + ((next.x - p.x) / outLen) * r;
-    const outY = p.y + ((next.y - p.y) / outLen) * r;
-    d += ` L${fmt(inX)} ${fmt(inY)} Q${fmt(p.x)} ${fmt(p.y)} ${fmt(outX)} ${fmt(outY)}`;
-  }
-  const last = points[points.length - 1]!;
-  d += ` L${fmt(last.x)} ${fmt(last.y)}`;
-  return d;
 }
 
 function escapeRegex(s: string): string {

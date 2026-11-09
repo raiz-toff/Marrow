@@ -11,6 +11,7 @@
     { "path": "../layout" },
     { "path": "../lint" },
     { "path": "../render-svg" },
+    { "path": "../visual" },
     { "path": "../icons" },
     { "path": "../runtime" }
   ]

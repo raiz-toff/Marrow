@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { encapLabel, linkPresentation, protocolLabel } from '@marrow/scene';
+import { encapLabel, linkPresentation, protocolLabel } from '@marrow/visual';
 
 describe('linkPresentation — mode → stroke pattern', () => {
   test('each mode maps to its pattern', () => {

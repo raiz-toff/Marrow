@@ -68,7 +68,8 @@ describe('renderScene', () => {
     expect(svg).toContain('data-node="a"');
     expect(svg).toContain('data-edge="a--b#1"');
     expect(svg).toContain('data-from-port="p1"');
-    expect(svg).toContain('pathLength="1"');
+    expect(svg).toMatch(/style="--len:[\d.]+"/);
+    expect(svg).not.toContain('pathLength');
   });
 
   test('status/speed/animated become classes; hero gets its class', () => {

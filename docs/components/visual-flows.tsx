@@ -277,6 +277,7 @@ export function CompilePipelineVisual() {
         '< 300 devices: SVG Hero Tier with inlined icon sprites and crisp CSS filters',
         '> 300 devices: Canvas Scale Tier with Level-of-Detail (LOD) radar culling',
         'Zero external asset requests: inlines all vector symbols and stylesheets',
+        'Both tiers paint from @marrow/visual, so they cannot drift',
       ],
       tag: 'SVG / Canvas',
     },
@@ -903,6 +904,7 @@ export function PackageLayersVisual() {
         { id: 'metrics', name: 'metrics', role: 'Deterministic text measurement tables' },
         { id: 'icons', name: 'icons', role: 'Vendor icon pack catalog & vector indexing' },
         { id: 'scene', name: 'scene', role: 'Geometric scene contract (boxes & polylines)' },
+        { id: 'visual', name: 'visual', role: 'Visual language: paint, tokens & generated CSS for both tiers' },
       ],
     },
   ];
@@ -915,7 +917,7 @@ export function PackageLayersVisual() {
         </div>
         <div>
           <h4 className="text-sm font-semibold text-fd-foreground">Monorepo Package Architecture</h4>
-          <p className="text-xs text-fd-muted-foreground">The 14 monorepo packages organized by architectural layer and dependency direction</p>
+          <p className="text-xs text-fd-muted-foreground">The 15 monorepo packages organized by architectural layer and dependency direction</p>
         </div>
       </div>
 

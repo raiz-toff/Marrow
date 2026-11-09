@@ -4,6 +4,7 @@
     { "path": "packages/diagnostics" },
     { "path": "packages/model" },
     { "path": "packages/scene" },
+    { "path": "packages/visual" },
     { "path": "packages/metrics" },
     { "path": "packages/icons" },
     { "path": "packages/schema" },

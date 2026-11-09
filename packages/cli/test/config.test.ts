@@ -2,6 +2,7 @@ import { describe, expect, test, beforeAll, afterAll } from 'vitest';
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { buildStylesheet } from '@marrow/site';
 import { loadConfig, parseConfig } from '../src/config.js';
 
 let dir: string;
@@ -115,8 +116,8 @@ theme:
     expect(theme?.dark?.up).toBe('#4ade80');
     expect(theme?.light?.bg).toBe('#ffffff');
     expect(theme?.light?.accent).toBe('#0284c7');
-    expect(theme?.links?.defaultStrokeWidth).toBe(2);
-    expect(theme?.links?.tenGStrokeWidth).toBe(3.5);
+    expect(theme?.links?.widthDefault).toBe(2);
+    expect(theme?.links?.width10g).toBe(3.5);
   });
 
   test('validates theme colors against CSS injection and stroke widths', () => {
@@ -132,9 +133,41 @@ theme:
     const { theme, problems } = parseConfig(yaml, dir);
     expect(theme?.dark?.panel).toBe('#222');
     expect(theme?.dark?.bg).toBeUndefined();
-    expect(theme?.links?.defaultStrokeWidth).toBeUndefined();
+    expect(theme?.links?.widthDefault).toBeUndefined();
     expect(problems.some((p) => p.includes('theme.dark.bg: invalid color'))).toBe(true);
     expect(problems.some((p) => p.includes('theme.links.default_stroke: must be a positive number'))).toBe(true);
+  });
+
+  test('theme.links overrides reach the built stylesheet (px widths and dashes)', () => {
+    const yaml = `
+theme:
+  dark:
+    planned: "#123456"
+  links:
+    width_10g: 4
+    dash_tunnel: "10 5"
+    dash_peering: [2, 4]
+`;
+    const { theme, problems } = parseConfig(yaml, dir);
+    expect(problems).toEqual([]);
+    const css = buildStylesheet(theme);
+    expect(css).toContain('--edge-width-10g: 4px;');
+    expect(css).toContain('--dash-tunnel: 10 5;');
+    expect(css).toContain('--dash-peering: 2 4;');
+    expect(css).toContain('--planned: #123456;');
+  });
+
+  test('legacy normalized dash values warn; malformed dashes are rejected', () => {
+    const yaml = `
+theme:
+  links:
+    dash_tunnel: "0.02 0.014"
+    dash_degraded: "solid"
+`;
+    const { theme, problems } = parseConfig(yaml, dir);
+    expect(problems.some((p) => p.includes('theme.links.dash_tunnel') && p.includes('dashes are px now'))).toBe(true);
+    expect(problems.some((p) => p.includes('theme.links.dash_degraded: must be a px dash pattern'))).toBe(true);
+    expect(theme?.links?.dashDegraded).toBeUndefined();
   });
 
   test('parses layout density and scale from config', () => {

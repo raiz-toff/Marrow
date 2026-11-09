@@ -142,7 +142,7 @@ fully offline; nothing is fetched unless a reader clicks. Both are http(s)-only.
 
 ## Theme design tokens and link styles
 
-Customize diagram color palettes and physical edge stroke widths by defining a `theme:` block in `marrow.config.yaml`. Values map directly to CSS custom properties and Canvas 2D engine render styles:
+Customize diagram color palettes and edge stroke widths and dash patterns by defining a `theme:` block in `marrow.config.yaml`. Values map directly to CSS custom properties and Canvas 2D engine render styles:
 
 ```yaml title="marrow.config.yaml"
 theme:
@@ -156,13 +156,19 @@ theme:
     bg: "#ffffff"
     panel: "#f8fafc"
     accent: "#0284c7"
-  links:
-    default_stroke: 1.5        # base link thickness in pixels
-    ten_g_stroke: 2.5          # 10G link thickness
-    forty_g_stroke: 4.0        # 40G / 100G link thickness
-    trunk_stroke: 3.0          # VLAN trunk rail thickness
-    stack_stroke: 5.0          # Switch stack backplane bar thickness
+  links:                       # every value is in px
+    width_default: 1.5         # base link thickness
+    width_10g: 2.5             # 10G / 25G link thickness
+    width_40g: 4.0             # 40G / 100G / 400G link thickness
+    width_trunk: 3.0           # VLAN trunk rail casing
+    width_stack: 5.0           # switch stack backplane bar
+    dash_tunnel: "9 6"         # tunnel dash: 9px on, 6px off
+    dash_degraded: "14 7"      # degraded-status dash
 ```
+
+The older `default_stroke` / `ten_g_stroke` / `forty_g_stroke` / `trunk_stroke` /
+`stack_stroke` spellings still work. Dash patterns are px runs, so a pattern
+reads the same on a short link and a long one.
 
 Color values accept hex, `rgb()`, `rgba()`, `hsl()`, `hsla()`, `oklch()`, and `color-mix()`. The configuration parser validates all color entries against CSS injection attacks and enforces positive finite numbers for link stroke widths.
 
