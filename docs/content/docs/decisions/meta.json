@@ -18,6 +18,7 @@
     "0017-configurable-blueprint-export-chrome",
     "0018-diagram-level-documentation-and-watermarked-attribution",
     "0019-shadcn-registry-and-modular-ui-components",
+    "0020-react-interface-has-one-source",
     "---v1 Foundation---",
     "0001-declare-structure-not-layout",
     "0002-agent-driven-no-gui",
