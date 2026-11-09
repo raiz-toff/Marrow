@@ -2,7 +2,6 @@
 
 import {
   ExternalLink,
-  Layers,
   Loader2,
   Maximize2,
   Minimize2,
@@ -374,10 +373,3 @@ export function MarrowEmbed({
     </div>
   );
 }
-
-// Aliases for seamless drop-in compatibility
-export const TopologyCanvas = MarrowEmbed;
-export const TopologyViewport = MarrowEmbed;
-export const TopologyStage = MarrowEmbed;
-export const MarrowDiagram = MarrowEmbed;
-export type TopologyStageProps = MarrowEmbedProps;

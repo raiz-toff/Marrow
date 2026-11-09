@@ -18,9 +18,10 @@ export default defineConfig({
       '@marrow/runtime': p('./packages/runtime/src/index.ts'),
       '@marrow/site': p('./packages/site/src/index.ts'),
       '@marrow/server': p('./packages/server/src/index.ts'),
+      '@marrow/ui': p('./packages/ui/src/index.ts'),
     },
   },
   test: {
-    include: ['packages/*/test/**/*.test.ts'],
+    include: ['packages/*/test/**/*.test.{ts,tsx}'],
   },
 });

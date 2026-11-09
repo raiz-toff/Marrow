@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -148,6 +148,20 @@ describe('marrow add registry scaffolding', () => {
     const res = run(['add', 'non-existent-component-xyz', '--out', tmp]);
     expect(res.status).toBe(1);
     expect(res.stderr).toContain('unknown component');
+  });
+
+  test('marrow add copies an item with every file it needs from the root registry.json', () => {
+    const out = join(tmp, 'device-link');
+    const res = run(['add', 'device-link', '--out', out]);
+    expect(res.status).toBe(0);
+    expect(readdirSync(out).sort()).toEqual(['cable-badge.tsx', 'device-link.tsx', 'topology-types.ts']);
+    expect(readFileSync(join(out, 'device-link.tsx'), 'utf8')).toContain("from './topology-types.js'");
+  });
+
+  test('marrow add outside a registry checkout exits with code 2', () => {
+    const res = run(['add', 'cable-badge', '--out', join(tmp, 'x')], tmp);
+    expect(res.status).toBe(2);
+    expect(res.stderr).toContain('registry catalog not found');
   });
 });
 

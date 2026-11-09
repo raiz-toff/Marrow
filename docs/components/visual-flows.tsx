@@ -738,7 +738,7 @@ export function SpaciousGridArchitectureVisual() {
                 </p>
               </div>
               <div className="flex items-center justify-between pt-2 border-t border-fd-border/40 text-[10px] font-mono">
-                <span className="text-blue-400">TopologyCanvas / Stage</span>
+                <span className="text-blue-400">MarrowEmbed</span>
                 <span className="text-fd-muted-foreground">Floating HUD Controls</span>
               </div>
             </div>

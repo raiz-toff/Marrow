@@ -48,3 +48,4 @@ We established a shadcn-compatible component registry and `@marrow/ui` package f
 
 ### Negative & Neutral Trade-offs
 - **Registry Schema Maintenance**: Updates to component implementations require running `scripts/build-registry.mjs` to update public JSON endpoints.
+- **Single Source**: `packages/ui/src` is the only hand-written source of the components; the registry items (`registry.json`, `docs/public/r/**`) are generated from it by `scripts/build-registry.mjs`, which ships `lib/utils.ts` as `topology-types.ts` and fails the build if a copied file would import anything outside the item (such as `@marrow/*`).

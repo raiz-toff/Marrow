@@ -271,9 +271,14 @@ function cmdAdd(rest: string[]): number {
   }
 
   const outDir = values.out ?? join('src', 'components', 'marrow');
-  const registryJsonPath = join('docs', 'public', 'r', 'registry.json');
-  if (!existsSync(registryJsonPath)) {
-    console.error('error: registry catalog not found at docs/public/r/registry.json — run npm run registry:build first');
+  // The root registry.json is the canonical catalog; docs/public/r/ is the docs
+  // site's published copy of the same file.
+  const registryCandidates = ['registry.json', join('docs', 'public', 'r', 'registry.json')];
+  const registryJsonPath = registryCandidates.find((p) => existsSync(p));
+  if (registryJsonPath === undefined) {
+    console.error(
+      `error: registry catalog not found (looked for ${registryCandidates.join(', ')}) — run npm run registry:build from the Marrow repository root`,
+    );
     return 2;
   }
 

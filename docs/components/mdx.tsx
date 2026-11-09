@@ -1,13 +1,6 @@
 import defaultMdxComponents from 'fumadocs-ui/mdx';
 import type { MDXComponents } from 'mdx/types';
-import {
-  MarrowEmbed,
-  MarrowDiagram,
-  TopologyCanvas,
-  TopologyViewport,
-  CableBadge,
-  DeviceLink,
-} from '@marrow/ui';
+import { MarrowEmbed, CableBadge, DeviceLink } from '@marrow/ui';
 import { ComponentPreview } from './component-preview';
 import { DemoStudio } from './demo-studio';
 import {
@@ -37,9 +30,6 @@ export function getMDXComponents(components?: MDXComponents) {
     PackageLayersVisual,
     TierHierarchyVisual,
     MarrowEmbed,
-    MarrowDiagram,
-    TopologyCanvas: MarrowEmbed,
-    TopologyViewport: MarrowEmbed,
     CableBadge,
     DeviceLink,
     ...components,

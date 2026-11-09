@@ -45,7 +45,6 @@ echo "Inspecting changes between $BASE_SHA and HEAD..."
 # Check if there are changes in docs-relevant paths
 if git diff --quiet "$BASE_SHA" HEAD -- \
   docs/ \
-  registry/ \
   registry.json \
   packages/ui/ \
   scripts/build-registry.mjs \
