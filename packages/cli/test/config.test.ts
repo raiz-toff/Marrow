@@ -2,7 +2,7 @@ import { describe, expect, test, beforeAll, afterAll } from 'vitest';
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { buildStylesheet } from '@marrow/site';
+import { buildStylesheet, DEFAULT_DARK_PALETTE, DEFAULT_DARK_STATUS } from '@marrow/site';
 import { loadConfig, parseConfig } from '../src/config.js';
 
 let dir: string;
@@ -99,7 +99,7 @@ theme:
   dark:
     bg: "#101216"
     panel: "#1b1e24"
-    accent_hover: "#38bdf8"
+    accent_ink: "#38bdf8"
     up: "#4ade80"
   light:
     bg: "#ffffff"
@@ -112,7 +112,7 @@ theme:
     expect(problems).toEqual([]);
     expect(theme?.dark?.bg).toBe('#101216');
     expect(theme?.dark?.panel).toBe('#1b1e24');
-    expect(theme?.dark?.accentHover).toBe('#38bdf8');
+    expect(theme?.dark?.accentInk).toBe('#38bdf8');
     expect(theme?.dark?.up).toBe('#4ade80');
     expect(theme?.light?.bg).toBe('#ffffff');
     expect(theme?.light?.accent).toBe('#0284c7');
@@ -155,6 +155,111 @@ theme:
     expect(css).toContain('--dash-tunnel: 10 5;');
     expect(css).toContain('--dash-peering: 2 4;');
     expect(css).toContain('--planned: #123456;');
+  });
+
+  test('palette keys reach :root and [data-theme="light"] in both spellings, aliases included', () => {
+    const yaml = `
+theme:
+  dark:
+    bg_raise: "#101010"
+    inkDim: "#202020"
+    panel: "#303030"
+    ring: "#404040"
+    sidebar_fg: "#505050"
+    muted: "#606060"
+  light:
+    bg_raise: "#a0a0a0"
+    inkDim: "#b0b0b0"
+    sidebar_fg: "#c0c0c0"
+    surface: "#d0d0d0"
+`;
+    const { theme, problems } = parseConfig(yaml, dir);
+    expect(problems).toEqual([]);
+    const css = buildStylesheet(theme);
+    const dark = /^:root \{([^}]*)\}/.exec(css)?.[1] ?? '';
+    const light = /:root\[data-theme="light"\] \{([^}]*)\}/.exec(css)?.[1] ?? '';
+    expect(dark).toContain('--bg-raise: #101010;');
+    expect(dark).toContain('--panel: #303030;');
+    expect(dark).toContain('--ring: #404040;');
+    expect(dark).toContain('--sidebar-fg: #505050;');
+    // `muted` is an alias of ink_dim; the later key in the block wins
+    expect(dark).toContain('--ink-dim: #606060;');
+    expect(light).toContain('--bg-raise: #a0a0a0;');
+    expect(light).toContain('--ink-dim: #b0b0b0;');
+    expect(light).toContain('--sidebar-fg: #c0c0c0;');
+    expect(light).toContain('--panel: #d0d0d0;');
+  });
+
+  test('every palette and status token is accepted in snake_case and camelCase', () => {
+    const snake = (k: string) => k.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
+    const keys = [...Object.keys(DEFAULT_DARK_PALETTE), ...Object.keys(DEFAULT_DARK_STATUS)];
+    const value = (k: string) => (k.startsWith('shadow') ? '0 1px 2px 0 rgb(1 2 3 / .5)' : '#abcdef');
+    for (const spell of [snake, (k: string) => k]) {
+      const lines = keys.map((k) => `    ${spell(k)}: "${value(k)}"`).join('\n');
+      const { theme, problems } = parseConfig(`theme:\n  dark:\n${lines}\n`, dir);
+      expect(problems).toEqual([]);
+      for (const k of keys) expect((theme?.dark as Record<string, string>)[k], k).toBe(value(k));
+    }
+  });
+
+  test('keys with no theme token warn, naming the supported keys — never a silent drop', () => {
+    const yaml = `
+theme:
+  dark:
+    accent_hover: "#111111"
+    accent_subtle: "#222222"
+    subtle: "#333333"
+    constructor: "#444444"
+    accent: "#555555"
+  light:
+    admin_down: "#666666"
+`;
+    const { theme, problems } = parseConfig(yaml, dir);
+    for (const key of ['theme.dark.accent_hover', 'theme.dark.accent_subtle', 'theme.dark.subtle', 'theme.dark.constructor', 'theme.light.admin_down']) {
+      const p = problems.find((m) => m.includes(`"${key}"`));
+      expect(p, key).toBeDefined();
+      expect(p).toContain('supported: bg, bg_raise, panel');
+      expect(p).toContain('surface → panel');
+    }
+    expect(theme?.dark).toEqual({ accent: '#555555' });
+    expect(theme?.light).toBeUndefined();
+    const links = parseConfig('theme:\n  links:\n    constructor: 2\n', dir);
+    expect(links.problems).toEqual(['unknown key "theme.links.constructor"']);
+  });
+
+  test('status colours are accepted flat or nested under status:', () => {
+    const yaml = `
+theme:
+  dark:
+    up: "#00aa00"
+    status:
+      down: "#aa0000"
+      bg: "#000000"
+  light:
+    status:
+      degraded: "#aaaa00"
+`;
+    const { theme, problems } = parseConfig(yaml, dir);
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toContain('"theme.dark.status.bg"');
+    expect(problems[0]).toContain('supported: up, down, degraded, planned, unknown');
+    const css = buildStylesheet(theme);
+    expect(css).toContain('--up: #00aa00;');
+    expect(css).toContain('--down: #aa0000;');
+    expect(/:root\[data-theme="light"\] \{([^}]*)\}/.exec(css)?.[1]).toContain('--degraded: #aaaa00;');
+  });
+
+  test('shadow tokens take a box-shadow list but never a resource load', () => {
+    const yaml = `
+theme:
+  dark:
+    shadow: "0 4px 8px rgb(0 0 0 / .5)"
+    shadow_sm: "0 0 0 1px url(https://example.com/x)"
+`;
+    const { theme, problems } = parseConfig(yaml, dir);
+    expect(theme?.dark?.shadow).toBe('0 4px 8px rgb(0 0 0 / .5)');
+    expect(theme?.dark?.shadowSm).toBeUndefined();
+    expect(problems.some((p) => p.includes('theme.dark.shadow_sm: invalid shadow'))).toBe(true);
   });
 
   test('legacy normalized dash values warn; malformed dashes are rejected', () => {

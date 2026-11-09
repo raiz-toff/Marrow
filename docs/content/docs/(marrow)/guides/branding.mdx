@@ -148,7 +148,7 @@ Customize diagram color palettes and edge stroke widths and dash patterns by def
 theme:
   dark:
     bg: "#0b0f19"              # canvas background
-    panel: "#111827"           # inspector drawers and sidebar
+    panel: "#111827"           # main card, drawers and popovers
     accent: "#38bdf8"          # selected nodes and primary highlight
     up: "#10b981"              # interface/device UP status LED
     down: "#f43f5e"            # interface/device DOWN status LED
@@ -166,7 +166,10 @@ theme:
     dash_degraded: "14 7"      # degraded-status dash
 ```
 
-The older `default_stroke` / `ten_g_stroke` / `forty_g_stroke` / `trunk_stroke` /
+Every palette and status key, the CSS variable it sets, and what it paints is
+listed in the [config reference](/docs/reference/config#palette-and-status-keys);
+a key that is not listed warns rather than being silently ignored. The older
+`default_stroke` / `ten_g_stroke` / `forty_g_stroke` / `trunk_stroke` /
 `stack_stroke` spellings still work. Dash patterns are px runs, so a pattern
 reads the same on a short link and a long one.
 

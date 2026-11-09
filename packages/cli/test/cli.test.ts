@@ -57,6 +57,24 @@ describe('marrow build (end to end)', () => {
     expect(existsSync(file)).toBe(true);
   });
 
+  test('marrow.config.yaml theme keys reach the built page; unsupported keys warn, exit 0', () => {
+    const config = join(out, 'theme.config.yaml');
+    writeFileSync(
+      config,
+      'theme:\n  dark:\n    bg_raise: "#0a0b0c"\n    sidebarFg: "#0d0e0f"\n    accent_hover: "#111111"\n  light:\n    ring: "#123123"\n',
+    );
+    const file = join(out, 'themed.html');
+    const res = run(['build', validFixture, '--single', '--config', config, '-o', file], out);
+    expect(res.status, res.stderr).toBe(0);
+    expect(res.stderr).toContain('warning: unknown key "theme.dark.accent_hover"');
+    expect(res.stderr).toContain('supported: bg, bg_raise');
+    const html = readFileSync(file, 'utf8');
+    expect(html).toContain('--bg-raise: #0a0b0c;');
+    expect(html).toContain('--sidebar-fg: #0d0e0f;');
+    expect(html).toContain('--ring: #123123;');
+    expect(html).not.toContain('#111111');
+  });
+
   test('a large topology builds a Site; --single forces one file', () => {
     const xl = join(repoRoot, 'fixtures', 'corpus', 'xl-campus-01.yaml');
     const site = join(out, 'campus-site');

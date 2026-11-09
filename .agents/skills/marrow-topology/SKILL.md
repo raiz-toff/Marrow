@@ -217,9 +217,14 @@ theme:
   dark:
     accent: "#38bdf8"
   links:
-    default_stroke: 1.5
-    ten_g_stroke: 2.5
+    width_default: 1.5   # px
+    width_10g: 2.5       # px
 ```
+
+`width_*` / `dash_*` are the canonical link keys; the older `default_stroke` /
+`ten_g_stroke` spellings remain accepted aliases. Palette and status keys
+(`bg_raise`, `ink_dim`, `up`, …) are listed in
+`docs/content/docs/(marrow)/reference/config.mdx`; an unsupported key warns.
 
 ## Rules
 

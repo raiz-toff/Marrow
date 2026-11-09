@@ -60,34 +60,82 @@ const LAYOUT_KEYS = ['density', 'scale'] as const;
 
 const SAFE_COLOR_REGEX = /^(#[0-9a-fA-F]{3,8}|(?:rgb|rgba|hsl|hsla|oklch|lab|color|color-mix|var)\([^;{}<>]+\)|[a-zA-Z_-]+)$/;
 
-const PALETTE_STATUS_MAP: Record<string, string> = {
-  bg: 'bg',
-  panel: 'panel',
-  surface: 'surface',
-  line: 'line',
-  subtle: 'subtle',
-  ink: 'ink',
-  muted: 'muted',
-  faint: 'faint',
-  accent: 'accent',
-  accenthover: 'accentHover',
-  accent_hover: 'accentHover',
-  accentHover: 'accentHover',
-  accentsubtle: 'accentSubtle',
-  accent_subtle: 'accentSubtle',
-  accentSubtle: 'accentSubtle',
-  accentink: 'accentInk',
-  accent_ink: 'accentInk',
-  accentInk: 'accentInk',
-  up: 'up',
-  down: 'down',
-  degraded: 'degraded',
-  planned: 'planned',
-  admindown: 'adminDown',
-  admin_down: 'adminDown',
-  adminDown: 'adminDown',
-  unknown: 'unknown',
+type ThemeColorKey = keyof PaletteTokens | keyof StatusTokens;
+
+/**
+ * Every palette token, exactly once — a `Record` over the key union, so adding
+ * a token to @marrow/visual without listing it here (or listing one that does
+ * not exist) is a compile error. The value says how the config value is
+ * checked: `color` against SAFE_COLOR_REGEX, `shadow` as a box-shadow list.
+ */
+const PALETTE_KEYS: Record<keyof PaletteTokens, 'color' | 'shadow'> = {
+  bg: 'color',
+  bgRaise: 'color',
+  panel: 'color',
+  line: 'color',
+  lineStrong: 'color',
+  ink: 'color',
+  inkDim: 'color',
+  inkFaint: 'color',
+  chip: 'color',
+  chipLine: 'color',
+  gridDot: 'color',
+  accent: 'color',
+  accentInk: 'color',
+  ring: 'color',
+  zone: 'color',
+  edge: 'color',
+  sidebar: 'color',
+  sidebarFg: 'color',
+  sidebarAccent: 'color',
+  sidebarBorder: 'color',
+  shadow: 'shadow',
+  shadowSm: 'shadow',
 };
+
+/** Every status colour, exactly once (same compile-time closure as PALETTE_KEYS). */
+const STATUS_KEYS: Record<keyof StatusTokens, true> = {
+  up: true,
+  down: true,
+  degraded: true,
+  planned: true,
+  unknown: true,
+};
+
+/**
+ * Older single-word names that still mean exactly one palette token. Anything
+ * without an unambiguous target (`subtle`, `accent_hover`, `accent_subtle`,
+ * `admin_down`) is deliberately absent: it warns instead of being dropped.
+ */
+const PALETTE_ALIASES: Record<string, keyof PaletteTokens> = {
+  surface: 'panel',
+  muted: 'inkDim',
+  faint: 'inkFaint',
+};
+
+const snake = (k: string): string => k.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
+
+/** The canonical snake_case keys, in token order — what warnings and docs list. */
+const CANONICAL_PALETTE_KEYS = Object.keys(PALETTE_KEYS).map(snake);
+const CANONICAL_STATUS_KEYS = Object.keys(STATUS_KEYS);
+
+/**
+ * `theme.dark` / `theme.light` keys → theme token names. Every palette and
+ * status key in snake_case and camelCase, plus PALETTE_ALIASES. Typed against
+ * the token interfaces so a target that does not exist cannot compile.
+ */
+const PALETTE_STATUS_MAP: Record<string, ThemeColorKey> = Object.fromEntries([
+  ...[...Object.keys(PALETTE_KEYS), ...Object.keys(STATUS_KEYS)].flatMap((k) => [
+    [k, k],
+    [snake(k), k],
+  ]),
+  ...Object.entries(PALETTE_ALIASES),
+]) as Record<string, ThemeColorKey>;
+
+const isStatusKey = (k: ThemeColorKey): k is keyof StatusTokens => k in STATUS_KEYS;
+
+/** A box-shadow list: no declaration/rule breakers, no resource loads. */
+const SAFE_SHADOW_REGEX = /^(?!.*\b(?:url|image|image-set|expression)\s*\()[^;{}<>\\"'`]+$/i;
 
 /**
  * `theme.links` keys → LinkTokens fields. Every value is px. The canonical
@@ -155,34 +203,81 @@ function str(value: unknown): string | undefined {
   return t === '' ? undefined : t;
 }
 
-function parseTokensBlock(
-  raw: unknown,
-  scope: 'theme.dark' | 'theme.light',
-  problems: string[],
-): (Partial<PaletteTokens> & Partial<StatusTokens>) | undefined {
+/** Own-property lookup, so `constructor` / `toString` are unknown keys, not Object internals. */
+function lookup<T>(map: Record<string, T>, key: string): T | undefined {
+  return Object.prototype.hasOwnProperty.call(map, key) ? map[key] : undefined;
+}
+
+function unknownThemeKey(scope: string, key: string, statusOnly: boolean): string {
+  const supported = statusOnly ? CANONICAL_STATUS_KEYS : [...CANONICAL_PALETTE_KEYS, ...CANONICAL_STATUS_KEYS];
+  const aliases = statusOnly
+    ? ''
+    : `; aliases: ${Object.entries(PALETTE_ALIASES)
+        .map(([a, t]) => `${a} → ${snake(t)}`)
+        .join(', ')}`;
+  return `unknown key "${scope}.${key}" — no theme token by that name; supported: ${supported.join(', ')} (camelCase also accepted${aliases})`;
+}
+
+function parseTokenValue(scope: string, key: string, val: unknown, target: ThemeColorKey, problems: string[]): string | undefined {
+  const value = str(val);
+  if (value === undefined) return undefined;
+  const shadow = !isStatusKey(target) && PALETTE_KEYS[target] === 'shadow';
+  if ((shadow ? SAFE_SHADOW_REGEX : SAFE_COLOR_REGEX).test(value)) return value;
+  problems.push(
+    shadow
+      ? `${scope}.${key}: invalid shadow "${value}" — must be a CSS box-shadow list`
+      : `${scope}.${key}: invalid color "${value}" — must be hex, rgb, hsl, oklch, or named color`,
+  );
+  return undefined;
+}
+
+type ThemeBlock = NonNullable<ThemeConfig['dark']>;
+
+/** A status block nested under `theme.<scheme>.status:` — status colours only. */
+function parseStatusBlock(raw: unknown, scope: string, problems: string[]): Partial<StatusTokens> | undefined {
   if (raw === undefined || raw === null) return undefined;
   if (typeof raw !== 'object' || Array.isArray(raw)) {
     problems.push(`\`${scope}:\` must be a mapping`);
     return undefined;
   }
-  const result: Record<string, string> = {};
-  const map = raw as Record<string, unknown>;
-  for (const [key, val] of Object.entries(map)) {
+  const result: Partial<StatusTokens> = {};
+  for (const [key, val] of Object.entries(raw as Record<string, unknown>)) {
     if (key.startsWith('x-')) continue;
-    const target = PALETTE_STATUS_MAP[key];
-    if (!target) {
-      problems.push(`unknown key "${scope}.${key}"`);
+    const target = lookup(PALETTE_STATUS_MAP, key);
+    if (target === undefined || !isStatusKey(target)) {
+      problems.push(unknownThemeKey(scope, key, true));
       continue;
     }
-    const colorStr = str(val);
-    if (!colorStr) continue;
-    if (SAFE_COLOR_REGEX.test(colorStr)) {
-      result[target] = colorStr;
-    } else {
-      problems.push(`${scope}.${key}: invalid color "${colorStr}" — must be hex, rgb, hsl, oklch, or named color`);
-    }
+    const value = parseTokenValue(scope, key, val, target, problems);
+    if (value !== undefined) result[target] = value;
   }
-  return Object.keys(result).length > 0 ? (result as Partial<PaletteTokens> & Partial<StatusTokens>) : undefined;
+  return Object.keys(result).length > 0 ? result : undefined;
+}
+
+function parseTokensBlock(raw: unknown, scope: 'theme.dark' | 'theme.light', problems: string[]): ThemeBlock | undefined {
+  if (raw === undefined || raw === null) return undefined;
+  if (typeof raw !== 'object' || Array.isArray(raw)) {
+    problems.push(`\`${scope}:\` must be a mapping`);
+    return undefined;
+  }
+  const result: Partial<Record<ThemeColorKey, string>> = {};
+  let status: Partial<StatusTokens> | undefined;
+  for (const [key, val] of Object.entries(raw as Record<string, unknown>)) {
+    if (key.startsWith('x-')) continue;
+    if (key === 'status') {
+      status = parseStatusBlock(val, `${scope}.status`, problems);
+      continue;
+    }
+    const target = lookup(PALETTE_STATUS_MAP, key);
+    if (target === undefined) {
+      problems.push(unknownThemeKey(scope, key, false));
+      continue;
+    }
+    const value = parseTokenValue(scope, key, val, target, problems);
+    if (value !== undefined) result[target] = value;
+  }
+  const block: ThemeBlock = { ...result, ...(status ? { status } : {}) };
+  return Object.keys(block).length > 0 ? block : undefined;
 }
 
 function parseLinksBlock(raw: unknown, problems: string[]): LinkStyleOverrides | undefined {
@@ -195,7 +290,7 @@ function parseLinksBlock(raw: unknown, problems: string[]): LinkStyleOverrides |
   const map = raw as Record<string, unknown>;
   for (const [key, val] of Object.entries(map)) {
     if (key.startsWith('x-')) continue;
-    const target = LINK_STYLE_MAP[key];
+    const target = lookup(LINK_STYLE_MAP, key);
     if (!target) {
       problems.push(`unknown key "theme.links.${key}"`);
       continue;

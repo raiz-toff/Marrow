@@ -50,16 +50,20 @@ render fully offline.
 
 ## `theme`
 
-Override default palette colors, device status badges, and link stroke widths and dash patterns. Both SVG and Canvas renderers read these values dynamically via CSS custom properties.
+Override the theme tokens: the palette, the status colours, and link stroke
+widths and dash patterns. Both the SVG and canvas renderers read them from the
+same CSS custom properties, so one override reaches both.
 
 ```yaml title="marrow.config.yaml"
 theme:
   dark:
     bg: "#090d16"
+    bg_raise: "#11151f"
     accent: "#3b82f6"
     accent_ink: "#ffffff"
     up: "#22c55e"
-    down: "#ef4444"
+    status:              # status colours may also be nested
+      down: "#ef4444"
   light:
     bg: "#ffffff"
     accent: "#2563eb"
@@ -78,11 +82,61 @@ theme:
 
 | Key | Type | Notes |
 | --- | --- | --- |
-| `dark` | map | Palette tokens (`bg`, `panel`, `surface`, `line`, `subtle`, `ink`, `muted`, `faint`, `accent`, `accent_hover`, `accent_subtle`, `accent_ink`) and status tokens (`up`, `down`, `degraded`, `planned`, `admin_down`, `unknown`) |
-| `light` | map | Same token keys for light theme |
+| `dark` | map | Palette and status colours for the dark scheme (the `:root` defaults) — see the table below |
+| `light` | map | The same keys for the light scheme (`:root[data-theme="light"]`) |
 | `links` | map | All values in **px**. Widths (positive numbers): `width_default`, `width_10g`, `width_40g`, `width_trunk`, `width_slot`, `width_stack`. Dash patterns (a `"9 6"` string or a `[9, 6]` list of px runs): `dash_tunnel`, `dash_peering`, `dash_degraded`, `dash_planned`, `dash_flow`. camelCase spellings (`width10g`, `dashTunnel`) and the older `default_stroke` / `ten_g_stroke` / `forty_g_stroke` / `trunk_stroke` / `slot_stroke` / `stack_stroke` aliases are accepted. A dash whose every value is below 1 warns as a legacy normalized value |
 
-Color values are validated against CSS injection (`SAFE_COLOR_REGEX`). Values containing semicolons, braces, or angle brackets are rejected with warnings.
+### Palette and status keys
+
+Every key is accepted in `snake_case` (shown) or camelCase (`bg_raise` or
+`bgRaise`). The chrome is the interface around the diagram: sidebar, toolbars,
+drawers and dialogs.
+
+| Config key | CSS variable | What it paints |
+| --- | --- | --- |
+| `bg` | `--bg` | The diagram canvas; the halo behind labels and pills |
+| `bg_raise` | `--bg-raise` | Page background behind the chrome; hovered and active controls |
+| `panel` | `--panel` | The main card holding the canvas; drawers, popovers and menus |
+| `line` | `--line` | Borders and dividers |
+| `line_strong` | `--line-strong` | Emphasised borders: link-label pills, port labels, scrollbars |
+| `ink` | `--ink` | Primary text and node labels |
+| `ink_dim` | `--ink-dim` | Secondary text, icon fallbacks, glyphs on link chips |
+| `ink_faint` | `--ink-faint` | Tertiary text: placeholders, captions, keyboard hints |
+| `chip` | `--chip` | Fill of the node icon chip |
+| `chip_line` | `--chip-line` | Outline of the node icon chip |
+| `grid_dot` | `--grid-dot` | The canvas dot grid |
+| `accent` | `--m-accent` | Selection, traced paths, animated flow, switches, badges |
+| `accent_ink` | `--m-accent-ink` | Text on an accent fill (badge counts) |
+| `ring` | `--ring` | Keyboard focus outline |
+| `zone` | `--zone` | Zone tint and label when the zone declares no colour |
+| `edge` | `--edge` | Default link stroke |
+| `sidebar` | `--sidebar` | Sidebar background |
+| `sidebar_fg` | `--sidebar-fg` | Sidebar text |
+| `sidebar_accent` | `--sidebar-accent` | Hovered and active sidebar rows |
+| `sidebar_border` | `--sidebar-border` | Sidebar edge and group rules |
+| `shadow` | `--shadow` | Shadow under floating chrome — a CSS `box-shadow` list, not a colour |
+| `shadow_sm` | `--shadow-sm` | Small shadow under toolbar buttons and tabs — a `box-shadow` list |
+| `up` | `--up` | Status colour: up pills, dots and legend |
+| `down` | `--down` | Status colour: down pills and dots; links whose status is down |
+| `degraded` | `--degraded` | Status colour: degraded pills and dots; degraded links |
+| `planned` | `--planned` | Status colour: planned pills and dots; planned links |
+| `unknown` | `--unknown` | Status colour: unknown or undeclared status (inventory dot) |
+| `surface` | `--panel` | **Alias** of `panel` |
+| `muted` | `--ink-dim` | **Alias** of `ink_dim` |
+| `faint` | `--ink-faint` | **Alias** of `ink_faint` |
+
+The five status keys may sit flat in `dark:` / `light:` or nested under
+`status:`; when both are set, the nested one wins.
+
+Any other key — including `accent_hover`, `accent_subtle`, `subtle` and
+`admin_down`, which no theme token backs — warns and lists the supported keys.
+It is never silently dropped.
+
+Colour values accept hex, `rgb()`, `rgba()`, `hsl()`, `hsla()`, `oklch()`,
+`lab()`, `color()`, `color-mix()`, `var()` and named colours
+(`SAFE_COLOR_REGEX`). `shadow` / `shadow_sm` take a `box-shadow` list and
+reject `url()`. Values containing semicolons, braces, or angle brackets are
+rejected with warnings.
 
 ## `layout`
 

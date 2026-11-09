@@ -257,6 +257,23 @@ describe('themes', () => {
     ).toEqual(DEFAULT_THEMES.dark);
   });
 
+  test('every palette and status key owns exactly one CSS variable', () => {
+    const base = DEFAULT_THEMES.dark;
+    const before = new Map(themeVars(base));
+    const owners = new Map<string, string>();
+    for (const group of ['palette', 'status'] as const) {
+      for (const key of Object.keys(base[group])) {
+        const t = { ...base, [group]: { ...base[group], [key]: '#0a1b2c' } } as Theme;
+        const changed = themeVars(t).filter(([k, v]) => before.get(k) !== v);
+        expect(changed, `${group}.${key}`).toHaveLength(1);
+        const cssVar = changed[0]![0];
+        expect(owners.has(cssVar), `${cssVar} shared by ${owners.get(cssVar)} and ${key}`).toBe(false);
+        owners.set(cssVar, key);
+      }
+    }
+    expect(owners.size).toBe(Object.keys(base.palette).length + Object.keys(base.status).length);
+  });
+
   test('themeVars emits px units and derived flow vars', () => {
     const vars = new Map(themeVars(DEFAULT_THEMES.dark));
     expect(vars.get('--edge-width-10g')).toBe('3px');
