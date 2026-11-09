@@ -109,6 +109,13 @@ The geometric contract handed to the renderers — boxes, polylines, and port
 chips. Everything downstream speaks only this.
 _Avoid_: model (that's the topology), layout result, output
 
+**Visual language**:
+How scene geometry is painted — the symbol for each link mode, stroke widths
+and dash patterns in pixels, status colours and draw order, chip and LED
+proportions. One module, consumed by every renderer and by the stylesheet, so
+the hero tier and the scale tier cannot drift.
+_Avoid_: theme (that's the palette overlay), style, look-and-feel, skin
+
 **Port chip**:
 The small marker on a device's edge where a link terminates. Placed
 collision-free by the layout stage; renderers draw it verbatim.
@@ -145,6 +152,17 @@ The multi-page output shape produced above the split threshold — overview, zon
 pages, device pages, inventory, shared assets.
 _Avoid_: folder mode, multi-page export
 
+**Output shape**:
+Which of the two forms a diagram takes — single file or site. The planner
+decides it from the split thresholds; `--single` is the only override.
+_Avoid_: mode (that's a link key), format, target, layout
+
+**Page contract**:
+Everything a compiled page and the runtime must agree on — the embedded data
+payload, the hook names the runtime queries, the pre-boot parameters. Defined
+once, imported by both sides; never a string two files happen to share.
+_Avoid_: protocol, API, schema (that's the YAML stage)
+
 **Hero tier / scale tier**:
 The two rendering tiers — SVG for full fidelity, a canvas host when the node
 count demands it. Chosen by size, visually identical.
@@ -158,7 +176,7 @@ _Avoid_: viewer, player, app
 **Chrome**:
 The interface surrounding the diagram — sidebar, inspector, command palette,
 breadcrumbs, dock. shadcn/ui ported to vanilla CSS and TypeScript.
-_Avoid_: UI, shell, frame
+_Avoid_: UI, shell (also in code: `renderChrome`, not `renderShell`), frame
 
 **Brand**:
 The global identity applied to every diagram from `marrow.config.yaml` — name,
