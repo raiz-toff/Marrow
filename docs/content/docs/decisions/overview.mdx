@@ -34,6 +34,7 @@ alternatives behind non-obvious architecture choices.
 | [0020](/docs/decisions/0020-react-interface-has-one-source) | The React interface has one source | `packages/ui/src` is the only source; the shadcn registry is generated from it and copied files are self-contained by construction |
 | [0021](/docs/decisions/0021-one-compile-entry) | One compile entry | `createSiteBuilder` owns config defaults and asks the planner for the output shape; CLI and server pass options and nothing else |
 | [0022](/docs/decisions/0022-one-visual-language-module) | One visual language module | `@marrow/visual` owns how a scene is painted; both renderers and the stylesheet consume it; dash and width units are pixels in every tier |
+| [0023](/docs/decisions/0023-typed-page-contract) | Typed page contract | Hooks, root state, payload and pre-boot defined once in `@marrow/runtime` and imported by both sides; behaviour hooks are `data-m`, never classes |
 
 <Callout type="warn">
 **On assumed rationale.** These records were written from the code, the

@@ -2104,7 +2104,7 @@ function renderTitleBlock(
     `<g class="m-blueprint-titleblock">` +
     `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="6" fill="var(--bg-raise, #161a22)" stroke="var(--line-strong, #30363d)" stroke-width="1.25"/>` +
     `<path d="M ${x} ${y + 24} h ${w}" stroke="var(--line, #21262d)" stroke-width="1"/>` +
-    `<rect x="${x + 1}" y="${y + 1}" width="${w - 2}" height="22" rx="5" fill="var(--surface, #0d1117)" opacity="0.6"/>` +
+    `<rect x="${x + 1}" y="${y + 1}" width="${w - 2}" height="22" rx="5" fill="var(--panel, #111113)" opacity="0.6"/>` +
     (logo || `<text x="${x + 10}" y="${y + 16}" font-size="10" font-weight="700" fill="var(--ink, #c9d1d9)" font-family="ui-sans-serif, system-ui, sans-serif" letter-spacing="0.06em">MARROW ENGINEERING BLUEPRINT</text>`) +
     `<path d="M ${x + Math.round(w * 0.58)} ${y + 24} v ${h - 24}" stroke="var(--line, #21262d)" stroke-width="1"/>` +
     `<path d="M ${x} ${y + 49} h ${w}" stroke="var(--line, #21262d)" stroke-width="1"/>` +

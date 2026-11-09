@@ -1,0 +1,98 @@
+---
+title: ADR-0023 — A typed page contract between compiled pages and the runtime
+description: Everything a compiled page and the runtime must agree on is defined once in @marrow/runtime and imported by both sides; behaviour hooks are data-m attributes, never CSS classes.
+---
+
+**Status:** accepted · refines [ADR-0015](/docs/decisions/0015-modular-ui-chrome-and-embed-modes) and [ADR-0016](/docs/decisions/0016-extensible-metadata-and-inspector-tabs)
+
+The **page contract** lives in `packages/runtime/src/shared/page-contract.ts`
+and is imported by the site compiler (which produces pages) and by the runtime
+client (which consumes them). It owns four things:
+
+1. **Hooks.** Every element the runtime looks up carries a `data-m="feature.hook"`
+   attribute drawn from a typed registry (`HOOKS`, 52 ids) that records each
+   hook's element kind, cardinality (`one` or `many`) and the page kinds it
+   appears on. The site renders hooks with `hookAttr(id)`; the runtime finds
+   them with `find`, `maybe` and `findAll`, which throw a `HookError` naming
+   the hook when the page does not match. CSS classes keep styling and carry
+   no behaviour.
+2. **Root state.** The `<html>` attributes the pre-boot script, the chrome and
+   the runtime all write (`data-theme`, `data-chrome`, `data-inspector`, …) have
+   one writer, `applyModularParams`.
+3. **Payload.** `EmbeddedData` is derived from `@marrow/model` and
+   `@marrow/scene` types through explicit key lists; the site produces it with
+   `satisfies` and `encodePageData`, the runtime reads it with `decodePageData`,
+   and `data.kind` says which page kind this is.
+4. **Pre-boot.** The `<head>` script that applies URL parameters before first
+   paint is a second esbuild bundle of the real parser, inlined by the site,
+   capped at 1.5 KB by a test.
+
+Embed message names (`marrow:theme`, `marrow:ready`) are constants here;
+`@marrow/ui` keeps literal copies because its files are copied into consumer
+codebases ([ADR-0020](/docs/decisions/0020-react-interface-has-one-source)), and
+a parity test keeps them equal.
+
+## Why
+
+The two sides agreed only by convention. The runtime issued 128 element
+lookups over 81 distinct class selectors and about 50 data attributes that the
+chrome template emitted as unrelated string literals; the payload was typed by
+hand on the consuming side, lacked two fields the client actually used, and
+was read through casts; the pre-boot script was a hand-minified copy of the
+URL parser. Tests asserted class-name spellings and substrings of the minified
+script, which is a test of typing accuracy, not of behaviour.
+
+Making the hooks explicit found what the string seam had hidden: thirteen
+selectors the runtime queried were emitted by nothing, so two whole features
+(`setupRail`, `setupRailPin`) and the Mac `⌘ K` shortcut relabel had never run,
+and the CSS for the rail and dock styled elements that never existed.
+
+Behaviour hooks became `data-m` attributes rather than class constants so the
+stylesheet can rename or restyle without touching behaviour, so the boot test
+can enumerate every hook from the registry instead of hand-listing selectors,
+and so cardinality is enforced by the type of `find`. The cost is one extra
+attribute on about fifty elements per page.
+
+## Consequences
+
+**Both sides compile against one definition.** Adding a payload field or a hook
+is one edit, type-checked on both sides. A hook that the chrome stops
+rendering fails the boot test with its name.
+
+**The runtime is bootable in a test.** `packages/runtime/test/boot*.test.ts`
+render pages through `createSiteBuilder`, load them into happy-dom, boot the
+client and drive a short session (select a node, open spotlight, switch tabs,
+open a menu). A static guard fails on any class-based lookup in client code
+outside the allowlist of markup the runtime creates itself.
+
+**Chrome is called chrome.** `shell.ts`, `renderShell`, `ShellOptions`,
+`shellLayout` and the `#marrow-shell` id became `chrome.ts`, `renderChrome`,
+`ChromeOptions`, `chromeLayout` and `#marrow-chrome`, matching the glossary.
+
+**Output changes are mechanical.** Across all fixtures (256 built files) the
+only differences are the `data-m` attributes, the chrome id, the pre-boot
+script text, `"kind"` in the payload and the removal of dead CSS. The runtime
+bundle shrank from 98.9 KB to 96.4 KB; the pre-boot script grew from 0.7 KB to
+1.5 KB because it is now the real parser.
+
+**Pre-boot honours `?chrome=full` and `#embed=false` before first paint**,
+removing a flash that existed when only the runtime applied them.
+
+## Considered and rejected
+
+**Hook names as class-name constants shared by both sides.** Rejected: it keeps
+styling and behaviour on one name, so a CSS refactor can still break behaviour,
+and nothing but the boot test guards it. `data-m` separates the two concerns at
+the cost of one attribute per hooked element.
+
+**Feature-sliced markup living in the runtime package.** Rejected: the templates
+are about 23 KB of source and would reach every compiled page through the
+runtime bundle ([ADR-0004](/docs/decisions/0004-self-contained-output)). Markup
+stays in `@marrow/site`; only the hook registry is shared.
+
+**`Omit<Device, …>` for the payload.** Rejected in favour of explicit key lists so
+that a new model field cannot enlarge every compiled page unnoticed.
+
+**A runtime check of the payload shape.** Rejected: page and runtime always come
+from the same build, so validation would only ever catch the compiler's own
+bugs, which the type system already does.

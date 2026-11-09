@@ -1543,7 +1543,7 @@ a.m-side-row.active i, a.m-side-row.active em { color: var(--sidebar-fg); }
 }
 .m-about-pill {
   display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px;
-  background: var(--surface); border: 1px solid var(--line); border-radius: 9999px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 9999px;
   font-size: 12px; color: var(--ink-dim);
 }
 .m-about-pill strong { color: var(--ink); font-weight: 600; }
@@ -1559,7 +1559,7 @@ a.m-side-row.active i, a.m-side-row.active em { color: var(--sidebar-fg); }
 }
 .m-about-hint {
   display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px;
-  background: color-mix(in srgb, var(--m-accent) 8%, var(--surface));
+  background: color-mix(in srgb, var(--m-accent) 8%, var(--panel));
   border: 1px dashed color-mix(in srgb, var(--m-accent) 30%, var(--line));
   border-radius: var(--radius); font-size: 12.5px; color: var(--ink-dim); line-height: 1.45;
 }
@@ -1567,7 +1567,7 @@ a.m-side-row.active i, a.m-side-row.active em { color: var(--sidebar-fg); }
 .m-about-hint strong { color: var(--ink); }
 .m-about-hint code {
   font-family: var(--font-mono, monospace); font-size: 11.5px; padding: 1px 4px;
-  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm);
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm);
   color: var(--m-accent);
 }
 .m-about-foot {
