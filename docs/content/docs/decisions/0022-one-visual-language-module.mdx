@@ -1,0 +1,101 @@
+---
+title: ADR-0022 — One visual language module
+description: "@marrow/visual owns how a scene is painted; both renderers and the stylesheet consume it, the runtime bundles it, and dash and width units are pixels in every tier."
+---
+
+**Status:** accepted · refines [ADR-0009](/docs/decisions/0009-link-semantics-and-visual-language) and [ADR-0013](/docs/decisions/0013-design-token-contract-and-theme-overrides)
+
+The **visual language** — the symbol for each link mode, stroke widths and dash
+patterns, status colours and draw order, chip and LED proportions, and the
+default token tables — lives in one dependency-free package, `@marrow/visual`.
+`render-svg`, the canvas engine in the runtime, and the site stylesheet all
+consume it. The runtime bundles it with esbuild, so the compiled page stays
+self-contained. All dash and width values are **pixels in both tiers**; the SVG
+tier no longer uses `pathLength="1"`.
+
+## Why
+
+Three renderers shared no module. `runtime/client/link.ts` was a verbatim copy
+of `linkPresentation` from `@marrow/scene` with a "keep the two in sync"
+comment; the canvas engine retyped `Scene`, carried 23 hex fallbacks copied
+from the token table, and repeated the chip proportions and the status order
+that `render-svg` also hard-coded; `styles.ts` encoded the same widths and
+dashes a third time as CSS. The contributor docs said "every visual change must
+land in both renderers plus the stylesheet", which is a maintenance rule
+standing in for a missing module.
+
+The copies had already drifted, and some drift was invisible until the
+renderers were compared side by side: leaf opacity (.18 vs .22), label pill
+radius and fill, chip stroke colour, peering opacity missing on canvas, the
+hero ring colour, quadratic fillets on SVG versus `arcTo` on canvas, and speed
+compared case-sensitively on one tier only. Two defects were outright bugs:
+with `pathLength="1"` the degraded and planned dash tokens (`14 7`, `2 7`)
+exceeded the path length, so those SVG edges rendered solid; and the CLI mapped
+`theme.links.*` config keys to names that did not exist on the token
+interface, so every link-style override in `marrow.config.yaml` was silently
+dropped (status colour overrides had the same fault).
+
+The runtime was "deliberately decoupled from the build packages", which is why
+it carried a mirror. That decoupling bought nothing: the runtime is an esbuild
+bundle, so importing a pure module inlines it at build time and the output has
+no more external dependencies than before. The bundle grew from 90.4 KB to
+98.9 KB and now draws the chip glyphs on canvas too.
+
+## The shape of the module
+
+Internally, per-dimension spec tables (statuses in draw order, modes, speeds,
+chip proportions, token rows) compile into one ordered paint-rule list with a
+fixed precedence: base, speed, mode, flow, status, path. That list has two
+interpreters. `resolveScene` folds it into draw-ready paint for imperative
+renderers; `visualCss` prints it as class-driven CSS using only `var(--…)`
+references, so theme overrides keep flowing through custom properties
+(ADR-0013) and SVG stays class-styled. Because both interpreters read the same
+list, a parity test can enumerate every status × speed × mode × flow × state
+combination and assert the CSS cascade and the canvas fold agree.
+
+The public interface is small: `DEFAULT_THEMES`, `themeVars`, `readTheme`,
+`linkPresentation`, `linkSemanticsWords`, `edgeClasses`, `resolveScene`,
+`interactEdge`, `interactNode`, `visualCss`, and their types.
+
+## Consequences
+
+**A visual change is one table edit.** The "three places" rule in the
+contributor docs is gone; renderer files only translate paint into SVG
+attributes or canvas calls.
+
+**Pixels everywhere.** `theme.links.dash_*` overrides are pixel strings such
+as `"9 6"`. Values written in the old normalized units (every number below 1)
+produce a warning from the config loader. The draw-in animation now uses a
+per-edge `--len` geometry variable computed deterministically at build time
+(chord sums with `sqrt` only, rounded to one decimal) instead of a normalized
+path.
+
+**Existing configs take effect.** Repositories that set `theme.links` or status
+colours in `marrow.config.yaml` will see them applied for the first time. This
+repo's own config declares 3.5 px default links, 5 px for 10G, and an emerald
+`up` colour; those now render as written.
+
+**Scene is geometry again.** `@marrow/scene` no longer exports link
+presentation; the glossary's "Scene = computed geometry" is literally true.
+
+**Determinism.** Edge draw order sorts by status rank, then by id with a
+code-unit comparison, replacing two `localeCompare` calls whose result depends
+on the machine's locale.
+
+## Considered and rejected
+
+**Keeping the visual language inside `@marrow/scene`.** Rejected: it widens the
+Scene interface from geometry to paint, and the glossary defines Scene as
+geometry.
+
+**Putting it in `@marrow/site/tokens.ts`.** Rejected: `render-svg` and the
+runtime would then depend on `site`, inverting the dependency direction.
+
+**Normalized dash units with a conversion for canvas.** Rejected: the only
+reason for normalized units was the draw-in animation, which a per-edge length
+variable serves equally well, and normalized units made the token values
+meaningless as pixels in every other consumer.
+
+**A `Painter` seam with an SVG and a canvas adapter.** Rejected for now: the
+renderers translate a resolved paint description; a painter interface would
+have one real adapter and be indirection.

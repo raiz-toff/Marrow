@@ -28,8 +28,10 @@ unused, colour-blind-safe channel, and the chip carries what a pattern can't.
 
 ## Consequences
 
-One resolver, `linkPresentation` in `@marrow/scene`, owns the mapping; the canvas
-tier and the inspector mirror it so they can't drift. Aggregation became
+One resolver, `linkPresentation`, owns the mapping. It lives in `@marrow/visual`
+(originally `@marrow/scene`; moved by [ADR-0022](/docs/decisions/0022-one-visual-language-module)),
+and the canvas tier and the inspector import it rather than mirroring it, so they
+cannot drift. Aggregation became
 lag-aware: members sharing a `lag` bundle under that id (`PO1`) instead of an
 anonymous `×N`. Mismatched attributes (e.g. `encap` on a non-tunnel link) warn as
 `MRW-W105` rather than failing the build.
