@@ -32,6 +32,7 @@ alternatives behind non-obvious architecture choices.
 | [0018](/docs/decisions/0018-diagram-level-documentation-and-watermarked-attribution) | Diagram-level documentation modal & attribution | Declarative about metadata schema, interactive document modal dialog, and permanent Marrow watermarked attribution |
 | [0019](/docs/decisions/0019-shadcn-registry-and-modular-ui-components) | Shadcn component registry & modular React UI | Source-distributed network primitives, Fumadocs layout engines, and bi-directional postMessage event bus |
 | [0020](/docs/decisions/0020-react-interface-has-one-source) | The React interface has one source | `packages/ui/src` is the only source; the shadcn registry is generated from it and copied files are self-contained by construction |
+| [0021](/docs/decisions/0021-one-compile-entry) | One compile entry | `createSiteBuilder` owns config defaults and asks the planner for the output shape; CLI and server pass options and nothing else |
 
 <Callout type="warn">
 **On assumed rationale.** These records were written from the code, the

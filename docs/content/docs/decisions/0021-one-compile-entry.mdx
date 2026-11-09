@@ -1,0 +1,69 @@
+---
+title: ADR-0021 — One compile entry
+description: createSiteBuilder is the only way to compile a diagram; it owns config defaults and asks the planner for the output shape, so the CLI and the dev server stop re-implementing the pipeline.
+---
+
+**Status:** accepted · refines [ADR-0008](/docs/decisions/0008-page-split-thresholds) and [ADR-0014](/docs/decisions/0014-density-presets-and-layout-metrics)
+
+`@marrow/site` exposes one compile entry, `createSiteBuilder(topology, options,
+cache?)`, for both output shapes. A Single file is a Site whose plan has one
+page with inline assets. `BuildOptions` carries everything that used to be
+assembled by callers: `defaults` (the `layout:` block of `marrow.config.yaml`,
+applied only where the topology declares nothing) and `shape` (`'single' |
+'site'`, the `--single` override). `buildSite` and `buildSingleFile` are gone.
+
+## Why
+
+Three callers — `marrow build`, `marrow snapshot` and the dev server — each
+copied the same four steps: apply config density/scale defaults, assemble build
+options by conditional spread, call the planner and branch on its answer, then
+call one of two build functions. The copies had already diverged: `snapshot`
+dropped the embed and chrome options, and the server kept two state shapes and
+two serving paths, one per output shape. Every new build option would have
+been a four-site edit.
+
+Deleting the two build functions concentrates that complexity instead of
+moving it: the builder is the only module that knows how a topology plus
+options becomes pages. The planner remains the only module that decides the
+shape when `shape` is absent, which is what ADR-0008 intended.
+
+Moving the defaults inside also surfaced a latent defect: the schema filled in
+`density: standard` and `scale: 1` for every topology, so the config file's
+`layout:` defaults could never apply to YAML input. The schema now leaves both
+optional and the layout stage resolves the standard values, which keeps output
+byte-identical for topologies that declare nothing while making ADR-0014's
+precedence ("topology wins over config") real.
+
+## Consequences
+
+**One place for option plumbing.** The CLI and the server pass `BuildOptions`
+and nothing else. Adding a build option is a change to `builder.ts` and its
+callers' flag parsing, not to the pipeline.
+
+**The server holds one builder** for either shape, keeps the last good one when
+an edit fails, and reloads only the pages whose inputs changed in both shapes.
+The shared hash now covers shape, chrome options, watermark and layout options,
+so toggling `--single` or editing the config reloads open tabs.
+
+**The build pipeline is tested at its interface** for the first time: defaults
+applied without mutating the input, declared values beating defaults, forced
+versus planned shape, and spawned `marrow build` runs for both shapes.
+Equivalence was verified once by building every fixture four ways before and
+after (240 files, byte-identical).
+
+**The input topology is never mutated.** Defaults are applied to a shallow
+copy. Callers that relied on `topology.density` being filled in afterwards must
+read it from the built page's scene metadata instead.
+
+## Considered and rejected
+
+**Keeping `buildSingleFile` as a convenience.** Rejected: a one-line
+pass-through is a second entry to document and keep in step. Tests use a helper
+in `packages/site/test/helpers.ts` instead.
+
+**A separate `compile()` facade over the builder.** Rejected for the same
+reason; the builder's own `buildAll()` is that facade.
+
+**Leaving the schema defaults in place.** Rejected because it makes a documented
+feature silently inert; the fix is output-preserving for every topology that
+does not use config defaults.

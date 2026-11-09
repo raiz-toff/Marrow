@@ -19,6 +19,7 @@
     "0018-diagram-level-documentation-and-watermarked-attribution",
     "0019-shadcn-registry-and-modular-ui-components",
     "0020-react-interface-has-one-source",
+    "0021-one-compile-entry",
     "---v1 Foundation---",
     "0001-declare-structure-not-layout",
     "0002-agent-driven-no-gui",
