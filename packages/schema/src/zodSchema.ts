@@ -133,8 +133,11 @@ export const topologySchema = z.strictObject({
   title_block: titleBlockSchema.optional(),
   inspector: inspectorSchema.optional(),
   theme: asEnum(THEMES).default('dark'),
-  density: asEnum(DENSITIES).default('standard'),
-  scale: z.number().min(0.4).max(2.5).default(1),
+  // no defaults: an undeclared density/scale stays undefined so build-wide
+  // defaults (marrow.config.yaml `layout:`) can apply; layout resolves
+  // whatever is still unset to standard / 1
+  density: asEnum(DENSITIES).optional(),
+  scale: z.number().min(0.4).max(2.5).optional(),
   hero: z.string().optional(),
   zones: z.array(zoneSchema).default([]),
   devices: z.array(deviceSchema).default([]),

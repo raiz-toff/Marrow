@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, test } from 'vitest';
 import { loadCatalog } from '@marrow/icons';
 import { validateSource } from '@marrow/schema';
-import { buildSingleFile } from '../src/index.js';
+import { buildSingle } from './helpers.js';
 
 const repoRoot = fileURLToPath(new URL('../../..', import.meta.url));
 const catalog = loadCatalog(join(repoRoot, 'icon-packs'));
@@ -13,10 +13,10 @@ async function build(rel: string) {
   const source = readFileSync(join(repoRoot, 'fixtures', rel), 'utf8');
   const validated = validateSource(source, { icons: catalog });
   if (!validated.topology) throw new Error('fixture invalid');
-  return buildSingleFile(validated.topology, { icons: catalog });
+  return buildSingle(validated.topology, { icons: catalog });
 }
 
-describe('buildSingleFile', () => {
+describe('Single file output', () => {
   test('produces a complete, self-contained page', async () => {
     const { html, scene } = await build('valid/small-office.yaml');
     expect(html).toContain('<!DOCTYPE html>');
@@ -73,7 +73,7 @@ describe('buildSingleFile', () => {
       '    to: b:p1',
     ].join('\n');
     const validated = validateSource(source, { icons: catalog });
-    const { html } = await buildSingleFile(validated.topology!, { icons: catalog });
+    const { html } = await buildSingle(validated.topology!, { icons: catalog });
     const dataBlock = /<script type="application\/json" id="marrow-data">([\s\S]*?)<\/script>/.exec(html)![1]!;
     expect(dataBlock).not.toContain('</script');
     expect(JSON.parse(dataBlock).devices[0].note).toContain('</script>');
@@ -87,10 +87,10 @@ describe('buildSingleFile', () => {
   test('canvas tier engages above the SVG limit (and on demand)', async () => {
     const source = readFileSync(join(repoRoot, 'fixtures', 'valid', 'small-office.yaml'), 'utf8');
     const t = validateSource(source, { icons: catalog }).topology!;
-    const svgBuild = await buildSingleFile(t, { icons: catalog });
+    const svgBuild = await buildSingle(t, { icons: catalog });
     expect(svgBuild.html).toContain('class="m-svg"');
     expect(svgBuild.html).not.toContain('<canvas');
-    const canvasBuild = await buildSingleFile(t, { icons: catalog, forceRenderer: 'canvas' });
+    const canvasBuild = await buildSingle(t, { icons: catalog, forceRenderer: 'canvas' });
     expect(canvasBuild.html).toContain('class="m-canvas"');
     expect(canvasBuild.html).toContain('class="m-sprite"');
     // geometry ships as data on canvas pages
@@ -110,14 +110,14 @@ describe('buildSingleFile', () => {
   test('modular chrome embed support (Defect 3)', async () => {
     const source = readFileSync(join(repoRoot, 'fixtures', 'valid', 'small-office.yaml'), 'utf8');
     const t = validateSource(source, { icons: catalog }).topology!;
-    const buildFull = await buildSingleFile(t, { icons: catalog });
+    const buildFull = await buildSingle(t, { icons: catalog });
     // URL param modular script is always injected in head
     expect(buildFull.html).toContain('g(\'embed\')===\'true\'');
     expect(buildFull.html).toContain('g(\'inspector\')===\'off\'');
     expect(buildFull.html).toContain('g(\'minimap\')===\'off\'');
 
     // Build-time minimal chrome option
-    const buildMinimal = await buildSingleFile(t, { icons: catalog, chrome: 'minimal' });
+    const buildMinimal = await buildSingle(t, { icons: catalog, chrome: 'minimal' });
     expect(buildMinimal.html).toContain('data-chrome="minimal"');
   });
 
@@ -139,7 +139,7 @@ describe('buildSingleFile', () => {
       '      tested: true',
     ].join('\n');
     const validated = validateSource(source, { icons: catalog });
-    const { html } = await buildSingleFile(validated.topology!, { icons: catalog });
+    const { html } = await buildSingle(validated.topology!, { icons: catalog });
     const dataBlock = /<script type="application\/json" id="marrow-data">([\s\S]*?)<\/script>/.exec(html)![1]!;
     const parsed = JSON.parse(dataBlock);
     expect(parsed.devices[0].customFields).toEqual({ rack: 'Rack 5' });

@@ -51,8 +51,8 @@ links: []                      # the cables
 | `title_block` | object | no | CAD title block configuration for static vector SVG and PNG exports |
 | `inspector` | object | no | Declarative custom tab definitions for the right-hand inspector drawer |
 | `theme` | `dark` \| `light` \| `auto` | no | Default `dark`. `auto` follows the viewer's OS scheme; a host can also drive any embed's theme by `postMessage` (see [Embedding → Theme](/docs/guides/embedding#theme)) |
-| `density` | `compact` \| `standard` \| `spacious` | no | Default `standard`. Scales node chips (48px / 64px / 80px), typography (10px / 12px / 14px), layer spacing, and port chips |
-| `scale` | float 0.4–2.5 | no | Global layout scale multiplier. Default `1.0`. Multiplies box padding, icon chip size, and layer spacing |
+| `density` | `compact` \| `standard` \| `spacious` | no | When omitted, `layout.density` from `marrow.config.yaml` applies, else `standard`. Scales node chips (48px / 64px / 80px), typography (10px / 12px / 14px), layer spacing, and port chips |
+| `scale` | float 0.4–2.5 | no | Global layout scale multiplier. When omitted, `layout.scale` from `marrow.config.yaml` applies, else `1.0`. Multiplies box padding, icon chip size, and layer spacing |
 | `hero` | device id | no | Camera focus on open |
 | `zones` | list | no | |
 | `devices` | list | — | |

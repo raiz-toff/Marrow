@@ -4,16 +4,7 @@ import { basename, dirname, join, resolve } from 'node:path';
 import { toJsonReport, type Diagnostic } from '@marrow/diagnostics';
 import type { IconCatalog } from '@marrow/icons';
 import { validateSource } from '@marrow/schema';
-import {
-  buildSingleFile,
-  createSiteBuilder,
-  planSite,
-  type Brand,
-  type ThemeConfig,
-  type BuildResult,
-  type SiteBuilder,
-  type SiteCache,
-} from '@marrow/site';
+import { createSiteBuilder, type BuildOptions, type SiteBuilder, type SiteCache } from '@marrow/site';
 import { LIVE_CLIENT } from './inject.js';
 
 export { LIVE_CLIENT } from './inject.js';
@@ -23,16 +14,21 @@ export { LIVE_CLIENT } from './inject.js';
  * YAML; the user's browser updates by itself. Hand-rolled on node:http +
  * fs.watch + SSE; binds 127.0.0.1.
  *
- * Serves exactly what `marrow build` would ship: small topologies as one
- * page, large ones as the full multi-page site (zone pages, device pages,
- * inventory, cross-page search). Site pages are built lazily on request and
- * memoized on a content hash, so an edit relayouts only the pages it feeds.
+ * Serves exactly what `marrow build` would ship: small topologies as a
+ * Single file, large ones as the full multi-page Site (zone pages, device
+ * pages, inventory, cross-page search). Both output shapes go through the one
+ * compile entry and the one serving path — a Single file is a builder with
+ * one page. Pages are built lazily on request and memoized on a content
+ * hash, so an edit relayouts only the pages it feeds.
  *
  * API (all JSON): GET /api/status · GET /api/validate · GET /api/scene ·
  * GET /api/files · GET/POST /api/current · GET /api/events (SSE)
  */
 
-export interface ServeOptions {
+/** The build options a config file contributes; reloaded live via `configLoader`. */
+export type ServeConfig = Pick<BuildOptions, 'brand' | 'themeConfig' | 'defaults'>;
+
+export interface ServeOptions extends ServeConfig {
   /** A .yaml file or a directory of them. */
   input: string;
   icons: IconCatalog;
@@ -40,18 +36,10 @@ export interface ServeOptions {
   host?: string;
   /** When false or undefined, automatically increments port on EADDRINUSE up to 10 attempts. When true, fails fast. */
   portExplicit?: boolean;
-  /** Global branding from brand/brand.html, applied to every previewed page. */
-  brand?: Brand;
-  themeConfig?: ThemeConfig;
   /** Optional config file to watch for real-time brand & theme reloading. */
   configFile?: string;
-  layout?: { density?: 'compact' | 'standard' | 'spacious'; scale?: number };
-  /** Dynamic loader called on config file changes to reload brand & theme without server restarts. */
-  configLoader?: () => {
-    brand?: Brand;
-    themeConfig?: ThemeConfig;
-    layout?: { density?: 'compact' | 'standard' | 'spacious'; scale?: number };
-  };
+  /** Dynamic loader called on config file changes to reload brand, theme & layout defaults without server restarts. */
+  configLoader?: () => ServeConfig;
 }
 
 export interface RunningServer {
@@ -69,14 +57,9 @@ interface State {
   stamp: number;
   diagnostics: Diagnostic[];
   valid: boolean;
-  mode: 'single' | 'site';
-  brand?: Brand;
-  themeConfig?: ThemeConfig;
-  layout?: { density?: 'compact' | 'standard' | 'spacious'; scale?: number };
-  /** single mode */
-  build?: BuildResult;
-  lastGoodHtml?: string;
-  /** site mode */
+  config: ServeConfig;
+  /** The last good build, for either output shape — kept when an edit fails,
+   *  so the browser keeps the last good diagram. Undefined until one succeeds. */
   builder?: SiteBuilder;
   /** memoized pages, kept across rebuilds — the incremental heart */
   cache: SiteCache;
@@ -101,10 +84,11 @@ export async function serve(options: ServeOptions): Promise<RunningServer> {
     stamp: 0,
     diagnostics: [],
     valid: false,
-    mode: 'single',
-    brand: options.brand,
-    themeConfig: options.themeConfig,
-    layout: options.layout,
+    config: {
+      ...(options.brand !== undefined ? { brand: options.brand } : {}),
+      ...(options.themeConfig !== undefined ? { themeConfig: options.themeConfig } : {}),
+      ...(options.defaults !== undefined ? { defaults: options.defaults } : {}),
+    },
     cache: new Map(),
     lastChanged: 0,
     lastRebuildMs: 0,
@@ -131,12 +115,7 @@ export async function serve(options: ServeOptions): Promise<RunningServer> {
   const rebuild = (): Promise<void> =>
     enqueue(async () => {
       const started = performance.now();
-      if (options.configLoader) {
-        const dynamicCfg = options.configLoader();
-        state.brand = dynamicCfg.brand;
-        state.themeConfig = dynamicCfg.themeConfig;
-        state.layout = dynamicCfg.layout;
-      }
+      if (options.configLoader) state.config = options.configLoader();
       let source: string;
       try {
         source = readFileSync(state.current, 'utf8');
@@ -160,62 +139,29 @@ export async function serve(options: ServeOptions): Promise<RunningServer> {
         return;
       }
 
-      if (state.layout?.density && !result.topology.density) {
-        result.topology.density = state.layout.density;
-      }
-      if (state.layout?.scale !== undefined && result.topology.scale === undefined) {
-        result.topology.scale = state.layout.scale;
-      }
-
-      const prevShape = state.mode === 'site' ? state.builder?.shapeHash : 'single';
-      const plan = planSite(result.topology);
+      const prevShape = state.builder?.shapeHash;
+      let builder: SiteBuilder;
+      let changed: string[];
       try {
-        if (plan.mode === 'single') {
-          const built = await buildSingleFile(result.topology, {
-            icons: options.icons,
-            ...(state.brand !== undefined ? { brand: state.brand } : {}),
-            ...(state.themeConfig !== undefined ? { themeConfig: state.themeConfig } : {}),
-          });
-          state.mode = 'single';
-          state.build = built;
-          state.builder = undefined;
-          state.lastGoodHtml = injectLive(built.html);
-          state.lastChanged = 1;
-        } else {
-          const builder = createSiteBuilder(
-            result.topology,
-            {
-              icons: options.icons,
-              ...(state.brand !== undefined ? { brand: state.brand } : {}),
-              ...(state.themeConfig !== undefined ? { themeConfig: state.themeConfig } : {}),
-            },
-            state.cache,
-          );
-          const changed = builder.changedPages();
-          for (const key of state.cache.keys()) if (!builder.has(key)) state.cache.delete(key);
-          state.mode = 'site';
-          state.builder = builder;
-          state.build = undefined;
-          state.lastChanged = changed.length;
-          // warm the page most likely to be open (memoized no-op when fresh);
-          // the rest build on request
-          await builder.buildPage('index.html');
-          state.lastRebuildMs = Math.round(performance.now() - started);
-          state.stamp++;
-          notify('valid', 'ok');
-          const shapeChanged = prevShape !== builder.shapeHash;
-          notify('reload', JSON.stringify({ stamp: state.stamp, pages: shapeChanged ? null : changed }));
-          return;
-        }
+        builder = createSiteBuilder(result.topology, { icons: options.icons, ...state.config }, state.cache);
+        changed = builder.changedPages();
+        // warm the page most likely to be open (memoized no-op when fresh);
+        // the rest build on request
+        await builder.buildPage('index.html');
       } catch (err) {
         state.valid = false;
         notify('invalid', (err as Error).message);
         return;
       }
+      for (const key of [...state.cache.keys()]) if (!builder.has(key)) state.cache.delete(key);
+      state.builder = builder;
+      state.lastChanged = changed.length;
       state.lastRebuildMs = Math.round(performance.now() - started);
       state.stamp++;
       notify('valid', 'ok');
-      notify('reload', JSON.stringify({ stamp: state.stamp, pages: null }));
+      // a new shape (page set, chrome, Single file ⇄ Site) reloads every tab
+      const shapeChanged = prevShape !== builder.shapeHash;
+      notify('reload', JSON.stringify({ stamp: state.stamp, pages: shapeChanged ? null : changed }));
     });
 
   // watch the directory; debounce per-file bursts from fs.watch
@@ -289,8 +235,8 @@ export async function serve(options: ServeOptions): Promise<RunningServer> {
             valid: state.valid,
             errors: report.summary.errors,
             warnings: report.summary.warnings,
-            mode: state.mode,
-            pages: state.mode === 'site' ? (state.builder?.plan.zonePages.length ?? 0) + 2 + (state.builder?.plan.devicePages.length ?? 0) : 1,
+            mode: modeOf(state),
+            pages: state.builder?.pages().length ?? 0,
             changed: state.lastChanged,
             rebuildMs: state.lastRebuildMs,
           }),
@@ -304,14 +250,10 @@ export async function serve(options: ServeOptions): Promise<RunningServer> {
       }
 
       if (url.pathname === '/api/scene') {
-        if (state.mode === 'site' && state.builder) {
-          const entry = await enqueue(() => state.builder!.buildPage('index.html')).catch(() => undefined);
-          if (entry?.scene) return send(200, JSON.stringify(entry.scene));
-          return send(404, JSON.stringify({ error: 'no successful build yet' }));
-        }
-        if (!state.build) return send(404, JSON.stringify({ error: 'no successful build yet' }));
-        send(200, JSON.stringify(state.build.scene));
-        return;
+        const builder = state.builder;
+        const entry = builder ? await enqueue(() => builder.buildPage('index.html')).catch(() => undefined) : undefined;
+        if (entry?.scene) return send(200, JSON.stringify(entry.scene));
+        return send(404, JSON.stringify({ error: 'no successful build yet' }));
       }
 
       if (url.pathname === '/api/files') {
@@ -350,39 +292,35 @@ export async function serve(options: ServeOptions): Promise<RunningServer> {
       const path = url.pathname === '/' ? 'index.html' : decodeURIComponent(url.pathname.slice(1));
       if (path.split('/').includes('..')) return send(404, JSON.stringify({ error: 'not found' }));
 
-      if (state.mode === 'site' && state.builder) {
-        const builder = state.builder;
-        if (!builder.has(path)) {
-          // pages can disappear across rebuilds (zone renamed/removed) — recover at the overview
-          if (path.endsWith('.html')) {
-            res.writeHead(302, { Location: '/' });
-            res.end();
-            return;
-          }
-          return send(404, JSON.stringify({ error: 'not found' }));
+      // nothing built yet (first build failed): retry once for the page a browser opens first
+      if (!state.builder && path === 'index.html') await rebuild();
+      const builder = state.builder;
+      if (!builder) {
+        if (path === 'index.html') return send(200, errorPage(basename(state.current), state.diagnostics), 'text/html');
+        if (path.endsWith('.html')) {
+          res.writeHead(302, { Location: '/' });
+          res.end();
+          return;
         }
-        try {
-          const entry = await enqueue(() => builder.buildPage(path));
-          if (!entry) return send(404, JSON.stringify({ error: 'not found' }));
-          if (path.endsWith('.html')) return send(200, injectLive(entry.content), 'text/html');
-          return send(200, entry.content, contentType(path));
-        } catch (err) {
-          return send(200, errorPage(basename(state.current), state.diagnostics, (err as Error).message), 'text/html');
+        return send(404, JSON.stringify({ error: 'not found' }));
+      }
+      if (!builder.has(path)) {
+        // pages can disappear across rebuilds (zone renamed/removed, Site → Single file) — recover at the overview
+        if (path.endsWith('.html')) {
+          res.writeHead(302, { Location: '/' });
+          res.end();
+          return;
         }
+        return send(404, JSON.stringify({ error: 'not found' }));
       }
-
-      // single mode
-      if (path === 'index.html') {
-        if (!state.lastGoodHtml) await rebuild();
-        if (state.lastGoodHtml) return send(200, state.lastGoodHtml, 'text/html');
-        return send(200, errorPage(basename(state.current), state.diagnostics), 'text/html');
+      try {
+        const entry = await enqueue(() => builder.buildPage(path));
+        if (!entry) return send(404, JSON.stringify({ error: 'not found' }));
+        if (path.endsWith('.html')) return send(200, injectLive(entry.content), 'text/html');
+        return send(200, entry.content, contentType(path));
+      } catch (err) {
+        return send(200, errorPage(basename(state.current), state.diagnostics, (err as Error).message), 'text/html');
       }
-      if (path.endsWith('.html')) {
-        res.writeHead(302, { Location: '/' });
-        res.end();
-        return;
-      }
-      send(404, JSON.stringify({ error: 'not found' }));
     })().catch((err: unknown) => {
       res.writeHead(500, { 'Content-Type': 'text/plain' });
       res.end(String(err));
@@ -396,8 +334,6 @@ export async function serve(options: ServeOptions): Promise<RunningServer> {
     if (!existsSync(full) || !/\.ya?ml$/i.test(name)) return { ok: false, error: `no such topology: ${name}` };
     if (full !== state.current) {
       state.current = full;
-      state.build = undefined;
-      state.lastGoodHtml = undefined;
       state.builder = undefined;
       state.cache.clear();
     }
@@ -441,7 +377,7 @@ export async function serve(options: ServeOptions): Promise<RunningServer> {
     port,
     url: `http://${host}:${port}/`,
     currentFile: () => basename(state.current),
-    mode: () => state.mode,
+    mode: () => modeOf(state),
     close: async () => {
       watcher.close();
       configWatcher?.close();
@@ -450,6 +386,11 @@ export async function serve(options: ServeOptions): Promise<RunningServer> {
       await new Promise<void>((r) => server.close(() => r()));
     },
   };
+}
+
+/** The output shape being served; 'single' until a build succeeds. */
+function modeOf(state: State): 'single' | 'site' {
+  return state.builder?.plan.mode ?? 'single';
 }
 
 function injectLive(html: string): string {

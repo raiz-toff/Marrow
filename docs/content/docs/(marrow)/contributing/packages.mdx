@@ -18,7 +18,7 @@ packages/
 ├─ lint          geometry linter: L1 fails builds, L2 auto-repairs, L3 advises
 ├─ render-svg    scene → SVG (hero tier) or canvas host (scale tier)
 ├─ runtime       the ~20 KB client: camera, inspector, spotlight, minimap, export
-├─ site          collapse, page planner, single-file + multi-page compiler
+├─ site          the compile entry: defaults, page planner, collapse, page compiler
 ├─ ui            shadcn-compatible React component suite (@marrow/ui)
 ├─ server        dev server: watch, rebuild, SSE live reload, /api
 └─ cli           the marrow command
@@ -51,8 +51,9 @@ legacy-v1/    archived Python v1, untracked, reference only
 | What fails a build | `lint` | Moving a rule between L1 and L3 is a breaking change in practice |
 | How something looks | `render-svg` **and** `runtime/client/canvas-engine.ts` **and** `site/styles.ts` | All three, always |
 | Interaction, chrome, keyboard | `runtime/client/main.ts` + `site/shell.ts` + `site/styles.ts` | Vanilla only — no React |
-| Page splitting, what earns a page | `site/planner.ts` | Thresholds are exported constants |
-| Dev server or its API | `server` | |
+| Page splitting, what earns a page | `site/planner.ts` | Thresholds are exported constants; the planner alone decides the shape |
+| How pages are compiled or packaged, a new build option | `site/builder.ts` | `createSiteBuilder` is the one entry for Single file and Site; callers only pass `BuildOptions` |
+| Dev server or its API | `server` | Serves both shapes through one `SiteBuilder` |
 | A command or flag | `cli` | Update the CLI reference too |
 | Icon search, ranking, fetching | `icons` | |
 
@@ -62,7 +63,8 @@ legacy-v1/    archived Python v1, untracked, reference only
 | --- | --- |
 | `packages/diagnostics/src/codes.ts` | The stable code registry. Public contract |
 | `packages/layout/src/classify.ts` | The six archetypes and their precedence |
-| `packages/site/src/planner.ts` | `SITE_DEVICE_THRESHOLD = 150`, `SITE_ZONE_THRESHOLD = 5` |
+| `packages/site/src/builder.ts` | `createSiteBuilder` and `BuildOptions` — the one compile entry for both output shapes |
+| `packages/site/src/planner.ts` | `SITE_DEVICE_THRESHOLD = 150`, `SITE_ZONE_THRESHOLD = 5`; honors a forced `shape` |
 | `packages/site/src/styles.ts` | The complete diagram stylesheet and design system |
 | `packages/site/src/brand.ts` | Branding types and logo sanitizing |
 | `packages/schema/src/zodSchema.ts` | The validation shape |

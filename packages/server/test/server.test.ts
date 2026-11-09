@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { loadCatalog } from '@marrow/icons';
 import { validateSource } from '@marrow/schema';
-import { buildSite } from '@marrow/site';
+import { createSiteBuilder } from '@marrow/site';
 import { LIVE_CLIENT, serve, type RunningServer } from '@marrow/server';
 
 const repoRoot = fileURLToPath(new URL('../../..', import.meta.url));
@@ -45,6 +45,19 @@ describe('marrow serve', () => {
     expect(res.headers.get('content-type')).toContain('text/html');
     expect(html).toContain('Small Office');
     expect(html).toContain('/api/events'); // live client present in served page
+  });
+
+  test('a Single file is served through the same path, byte-identical to the build (+ live client)', async () => {
+    const topology = validateSource(readFileSync(join(dir, 'a-office.yaml'), 'utf8'), { icons: catalog }).topology!;
+    const built = await createSiteBuilder(topology, { icons: catalog }).buildAll();
+    expect([...built.files.keys()]).toEqual(['index.html']);
+    const served = await (await fetch(server.url)).text();
+    expect(served).toBe(built.files.get('index.html')!.replace('</body>', `${LIVE_CLIENT}\n</body>`));
+    expect(server.mode()).toBe('single');
+    expect(await api('/api/status')).toMatchObject({ mode: 'single', pages: 1 });
+    // a Single file has no site assets or sub-pages
+    expect((await fetch(`${server.url}assets/runtime.js`)).status).toBe(404);
+    expect((await fetch(`${server.url}zones/x.html`, { redirect: 'manual' })).status).toBe(302);
   });
 
   test('status + validate + scene + files APIs', async () => {
@@ -197,10 +210,10 @@ describe('marrow serve — site mode (large topology)', () => {
     expect(search).toContain('__MARROW_SEARCH');
   }, 30_000);
 
-  test('served pages are byte-identical to buildSite output (+ live client)', async () => {
+  test('served pages are byte-identical to the built Site (+ live client)', async () => {
     const source = readFileSync(join(siteDir, 'campus.yaml'), 'utf8');
     const topology = validateSource(source, { icons: catalog }).topology!;
-    const built = await buildSite(topology, { icons: catalog });
+    const built = await createSiteBuilder(topology, { icons: catalog }).buildAll();
     for (const path of ['index.html', 'zones/datacenter.html', 'inventory.html']) {
       const served = await (await page(`/${path}`)).text();
       expect(served).toBe(built.files.get(path)!.replace('</body>', `${LIVE_CLIENT}\n</body>`));

@@ -3,14 +3,15 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 import { loadCatalog } from '@marrow/icons';
+import type { Topology } from '@marrow/model';
 import { validateSource } from '@marrow/schema';
-import { buildSingleFile } from '../src/index.js';
+import { buildSingle } from './helpers.js';
 import { hasBrand, isSafeLink, sanitizeLogo, type Brand } from '../src/brand.js';
 
 const repoRoot = fileURLToPath(new URL('../../..', import.meta.url));
 const icons = loadCatalog(join(repoRoot, 'icon-packs'));
 
-function topology(): ReturnType<typeof validateSource>['topology'] {
+function topology(): Topology {
   const src = readFileSync(join(repoRoot, 'fixtures', 'valid', 'small-office.yaml'), 'utf8');
   const result = validateSource(src, { icons });
   if (!result.topology) throw new Error('fixture failed to validate');
@@ -68,7 +69,7 @@ describe('isSafeLink / hasBrand', () => {
 
 describe('brand in the built page', () => {
   test('the logo reaches every chrome surface', async () => {
-    const built = await buildSingleFile(topology(), { icons, brand: ACME });
+    const built = await buildSingle(topology(), { icons, brand: ACME });
     for (const surface of ['m-backdrop-text', 'm-side-foot', 'm-drawer-foot']) {
       const region = new RegExp(`class="${surface}"[\\s\\S]{0,400}`).exec(built.html);
       expect(region, `${surface} missing`).not.toBeNull();
@@ -80,7 +81,7 @@ describe('brand in the built page', () => {
   test('the config is authoritative — topology YAML cannot override it', async () => {
     // `backdrop` is no longer part of the schema; even smuggled in, it is ignored
     const t = { ...topology()!, backdrop: { text: 'Per-Diagram Co', note: 'Internal' } } as never;
-    const built = await buildSingleFile(t, { icons, brand: ACME });
+    const built = await buildSingle(t, { icons, brand: ACME });
 
     expect(built.html).toContain('Acme Networks');
     expect(built.html).toContain('ACMEMARK');
@@ -88,13 +89,13 @@ describe('brand in the built page', () => {
   });
 
   test('no brand configured still renders the default mark', async () => {
-    const built = await buildSingleFile(topology(), { icons });
+    const built = await buildSingle(topology(), { icons });
     expect(built.html).toContain('Marrow');
     expect(built.html).not.toContain('ACMEMARK');
   });
 
   test('OFFLINE GATE holds with branding applied', async () => {
-    const built = await buildSingleFile(topology(), { icons, brand: ACME });
+    const built = await buildSingle(topology(), { icons, brand: ACME });
     expect(built.html).not.toMatch(/\bsrc\s*=\s*"https?:/i);
     expect(built.html).not.toMatch(/url\(\s*["']?https?:/i);
     const external = built.html.match(/https?:\/\/(?!www\.w3\.org)[^"' )]+/g) ?? [];
@@ -108,7 +109,7 @@ describe('brand links', () => {
   const LINKED: Brand = { ...ACME, link: 'https://acme.example.com', github: 'https://github.com/acme/net' };
 
   test('the brand mark links out, with a separate source mark', async () => {
-    const built = await buildSingleFile(topology(), { icons, brand: LINKED });
+    const built = await buildSingle(topology(), { icons, brand: LINKED });
     expect(built.html).toContain('href="https://acme.example.com"');
     expect(built.html).toContain('href="https://github.com/acme/net"');
     for (const a of built.html.match(/<a class="m-brand-(?:link|gh)"[^>]*>/g) ?? []) {
@@ -118,7 +119,7 @@ describe('brand links', () => {
   });
 
   test('links are navigation only — never an external resource load', async () => {
-    const built = await buildSingleFile(topology(), { icons, brand: LINKED });
+    const built = await buildSingle(topology(), { icons, brand: LINKED });
     expect(built.html.match(/\bsrc\s*=\s*"https?:\/\/[^"]*"/gi) ?? []).toEqual([]);
     for (const tag of built.html.match(/<[a-z-]+\b[^>]*href\s*=\s*"https?:\/\/[^"]*"[^>]*>/gi) ?? []) {
       expect(tag.toLowerCase().startsWith('<a ')).toBe(true);
@@ -126,7 +127,7 @@ describe('brand links', () => {
   });
 
   test('no links configured leaves the mark unlinked', async () => {
-    const built = await buildSingleFile(topology(), { icons, brand: { name: 'Acme' } });
+    const built = await buildSingle(topology(), { icons, brand: { name: 'Acme' } });
     expect(built.html).not.toContain('<a class="m-brand-link"');
     expect(built.html).not.toContain('<a class="m-brand-gh"');
   });

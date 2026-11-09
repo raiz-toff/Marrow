@@ -109,7 +109,7 @@ enforced. See [ADR-0007](/docs/decisions/0007-determinism-and-the-geometry-gate)
 
 ## Density presets and scaling
 
-Marrow sizes node boxes, port chips, typography, and ELK layout spacing using layout metrics presets. Set `density` in the topology header or under `layout.density` in `marrow.config.yaml` to adjust diagram compacteness:
+Marrow sizes node boxes, port chips, typography, and ELK layout spacing using layout metrics presets. Set `density` in the topology header, or under `layout.density` in `marrow.config.yaml` as a default for every diagram, to adjust diagram compactness. The config value applies only to topologies that do not declare their own; the topology header always wins:
 
 ```yaml
 marrow: 2

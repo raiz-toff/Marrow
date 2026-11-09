@@ -20,7 +20,6 @@ import { existsSync, readFileSync } from 'node:fs';
 import { dirname, isAbsolute, resolve } from 'node:path';
 import { parse } from 'yaml';
 import {
-  type Density,
   type WatermarkConfig,
   type WatermarkMode,
   type WatermarkCasing,
@@ -34,6 +33,7 @@ import {
   isSafeLink,
   sanitizeLogo,
   type Brand,
+  type LayoutDefaults,
   type ThemeConfig,
   type PaletteTokens,
   type StatusTokens,
@@ -42,15 +42,10 @@ import {
 
 export const DEFAULT_CONFIG_FILE = 'marrow.config.yaml';
 
-export interface LayoutConfig {
-  density?: Density;
-  scale?: number;
-}
-
 export interface LoadedConfig {
   brand?: Brand;
   theme?: ThemeConfig;
-  layout?: LayoutConfig;
+  layout?: LayoutDefaults;
   watermark?: WatermarkConfig;
   /** Non-fatal issues, already human-readable. */
   problems: string[];
@@ -251,14 +246,14 @@ function inlineLogo(logoPath: string, configDir: string, problems: string[]): st
   }
 }
 
-function parseLayout(rawLayout: unknown, problems: string[]): LayoutConfig | undefined {
+function parseLayout(rawLayout: unknown, problems: string[]): LayoutDefaults | undefined {
   if (rawLayout === undefined || rawLayout === null) return undefined;
   if (typeof rawLayout !== 'object' || Array.isArray(rawLayout)) {
     problems.push('`layout:` must be a mapping');
     return undefined;
   }
   const l = rawLayout as Record<string, unknown>;
-  const res: LayoutConfig = {};
+  const res: LayoutDefaults = {};
   for (const key of Object.keys(l)) {
     if (!key.startsWith('x-') && !(LAYOUT_KEYS as readonly string[]).includes(key as any)) {
       problems.push(`unknown key "layout.${key}" — expected: ${LAYOUT_KEYS.join(', ')}`);

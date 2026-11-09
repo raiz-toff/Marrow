@@ -4,11 +4,18 @@ import type { Topology } from '@marrow/model';
  * The page planner: decides whether a topology ships as ONE self-contained
  * file or as a multi-page site, and which pages the site gets. Budgets are
  * hard rules from the v2 plan — no page may carry more devices than a reader
- * (or a renderer) can handle.
+ * (or a renderer) can handle (ADR-0008).
+ *
+ * The planner is the only place the output shape is decided. A caller may
+ * override the verdict (`--single`) by passing `shape`; the page set is
+ * still computed here.
  */
 
+/** The two output shapes: one self-contained file, or a multi-page site. */
+export type OutputShape = 'single' | 'site';
+
 export interface SitePlan {
-  mode: 'single' | 'site';
+  mode: OutputShape;
   /** top-level content zones, one page each */
   zonePages: Array<{ zoneId: string; devices: number }>;
   /** devices that earn a dedicated device-360 page */
@@ -18,9 +25,10 @@ export interface SitePlan {
 export const SITE_DEVICE_THRESHOLD = 150;
 export const SITE_ZONE_THRESHOLD = 5;
 
-export function planSite(t: Topology): SitePlan {
+export function planSite(t: Topology, shape?: OutputShape): SitePlan {
   const zonesWithDevices = new Set(t.devices.map((d) => d.zone).filter((z) => z !== undefined));
-  const site = t.devices.length > SITE_DEVICE_THRESHOLD || zonesWithDevices.size > SITE_ZONE_THRESHOLD;
+  const site =
+    shape !== undefined ? shape === 'site' : t.devices.length > SITE_DEVICE_THRESHOLD || zonesWithDevices.size > SITE_ZONE_THRESHOLD;
   if (!site) return { mode: 'single', zonePages: [], devicePages: [] };
 
   const childrenOf = new Map<string, string[]>();

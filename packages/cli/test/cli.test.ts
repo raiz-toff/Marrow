@@ -41,6 +41,40 @@ describe('exit codes and arg handling', () => {
   });
 });
 
+describe('marrow build (end to end)', () => {
+  let out: string;
+  beforeAll(() => {
+    out = mkdtempSync(join(tmpdir(), 'marrow-build-'));
+  });
+  afterAll(() => rmSync(out, { recursive: true, force: true }));
+
+  // run from an empty cwd so no marrow.config.yaml leaks in
+  test('a small topology builds a Single file', () => {
+    const file = join(out, 'office.html');
+    const res = run(['build', validFixture, '-o', file], out);
+    expect(res.status, res.stderr).toBe(0);
+    expect(res.stdout).toMatch(/^built .*office\.html — 10 nodes/);
+    expect(existsSync(file)).toBe(true);
+  });
+
+  test('a large topology builds a Site; --single forces one file', () => {
+    const xl = join(repoRoot, 'fixtures', 'corpus', 'xl-campus-01.yaml');
+    const site = join(out, 'campus-site');
+    const res = run(['build', xl, '-o', site], out);
+    expect(res.status, res.stderr).toBe(0);
+    expect(res.stdout).toContain('built site');
+    for (const rel of ['index.html', 'inventory.html', 'zones/building-a.html', 'assets/runtime.js', 'assets/search-data.js']) {
+      expect(existsSync(join(site, rel)), rel).toBe(true);
+    }
+
+    const single = join(out, 'campus.html');
+    const forced = run(['build', xl, '--single', '-o', single], out);
+    expect(forced.status, forced.stderr).toBe(0);
+    expect(existsSync(single)).toBe(true);
+    expect(existsSync(join(out, 'assets'))).toBe(false);
+  }, 30_000);
+});
+
 describe('multi-file validation', () => {
   test('validates every positional and fails if ANY file is invalid', () => {
     const res = run(['validate', validFixture, invalidFixture]);
@@ -104,6 +138,11 @@ describe('schema export', () => {
     expect(schema.required).toContain('name');
     expect(schema.required).not.toContain('theme');
     expect(schema.required).not.toContain('zones');
+    // density/scale stay undeclared unless written, so config defaults can apply
+    for (const key of ['density', 'scale']) {
+      expect(schema.required).not.toContain(key);
+      expect(schema.properties[key].default, key).toBeUndefined();
+    }
     const device = schema.properties.devices.items;
     expect(device.required).toContain('id');
     expect(device.required).toContain('icon');

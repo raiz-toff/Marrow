@@ -4,8 +4,8 @@ import { basename, dirname, join } from 'node:path';
 import { parseArgs } from 'node:util';
 import { formatPretty, toJsonReport, type JsonReport } from '@marrow/diagnostics';
 import { topologyJsonSchema, validateSource } from '@marrow/schema';
-import { buildSingleFile, buildSite, planSite, type Brand, type ThemeConfig } from '@marrow/site';
-import { loadConfig, type LayoutConfig } from './config.js';
+import { createSiteBuilder, type BuildOptions } from '@marrow/site';
+import { loadConfig } from './config.js';
 import { importV1 } from './import-v1.js';
 import { loadIconCatalog } from './packs.js';
 
@@ -26,14 +26,17 @@ usage:
 
 exit codes: 0 valid · 1 validation errors · 2 usage or I/O error`;
 
-/** Global settings from marrow.config.yaml; --config points elsewhere. */
-function globalConfig(explicit?: string): { brand?: Brand; themeConfig?: ThemeConfig; layout?: LayoutConfig } {
+/** The slice of build options that marrow.config.yaml contributes to every build. */
+type GlobalConfig = Pick<BuildOptions, 'brand' | 'themeConfig' | 'defaults'>;
+
+/** Global settings from marrow.config.yaml, as build options; --config points elsewhere. */
+function globalConfig(explicit?: string): GlobalConfig {
   const { brand, theme, layout, problems } = loadConfig(explicit);
   for (const problem of problems) console.error(`warning: ${problem}`);
   return {
     ...(brand !== undefined ? { brand } : {}),
     ...(theme !== undefined ? { themeConfig: theme } : {}),
-    ...(layout !== undefined ? { layout } : {}),
+    ...(layout !== undefined ? { defaults: layout } : {}),
   };
 }
 
@@ -199,26 +202,17 @@ async function cmdBuild(rest: string[]): Promise<number> {
   }
 
   const baseName = basename(file).replace(/\.ya?ml$/i, '');
-  const config = globalConfig(values.config);
-  if (config.layout?.density && !result.topology.density) {
-    result.topology.density = config.layout.density;
-  }
-  if (config.layout?.scale !== undefined && result.topology.scale === undefined) {
-    result.topology.scale = config.layout.scale;
-  }
-
-  const plan = planSite(result.topology);
-  const buildOpts: import('@marrow/site').BuildOptions = {
-    icons: packs.catalog,
-    ...(config.brand ? { brand: config.brand } : {}),
-    ...(config.themeConfig ? { themeConfig: config.themeConfig } : {}),
-    ...(values.embed ? { embed: true } : {}),
-    ...(values.chrome === 'minimal' || values.chrome === 'full' ? { chrome: values.chrome } : {}),
-  };
   try {
-    if (plan.mode === 'site' && !values.single) {
+    const builder = createSiteBuilder(result.topology, {
+      icons: packs.catalog,
+      ...globalConfig(values.config),
+      ...(values.single ? { shape: 'single' as const } : {}),
+      ...(values.embed ? { embed: true } : {}),
+      ...(values.chrome === 'minimal' || values.chrome === 'full' ? { chrome: values.chrome } : {}),
+    });
+    if (builder.plan.mode === 'site') {
       const outDir = values.out ?? join('output', `${baseName}-site`);
-      const site = await buildSite(result.topology, buildOpts);
+      const site = await builder.buildAll();
       let bytes = 0;
       for (const [rel, content] of site.files) {
         const full = join(outDir, rel);
@@ -235,13 +229,13 @@ async function cmdBuild(rest: string[]): Promise<number> {
       return 0;
     }
     const outPath = values.out ?? join('output', `${baseName}.html`);
-    const built = await buildSingleFile(result.topology, buildOpts);
+    const built = (await builder.buildPage('index.html'))!;
     mkdirSync(dirname(outPath), { recursive: true });
-    writeFileSync(outPath, built.html);
-    const kb = Math.round(Buffer.byteLength(built.html) / 1024);
+    writeFileSync(outPath, built.content);
+    const kb = Math.round(Buffer.byteLength(built.content) / 1024);
     console.log(
-      `built ${outPath} — ${built.scene.nodes.length} nodes, ${built.scene.edges.length} edges, ${kb} KB, lint clean` +
-        (built.lint.l3.length ? ` (${built.lint.l3.length} advisories)` : ''),
+      `built ${outPath} — ${built.scene!.nodes.length} nodes, ${built.scene!.edges.length} edges, ${kb} KB, lint clean` +
+        (built.lint!.l3.length ? ` (${built.lint!.l3.length} advisories)` : ''),
     );
     return 0;
   } catch (err) {
@@ -471,18 +465,14 @@ async function cmdSnapshot(rest: string[]): Promise<number> {
   }
 
   try {
-    const config = globalConfig(values.config);
-    if (config.layout?.density && !result.topology.density) {
-      result.topology.density = config.layout.density;
-    }
-    if (config.layout?.scale !== undefined && result.topology.scale === undefined) {
-      result.topology.scale = config.layout.scale;
-    }
-    const built = await buildSingleFile(result.topology, {
+    // a snapshot is always one page: the Single file, whatever the planner would pick
+    const builder = createSiteBuilder(result.topology, {
       icons: packs.catalog,
-      ...(config.brand ? { brand: config.brand } : {}),
-      ...(config.themeConfig ? { themeConfig: config.themeConfig } : {}),
+      ...globalConfig(values.config),
+      shape: 'single',
     });
+    const built = (await builder.buildPage('index.html'))!;
+    const scene = built.scene!;
     const outPath = values.out ?? join('output', basename(file).replace(/\.ya?ml$/i, '') + '.png');
     mkdirSync(dirname(outPath), { recursive: true });
 
@@ -507,7 +497,7 @@ async function cmdSnapshot(rest: string[]): Promise<number> {
       reducedMotion: 'reduce',
     });
     const hash = values.focus ? `#d=${encodeURIComponent(values.focus)}` : '';
-    const dataUri = `data:text/html;charset=utf-8;base64,${Buffer.from(built.html).toString('base64')}`;
+    const dataUri = `data:text/html;charset=utf-8;base64,${Buffer.from(built.content).toString('base64')}`;
     await page.goto(`${dataUri}${hash}`);
     try {
       await page.waitForFunction('window.__MARROW_READY__ === true', { timeout: 15000 });
@@ -520,10 +510,10 @@ async function cmdSnapshot(rest: string[]): Promise<number> {
     const summary = {
       file,
       png: outPath,
-      nodes: built.scene.nodes.length,
-      edges: built.scene.edges.length,
-      size: built.scene.size,
-      advisories: built.lint.l3.map((i) => i.message),
+      nodes: scene.nodes.length,
+      edges: scene.edges.length,
+      size: scene.size,
+      advisories: built.lint!.l3.map((i) => i.message),
     };
     if (values.json) console.log(JSON.stringify(summary, null, 2));
     else console.log(`snapshot ${outPath} — ${summary.nodes} nodes, ${summary.edges} edges`);

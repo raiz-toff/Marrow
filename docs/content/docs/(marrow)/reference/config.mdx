@@ -82,7 +82,7 @@ Color values are validated against CSS injection (`SAFE_COLOR_REGEX`). Values co
 
 ## `layout`
 
-Default density preset and scale multiplier applied across all compiled diagrams when not overridden in the topology YAML header.
+Default density preset and scale multiplier for every compiled diagram. Each value applies **only when the topology does not declare its own** `density` or `scale` in its header — a value written in the topology always wins. With neither set, diagrams use `standard` and `1.0`.
 
 ```yaml title="marrow.config.yaml"
 layout:
@@ -92,8 +92,8 @@ layout:
 
 | Key | Type | Notes |
 | --- | --- | --- |
-| `density` | `compact` \| `standard` \| `spacious` | Default `standard`. Scales node chips (48px / 64px / 80px), typography (10px / 12px / 14px), layer spacing, and port chips |
-| `scale` | float 0.4–2.5 | Multiplies box padding, icon chip size, and layer spacing |
+| `density` | `compact` \| `standard` \| `spacious` | Used when the topology declares no `density`; `standard` if neither does. Scales node chips (48px / 64px / 80px), typography (10px / 12px / 14px), layer spacing, and port chips |
+| `scale` | float 0.4–2.5 | Used when the topology declares no `scale`; `1.0` if neither does. Multiplies box padding, icon chip size, and layer spacing |
 
 Edits to `marrow.config.yaml` hot-reload automatically in `marrow serve` without restarting the server.
 

@@ -4,15 +4,15 @@ import { join } from 'node:path';
 import type { IconCatalog } from '@marrow/icons';
 import { layoutTopology, type LayoutOptions, type NodeMeta } from '@marrow/layout';
 import { lintScene, type LintReport } from '@marrow/lint';
-import type { Topology } from '@marrow/model';
+import type { Density, Topology } from '@marrow/model';
 import { renderCanvasHost, renderScene, type IconSource } from '@marrow/render-svg';
 import { getRuntimeSource } from '@marrow/runtime';
 import type { Scene } from '@marrow/scene';
 import type { Brand } from './brand.js';
 import { collapseEndpoints } from './collapse.js';
 import { indexZones, inventoryBody, overviewTopology, pageOf, zoneTopology, deviceTopology, type PageTopo, type ZoneIndex } from './pages.js';
-import { planSite, type SitePlan } from './planner.js';
-import { renderShell, type Crumb, type NavLink } from './shell.js';
+import { planSite, type OutputShape, type SitePlan } from './planner.js';
+import { renderShell, type Crumb, type NavLink, type ShellOptions } from './shell.js';
 import { buildStylesheet, SITE_CSS } from './styles.js';
 import type { ThemeConfig } from './tokens.js';
 
@@ -21,9 +21,24 @@ export const SVG_NODE_LIMIT = 250;
 /** No single page may exceed this many rendered nodes — the planner splits instead. */
 export const PAGE_NODE_LIMIT = 1200;
 
+/**
+ * Build-wide layout defaults — the `layout:` block of marrow.config.yaml.
+ * Each value applies only where the topology does not declare its own.
+ */
+export interface LayoutDefaults {
+  density?: Density;
+  scale?: number;
+}
+
 export interface BuildOptions {
   icons: IconCatalog;
+  /** Layout-engine options (routing, metrics). Not the config file's `layout:` block — that is `defaults`. */
   layout?: LayoutOptions;
+  /** Density/scale used when the topology declares none. Applied to a shallow
+   *  copy inside the compiler; the caller's topology is never mutated. */
+  defaults?: LayoutDefaults;
+  /** Force an output shape (`--single`). Absent → the planner decides (ADR-0008). */
+  shape?: OutputShape;
   /** Override tier selection (tests, comparisons). */
   forceRenderer?: 'svg' | 'canvas';
   /** Global branding from brand/brand.html — the single source for the mark. */
@@ -37,31 +52,29 @@ export interface BuildOptions {
   shellLayout?: 'spacious';
 }
 
-export interface BuildResult {
-  html: string;
-  scene: Scene;
-  lint: LintReport;
-}
-
-export interface SiteBuildResult {
-  /** site-root-relative path → file content */
-  files: Map<string, string>;
-  plan: SitePlan;
-  /** per-page node counts + renderer tier for reporting/budget checks */
-  pageStats: Array<{ page: string; nodes: number; edges: number; tier: 'svg' | 'canvas' }>;
-}
-
 export interface PageStats {
   nodes: number;
   edges: number;
   tier: 'svg' | 'canvas';
 }
 
-/** One memoized page. Keyed by site-root-relative path in a SiteCache. */
+/** Everything one `buildAll()` emits, for either output shape. */
+export interface BuildOutput {
+  /** output-root-relative path → file content. A Single file is just `index.html`. */
+  files: Map<string, string>;
+  plan: SitePlan;
+  /** per-page node counts + renderer tier for reporting/budget checks */
+  pageStats: Array<{ page: string } & PageStats>;
+}
+
+/** One built page or asset, memoized by path in a SiteCache. Diagram pages
+ *  also carry their scene, lint report and stats; the inventory page and the
+ *  shared assets carry content only. */
 export interface PageCacheEntry {
   hash: string;
   content: string;
   scene?: Scene;
+  lint?: LintReport;
   stats?: PageStats;
 }
 
@@ -70,20 +83,24 @@ export interface PageCacheEntry {
 export type SiteCache = Map<string, PageCacheEntry>;
 
 export interface SiteBuilder {
+  /** The planner's verdict; `plan.mode` is the output shape. */
   plan: SitePlan;
-  /** All servable site-root-relative paths, pages first, then assets. */
+  /** All HTML pages, in emit order (`index.html` first). A Single file has exactly one. */
+  pages(): string[];
+  /** All servable output-root-relative paths: pages first, then assets (a Single file has none). */
   paths(): string[];
-  /** True when this path is a page/asset of this site. */
+  /** True when this path is a page/asset of this output. */
   has(path: string): boolean;
-  /** Fingerprint of the site shape (nav + page set + shared chrome inputs). */
+  /** Fingerprint of the output shape and every input shared by all pages
+   *  (nav, page set, chrome options). A change means every page changed. */
   shapeHash: string;
   /** Previously built pages whose inputs changed. Pages never built are NOT
    *  listed — nothing can be displaying them, so nothing needs a reload. */
   changedPages(): string[];
   /** Build (or reuse) one page/asset. Undefined for unknown paths. */
   buildPage(path: string): Promise<PageCacheEntry | undefined>;
-  /** Build everything — identical output to the classic buildSite(). */
-  buildAll(): Promise<SiteBuildResult>;
+  /** Build every file of the output. */
+  buildAll(): Promise<BuildOutput>;
 }
 
 interface StagePageDef {
@@ -101,16 +118,23 @@ interface DocPageDef {
 type PageDef = StagePageDef | DocPageDef;
 
 /**
- * Incremental site compiler. Same output as buildSite() page-for-page, but
- * each page is built lazily and memoized on a content hash of its inputs —
- * an edit relayouts only the pages it actually feeds.
+ * The compile entry — one for both output shapes. Applies the build-wide
+ * defaults, asks the planner for the shape (unless `options.shape` forces
+ * one) and returns a builder for its pages. A Single file is the degenerate
+ * plan: one page, `index.html`, with styles and the runtime inlined.
+ *
+ * Each page is built lazily and memoized on a content hash of its inputs —
+ * an edit relayouts only the pages it actually feeds. Output is
+ * byte-identical for identical input (ADR-0007).
  */
 export function createSiteBuilder(
-  topology: Topology,
+  input: Topology,
   options: BuildOptions,
   cache: SiteCache = new Map(),
 ): SiteBuilder {
-  const plan = planSite(topology);
+  const topology = withDefaults(input, options.defaults);
+  const plan = planSite(topology, options.shape);
+  const single = plan.mode === 'single';
   const zi = indexZones(topology, plan);
   const zoneNameFor = new Map(topology.zones.map((z) => [z.id, z.name]));
   const deviceName = new Map(topology.devices.map((d) => [d.id, d.name]));
@@ -124,36 +148,35 @@ export function createSiteBuilder(
     })),
     { label: 'Inventory', href: 'inventory.html', kind: 'inventory' as const, count: topology.devices.length },
   ];
+  const chrome = chromeOptions(options);
 
-  // everything that feeds EVERY page's chrome — part of every page hash, so a
-  // nav count change or theme flip correctly invalidates the whole site
+  // everything that feeds EVERY page — part of every page hash, so a nav
+  // count change, theme flip, rebrand or shape switch invalidates the lot
   const sharedInputs = JSON.stringify({
+    shape: plan.mode,
     name: topology.name,
     theme: topology.theme,
     description: topology.description ?? null,
+    watermark: topology.watermark ?? null,
     navLinks,
     devicePages: plan.devicePages,
     forceRenderer: options.forceRenderer ?? null,
+    layout: options.layout ?? null,
+    chrome,
   });
   const shapeHash = sha1(sharedInputs);
 
-  // page definitions, in the classic buildSite() emit order
+  // page definitions, in emit order
   const defs = new Map<string, PageDef>();
-  if (plan.zonePages.length > 0) {
-    defs.set('index.html', {
-      kind: 'stage',
-      topo: () => overviewTopology(topology, plan, zi),
-      crumbs: [{ label: topology.name }],
-      rootPrefix: '',
-    });
-  } else {
-    defs.set('index.html', {
-      kind: 'stage',
-      topo: () => ({ topology, nodeMeta: new Map<string, NodeMeta>() }),
-      crumbs: [{ label: topology.name }],
-      rootPrefix: '',
-    });
-  }
+  defs.set('index.html', {
+    kind: 'stage',
+    topo:
+      plan.zonePages.length > 0
+        ? () => overviewTopology(topology, plan, zi)
+        : () => ({ topology, nodeMeta: new Map<string, NodeMeta>() }),
+    crumbs: [{ label: topology.name }],
+    rootPrefix: '',
+  });
   for (const page of plan.zonePages) {
     defs.set(`zones/${page.zoneId}.html`, {
       kind: 'stage',
@@ -175,15 +198,23 @@ export function createSiteBuilder(
       hero: deviceId,
     });
   }
-  defs.set('inventory.html', { kind: 'inventory' });
+  if (!single) defs.set('inventory.html', { kind: 'inventory' });
 
   const assetContent = (path: string): string | undefined => {
+    if (single) return undefined;
     if (path === 'assets/styles.css') return options.themeConfig ? buildStylesheet(options.themeConfig) : SITE_CSS;
     if (path === 'assets/runtime.js') return getRuntimeSource();
     if (path === 'assets/search-data.js') return searchDataJs(topology, plan, zi);
     return undefined;
   };
-  const assetPaths = ['assets/styles.css', 'assets/runtime.js', 'assets/search-data.js'];
+  const assetPaths = single ? [] : ['assets/styles.css', 'assets/runtime.js', 'assets/search-data.js'];
+
+  // How a page is packaged. A Single file inlines styles + runtime, has no
+  // nav, and — with no search-data asset to derive it from — embeds the
+  // (empty) device-page manifest. Site pages share external assets.
+  const packaging: Pick<ShellOptions, 'assets' | 'navLinks'> = single
+    ? { assets: { mode: 'inline', runtime: getRuntimeSource() } }
+    : { assets: { mode: 'external' }, navLinks };
 
   const pageHash = (path: string, def: PageDef): string => {
     if (def.kind === 'inventory') return sha1(sharedInputs + '\0inventory\0' + JSON.stringify(topology));
@@ -198,11 +229,12 @@ export function createSiteBuilder(
 
   const buildStage = async (path: string, def: StagePageDef): Promise<PageCacheEntry> => {
     const page = def.topo();
-    const collapsed = collapseEndpoints(page.topology, { activateAbove: 120 });
-    const { svg, scene, tier } = await renderPage(collapsed, options, page.nodeMeta);
+    const collapsed = collapseEndpoints(page.topology);
+    const { svg, scene, lint, tier } = await renderPage(collapsed, options, page.nodeMeta);
     const content = renderShell({
       title: def.crumbs.at(-1)?.label ?? topology.name,
-      stats: `${scene.nodes.length} devices · ${scene.edges.length} links`,
+      // a Single file has no inventory page: its header counts the whole topology
+      stats: single ? statsOf(collapsed) : `${scene.nodes.length} devices · ${scene.edges.length} links`,
       crumbs: def.crumbs,
       rootPrefix: def.rootPrefix,
       page: path,
@@ -210,22 +242,18 @@ export function createSiteBuilder(
       stage: svg,
       ...(topology.description !== undefined ? { subtitle: topology.description } : {}),
       ...(topology.watermark !== undefined ? { watermark: topology.watermark } : {}),
-      ...(options.brand !== undefined ? { brand: options.brand } : {}),
-      ...(options.themeConfig !== undefined ? { themeConfig: options.themeConfig } : {}),
-      ...(options.chrome !== undefined ? { chrome: options.chrome } : {}),
-      ...(options.embed !== undefined ? { embed: options.embed } : {}),
-      ...(options.shellLayout !== undefined ? { layout: options.shellLayout } : {}),
+      ...chrome,
       dataJson: embeddedData(collapsed, {
         page: path,
-        // devicePages omitted — derived client-side from the shared search index
+        // site pages derive the device-page manifest from the shared search index
+        ...(single ? { devicePages: [] } : {}),
         hero: def.hero,
         scene: tier === 'canvas' ? scene : undefined,
       }),
-      assets: { mode: 'external' },
-      navLinks,
+      ...packaging,
       about: { layout: archetypeLabel(scene.archetype), renderer: rendererLabel(tier) },
     });
-    return { hash: '', content, scene, stats: { nodes: scene.nodes.length, edges: scene.edges.length, tier } };
+    return { hash: '', content, scene, lint, stats: { nodes: scene.nodes.length, edges: scene.edges.length, tier } };
   };
 
   const buildInventory = (): PageCacheEntry => {
@@ -237,16 +265,11 @@ export function createSiteBuilder(
       page: 'inventory.html',
       theme: topology.theme,
       body: inventoryBody(topology, plan, zi, (id) => iconSource(options.icons).svg(id)),
-      ...(options.brand !== undefined ? { brand: options.brand } : {}),
-      ...(options.themeConfig !== undefined ? { themeConfig: options.themeConfig } : {}),
-      ...(options.chrome !== undefined ? { chrome: options.chrome } : {}),
-      ...(options.embed !== undefined ? { embed: options.embed } : {}),
-      ...(options.shellLayout !== undefined ? { layout: options.shellLayout } : {}),
+      ...chrome,
       // full device+link payload: the inventory drawer shows device details in place
       // (devicePages omitted — derived client-side from the shared search index)
       dataJson: embeddedData(topology, { page: 'inventory.html' }),
-      assets: { mode: 'external' },
-      navLinks,
+      ...packaging,
     });
     return { hash: '', content };
   };
@@ -268,6 +291,7 @@ export function createSiteBuilder(
   return {
     plan,
     shapeHash,
+    pages: () => [...defs.keys()],
     paths: () => [...defs.keys(), ...assetPaths],
     has: (path) => defs.has(path) || assetPaths.includes(path),
     changedPages: () =>
@@ -277,13 +301,11 @@ export function createSiteBuilder(
     buildPage,
     buildAll: async () => {
       const files = new Map<string, string>();
-      const pageStats: SiteBuildResult['pageStats'] = [];
-      for (const [path, def] of defs) {
+      const pageStats: BuildOutput['pageStats'] = [];
+      for (const path of defs.keys()) {
         const entry = (await buildPage(path))!;
         files.set(path, entry.content);
-        if (def.kind === 'stage' && entry.stats) {
-          pageStats.push({ page: path, nodes: entry.stats.nodes, edges: entry.stats.edges, tier: entry.stats.tier });
-        }
+        if (entry.stats) pageStats.push({ page: path, ...entry.stats });
       }
       for (const path of assetPaths) files.set(path, assetContent(path)!);
       return { files, plan, pageStats };
@@ -291,14 +313,32 @@ export function createSiteBuilder(
   };
 }
 
-/** Compile the multi-page site: overview + zone pages + device pages + inventory. */
-export async function buildSite(topology: Topology, options: BuildOptions): Promise<SiteBuildResult> {
-  return createSiteBuilder(topology, options).buildAll();
+/** Fill in build-wide layout defaults on a shallow copy; the input is never mutated. */
+function withDefaults(t: Topology, defaults: LayoutDefaults | undefined): Topology {
+  const density = t.density ?? defaults?.density;
+  const scale = t.scale ?? defaults?.scale;
+  if (density === t.density && scale === t.scale) return t;
+  return {
+    ...t,
+    ...(density !== undefined ? { density } : {}),
+    ...(scale !== undefined ? { scale } : {}),
+  };
 }
 
-// ─── shared internals (also used by buildSingleFile) ────────────────────────
+/** Shell options shared by every page of a build. */
+function chromeOptions(options: BuildOptions): Pick<ShellOptions, 'brand' | 'themeConfig' | 'chrome' | 'embed' | 'layout'> {
+  return {
+    ...(options.brand !== undefined ? { brand: options.brand } : {}),
+    ...(options.themeConfig !== undefined ? { themeConfig: options.themeConfig } : {}),
+    ...(options.chrome !== undefined ? { chrome: options.chrome } : {}),
+    ...(options.embed !== undefined ? { embed: options.embed } : {}),
+    ...(options.shellLayout !== undefined ? { layout: options.shellLayout } : {}),
+  };
+}
 
-export async function renderPage(
+// ─── shared internals ───────────────────────────────────────────────────────
+
+async function renderPage(
   t: Topology,
   options: BuildOptions,
   nodeMeta: Map<string, NodeMeta> | undefined,
@@ -323,7 +363,7 @@ export async function renderPage(
   return { svg: rendered.svg, scene, lint, tier };
 }
 
-export function archetypeLabel(archetype: string | undefined): string {
+function archetypeLabel(archetype: string | undefined): string {
   switch (archetype) {
     case 'zoned':
       return 'Zoned mosaic';
@@ -340,7 +380,7 @@ export function archetypeLabel(archetype: string | undefined): string {
   }
 }
 
-export function rendererLabel(tier: 'svg' | 'canvas'): string {
+function rendererLabel(tier: 'svg' | 'canvas'): string {
   return tier === 'canvas' ? 'Canvas (scale tier)' : 'SVG (hero tier)';
 }
 
@@ -358,7 +398,7 @@ function iconSource(icons: IconCatalog): IconSource {
   };
 }
 
-export function statsOf(t: Topology): string {
+function statsOf(t: Topology): string {
   return `${t.devices.length} devices · ${t.links.length} links${t.zones.length ? ` · ${t.zones.length} zones` : ''}`;
 }
 
@@ -377,7 +417,7 @@ function searchDataJs(topology: Topology, plan: SitePlan, zi: ZoneIndex): string
   return `window.__MARROW_SEARCH=${JSON.stringify({ docs: searchDocs }).replace(/</g, '\\u003c')};\n`;
 }
 
-export function embeddedData(
+function embeddedData(
   t: Topology,
   extra: { page: string; devicePages?: string[]; hero?: string | undefined; scene?: Scene | undefined },
 ): string {

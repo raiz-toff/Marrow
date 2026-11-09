@@ -70,10 +70,19 @@ Shared conventions worth knowing before touching either:
 
 ### site — pages and packaging
 
-Collapse decides what's summarized. The planner decides single file versus
-multi-page site and which pages exist. The compiler inlines styles, the runtime,
-and the icon sprites actually used. Page builds are content-hashed and memoized,
-so a rebuild only touches pages whose inputs changed.
+One compile entry, `createSiteBuilder(topology, options)`, serves both output
+shapes. It fills in build-wide defaults (the config file's `layout:` density
+and scale, on a copy — never the caller's topology), then asks the planner for
+the shape and the page set. The planner is the only place that decides a
+**Single file** versus a **Site**; `options.shape` overrides it, which is all
+`--single` does. A Single file is simply a plan with one page, `index.html`,
+whose styles and runtime are inlined; a Site's pages share external assets.
+
+Collapse decides what's summarized on each page. The compiler inlines the icon
+sprites actually used. Page builds are content-hashed and memoized, so a
+rebuild only touches pages whose inputs changed. Callers — the CLI and the dev
+server — never plan, default or branch on the shape themselves: they pass
+options and read pages back.
 
 ### runtime — the client
 
@@ -84,7 +93,9 @@ installed as components, because output must stay dependency-free.
 ### server and cli
 
 The dev server watches, rebuilds, and pushes live reloads over SSE, with a
-small JSON API. The CLI is the user-facing surface: validate, build, serve,
+small JSON API. It holds one builder for either output shape and serves every
+page through the same path, so a served page is byte-identical to the built
+one plus the live-reload client. The CLI is the user-facing surface: validate, build, serve,
 snapshot, import, icons, schema.
 
 ## Design invariants

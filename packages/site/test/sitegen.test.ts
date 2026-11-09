@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, test } from 'vitest';
 import { loadCatalog } from '@marrow/icons';
 import { validateSource } from '@marrow/schema';
-import { buildSite, collapseEndpoints, planSite } from '@marrow/site';
+import { collapseEndpoints, createSiteBuilder, planSite } from '@marrow/site';
 import type { Topology } from '@marrow/model';
 
 const repoRoot = fileURLToPath(new URL('../../..', import.meta.url));
@@ -53,11 +53,11 @@ describe('collapseEndpoints', () => {
   });
 });
 
-describe('buildSite (xl-campus, 358 devices)', () => {
+describe('Site output (xl-campus, 358 devices)', () => {
   const t = topo('corpus/xl-campus-01.yaml');
 
   test('full site: budgets hold, every internal link resolves, search covers everything', async () => {
-    const site = await buildSite(t, { icons: catalog });
+    const site = await createSiteBuilder(t, { icons: catalog }).buildAll();
     expect(site.files.has('index.html')).toBe(true);
     expect(site.files.has('inventory.html')).toBe(true);
     expect(site.files.has('assets/runtime.js')).toBe(true);
@@ -107,8 +107,8 @@ describe('buildSite (xl-campus, 358 devices)', () => {
   }, 60000);
 
   test('deterministic site output', async () => {
-    const a = await buildSite(t, { icons: catalog });
-    const b = await buildSite(t, { icons: catalog });
+    const a = await createSiteBuilder(t, { icons: catalog }).buildAll();
+    const b = await createSiteBuilder(t, { icons: catalog }).buildAll();
     expect([...a.files.keys()]).toEqual([...b.files.keys()]);
     expect(a.files.get('index.html')).toBe(b.files.get('index.html'));
     expect(a.files.get('assets/search-data.js')).toBe(b.files.get('assets/search-data.js'));
