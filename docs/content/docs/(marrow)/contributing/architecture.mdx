@@ -100,11 +100,31 @@ rebuild only touches pages whose inputs changed. Callers — the CLI and the dev
 server — never plan, default or branch on the shape themselves: they pass
 options and read pages back.
 
+The chrome (`site/src/chrome.ts`, markup by feature under `chrome/`) is written
+against the **page contract** — `runtime/src/shared/page-contract.ts`, imported
+by both the compiler and the runtime. Every element the runtime binds to
+carries a `data-m="<hook>"` behaviour hook from its `HOOKS` registry; classes
+are for styling only. The embedded payload is `EmbeddedData`, picked from the
+model through explicit key lists (a new model field reaches the browser only
+when it is added to them) and serialized with `encodePageData`. The pre-boot
+`<head>` script is a bundle of the same URL-parsing code the runtime uses, so
+embed and kiosk options apply before first paint.
+
 ### runtime — the client
 
-About 20 KB: camera, inspector, spotlight, minimap, search, export, command
-palette. The chrome is shadcn/ui ported to vanilla CSS and TypeScript — never
-installed as components, because output must stay dependency-free.
+Camera, inspector, spotlight, minimap, search, export, command palette. The
+chrome is shadcn/ui ported to vanilla CSS and TypeScript — never installed as
+components, because output must stay dependency-free.
+
+The runtime reads the page only through the page contract: `find` / `findAll`
+look elements up by hook and throw a `HookError` naming it when the markup and
+the runtime disagree, `boot()` branches on the payload's `kind` (diagram stage
+or inventory), and `applyModularParams` is the one writer of the `<html>` state
+attributes. Diagram elements are found through the stage hooks `@marrow/visual`
+exports beside the classes it paints. Two bundles come out of the package:
+`dist/runtime.js` and the ~1.5 KB `dist/preboot.js` inlined into every page's
+`<head>`. The boot tests build real pages and run the runtime against them in
+happy-dom, so a renamed hook fails the suite, not the viewer.
 
 ### server and cli
 

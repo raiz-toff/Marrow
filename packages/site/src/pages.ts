@@ -1,8 +1,9 @@
 import type { Device, DeviceStatus, Link, LinkStatus, Tier, Topology } from '@marrow/model';
 import type { NodeMeta } from '@marrow/layout';
 import { extractSvg } from '@marrow/render-svg';
+import { ATTR, hookAttr, type InventoryView } from '@marrow/runtime';
+import { esc } from './html.js';
 import type { SitePlan } from './planner.js';
-import { esc } from './shell.js';
 
 /** Sub-topology builders for the multi-page site. All ids stay real device
  *  ids so deep links (`#d=`) work identically on every page. */
@@ -54,13 +55,13 @@ export function indexZones(t: Topology, plan: SitePlan): ZoneIndex {
 /** shadcn ResizableHandle (withHandle): a divider between zone panels — dragging
  *  trades viewport height between the sections above and below it. */
 const RSZ_V_HANDLE =
-  '<div class="m-rsz-v" role="separator" aria-orientation="vertical" aria-label="Resize columns">' +
+  `<div class="m-rsz-v" ${hookAttr('inventory.resizeCol')} role="separator" aria-orientation="vertical" aria-label="Resize columns">` +
   '<span class="m-rsz-grip"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">' +
   '<circle cx="9" cy="9" r="1.5"/><circle cx="15" cy="9" r="1.5"/><circle cx="9" cy="15" r="1.5"/><circle cx="15" cy="15" r="1.5"/>' +
   '</svg></span></div>';
 
 const RSZ_HANDLE =
-  '\n<div class="m-rsz-handle" role="separator" aria-orientation="horizontal" aria-label="Resize sections">' +
+  `\n<div class="m-rsz-handle" ${hookAttr('inventory.resizeRow')} role="separator" aria-orientation="horizontal" aria-label="Resize sections">` +
   '<span class="m-rsz-grip"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">' +
   '<circle cx="9" cy="9" r="1.5"/><circle cx="15" cy="9" r="1.5"/><circle cx="9" cy="15" r="1.5"/><circle cx="15" cy="15" r="1.5"/>' +
   '</svg></span></div>\n';
@@ -317,7 +318,7 @@ export function inventoryBody(
     const href = `${pageOf(d.id, plan, zi)}#d=${encodeURIComponent(d.id)}`;
     const leaf = d.zone !== undefined ? (zoneName.get(d.zone) ?? d.zone) : '';
     return (
-      `<tr class="m-inv-row" data-id="${esc(d.id)}" data-search="${esc([d.id, d.name, d.tier, d.zone, leaf, d.mgmtIp, d.role].filter(Boolean).join(' ').toLowerCase())}">` +
+      `<tr class="m-inv-row" ${hookAttr('inventory.row')} ${ATTR.id}="${esc(d.id)}" ${ATTR.search}="${esc([d.id, d.name, d.tier, d.zone, leaf, d.mgmtIp, d.role].filter(Boolean).join(' ').toLowerCase())}">` +
       `<td><span class="m-inv-name">${iconChip(d)}<a href="${esc(href)}">${esc(d.name)}</a></span></td>` +
       `<td class="m-dim">${esc(d.id)}</td>` +
       `<td class="m-dim">${esc(d.tier ?? '')}</td>` +
@@ -327,12 +328,17 @@ export function inventoryBody(
       `</tr>`
     );
   };
-  const thead = `<thead><tr><th data-sort>name</th><th data-sort>id</th><th data-sort>tier</th><th data-sort>role</th><th data-sort>status</th><th data-sort>mgmt ip</th></tr></thead>`;
+  const sortable = hookAttr('inventory.sort');
+  const thead = `<thead><tr>${['name', 'id', 'tier', 'role', 'status', 'mgmt ip'].map((c) => `<th ${sortable}>${c}</th>`).join('')}</tr></thead>`;
+  const table = `<table class="m-table m-inventory" ${hookAttr('inventory.table')}>`;
+  const pager = (label: string): string => `<nav class="m-pagination" ${hookAttr('inventory.pager')} aria-label="${label}"></nav>`;
+  const filter = `<input class="m-inv-filter" ${hookAttr('inventory.filter')} type="text" placeholder="Filter devices…" aria-label="Filter inventory">`;
+  const view = (v: InventoryView, extra = ''): string => `<div class="m-inv-view${extra}" ${hookAttr('inventory.view')} ${ATTR.view}="${v}"`;
   const head = `
   <h1>Inventory</h1>
   <p class="m-dim">${t.devices.length} devices · ${t.links.length} links · click a column to sort</p>`;
   const flatTable = (): string =>
-    `<table class="m-table m-inventory">${thead}<tbody>${[...t.devices]
+    `${table}${thead}<tbody>${[...t.devices]
       .sort((a, b) => a.id.localeCompare(b.id))
       .map(row)
       .join('\n')}</tbody></table>`;
@@ -340,8 +346,8 @@ export function inventoryBody(
   // no zone pages (site split by device count alone) → the classic flat table
   if (plan.zonePages.length === 0) {
     return `<div class="m-doc-inner">${sprite}${head}
-  <div class="m-inv-bar"><input class="m-inv-filter" type="text" placeholder="Filter devices…" aria-label="Filter inventory"></div>
-  <div class="m-inv-view" data-view="all">${flatTable()}<nav class="m-pagination" aria-label="Pagination"></nav></div>
+  <div class="m-inv-bar">${filter}</div>
+  ${view('all')}>${flatTable()}${pager('Pagination')}</div>
 </div>`;
   }
 
@@ -361,16 +367,16 @@ export function inventoryBody(
           .sort((a, b) => tierRank(a) - tierRank(b) || a.name.localeCompare(b.name));
         const isNested = href !== undefined && key !== '' && `zones/${key}.html` !== href;
         const sub = isNested
-          ? `<tr class="m-inv-sub"><td colspan="6">${esc(zoneName.get(key) ?? key)}</td></tr>`
+          ? `<tr class="m-inv-sub" ${hookAttr('inventory.sub')}><td colspan="6">${esc(zoneName.get(key) ?? key)}</td></tr>`
           : '';
         return `<tbody>${sub}${devices.map(row).join('\n')}</tbody>`;
       })
       .join('\n');
     const name = href !== undefined ? `<a href="${esc(href)}">${esc(title)}</a>` : esc(title);
-    return `<section class="m-inv-group">
+    return `<section class="m-inv-group" ${hookAttr('inventory.group')}>
   <header>${name}<em>${members.length} devices</em></header>
-  <div class="m-inv-scroll"><table class="m-table m-inventory">${thead}${tbodies}</table></div>
-  <nav class="m-pagination" aria-label="Section pagination"></nav>
+  <div class="m-inv-scroll" ${hookAttr('inventory.scroll')}>${table}${thead}${tbodies}</table></div>
+  ${pager('Section pagination')}
 </section>`;
   };
 
@@ -397,13 +403,13 @@ export function inventoryBody(
   return `<div class="m-doc-inner">${sprite}${head}
   <div class="m-inv-bar">
     <div class="m-tabs m-inv-tabs" role="tablist">
-      <button class="m-tab active" type="button" data-tab="zones" role="tab">By zone</button>
-      <button class="m-tab" type="button" data-tab="all" role="tab">All devices</button>
+      <button class="m-tab active" ${hookAttr('inventory.tab')} type="button" ${ATTR.tab}="zones" role="tab">By zone</button>
+      <button class="m-tab" ${hookAttr('inventory.tab')} type="button" ${ATTR.tab}="all" role="tab">All devices</button>
     </div>
-    <input class="m-inv-filter" type="text" placeholder="Filter devices…" aria-label="Filter inventory">
+    ${filter}
   </div>
-  <div class="m-inv-view m-inv-cols" data-view="zones">${colHtml}</div>
-  <div class="m-inv-view" data-view="all" hidden>${flatTable()}<nav class="m-pagination" aria-label="Pagination"></nav></div>
+  ${view('zones', ' m-inv-cols')}>${colHtml}</div>
+  ${view('all')} hidden>${flatTable()}${pager('Pagination')}</div>
 </div>`;
 }
 

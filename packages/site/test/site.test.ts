@@ -3,11 +3,18 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, test } from 'vitest';
 import { loadCatalog } from '@marrow/icons';
+import { DATA_SCRIPT_ID, decodePageData, getPrebootSource } from '@marrow/runtime';
 import { validateSource } from '@marrow/schema';
 import { buildSingle } from './helpers.js';
 
 const repoRoot = fileURLToPath(new URL('../../..', import.meta.url));
 const catalog = loadCatalog(join(repoRoot, 'icon-packs'));
+
+/** The page's payload, read the way the runtime reads it. */
+function pageData(html: string) {
+  const re = new RegExp(`<script type="application/json" id="${DATA_SCRIPT_ID}">([\\s\\S]*?)</script>`);
+  return decodePageData(re.exec(html)?.[1]);
+}
 
 async function build(rel: string) {
   const source = readFileSync(join(repoRoot, 'fixtures', rel), 'utf8');
@@ -76,7 +83,7 @@ describe('Single file output', () => {
     const { html } = await buildSingle(validated.topology!, { icons: catalog });
     const dataBlock = /<script type="application\/json" id="marrow-data">([\s\S]*?)<\/script>/.exec(html)![1]!;
     expect(dataBlock).not.toContain('</script');
-    expect(JSON.parse(dataBlock).devices[0].note).toContain('</script>');
+    expect(pageData(html).devices[0]!.note).toContain('</script>');
   });
 
   test('single-file size budget: ≤900 KB at ~50 nodes', async () => {
@@ -94,11 +101,10 @@ describe('Single file output', () => {
     expect(canvasBuild.html).toContain('class="m-canvas"');
     expect(canvasBuild.html).toContain('class="m-sprite"');
     // geometry ships as data on canvas pages
-    const data = JSON.parse(
-      /<script type="application\/json" id="marrow-data">([\s\S]*?)<\/script>/.exec(canvasBuild.html)![1]!,
-    );
-    expect(data.scene.nodes).toHaveLength(10);
-    expect(data.scene.edges[0].points.length).toBeGreaterThanOrEqual(2);
+    const data = pageData(canvasBuild.html);
+    expect(data.kind).toBe('stage');
+    expect(data.scene!.nodes).toHaveLength(10);
+    expect(data.scene!.edges[0]!.points.length).toBeGreaterThanOrEqual(2);
   });
 
   test('deterministic output', async () => {
@@ -111,10 +117,10 @@ describe('Single file output', () => {
     const source = readFileSync(join(repoRoot, 'fixtures', 'valid', 'small-office.yaml'), 'utf8');
     const t = validateSource(source, { icons: catalog }).topology!;
     const buildFull = await buildSingle(t, { icons: catalog });
-    // URL param modular script is always injected in head
-    expect(buildFull.html).toContain('g(\'embed\')===\'true\'');
-    expect(buildFull.html).toContain('g(\'inspector\')===\'off\'');
-    expect(buildFull.html).toContain('g(\'minimap\')===\'off\'');
+    // the pre-boot script (URL → <html> attributes before first paint) is
+    // inlined in <head>; its behaviour is tested in packages/runtime
+    const head = buildFull.html.slice(0, buildFull.html.indexOf('</head>'));
+    expect(head).toContain(`<script>${getPrebootSource()}</script>`);
 
     // Build-time minimal chrome option
     const buildMinimal = await buildSingle(t, { icons: catalog, chrome: 'minimal' });
@@ -140,10 +146,9 @@ describe('Single file output', () => {
     ].join('\n');
     const validated = validateSource(source, { icons: catalog });
     const { html } = await buildSingle(validated.topology!, { icons: catalog });
-    const dataBlock = /<script type="application\/json" id="marrow-data">([\s\S]*?)<\/script>/.exec(html)![1]!;
-    const parsed = JSON.parse(dataBlock);
-    expect(parsed.devices[0].customFields).toEqual({ rack: 'Rack 5' });
-    expect(parsed.devices[0].sections).toEqual({ bgp: 'Peer 1.1.1.1' });
-    expect(parsed.links[0].customFields).toEqual({ tested: true });
+    const parsed = pageData(html);
+    expect(parsed.devices[0]!.customFields).toEqual({ rack: 'Rack 5' });
+    expect(parsed.devices[0]!.sections).toEqual({ bgp: 'Peer 1.1.1.1' });
+    expect(parsed.links[0]!.customFields).toEqual({ tested: true });
   });
 });

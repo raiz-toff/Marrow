@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "type": "module",
+  "sideEffects": false,
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -12,9 +13,10 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
-    "bundle": "esbuild src/client/main.ts --bundle --minify --format=iife --outfile=dist/runtime.js --log-level=warning"
+    "bundle": "esbuild src/client/entry.ts --bundle --minify --format=iife --outfile=dist/runtime.js --log-level=warning && esbuild src/shared/preboot.ts --bundle --minify --format=iife --target=es2019 --outfile=dist/preboot.js --log-level=warning"
   },
   "dependencies": {
+    "@marrow/model": "0.0.1",
     "@marrow/scene": "0.0.1",
     "@marrow/visual": "0.0.1"
   }

@@ -18,8 +18,8 @@ packages/
 ├─ layout        classify → place (ELK / compose / polar / circle) → route (libavoid)
 ├─ lint          geometry linter: L1 fails builds, L2 auto-repairs, L3 advises
 ├─ render-svg    scene → SVG (hero tier) or canvas host (scale tier)
-├─ runtime       the ~20 KB client: camera, inspector, spotlight, minimap, export
-├─ site          the compile entry: defaults, page planner, collapse, page compiler
+├─ runtime       the browser client + the page contract it shares with site
+├─ site          the compile entry: defaults, page planner, collapse, chrome markup
 ├─ ui            shadcn-compatible React component suite (@marrow/ui)
 ├─ server        dev server: watch, rebuild, SSE live reload, /api
 └─ cli           the marrow command
@@ -52,7 +52,8 @@ legacy-v1/    archived Python v1, untracked, reference only
 | What fails a build | `lint` | Moving a rule between L1 and L3 is a breaking change in practice |
 | How something looks | `visual` | Symbols, px widths and dashes, status colours and draw order, chip/LED proportions, theme tokens. Both tiers pick it up; touch `render-svg` / `runtime/client/canvas-engine.ts` only for markup or draw-call plumbing |
 | A theme token or its default | `visual/src/tokens.ts` | The token table is the only place a CSS variable name is spelled; `site/tokens.ts` only merges `marrow.config.yaml` overrides |
-| Interaction, chrome, keyboard | `runtime/client/main.ts` + `site/shell.ts` + `site/styles.ts` | Vanilla only — no React |
+| Interaction, chrome, keyboard | `runtime/client/*` + `site/chrome.ts` (markup in `site/chrome/*`) + `site/styles.ts`; hooks in `runtime/src/shared/page-contract.ts` | Vanilla only — no React. A new element the runtime binds to = a `HOOKS` entry + `hookAttr(...)` on the markup |
+| What the page embeds for the runtime | `runtime/src/shared/page-contract.ts` | `EmbeddedData` and its key lists; `site/builder.ts` only picks through them |
 | Page splitting, what earns a page | `site/planner.ts` | Thresholds are exported constants; the planner alone decides the shape |
 | How pages are compiled or packaged, a new build option | `site/builder.ts` | `createSiteBuilder` is the one entry for Single file and Site; callers only pass `BuildOptions` |
 | Dev server or its API | `server` | Serves both shapes through one `SiteBuilder` |
@@ -69,6 +70,7 @@ legacy-v1/    archived Python v1, untracked, reference only
 | `packages/site/src/planner.ts` | `SITE_DEVICE_THRESHOLD = 150`, `SITE_ZONE_THRESHOLD = 5`; honors a forced `shape` |
 | `packages/visual/src/spec.ts` | The visual language as tables: statuses (in draw order), modes, speeds, chip proportions |
 | `packages/visual/src/rules.ts` | The one ordered paint rule list; folded by the canvas, printed as CSS for SVG |
+| `packages/runtime/src/shared/page-contract.ts` | The page contract: `data-m` hooks, `<html>` root state, payload type and codec, embed message names. Imported by both site and runtime |
 | `packages/site/src/styles.ts` | The chrome stylesheet; splices in `visualCss()` for the diagram itself |
 | `packages/site/src/brand.ts` | Branding types and logo sanitizing |
 | `packages/schema/src/zodSchema.ts` | The validation shape |
@@ -78,7 +80,14 @@ legacy-v1/    archived Python v1, untracked, reference only
 
 **Port chips carry `data-edge` and `data-node`.** Runtime element maps must use
 class-qualified selectors — `.m-node[data-node]`, `.m-edge[data-edge]` — or they
-match chips as well as the things they're meant to match.
+match chips as well as the things they're meant to match. Use `STAGE_HOOKS.node`
+/ `STAGE_HOOKS.edge` from `@marrow/visual`, which spell exactly that.
+
+**Behaviour hooks are `data-m`, never classes.** The runtime finds chrome by
+`find(document, 'inspector.panel')`, not `.m-inspector`; restyling or renaming a
+class can't break a feature, and a missing hook throws a `HookError` naming it.
+A static test rejects `.m-…` / `[data-…]` selector literals in
+`runtime/src/client` except for markup the runtime creates itself.
 
 **Text measurement is static.** `@marrow/metrics` measures at the exact pixel
 size and letter-spacing the renderers use. Don't reach for a DOM measurement;

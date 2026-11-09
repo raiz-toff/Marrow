@@ -1,17 +1,45 @@
 import { Camera } from './camera.js';
-import type { Scene } from '@marrow/scene';
 import { edgeClasses, linkSemanticsWords } from '@marrow/visual';
 import { CanvasEngine } from './canvas-engine.js';
 import { devicePageIds, globalSearchDocs, loadData, type DataDevice, type DataLink, type DataTitleBlock, type EmbeddedData } from './data.js';
+import { closestHook, find, findAll, markHook, maybe, param, setParam } from './find.js';
 import { parseHash, parseModularParams, serializeHash } from '../shared/hash.js';
+import {
+  applyModularParams,
+  ATTR,
+  EMBED,
+  hookAttr,
+  isEmbedMessage,
+  readRoot,
+  READY_FLAG,
+  STAGE_ATTR,
+  STAGE_HOOKS,
+  storageKey,
+  writeRoot,
+  type Menu,
+  type OneHook,
+  type StorageName,
+} from '../shared/page-contract.js';
 import { searchDocs, type SearchDoc } from '../shared/search.js';
 
-/** The interactive shell. One chrome (inspector, spotlight, minimap, tooltip,
+/** The interactive chrome. One chrome (inspector, spotlight, minimap, tooltip,
  *  themes, deep links, keyboard) over two render backends: the SVG DOM for
- *  hero-tier pages, the canvas engine for scale-tier pages. */
+ *  hero-tier pages, the canvas engine for scale-tier pages. Every element it
+ *  binds to is a page-contract hook (`find` / `findAll`) or a stage hook from
+ *  @marrow/visual; classes it queries by name are ones it creates itself. */
 
-const rootPrefix = (): string => document.documentElement.dataset['root'] ?? '';
-const currentPage = (): string => document.documentElement.dataset['page'] ?? 'index.html';
+const rootEl = (): HTMLElement => document.documentElement;
+const rootPrefix = (): string => readRoot(rootEl(), 'root') ?? '';
+const currentPage = (): string => readRoot(rootEl(), 'page') ?? 'index.html';
+const inspectorOff = (): boolean => readRoot(rootEl(), 'inspector') === 'off';
+const stored = (name: StorageName, dflt: string): string => localStorage.getItem(storageKey(name)) ?? dflt;
+/** Open the ⌘K command center through its own button, so open/close state stays in one place. */
+const openPalette = (): void => findAll(document, 'search.open')[0]?.click();
+
+function markReady(): void {
+  (window as unknown as Record<string, unknown>)[READY_FLAG] = true;
+  window.dispatchEvent(new CustomEvent(EMBED.ready));
+}
 
 interface Ctx {
   mode: 'svg' | 'canvas';
@@ -30,27 +58,28 @@ interface Ctx {
   selected: string | undefined;
 }
 
-function boot(): void {
+export function boot(): void {
   const data = loadData();
-  const stage = document.querySelector<HTMLElement>('.m-stage');
-  const svg = document.querySelector<SVGSVGElement>('.m-svg');
-  const canvas = document.querySelector<HTMLCanvasElement>('.m-canvas');
 
-  if (!stage || (!svg && !canvas)) {
-    // document pages (inventory): chrome only
+  if (data.kind === 'inventory') {
+    // document page: chrome only
     setupTheme();
     setupSidebar(undefined);
     setupSpotlight(undefined, data);
     setupMenubar(undefined);
     setupShortcutsDialog();
-    setupAboutDialog(undefined);
+    setupAboutDialog();
     setupInventory();
     setupInventoryDetails(data);
-    setupMobileNav(undefined);
-    (window as any).__MARROW_READY__ = true;
-    window.dispatchEvent(new CustomEvent('marrow:ready'));
+    setupMobileNav();
+    markReady();
     return;
   }
+
+  const stage = find(document, 'stage.root');
+  const svg = stage.querySelector<SVGSVGElement>(STAGE_HOOKS.svg);
+  const canvas = stage.querySelector<HTMLCanvasElement>(STAGE_HOOKS.canvas);
+  if (!svg && !canvas) throw new Error('marrow: stage page without a diagram');
 
   const deviceById = new Map(data.devices.map((d) => [d.id, d]));
   const linksByDevice = new Map<string, DataLink[]>();
@@ -71,14 +100,14 @@ function boot(): void {
   const edgeEls = new Map<string, SVGPathElement>();
 
   if (svg) {
-    sceneSize = { w: Number(svg.dataset['w']) || 1, h: Number(svg.dataset['h']) || 1 };
+    sceneSize = sceneSizeOf(svg);
     // class-qualified: port chips also carry data-node/data-edge and must
     // not shadow the real node groups / edge paths in these maps
-    for (const el of svg.querySelectorAll<SVGGElement>('.m-node[data-node]')) nodeEls.set(el.dataset['node']!, el);
-    for (const el of svg.querySelectorAll<SVGPathElement>('.m-edge[data-edge]')) edgeEls.set(el.dataset['edge']!, el);
+    for (const el of svg.querySelectorAll<SVGGElement>(STAGE_HOOKS.node)) nodeEls.set(el.getAttribute(STAGE_ATTR.node)!, el);
+    for (const el of svg.querySelectorAll<SVGPathElement>(STAGE_HOOKS.edge)) edgeEls.set(el.getAttribute(STAGE_ATTR.edge)!, el);
   }
   if (canvas) {
-    const scene = (data as { scene?: Scene }).scene;
+    const scene = data.scene;
     if (!scene) throw new Error('marrow: canvas page without embedded scene');
     engine = new CanvasEngine(canvas, stage, scene);
     sceneSize = scene.size;
@@ -87,7 +116,7 @@ function boot(): void {
   let minimapSync: () => void = () => {};
   let hashSyncSoon: () => void = () => {};
 
-  const cameraTarget = svg?.querySelector<SVGGElement>('.m-camera') ?? undefined;
+  const cameraTarget = svg?.querySelector<SVGGElement>(STAGE_HOOKS.camera) ?? undefined;
   const camera = new Camera(
     cameraTarget ?? (document.createElementNS('http://www.w3.org/2000/svg', 'g') as SVGGElement),
     () => {
@@ -96,19 +125,15 @@ function boot(): void {
     },
     sceneSize,
     (s) => {
-      document.documentElement.dataset['zoom'] = s.k < 0.70 ? 'far' : s.k > 1.3 ? 'near' : 'mid';
+      writeRoot(rootEl(), 'zoom', s.k < 0.70 ? 'far' : s.k > 1.3 ? 'near' : 'mid');
       engine?.applyCamera(s);
       minimapSync();
       hashSyncSoon();
-      const zoomPct = `${Math.round(s.k * 100)}%`;
-      for (const el of document.querySelectorAll('.m-zoom-readout')) {
-        el.textContent = zoomPct;
-      }
     },
     () => {
       const insets = { top: 0, right: 0, bottom: 0, left: 0 };
-      const inspector = document.querySelector<HTMLElement>('.m-inspector');
-      if (inspector && !inspector.hidden && inspector.dataset['sheet'] !== 'closed') {
+      const inspector = find(document, 'inspector.panel');
+      if (!inspector.hidden && param(inspector, 'sheet') !== 'closed') {
         const stageRect = stage.getBoundingClientRect();
         const inspRect = inspector.getBoundingClientRect();
         if (inspRect.top < stageRect.bottom && inspRect.bottom > stageRect.top) {
@@ -154,20 +179,20 @@ function boot(): void {
   setupContextMenu(ctx);
   setupMenubar(ctx);
   setupShortcutsDialog();
-  setupAboutDialog(ctx);
-  minimapSync = setupMinimap(ctx, stage);
+  setupAboutDialog();
+  minimapSync = setupMinimap(ctx);
   setupSidebar(ctx);
   setupClickAway(ctx);
-  setupMobileNav(ctx);
+  setupMobileNav();
   hashSyncSoon = setupHash(ctx);
   syncModularParams(ctx);
   addEventListener('hashchange', () => syncModularParams(ctx));
 
   // re-apply persisted view settings — the ⌘K palette reads AND writes these,
   // so what it displays must be what the page is actually doing
-  for (const key of ['labels', 'ports', 'motion', 'minimap']) {
-    if (key === 'minimap' && document.documentElement.dataset['minimap'] === 'off') continue;
-    const storedValue = localStorage.getItem(`marrow-${key}`);
+  for (const key of ['labels', 'ports', 'motion', 'minimap'] as const) {
+    if (key === 'minimap' && readRoot(rootEl(), 'minimap') === 'off') continue;
+    const storedValue = localStorage.getItem(storageKey(key));
     if (storedValue !== null) applySetting(ctx, key, storedValue);
   }
 
@@ -213,19 +238,14 @@ function boot(): void {
     });
     ro.observe(stage);
   }
-  const wanted = !isReload ? (initial.device ?? (data as { hero?: string }).hero) : undefined;
+  const wanted = !isReload ? (initial.device ?? data.hero) : undefined;
   if (wanted !== undefined) {
     const resolved = resolveNodeFor(ctx, wanted);
     if (resolved !== undefined) selectDevice(ctx, resolved, false);
   }
-  const settle = (): void => document.documentElement.classList.add('settled');
+  const settle = (): void => rootEl().classList.add('settled');
   setTimeout(settle, reduced ? 0 : 1900);
   addEventListener('pointerdown', settle, { once: true });
-
-  const markReady = (): void => {
-    (window as any).__MARROW_READY__ = true;
-    window.dispatchEvent(new CustomEvent('marrow:ready'));
-  };
 
   if (document.fonts?.ready) {
     document.fonts.ready
@@ -237,6 +257,14 @@ function boot(): void {
 }
 
 // ─── backend-neutral node operations ────────────────────────────────────────
+
+/** Scene size a hero-tier svg carries in `data-w` / `data-h`. */
+function sceneSizeOf(svg: SVGSVGElement, fallback = 1): { w: number; h: number } {
+  return {
+    w: Number(svg.getAttribute(STAGE_ATTR.w)) || fallback,
+    h: Number(svg.getAttribute(STAGE_ATTR.h)) || fallback,
+  };
+}
 
 function hasNode(ctx: Ctx, id: string): boolean {
   return ctx.mode === 'svg' ? ctx.nodeEls.has(id) : ctx.engine!.nodeBox(id) !== undefined;
@@ -303,7 +331,7 @@ function applyFocus(ctx: Ctx, id: string): void {
 
 /** Reveal/hide the port chips belonging to one edge (progressive disclosure). */
 function setChipsHot(ctx: Ctx, edgeId: string, hot: boolean): void {
-  const sel = `.m-portlabel[data-edge="${CSS.escape(edgeId)}"]`;
+  const sel = `${STAGE_HOOKS.portChip}[${STAGE_ATTR.edge}="${CSS.escape(edgeId)}"]`;
   for (const chip of ctx.svg!.querySelectorAll(sel)) chip.classList.toggle('is-hot', hot);
 }
 
@@ -351,7 +379,7 @@ function setupPanZoom(ctx: Ctx, stage: HTMLElement): void {
   let moved = false;
 
   stage.addEventListener('pointerdown', (ev) => {
-    if (ctx.mode === 'svg' && (ev.target as Element).closest('.m-node[data-node], [data-edge]')) return;
+    if (ctx.mode === 'svg' && (ev.target as Element).closest(`${STAGE_HOOKS.node}, ${STAGE_HOOKS.edgeBound}`)) return;
     if (ctx.mode === 'canvas' && hitNode(ctx, ev)) return;
     pointers.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
     stage.setPointerCapture(ev.pointerId);
@@ -412,33 +440,33 @@ function setupPanZoom(ctx: Ctx, stage: HTMLElement): void {
 // ─── pointer wiring per backend ─────────────────────────────────────────────
 
 function setupSvgPointer(ctx: Ctx): void {
-  const root = document.documentElement;
+  const root = rootEl();
   ctx.svg!.addEventListener('pointerover', (ev) => {
-    const nodeEl = (ev.target as Element).closest<SVGGElement>('.m-node[data-node]');
+    const nodeEl = (ev.target as Element).closest<SVGGElement>(STAGE_HOOKS.node);
     if (!nodeEl) return;
-    applyFocus(ctx, nodeEl.dataset['node']!);
+    applyFocus(ctx, nodeEl.getAttribute(STAGE_ATTR.node)!);
     root.classList.add('focus-mode');
   });
   ctx.svg!.addEventListener('pointerout', (ev) => {
-    if (!(ev.target as Element).closest('.m-node[data-node]')) return;
+    if (!(ev.target as Element).closest(STAGE_HOOKS.node)) return;
     root.classList.remove('focus-mode');
     clearFocus(ctx);
     if (ctx.selected) applyFocus(ctx, ctx.selected);
   });
   ctx.svg!.addEventListener('click', (ev) => {
-    const nodeEl = (ev.target as Element).closest<SVGGElement>('.m-node[data-node]');
+    const nodeEl = (ev.target as Element).closest<SVGGElement>(STAGE_HOOKS.node);
     if (nodeEl) {
-      const href = nodeEl.dataset['href'];
-      if (href !== undefined) {
+      const href = nodeEl.getAttribute(STAGE_ATTR.href);
+      if (href !== null) {
         location.href = rootPrefix() + href;
         return;
       }
-      selectDevice(ctx, nodeEl.dataset['node']!, true);
+      selectDevice(ctx, nodeEl.getAttribute(STAGE_ATTR.node)!, true);
       return;
     }
-    const edgeEl = (ev.target as Element).closest<SVGElement>('[data-edge]');
-    if (edgeEl && document.documentElement.dataset['inspector'] !== 'off') {
-      const edgeId = edgeEl.getAttribute('data-edge');
+    const edgeEl = (ev.target as Element).closest<SVGElement>(STAGE_HOOKS.edgeBound);
+    if (edgeEl && !inspectorOff()) {
+      const edgeId = edgeEl.getAttribute(STAGE_ATTR.edge);
       const link = ctx.data.links.find((l) => l.id === edgeId);
       if (link) {
         selectLink(ctx, link);
@@ -449,13 +477,13 @@ function setupSvgPointer(ctx: Ctx): void {
   });
   // hovering an edge reveals its port chips even when the toggle is off
   ctx.svg!.addEventListener('pointerover', (ev) => {
-    const edgeEl = (ev.target as Element).closest<SVGElement>('[data-edge]');
-    if (edgeEl) setChipsHot(ctx, edgeEl.getAttribute('data-edge')!, true);
+    const edgeEl = (ev.target as Element).closest<SVGElement>(STAGE_HOOKS.edgeBound);
+    if (edgeEl) setChipsHot(ctx, edgeEl.getAttribute(STAGE_ATTR.edge)!, true);
   });
   ctx.svg!.addEventListener('pointerout', (ev) => {
-    const edgeEl = (ev.target as Element).closest<SVGElement>('[data-edge]');
+    const edgeEl = (ev.target as Element).closest<SVGElement>(STAGE_HOOKS.edgeBound);
     if (!edgeEl) return;
-    const edgeId = edgeEl.getAttribute('data-edge')!;
+    const edgeId = edgeEl.getAttribute(STAGE_ATTR.edge)!;
     const edgePath = ctx.edgeEls.get(edgeId);
     if (edgePath && edgePath.classList.contains('is-path')) return;
     setChipsHot(ctx, edgeId, false);
@@ -475,8 +503,8 @@ function hitNode(ctx: Ctx, ev: PointerEvent | MouseEvent): ReturnType<CanvasEngi
 }
 
 function setupCanvasPointer(ctx: Ctx): void {
-  const root = document.documentElement;
-  const tip = document.querySelector<HTMLElement>('.m-tooltip');
+  const root = rootEl();
+  const tip = find(document, 'stage.tooltip');
   let hovered: string | undefined;
   ctx.stage.addEventListener('pointermove', (ev) => {
     const node = hitNode(ctx, ev);
@@ -493,7 +521,6 @@ function setupCanvasPointer(ctx: Ctx): void {
         ctx.stage.style.cursor = '';
       }
     }
-    if (!tip) return;
     if (!node) {
       const w = toWorld(ctx, ev);
       const cam = ctx.camera.get();
@@ -527,7 +554,7 @@ function setupCanvasPointer(ctx: Ctx): void {
     const w = toWorld(ctx, ev);
     const cam = ctx.camera.get();
     const edge = ctx.engine!.edgeAt(w.x, w.y, 8 / cam.k);
-    if (edge && document.documentElement.dataset['inspector'] !== 'off') {
+    if (edge && !inspectorOff()) {
       const link = ctx.data.links.find((l) => l.id === edge.id);
       if (link) {
         selectLink(ctx, link);
@@ -537,7 +564,7 @@ function setupCanvasPointer(ctx: Ctx): void {
     deselect(ctx);
   });
   ctx.stage.addEventListener('pointerleave', () => {
-    if (tip) tip.hidden = true;
+    tip.hidden = true;
   });
 }
 
@@ -678,8 +705,7 @@ export function exposePublicApi(ctx?: Ctx): void {
         };
       },
       activateTab(tabId: string): void {
-        const panel = document.querySelector<HTMLElement>('.m-inspector');
-        if (panel) activateInspectorTab(panel, tabId);
+        activateInspectorTab(find(document, 'inspector.panel'), tabId);
       },
       getTabs(): InspectorTabDef[] {
         return Array.from(customTabsRegistry.values());
@@ -714,7 +740,7 @@ export function selectDevice(ctx: Ctx, id: string, fly = true): void {
   ctx.selected = id;
   currentInspectedItem = { type: 'device', item: device };
   markSelected(ctx, id);
-  document.documentElement.classList.add('has-selection');
+  rootEl().classList.add('has-selection');
   applyFocus(ctx, id);
   renderInspector(ctx, device);
   if (fly) {
@@ -722,11 +748,6 @@ export function selectDevice(ctx: Ctx, id: string, fly = true): void {
     if (b) ctx.camera.flyTo(b);
   }
   syncHash(ctx);
-  const statusNode = document.querySelector('.m-status-node');
-  if (statusNode) {
-    const sub = [device.mgmtIp, device.role, device.tier].filter(Boolean).join(' · ');
-    statusNode.textContent = sub ? `${device.name} · ${sub}` : device.name;
-  }
   emitEvent('select', currentInspectedItem);
 }
 
@@ -740,7 +761,7 @@ function deselect(ctx?: Ctx): void {
       setTimeout(() => ctx.camera.fit(true), 80);
     }
   }
-  document.documentElement.classList.remove('has-selection');
+  rootEl().classList.remove('has-selection');
   if (currentActiveCleanup) {
     try {
       currentActiveCleanup();
@@ -750,17 +771,10 @@ function deselect(ctx?: Ctx): void {
     currentActiveCleanup = undefined;
   }
   currentInspectedItem = null;
-  const panel = document.querySelector<HTMLElement>('.m-inspector');
-  if (panel) {
-    panel.hidden = true;
-    panel.dataset['sheet'] = 'closed';
-  }
-  const shell = document.getElementById('marrow-shell');
-  if (shell) {
-    shell.style.setProperty('--inspector-offset', '0px');
-  }
-  const statusNode = document.querySelector('.m-status-node');
-  if (statusNode) statusNode.textContent = 'Ready';
+  const panel = find(document, 'inspector.panel');
+  panel.hidden = true;
+  setParam(panel, 'sheet', 'closed');
+  find(document, 'chrome.root').style.setProperty('--inspector-offset', '0px');
   emitEvent('deselect');
 }
 
@@ -769,7 +783,7 @@ export function selectLink(ctx: Ctx, link: DataLink, fly = true): void {
   currentInspectedItem = { type: 'edge', item: link };
   clearFocus(ctx);
   ctx.selected = undefined;
-  document.documentElement.classList.add('has-selection');
+  rootEl().classList.add('has-selection');
   ctx.edgeEls.get(link.id)?.classList.add('is-path');
   setChipsHot(ctx, link.id, true);
   ctx.nodeEls.get(link.from.device)?.classList.add('is-adj');
@@ -804,9 +818,8 @@ function setupClickAway(ctx: Ctx): void {
     if (ctx.selected === undefined && !currentInspectedItem) return;
     const target = ev.target as Element;
     if (
-      target.closest(
-        '.m-inspector, .m-controls, .m-minimap, .m-spotlight, .m-rail-wrap, .m-dock, .m-sidebar, .m-command-bar, .m-status-bar, .m-mobile-nav, [data-node], [data-edge]',
-      )
+      closestHook(target, 'inspector.panel', 'camera.controls', 'minimap.root', 'spotlight.root', 'sidebar.panel', 'chrome.commandBar') ||
+      target.closest(`${STAGE_HOOKS.nodeBound}, ${STAGE_HOOKS.edgeBound}`)
     )
       return;
     if (ctx.mode === 'canvas' && hitNode(ctx, ev)) return; // canvas nodes aren't DOM
@@ -822,7 +835,7 @@ interface DeviceMaps {
 }
 
 function renderInspector(ctx: Ctx, d: DataDevice): void {
-  if (document.documentElement.dataset['inspector'] === 'off') return;
+  if (inspectorOff()) return;
   fillInspector(
     { deviceById: ctx.deviceById, linksByDevice: ctx.linksByDevice, devicePages: devicePageIds(ctx.data) },
     d,
@@ -920,10 +933,10 @@ function activateInspectorTab(panel: HTMLElement, tabId: string): void {
     currentActiveCleanup = undefined;
   }
 
-  const tabs = panel.querySelectorAll<HTMLButtonElement>('.m-tab-btn');
-  const panes = panel.querySelectorAll<HTMLElement>('.m-tab-pane, .m-inspector-pane');
+  const tabs = findAll(panel, 'inspector.tab');
+  const panes = findAll(panel, 'inspector.pane');
   for (const tab of tabs) {
-    const active = tab.dataset['tab'] === currentTab.id;
+    const active = param(tab, 'tab') === currentTab.id;
     tab.classList.toggle('is-active', active);
     tab.classList.toggle('active', active);
     tab.setAttribute('aria-selected', String(active));
@@ -935,7 +948,7 @@ function activateInspectorTab(panel: HTMLElement, tabId: string): void {
     pane.hidden = !active;
   }
 
-  const pane = panel.querySelector<HTMLElement>(`#m-pane-${currentTab.id}`);
+  const pane = panes.find((p) => p.id === `m-pane-${currentTab.id}`);
   if (pane && currentTab.render) {
     const cleanup = currentTab.render(pane);
     if (typeof cleanup === 'function') {
@@ -944,100 +957,90 @@ function activateInspectorTab(panel: HTMLElement, tabId: string): void {
   }
 
   if (window.innerWidth < 768 && (currentTab.id === 'interfaces' || currentTab.id === 'config')) {
-    panel.dataset['sheet'] = 'full';
+    setParam(panel, 'sheet', 'full');
   }
 
   emitEvent('tabchange', currentTab.id);
 }
 
 function bindInspectorTabs(panel: HTMLElement): void {
-  const tabsBar = panel.querySelector('.m-inspector-tabs');
-  tabsBar?.addEventListener('click', (ev) => {
-    const btn = (ev.target as Element).closest<HTMLButtonElement>('.m-tab-btn');
-    if (!btn || !btn.dataset['tab']) return;
-    activateInspectorTab(panel, btn.dataset['tab']);
+  find(panel, 'inspector.tabs').addEventListener('click', (ev) => {
+    const btn = closestHook(ev.target, 'inspector.tab');
+    const tab = btn ? param(btn, 'tab') : undefined;
+    if (tab) activateInspectorTab(panel, tab);
   });
 }
 
 function setupInspector(ctx: Ctx): void {
-  const panel = document.querySelector<HTMLElement>('.m-inspector');
-  if (!panel) return;
+  const panel = find(document, 'inspector.panel');
 
-  panel.querySelector('.m-inspector-close')?.addEventListener('click', () => deselect(ctx));
+  find(panel, 'inspector.close').addEventListener('click', () => deselect(ctx));
   bindInspectorTabs(panel);
 
-  const handle = panel.querySelector<HTMLElement>('.m-sheet-drag-handle');
-  if (handle) {
-    let startY = 0;
-    let isDragging = false;
-    handle.addEventListener('pointerdown', (ev) => {
-      startY = ev.clientY;
-      isDragging = true;
-      handle.setPointerCapture(ev.pointerId);
-    });
-    handle.addEventListener('pointerup', (ev) => {
-      if (!isDragging) return;
-      isDragging = false;
-      const diff = ev.clientY - startY;
-      const current = panel.dataset['sheet'] || 'half';
-      let next = current;
-      if (Math.abs(diff) < 10) {
-        if (current === 'peek') next = 'half';
-        else if (current === 'half') next = 'full';
-        else if (current === 'full') next = 'half';
-        else next = 'half';
-      } else if (diff > 40) {
-        if (current === 'full') next = 'half';
-        else if (current === 'half') next = 'peek';
-        else {
-          deselect(ctx);
-          return;
-        }
-      } else if (diff < -40) {
-        if (current === 'peek') next = 'half';
-        else if (current === 'half') next = 'full';
+  const handle = find(panel, 'inspector.handle');
+  // bottom-sheet drag handle (mobile): tap cycles, drag snaps peek/half/full
+  let startY = 0;
+  let isDragging = false;
+  handle.addEventListener('pointerdown', (ev) => {
+    startY = ev.clientY;
+    isDragging = true;
+    handle.setPointerCapture(ev.pointerId);
+  });
+  handle.addEventListener('pointerup', (ev) => {
+    if (!isDragging) return;
+    isDragging = false;
+    const diff = ev.clientY - startY;
+    const current = param(panel, 'sheet') || 'half';
+    let next = current;
+    if (Math.abs(diff) < 10) {
+      if (current === 'peek') next = 'half';
+      else if (current === 'half') next = 'full';
+      else if (current === 'full') next = 'half';
+      else next = 'half';
+    } else if (diff > 40) {
+      if (current === 'full') next = 'half';
+      else if (current === 'half') next = 'peek';
+      else {
+        deselect(ctx);
+        return;
       }
-      panel.dataset['sheet'] = next;
-      panel.dataset['sheetSnap'] = next;
-      if (next !== 'full') {
-        if (ctx.selected) {
-          const b = nodeWorldBox(ctx, ctx.selected);
-          if (b) ctx.camera.flyTo(b);
-        } else if (currentInspectedItem?.type === 'edge') {
-          const b = linkWorldBox(ctx, currentInspectedItem.item as DataLink);
-          if (b) ctx.camera.flyTo(b);
-        }
-      }
-    });
-  }
-
-  window.addEventListener('resize', () => {
-    const shell = document.getElementById('marrow-shell');
-    if (shell) {
-      if (window.innerWidth < 768 || panel.hidden) {
-        shell.style.setProperty('--inspector-offset', '0px');
-      } else {
-        shell.style.setProperty('--inspector-offset', '380px');
+    } else if (diff < -40) {
+      if (current === 'peek') next = 'half';
+      else if (current === 'half') next = 'full';
+    }
+    setParam(panel, 'sheet', next);
+    setParam(panel, 'sheetSnap', next);
+    if (next !== 'full') {
+      if (ctx.selected) {
+        const b = nodeWorldBox(ctx, ctx.selected);
+        if (b) ctx.camera.flyTo(b);
+      } else if (currentInspectedItem?.type === 'edge') {
+        const b = linkWorldBox(ctx, currentInspectedItem.item as DataLink);
+        if (b) ctx.camera.flyTo(b);
       }
     }
+  });
+
+  window.addEventListener('resize', () => {
+    const offset = window.innerWidth < 768 || panel.hidden ? '0px' : '380px';
+    find(document, 'chrome.root').style.setProperty('--inspector-offset', offset);
   });
 }
 
 function renderInspectorTabsAndPanes(panel: HTMLElement, tabs: TabInstance[]): void {
   currentTabsList = tabs;
-  const tabsBar = panel.querySelector<HTMLElement>('.m-inspector-tabs');
-  const body = panel.querySelector<HTMLElement>('.m-inspector-body');
-  if (!tabsBar || !body) return;
+  const tabsBar = find(panel, 'inspector.tabs');
+  const body = find(panel, 'inspector.body');
 
   tabsBar.innerHTML = tabs
     .map(
       (t) =>
-        `<button class="m-tab-btn" data-tab="${html(t.id)}" type="button" role="tab" aria-selected="false">${html(t.label)}</button>`,
+        `<button class="m-tab-btn" ${hookAttr('inspector.tab')} ${ATTR.tab}="${html(t.id)}" type="button" role="tab" aria-selected="false">${html(t.label)}</button>`,
     )
     .join('');
 
   const existingPanes = new Set<string>();
-  for (const pane of body.querySelectorAll<HTMLElement>('.m-tab-pane, .m-inspector-pane')) {
+  for (const pane of findAll(body, 'inspector.pane')) {
     const id = pane.id.replace('m-pane-', '');
     existingPanes.add(id);
   }
@@ -1046,14 +1049,15 @@ function renderInspectorTabsAndPanes(panel: HTMLElement, tabs: TabInstance[]): v
       const pane = document.createElement('div');
       pane.id = `m-pane-${t.id}`;
       pane.className = 'm-inspector-pane m-tab-pane';
+      markHook(pane, 'inspector.pane');
       pane.setAttribute('role', 'tabpanel');
       pane.hidden = true;
       body.appendChild(pane);
     }
   }
 
-  const activeBtn = panel.querySelector<HTMLButtonElement>('.m-tab-btn.is-active, .m-tab-btn.active');
-  const wantedTabId = activeBtn?.dataset['tab'];
+  const activeBtn = findAll(tabsBar, 'inspector.tab').find((b) => b.classList.contains('is-active') || b.classList.contains('active'));
+  const wantedTabId = activeBtn ? param(activeBtn, 'tab') : undefined;
   const nextTabId = tabs.some((t) => t.id === wantedTabId) ? wantedTabId! : tabs[0]?.id;
   if (nextTabId) {
     activateInspectorTab(panel, nextTabId);
@@ -1061,19 +1065,16 @@ function renderInspectorTabsAndPanes(panel: HTMLElement, tabs: TabInstance[]): v
 }
 
 function fillInspector(maps: DeviceMaps, d: DataDevice, onGoto: (id: string) => void): void {
-  if (document.documentElement.dataset['inspector'] === 'off') return;
-  const panel = document.querySelector<HTMLElement>('.m-inspector');
-  const body = document.querySelector<HTMLElement>('.m-inspector-body');
-  const title = document.querySelector<HTMLElement>('.m-inspector-title');
-  if (!panel || !body || !title) return;
+  if (inspectorOff()) return;
+  const panel = find(document, 'inspector.panel');
+  const title = find(panel, 'inspector.title');
 
   activeMaps = maps;
   activeGoto = onGoto;
   currentInspectedItem = { type: 'device', item: d };
 
   title.textContent = d.name;
-  const desc = document.querySelector<HTMLElement>('.m-inspector-desc');
-  if (desc) desc.textContent = [d.role ?? d.tier, d.zone].filter(Boolean).join(' · ');
+  find(panel, 'inspector.desc').textContent = [d.role ?? d.tier, d.zone].filter(Boolean).join(' · ');
 
   const h = html;
 
@@ -1226,19 +1227,15 @@ function fillInspector(maps: DeviceMaps, d: DataDevice, onGoto: (id: string) => 
   renderInspectorTabsAndPanes(panel, tabsList);
 
   panel.hidden = false;
-  panel.dataset['sheet'] = panel.dataset['sheet'] && panel.dataset['sheet'] !== 'closed' ? panel.dataset['sheet'] : 'half';
-  const shell = document.getElementById('marrow-shell');
-  if (shell && window.innerWidth >= 768) {
-    shell.style.setProperty('--inspector-offset', '380px');
-  }
+  const sheet = param(panel, 'sheet');
+  setParam(panel, 'sheet', sheet && sheet !== 'closed' ? sheet : 'half');
+  if (window.innerWidth >= 768) find(document, 'chrome.root').style.setProperty('--inspector-offset', '380px');
 }
 
 function fillLinkInspector(maps: DeviceMaps, l: DataLink, onGoto: (id: string) => void): void {
-  if (document.documentElement.dataset['inspector'] === 'off') return;
-  const panel = document.querySelector<HTMLElement>('.m-inspector');
-  const body = document.querySelector<HTMLElement>('.m-inspector-body');
-  const title = document.querySelector<HTMLElement>('.m-inspector-title');
-  if (!panel || !body || !title) return;
+  if (inspectorOff()) return;
+  const panel = find(document, 'inspector.panel');
+  const title = find(panel, 'inspector.title');
 
   activeMaps = maps;
   activeGoto = onGoto;
@@ -1247,8 +1244,7 @@ function fillLinkInspector(maps: DeviceMaps, l: DataLink, onGoto: (id: string) =
   const fromName = maps.deviceById.get(l.from.device)?.name ?? l.from.device;
   const toName = maps.deviceById.get(l.to.device)?.name ?? l.to.device;
   title.textContent = `${fromName} ⟷ ${toName}`;
-  const desc = document.querySelector<HTMLElement>('.m-inspector-desc');
-  if (desc) desc.textContent = [l.kind, l.speed, l.mode].filter(Boolean).join(' · ');
+  find(panel, 'inspector.desc').textContent = [l.kind, l.speed, l.mode].filter(Boolean).join(' · ');
 
   const h = html;
   const facts: Array<[string, string | undefined]> = [
@@ -1319,23 +1315,16 @@ function fillLinkInspector(maps: DeviceMaps, l: DataLink, onGoto: (id: string) =
   renderInspectorTabsAndPanes(panel, tabsList);
 
   panel.hidden = false;
-  panel.dataset['sheet'] = 'half';
-  const shell = document.getElementById('marrow-shell');
-  if (shell && window.innerWidth >= 768) {
-    shell.style.setProperty('--inspector-offset', '380px');
-  }
-
-  const statusNode = document.querySelector('.m-status-node');
-  if (statusNode) statusNode.textContent = `${fromName} ⟷ ${toName}`;
+  setParam(panel, 'sheet', 'half');
+  if (window.innerWidth >= 768) find(document, 'chrome.root').style.setProperty('--inspector-offset', '380px');
 }
 
 // ─── spotlight ──────────────────────────────────────────────────────────────
 
 function setupSpotlight(ctx: Ctx | undefined, data: EmbeddedData): void {
-  const overlay = document.querySelector<HTMLElement>('.m-spotlight');
-  const input = document.querySelector<HTMLInputElement>('.m-spotlight input');
-  const list = document.querySelector<HTMLElement>('.m-spotlight ul');
-  if (!overlay || !input || !list) return;
+  const overlay = find(document, 'spotlight.root');
+  const input = find(overlay, 'spotlight.input');
+  const list = find(overlay, 'spotlight.list');
 
   // site mode ships a global cross-page index; single files search themselves
   const global = globalSearchDocs();
@@ -1414,20 +1403,19 @@ function setupSpotlight(ctx: Ctx | undefined, data: EmbeddedData): void {
   /** View settings as commands, each showing its live value where a shortcut
    *  would sit; running one applies + persists it (the old icon rail's job). */
   const settingCommands = (): Command[] => {
-    const root = document.documentElement;
-    const stored = (key: string, dflt: string): string => localStorage.getItem(`marrow-${key}`) ?? dflt;
-    const cycle3 = (key: string): string => {
+    const root = rootEl();
+    const cycle3 = (key: StorageName): string => {
       const order = ['auto', 'on', 'off'];
       return order[(order.indexOf(stored(key, 'auto')) + 1) % order.length]!;
     };
-    const set = (key: string, value: string): void => setViewSetting(ctx, key, value);
+    const set = (key: StorageName, value: string): void => setViewSetting(ctx, key, value);
     const cmds: Command[] = [
       {
         label: 'Toggle theme',
         icon: CMD_IC.moon,
-        shortcut: root.dataset['theme'] ?? 'dark',
+        shortcut: readRoot(root, 'theme') ?? 'dark',
         keywords: 'dark light mode appearance',
-        run: () => set('theme', root.dataset['theme'] === 'light' ? 'dark' : 'light'),
+        run: () => set('theme', readRoot(root, 'theme') === 'light' ? 'dark' : 'light'),
       },
     ];
     if (ctx !== undefined) {
@@ -1462,7 +1450,7 @@ function setupSpotlight(ctx: Ctx | undefined, data: EmbeddedData): void {
           run: () => set('motion', stored('motion', 'on') !== 'off' ? 'off' : 'on'),
         });
       }
-      const showMinimap = document.documentElement.dataset['minimap'] !== 'off' && ctx.data.devices.length >= 2;
+      const showMinimap = readRoot(root, 'minimap') !== 'off' && ctx.data.devices.length >= 2;
       if (showMinimap) {
         cmds.push({
           label: 'Minimap',
@@ -1478,10 +1466,10 @@ function setupSpotlight(ctx: Ctx | undefined, data: EmbeddedData): void {
 
   const collectCommands = (): { nav: Command[]; actions: Command[]; view: Command[] } => {
     const nav: Command[] = [];
-    for (const a of document.querySelectorAll<HTMLAnchorElement>('.m-side-nav a.m-side-row')) {
+    for (const a of findAll(document, 'sidebar.navLink') as HTMLAnchorElement[]) {
       if (a.href === '') continue;
       nav.push({
-        label: a.dataset['label'] ?? a.querySelector('span')?.textContent ?? a.href,
+        label: param(a, 'label') ?? a.querySelector('span')?.textContent ?? a.href,
         icon: a.querySelector('i')?.innerHTML ?? '',
         keywords: 'go to open page',
         run: () => {
@@ -1491,18 +1479,18 @@ function setupSpotlight(ctx: Ctx | undefined, data: EmbeddedData): void {
     }
     const mac = /Mac|iP(hone|ad|od)/.test(navigator.platform);
     const actions: Command[] = [];
-    const add = (selector: string, label: string, opts: { shortcut?: string; keywords?: string } = {}): void => {
-      const btn = document.querySelector<HTMLElement>(selector);
+    const add = (btn: HTMLElement | undefined, label: string, opts: { shortcut?: string; keywords?: string } = {}): void => {
       if (!btn) return;
       const cmd: Command = { label, icon: btn.querySelector('svg')?.outerHTML ?? '', run: () => btn.click() };
       if (opts.shortcut !== undefined) cmd.shortcut = opts.shortcut;
       if (opts.keywords !== undefined) cmd.keywords = opts.keywords;
       actions.push(cmd);
     };
-    add('.m-ctl-fit', 'Fit view', { shortcut: 'F', keywords: 'zoom reset center' });
-    add('.m-ctl-in', 'Zoom in', { shortcut: '+' });
-    add('.m-ctl-out', 'Zoom out', { shortcut: '−' });
-    add('.m-sidebar-btn', 'Toggle sidebar', { shortcut: mac ? '⌘B' : 'Ctrl B', keywords: 'panel browse' });
+    const control = (id: OneHook): HTMLElement | undefined => maybe(document, id);
+    add(control('camera.fit'), 'Fit view', { shortcut: 'F', keywords: 'zoom reset center' });
+    add(control('camera.zoomIn'), 'Zoom in', { shortcut: '+' });
+    add(control('camera.zoomOut'), 'Zoom out', { shortcut: '−' });
+    add(findAll(document, 'sidebar.toggle')[0], 'Toggle sidebar', { shortcut: mac ? '⌘B' : 'Ctrl B', keywords: 'panel browse' });
     actions.push({
       label: 'Keyboard shortcuts',
       icon: cic('<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>'),
@@ -1652,8 +1640,8 @@ function setupSpotlight(ctx: Ctx | undefined, data: EmbeddedData): void {
   overlay.addEventListener('click', (ev) => {
     if (ev.target === overlay) close();
   });
-  // the dock pill, command bar search pill, and peek tab all open search
-  for (const btn of document.querySelectorAll('.m-search-btn, .m-cmd-search-btn')) btn.addEventListener('click', open);
+  // every search button (command bar, camera controls, mobile bar) opens it
+  for (const btn of findAll(document, 'search.open')) btn.addEventListener('click', open);
   addEventListener('keydown', (ev) => {
     if ((ev.key === 'k' && (ev.metaKey || ev.ctrlKey)) || (ev.key === '/' && !isTyping())) {
       ev.preventDefault();
@@ -1666,21 +1654,15 @@ function setupSpotlight(ctx: Ctx | undefined, data: EmbeddedData): void {
 // ─── menubar (shadcn Menubar; popovers share the DropdownMenu spec) ─────────
 
 function fillAboutDialog(dlg: HTMLElement, ctx?: Ctx): void {
-  const rawScript = document.getElementById('marrow-data')?.textContent;
-  const data: EmbeddedData | undefined = ctx?.data ?? (rawScript ? JSON.parse(rawScript) : undefined);
-  if (!data) return;
+  const data: EmbeddedData = ctx?.data ?? loadData();
 
-  const titleEl = dlg.querySelector<HTMLElement>('.m-about-title');
-  const descEl = dlg.querySelector<HTMLElement>('.m-about-desc');
-  const bodyEl = dlg.querySelector<HTMLElement>('.m-about-body');
+  const titleEl = find(dlg, 'about.title');
+  const descEl = find(dlg, 'about.desc');
+  const bodyEl = find(dlg, 'about.body');
 
-  if (titleEl) titleEl.textContent = data.name || 'Topology Diagram';
-  if (descEl) {
-    descEl.textContent = data.description || '';
-    descEl.hidden = !data.description;
-  }
-
-  if (!bodyEl) return;
+  titleEl.textContent = data.name || 'Topology Diagram';
+  descEl.textContent = data.description || '';
+  descEl.hidden = !data.description;
 
   const author = data.author ?? data.titleBlock?.author;
   const revision = data.revision ?? data.titleBlock?.revision;
@@ -1732,16 +1714,14 @@ function fillAboutDialog(dlg: HTMLElement, ctx?: Ctx): void {
 }
 
 function openAboutDialog(ctx?: Ctx): void {
-  const dlg = document.querySelector<HTMLElement>('.m-about-dialog');
-  if (!dlg) return;
+  const dlg = find(document, 'about.dialog');
   fillAboutDialog(dlg, ctx);
   dlg.hidden = false;
 }
 
-function setupAboutDialog(ctx?: Ctx): void {
-  const dlg = document.querySelector<HTMLElement>('.m-about-dialog');
-  if (!dlg) return;
-  dlg.querySelector('.m-about-close')?.addEventListener('click', () => {
+function setupAboutDialog(): void {
+  const dlg = find(document, 'about.dialog');
+  find(dlg, 'about.close').addEventListener('click', () => {
     dlg.hidden = true;
   });
   dlg.addEventListener('click', (ev) => {
@@ -1753,14 +1733,12 @@ function setupAboutDialog(ctx?: Ctx): void {
 }
 
 function openShortcutsGuide(): void {
-  const dlg = document.querySelector<HTMLElement>('.m-shortcuts');
-  if (dlg) dlg.hidden = false;
+  find(document, 'shortcuts.dialog').hidden = false;
 }
 
 function setupShortcutsDialog(): void {
-  const dlg = document.querySelector<HTMLElement>('.m-shortcuts');
-  if (!dlg) return;
-  dlg.querySelector('.m-shortcuts-close')?.addEventListener('click', () => {
+  const dlg = find(document, 'shortcuts.dialog');
+  find(dlg, 'shortcuts.close').addEventListener('click', () => {
     dlg.hidden = true;
   });
   dlg.addEventListener('click', (ev) => {
@@ -1772,17 +1750,16 @@ function setupShortcutsDialog(): void {
 }
 
 function setupMenubar(ctx: Ctx | undefined): void {
-  const bar = document.querySelector<HTMLElement>('.m-menubar');
-  if (!bar) return;
+  const bar = find(document, 'menubar.root');
+  const triggers = findAll(bar, 'menubar.trigger');
   const pop = document.createElement('div');
   pop.className = 'm-ctxmenu m-menupop';
   pop.hidden = true;
   document.body.append(pop);
-  let openMenu: string | undefined;
+  let openMenu: Menu | undefined;
 
   const CHECK =
     '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
-  const stored = (k: string, d: string): string => localStorage.getItem(`marrow-${k}`) ?? d;
   const mac = /Mac|iP(hone|ad|od)/.test(navigator.platform);
   const mod = mac ? '⌘' : 'Ctrl ';
   const item = (act: string, label: string, opts: { shortcut?: string; check?: boolean | string } = {}): string =>
@@ -1797,7 +1774,7 @@ function setupMenubar(ctx: Ctx | undefined): void {
     `</button>`;
   const sep = (): string => '<div class="m-ctx-sep"></div>';
 
-  const content = (menu: string): string => {
+  const content = (menu: Menu): string => {
     if (menu === 'view') {
       const stage = ctx !== undefined;
       const hasDevices = ctx !== undefined && ctx.data.devices.length > 0;
@@ -1806,10 +1783,7 @@ function setupMenubar(ctx: Ctx | undefined): void {
         (ctx.data.links.some((l) => Boolean(l.from.port || l.to.port)) ||
           ctx.data.devices.some((d) => Array.isArray(d.interfaces) && d.interfaces.length > 0));
       const hasMotion = ctx !== undefined && ctx.data.links.some((l) => Boolean(l.animated));
-      const showMinimap =
-        ctx !== undefined &&
-        document.documentElement.dataset['minimap'] !== 'off' &&
-        ctx.data.devices.length >= 2;
+      const showMinimap = ctx !== undefined && readRoot(rootEl(), 'minimap') !== 'off' && ctx.data.devices.length >= 2;
       const hasAnyToggle = hasDevices || hasPorts || hasMotion || showMinimap;
       return (
         (stage
@@ -1823,7 +1797,7 @@ function setupMenubar(ctx: Ctx | undefined): void {
             (showMinimap ? item('t-minimap', 'Minimap', { check: stored('minimap', 'on') !== 'off' }) : '') +
             sep()
           : '') +
-        item('t-theme', 'Theme', { check: document.documentElement.dataset['theme'] ?? 'dark' })
+        item('t-theme', 'Theme', { check: readRoot(rootEl(), 'theme') ?? 'dark' })
       );
     }
     if (menu === 'export') {
@@ -1840,18 +1814,17 @@ function setupMenubar(ctx: Ctx | undefined): void {
     );
   };
 
+  const menuOf = (btn: HTMLElement): Menu => param(btn, 'menu') as Menu;
   const syncTriggers = (): void => {
-    for (const b of bar.querySelectorAll<HTMLButtonElement>('[data-menu]')) {
-      b.classList.toggle('open', b.dataset['menu'] === openMenu);
-    }
+    for (const b of triggers) b.classList.toggle('open', menuOf(b) === openMenu);
   };
   const close = (): void => {
     pop.hidden = true;
     openMenu = undefined;
     syncTriggers();
   };
-  const openFor = (btn: HTMLButtonElement): void => {
-    openMenu = btn.dataset['menu']!;
+  const openFor = (btn: HTMLElement): void => {
+    openMenu = menuOf(btn);
     pop.innerHTML = content(openMenu);
     pop.hidden = false;
     const r = btn.getBoundingClientRect();
@@ -1859,8 +1832,7 @@ function setupMenubar(ctx: Ctx | undefined): void {
     pop.style.top = '0px';
     const isOverlaySidebar = window.innerWidth <= 1024;
     if (isOverlaySidebar) {
-      const sidebar = document.querySelector<HTMLElement>('.m-sidebar');
-      const drawerW = sidebar ? sidebar.offsetWidth : 280;
+      const drawerW = find(document, 'sidebar.panel').offsetWidth || 280;
       const left = Math.max(12, Math.min(r.left, drawerW - pop.offsetWidth - 12));
       pop.style.left = `${left}px`;
       pop.style.top = `${Math.min(r.bottom + 6, innerHeight - pop.offsetHeight - 8)}px`;
@@ -1871,14 +1843,14 @@ function setupMenubar(ctx: Ctx | undefined): void {
     syncTriggers();
   };
 
-  for (const btn of bar.querySelectorAll<HTMLButtonElement>('[data-menu]')) {
+  for (const btn of triggers) {
     btn.addEventListener('click', () => {
-      if (openMenu === btn.dataset['menu']) close();
+      if (openMenu === menuOf(btn)) close();
       else openFor(btn);
     });
     // Menubar behavior: with a menu open, hovering a sibling trigger switches
     btn.addEventListener('mouseenter', () => {
-      if (openMenu !== undefined && openMenu !== btn.dataset['menu']) openFor(btn);
+      if (openMenu !== undefined && openMenu !== menuOf(btn)) openFor(btn);
     });
   }
 
@@ -1888,12 +1860,12 @@ function setupMenubar(ctx: Ctx | undefined): void {
     const rerender = (): void => {
       if (openMenu !== undefined) pop.innerHTML = content(openMenu);
     };
-    const cycle3 = (key: string): void => {
+    const cycle3 = (key: StorageName): void => {
       const order = ['auto', 'on', 'off'];
       setViewSetting(ctx, key, order[(order.indexOf(stored(key, 'auto')) + 1) % order.length]!);
       rerender();
     };
-    const flip = (key: string): void => {
+    const flip = (key: StorageName): void => {
       setViewSetting(ctx, key, stored(key, 'on') !== 'off' ? 'off' : 'on');
       rerender();
     };
@@ -1906,14 +1878,14 @@ function setupMenubar(ctx: Ctx | undefined): void {
       case 't-motion': flip('motion'); break;
       case 't-minimap': flip('minimap'); break;
       case 't-theme':
-        setViewSetting(ctx, 'theme', document.documentElement.dataset['theme'] === 'light' ? 'dark' : 'light');
+        setViewSetting(ctx, 'theme', readRoot(rootEl(), 'theme') === 'light' ? 'dark' : 'light');
         rerender();
         break;
       case 'png': close(); if (ctx) void exportPng(ctx); break;
       case 'svg': close(); if (ctx) download(new Blob([standaloneSvg(ctx)], { type: 'image/svg+xml' }), `${fileStem(ctx)}.svg`); break;
       case 'print': close(); window.print(); break;
       case 'guide': close(); openShortcutsGuide(); break;
-      case 'palette': close(); document.querySelector<HTMLButtonElement>('.m-search-btn')?.click(); break;
+      case 'palette': close(); openPalette(); break;
       case 'about': close(); openAboutDialog(ctx); break;
     }
   });
@@ -1941,7 +1913,6 @@ function setupContextMenu(ctx: Ctx): void {
 
   const CHECK =
     '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
-  const stored = (k: string, d: string): string => localStorage.getItem(`marrow-${k}`) ?? d;
   const mac = /Mac|iP(hone|ad|od)/.test(navigator.platform);
   const mod = mac ? '⌘' : 'Ctrl ';
 
@@ -1977,7 +1948,7 @@ function setupContextMenu(ctx: Ctx): void {
         ctx.data.links.some((l) => Boolean(l.from.port || l.to.port)) ||
         ctx.data.devices.some((d) => Array.isArray(d.interfaces) && d.interfaces.length > 0);
       const hasMotion = ctx.data.links.some((l) => Boolean(l.animated));
-      const showMinimap = document.documentElement.dataset['minimap'] !== 'off' && ctx.data.devices.length >= 2;
+      const showMinimap = readRoot(rootEl(), 'minimap') !== 'off' && ctx.data.devices.length >= 2;
       const hasAnyToggle = hasDevices || hasPorts || hasMotion || showMinimap;
       menu.innerHTML =
         item('fit', 'Fit view', { shortcut: 'F' }) +
@@ -2015,8 +1986,8 @@ function setupContextMenu(ctx: Ctx): void {
   ctx.stage.addEventListener('contextmenu', (ev) => {
     ev.preventDefault();
     if (ctx.mode === 'svg') {
-      const nodeEl = (ev.target as Element).closest<SVGGElement>('.m-node[data-node]');
-      forNode = nodeEl?.dataset['node'];
+      const nodeEl = (ev.target as Element).closest<SVGGElement>(STAGE_HOOKS.node);
+      forNode = nodeEl?.getAttribute(STAGE_ATTR.node) ?? undefined;
     } else {
       forNode = hitNode(ctx, ev)?.id;
     }
@@ -2027,12 +1998,12 @@ function setupContextMenu(ctx: Ctx): void {
     const btn = (ev.target as Element).closest<HTMLButtonElement>('.m-ctx-item');
     if (!btn || btn.disabled) return;
     const id = forNode;
-    const cycle3 = (key: string): void => {
+    const cycle3 = (key: StorageName): void => {
       const order = ['auto', 'on', 'off'];
       setViewSetting(ctx, key, order[(order.indexOf(stored(key, 'auto')) + 1) % order.length]!);
       render(); // toggles keep the menu open
     };
-    const flip = (key: string): void => {
+    const flip = (key: StorageName): void => {
       setViewSetting(ctx, key, stored(key, 'on') !== 'off' ? 'off' : 'on');
       render();
     };
@@ -2051,7 +2022,7 @@ function setupContextMenu(ctx: Ctx): void {
       case 't-minimap': flip('minimap'); break;
       case 'png': close(); void exportPng(ctx); break;
       case 'svg': close(); download(new Blob([standaloneSvg(ctx)], { type: 'image/svg+xml' }), `${fileStem(ctx)}.svg`); break;
-      case 'palette': close(); document.querySelector<HTMLButtonElement>('.m-search-btn')?.click(); break;
+      case 'palette': close(); openPalette(); break;
     }
   });
 
@@ -2069,21 +2040,20 @@ function setupContextMenu(ctx: Ctx): void {
 // ─── svg edge tooltip ───────────────────────────────────────────────────────
 
 function setupTooltipSvg(ctx: Ctx): void {
-  const tip = document.querySelector<HTMLElement>('.m-tooltip');
-  if (!tip) return;
+  const tip = find(document, 'stage.tooltip');
   ctx.svg!.addEventListener('pointermove', (ev) => {
-    const edge = (ev.target as Element).closest<SVGElement>('[data-edge]');
+    const edge = (ev.target as Element).closest<SVGElement>(STAGE_HOOKS.edgeBound);
     if (!edge) {
       tip.hidden = true;
       return;
     }
-    const edgeId = edge.getAttribute('data-edge');
+    const edgeId = edge.getAttribute(STAGE_ATTR.edge);
     const link = ctx.data.links.find((l) => l.id === edgeId);
-    const from = (link ? ctx.deviceById.get(link.from.device)?.name ?? link.from.device : edge.dataset['from']) ?? '';
-    const to = (link ? ctx.deviceById.get(link.to.device)?.name ?? link.to.device : edge.dataset['to']) ?? '';
+    const from = (link ? ctx.deviceById.get(link.from.device)?.name ?? link.from.device : edge.getAttribute(STAGE_ATTR.from)) ?? '';
+    const to = (link ? ctx.deviceById.get(link.to.device)?.name ?? link.to.device : edge.getAttribute(STAGE_ATTR.to)) ?? '';
     const meta = link
       ? [link.from.port, link.to.port, link.speed, link.kind, link.mode].filter(Boolean).join(' · ')
-      : edge.dataset['meta'] ?? '';
+      : edge.getAttribute(STAGE_ATTR.meta) ?? '';
     tip.innerHTML = `<strong>${html(from)} ⟷ ${html(to)}</strong>${meta ? `<span>${html(meta)}</span>` : ''}`;
     const rect = ctx.stage.getBoundingClientRect();
     tip.style.left = `${ev.clientX - rect.left + 14}px`;
@@ -2098,21 +2068,9 @@ function setupTooltipSvg(ctx: Ctx): void {
 // ─── controls / theme / keyboard ────────────────────────────────────────────
 
 function setupControls(ctx: Ctx): void {
-  for (const btn of document.querySelectorAll('.m-ctl-fit')) {
-    btn.addEventListener('click', () => ctx.camera.fit(true));
-  }
-  for (const btn of document.querySelectorAll('.m-ctl-in')) {
-    btn.addEventListener('click', () => zoomCenter(ctx, 1.35));
-  }
-  for (const btn of document.querySelectorAll('.m-ctl-out')) {
-    btn.addEventListener('click', () => zoomCenter(ctx, 1 / 1.35));
-  }
-  for (const btn of document.querySelectorAll('.m-minimap-btn')) {
-    btn.addEventListener('click', () => {
-      const mini = document.querySelector<HTMLButtonElement>('.m-minimap .m-mini-toggle');
-      if (mini) mini.click();
-    });
-  }
+  find(document, 'camera.fit').addEventListener('click', () => ctx.camera.fit(true));
+  find(document, 'camera.zoomIn').addEventListener('click', () => zoomCenter(ctx, 1.35));
+  find(document, 'camera.zoomOut').addEventListener('click', () => zoomCenter(ctx, 1 / 1.35));
 }
 
 // ─── export (reached via the ⌘K command center) ─────────────────────────────
@@ -2244,9 +2202,8 @@ function renderAutoLegend(
 /** Rebuild the diagram as a self-contained SVG document with modular blueprint chrome. */
 function standaloneSvg(ctx: Ctx, options?: ExportOptions): string {
   const svg = ctx.svg!;
-  const origW = Number(svg.dataset['w']) || 100;
-  const origH = Number(svg.dataset['h']) || 100;
-  const theme = document.documentElement.dataset['theme'] ?? 'dark';
+  const { w: origW, h: origH } = sceneSizeOf(svg, 100);
+  const theme = readRoot(rootEl(), 'theme') ?? 'dark';
 
   const modular = parseModularParams(location.search, location.hash);
   const showTitle = options?.titleBlock ?? (modular.exportTitle !== 'off');
@@ -2280,7 +2237,7 @@ function standaloneSvg(ctx: Ctx, options?: ExportOptions): string {
   // Clone and neutralize the live camera transform — export shows the WHOLE
   // scene at world coordinates (0..w, 0..h), not the current pan/zoom viewport.
   const clone = svg.cloneNode(true) as SVGSVGElement;
-  clone.querySelector('.m-camera')?.removeAttribute('transform');
+  clone.querySelector(STAGE_HOOKS.camera)?.removeAttribute('transform');
   // drop transient interaction state so the export is a clean, settled frame
   for (const el of clone.querySelectorAll('.is-selected, .is-focus, .is-adj, .is-path')) {
     el.classList.remove('is-selected', 'is-focus', 'is-adj', 'is-path');
@@ -2327,8 +2284,7 @@ async function exportPng(ctx: Ctx, options?: ExportOptions): Promise<void> {
   const showTitle = options?.titleBlock ?? (modular.exportTitle !== 'off');
   const showLegend = options?.legend ?? (modular.exportLegend !== 'off');
   const hasBlueprint = showTitle || (showLegend && ctx.data.links.length > 0);
-  const origW = Number(ctx.svg!.dataset['w']) || 100;
-  const origH = Number(ctx.svg!.dataset['h']) || 100;
+  const { w: origW, h: origH } = sceneSizeOf(ctx.svg!, 100);
   const totalW = Math.max(origW, hasBlueprint ? 720 : origW);
   const totalH = origH + (hasBlueprint ? 110 : 0);
   const w = totalW * 2;
@@ -2363,64 +2319,34 @@ function download(blob: Blob, filename: string): void {
   setTimeout(() => URL.revokeObjectURL(url), 4000);
 }
 
-function syncModularParams(ctx?: Ctx): void {
-  const root = document.documentElement;
+/** Re-apply URL options after a `hashchange` (a host toggling an embedded diagram). */
+function syncModularParams(ctx: Ctx): void {
   const opts = parseModularParams(location.search, location.hash);
-
-  if (opts.chrome === 'minimal') {
-    root.dataset['chrome'] = 'minimal';
-  } else if (opts.chrome === 'full') {
-    delete root.dataset['chrome'];
-  }
-
-  if (opts.inspector === 'off') {
-    root.dataset['inspector'] = 'off';
-    const panel = document.querySelector<HTMLElement>('.m-inspector');
-    if (panel) panel.hidden = true;
-  } else if (opts.inspector === 'on') {
-    delete root.dataset['inspector'];
-  }
-
-  if (opts.minimap === 'off') {
-    root.dataset['minimap'] = 'off';
-    const wrap = document.querySelector<HTMLElement>('.m-minimap');
-    if (wrap) wrap.hidden = true;
-  } else if (opts.minimap === 'on') {
-    delete root.dataset['minimap'];
-    const wrap = document.querySelector<HTMLElement>('.m-minimap');
-    if (wrap && (ctx?.data.devices.length ?? 0) >= 2) wrap.hidden = false;
-  }
-
-  if (opts.theme) {
-    root.dataset['theme'] = opts.theme;
-  }
-
-  if (opts.layout === 'spacious') {
-    root.dataset['layout'] = 'spacious';
-    document.querySelector('#marrow-shell')?.setAttribute('data-layout', 'spacious');
-  }
+  applyModularParams(rootEl(), opts);
+  if (opts.inspector === 'off') find(document, 'inspector.panel').hidden = true;
+  const minimap = find(document, 'minimap.root');
+  if (opts.minimap === 'off') minimap.hidden = true;
+  else if (opts.minimap === 'on' && ctx.data.devices.length >= 2) minimap.hidden = false;
 }
 
 function setupTheme(): void {
-  const root = document.documentElement;
+  const root = rootEl();
   const mql = matchMedia('(prefers-color-scheme: dark)');
 
   // `theme: auto` follows the viewer's OS scheme — unless they made an explicit
   // in-diagram choice, which is remembered for standalone viewing.
   const applyAuto = (): void => {
-    if (root.dataset['themeMode'] === 'auto' && !localStorage.getItem('marrow-theme')) {
-      root.dataset['theme'] = mql.matches ? 'dark' : 'light';
+    if (readRoot(root, 'themeMode') === 'auto' && !localStorage.getItem(storageKey('theme'))) {
+      writeRoot(root, 'theme', mql.matches ? 'dark' : 'light');
     }
   };
-  const q = new URLSearchParams(location.search);
-  const h = location.hash.slice(1);
-  const hp = new URLSearchParams(h.includes(';') ? h.replace(/;/g, '&') : h);
-  const urlTheme = q.get('theme') || hp.get('theme');
-  if (urlTheme === 'dark' || urlTheme === 'light') {
-    root.dataset['theme'] = urlTheme;
-  } else {
-    const stored = localStorage.getItem('marrow-theme');
-    if (stored === 'dark' || stored === 'light') root.dataset['theme'] = stored;
+  // a URL theme wins (applied before paint by the pre-boot script; again here
+  // in case the runtime was loaded without it), then the viewer's choice
+  const url = parseModularParams(location.search, location.hash);
+  applyModularParams(root, url);
+  if (url.theme === undefined) {
+    const choice = localStorage.getItem(storageKey('theme'));
+    if (choice === 'dark' || choice === 'light') writeRoot(root, 'theme', choice);
     else applyAuto();
   }
   mql.addEventListener('change', applyAuto);
@@ -2432,37 +2358,40 @@ function setupTheme(): void {
   //   iframe → host:  postMessage({ type: 'marrow:ready' })  (once, on load)
   // A host-driven theme is not persisted — it must not leak into standalone use.
   addEventListener('message', (e: MessageEvent) => {
-    const d = e.data as { type?: string; theme?: string } | null;
-    if (!d || d.type !== 'marrow:theme') return;
+    const d: unknown = e.data;
+    if (!isEmbedMessage(d) || d.type !== EMBED.theme) return;
     if (d.theme === 'auto') {
-      root.dataset['themeMode'] = 'auto';
+      writeRoot(root, 'themeMode', 'auto');
       applyAuto();
-    } else if (d.theme === 'dark' || d.theme === 'light') {
-      delete root.dataset['themeMode'];
-      root.dataset['theme'] = d.theme;
+    } else {
+      writeRoot(root, 'themeMode', undefined);
+      writeRoot(root, 'theme', d.theme);
     }
   });
   if (window.parent !== window) {
     try {
-      window.parent.postMessage({ type: 'marrow:ready' }, '*');
+      window.parent.postMessage({ type: EMBED.ready }, '*');
     } catch {
       /* cross-origin parent — the host can still post in, we just can't ping out */
     }
   }
 
-  // the static shell ships "Ctrl K"; swap for the platform's own key on Macs
+  // the static chrome ships "Ctrl K"; swap for the platform's own key on Macs
   if (/Mac|iP(hone|ad|od)/.test(navigator.platform)) {
-    for (const kbd of document.querySelectorAll('.m-searchpill kbd, .m-dock-hint kbd')) kbd.textContent = '⌘ K';
+    for (const btn of findAll(document, 'search.open')) {
+      const kbd = btn.querySelector('kbd');
+      if (kbd) kbd.textContent = '⌘ K';
+    }
   }
 
-  for (const btn of document.querySelectorAll('.m-theme-btn')) {
+  for (const btn of findAll(document, 'theme.toggle')) {
     btn.addEventListener('click', (ev) => {
-      const opt = (ev.target as Element).closest<HTMLElement>('.m-theme-opt');
-      const val = opt?.dataset['themeVal'];
-      const next = val || (root.dataset['theme'] === 'light' ? 'dark' : 'light');
-      root.dataset['theme'] = next;
-      delete root.dataset['themeMode'];
-      localStorage.setItem('marrow-theme', next);
+      const opt = closestHook(ev.target, 'theme.option');
+      const val = opt ? param(opt, 'themeVal') : undefined;
+      const next = val === 'dark' || val === 'light' ? val : readRoot(root, 'theme') === 'light' ? 'dark' : 'light';
+      writeRoot(root, 'theme', next);
+      writeRoot(root, 'themeMode', undefined);
+      localStorage.setItem(storageKey('theme'), next);
     });
   }
 }
@@ -2470,34 +2399,31 @@ function setupTheme(): void {
 // ─── sidebar ────────────────────────────────────────────────────────────────
 
 function setupSidebar(ctx: Ctx | undefined): void {
-  const sidebar = document.querySelector<HTMLElement>('.m-sidebar');
-  if (!sidebar) return;
-  const root = document.documentElement;
+  const sidebar = find(document, 'sidebar.panel');
+  const toggles = findAll(document, 'sidebar.toggle');
+  const root = rootEl();
 
   const setOpen = (open: boolean): void => {
     sidebar.classList.toggle('open', open);
     sidebar.classList.toggle('is-collapsed', !open);
-    for (const btn of document.querySelectorAll('.m-sidebar-btn')) {
-      btn.classList.toggle('on', open);
-    }
-    localStorage.setItem('marrow-sidebar', open ? 'open' : 'closed');
+    for (const btn of toggles) btn.classList.toggle('on', open);
+    localStorage.setItem(storageKey('sidebar'), open ? 'open' : 'closed');
   };
   const defaultOpen = !sidebar.classList.contains('is-collapsed');
-  const stored = localStorage.getItem('marrow-sidebar');
-  setOpen(stored !== null ? stored === 'open' : defaultOpen);
+  const remembered = localStorage.getItem(storageKey('sidebar'));
+  setOpen(remembered !== null ? remembered === 'open' : defaultOpen);
 
-  for (const btn of document.querySelectorAll('.m-sidebar-btn')) {
+  for (const btn of toggles) {
     btn.addEventListener('click', () => setOpen(!sidebar.classList.contains('open')));
   }
-  for (const closeBtn of sidebar.querySelectorAll<HTMLButtonElement>('.m-sidebar-close')) {
-    closeBtn.addEventListener('click', () => setOpen(false));
-  }
+  find(sidebar, 'sidebar.close').addEventListener('click', () => setOpen(false));
   document.addEventListener('pointerdown', (ev) => {
     if (window.innerWidth <= 1024 && sidebar.classList.contains('open')) {
       const target = ev.target as Node;
+      // the menubar popover is runtime-created (setupMenubar), not a page hook
       const menupop = document.querySelector<HTMLElement>('.m-menupop');
       if (menupop && !menupop.hidden && menupop.contains(target)) return;
-      if (!sidebar.contains(target) && !document.querySelector('.m-sidebar-btn')?.contains(target)) {
+      if (!sidebar.contains(target) && !toggles[0]?.contains(target)) {
         setOpen(false);
       }
     }
@@ -2505,7 +2431,7 @@ function setupSidebar(ctx: Ctx | undefined): void {
   // collapsible nav groups (Branch, Building, …); in strip mode the head is
   // the group's single icon — clicking it expands the sidebar with it open
   sidebar.addEventListener('click', (ev) => {
-    const head = (ev.target as Element).closest<HTMLButtonElement>('.m-side-group-head');
+    const head = closestHook(ev.target, 'sidebar.groupHead');
     if (!head) return;
     const group = head.parentElement!;
     if (!sidebar.classList.contains('open')) {
@@ -2524,238 +2450,66 @@ function setupSidebar(ctx: Ctx | undefined): void {
     }
   });
 
-  setupRail(ctx, sidebar);
-
   // segmented controls (theme, labels)
-  const applySeg = (seg: HTMLElement, value: string): void => {
-    for (const b of seg.querySelectorAll('button')) b.classList.toggle('active', b.dataset['value'] === value);
-  };
-  for (const seg of sidebar.querySelectorAll<HTMLElement>('.m-seg')) {
-    const setting = seg.dataset['setting']!;
-    const current =
-      setting === 'theme'
-        ? (root.dataset['theme'] ?? 'dark')
-        : localStorage.getItem(`marrow-${setting}`) ?? 'auto';
-    applySeg(seg, current);
+  for (const seg of findAll(sidebar, 'settings.seg')) {
+    const setting = param(seg, 'setting') as StorageName;
+    const current = setting === 'theme' ? (readRoot(root, 'theme') ?? 'dark') : stored(setting, 'auto');
+    syncSeg(seg, current);
     applySetting(ctx, setting, current);
     seg.addEventListener('click', (ev) => {
-      const btn = (ev.target as Element).closest<HTMLButtonElement>('button[data-value]');
+      const btn = (ev.target as Element).closest<HTMLButtonElement>(`button[${ATTR.value}]`);
       if (!btn) return;
-      const value = btn.dataset['value']!;
-      applySeg(seg, value);
-      localStorage.setItem(`marrow-${setting}`, value);
+      const value = param(btn, 'value')!;
+      syncSeg(seg, value);
+      localStorage.setItem(storageKey(setting), value);
       applySetting(ctx, setting, value);
     });
   }
-
-  // switches (motion, minimap)
-  for (const sw of sidebar.querySelectorAll<HTMLButtonElement>('.m-switch')) {
-    const setting = sw.dataset['setting']!;
-    let on = localStorage.getItem(`marrow-${setting}`) !== 'off';
-    const apply = (): void => {
-      sw.setAttribute('aria-checked', String(on));
-      applySetting(ctx, setting, on ? 'on' : 'off');
-    };
-    apply();
-    sw.addEventListener('click', () => {
-      on = !on;
-      localStorage.setItem(`marrow-${setting}`, on ? 'on' : 'off');
-      apply();
-    });
-  }
 }
 
-function setupMobileNav(ctx: Ctx | undefined): void {
-  const nav = document.querySelector<HTMLElement>('.m-mobile-nav, .m-mobile-bar');
-  if (!nav) return;
+/** Mark the segmented-control button for `value` active. */
+function syncSeg(seg: HTMLElement, value: string): void {
+  for (const b of seg.querySelectorAll('button')) b.classList.toggle('active', param(b, 'value') === value);
 
-  const setActive = (action: string): void => {
-    for (const b of nav.querySelectorAll<HTMLButtonElement>('.m-mob-btn, .m-mobile-btn')) {
-      const match = b.dataset['action'] === action;
-      b.classList.toggle('is-active', match);
-      b.classList.toggle('active', match);
-    }
-  };
-
-  nav.addEventListener('click', (ev) => {
-    const inspector = document.querySelector<HTMLElement>('.m-inspector');
-    const sidebar = document.querySelector<HTMLElement>('.m-sidebar');
-
-    const mobSelBtn = (ev.target as Element).closest<HTMLButtonElement>('.m-mob-selector-btn');
-    if (mobSelBtn) {
-      if (sidebar) {
-        const isOpen = sidebar.classList.contains('open');
-        sidebar.classList.toggle('open', !isOpen);
-        if (!isOpen && inspector) inspector.dataset['sheet'] = 'closed';
-      }
-      return;
-    }
-
-    const btn = (ev.target as Element).closest<HTMLButtonElement>('.m-mob-btn, .m-mobile-btn');
-    if (!btn || !btn.dataset['action']) return;
-    const action = btn.dataset['action'];
-    setActive(action);
-
-    if (action === 'canvas') {
-      sidebar?.classList.remove('open');
-      if (inspector) inspector.dataset['sheet'] = 'closed';
-    } else if (action === 'search') {
-      const searchBtn = document.querySelector<HTMLButtonElement>('.m-cmd-search-btn, .m-search-btn');
-      searchBtn?.click();
-    } else if (action === 'pages') {
-      if (sidebar) {
-        const isOpen = sidebar.classList.contains('open');
-        sidebar.classList.toggle('open', !isOpen);
-        if (!isOpen && inspector) inspector.dataset['sheet'] = 'closed';
-      }
-    } else if (action === 'details') {
-      if (inspector) {
-        sidebar?.classList.remove('open');
-        inspector.hidden = false;
-        inspector.dataset['sheet'] = 'half';
-      }
-    }
-  });
 }
 
-/** The v1-style icon rail: quick toggles kept in sync with the panel controls. */
-function setupRail(ctx: Ctx | undefined, sidebar: HTMLElement): void {
-  const rail = document.querySelector<HTMLElement>('.m-rail');
-  if (!rail) return;
-
-  setupRailPin(rail);
-
-  const syncRailButton = (btn: HTMLButtonElement, setting: string, value: string): void => {
-    const base = (btn.dataset['title'] ?? '').split(':')[0]!;
-    if (btn.dataset['cycle'] !== undefined) {
-      btn.dataset['title'] = `${base}: ${value}`;
-      btn.classList.toggle('on', value === 'on');
-      btn.classList.toggle('off', value === 'off');
-    } else {
-      const on = setting === 'theme' ? value === 'light' : value !== 'off';
-      btn.classList.toggle('on', setting === 'theme' ? on : false);
-      btn.classList.toggle('off', setting !== 'theme' && !on);
-    }
-  };
-
-  const syncPanel = (setting: string, value: string): void => {
-    const seg = sidebar.querySelector<HTMLElement>(`.m-seg[data-setting="${setting}"]`);
-    if (seg) {
-      for (const b of seg.querySelectorAll('button')) b.classList.toggle('active', b.dataset['value'] === value);
-    }
-    const sw = sidebar.querySelector<HTMLButtonElement>(`.m-switch[data-setting="${setting}"]`);
-    if (sw) sw.setAttribute('aria-checked', String(value !== 'off'));
-  };
-
-  for (const btn of rail.querySelectorAll<HTMLButtonElement>('[data-cycle]')) {
-    const setting = btn.dataset['cycle']!;
-    const order = ['auto', 'on', 'off'];
-    syncRailButton(btn, setting, localStorage.getItem(`marrow-${setting}`) ?? 'auto');
-    btn.addEventListener('click', () => {
-      const current = localStorage.getItem(`marrow-${setting}`) ?? 'auto';
-      const next = order[(order.indexOf(current) + 1) % order.length]!;
-      localStorage.setItem(`marrow-${setting}`, next);
-      applySetting(ctx, setting, next);
-      syncRailButton(btn, setting, next);
-      syncPanel(setting, next);
-    });
-  }
-
-  for (const btn of rail.querySelectorAll<HTMLButtonElement>('[data-action]')) {
-    const setting = btn.dataset['action']!;
-    const current = setting === 'theme'
-      ? (document.documentElement.dataset['theme'] ?? 'dark')
-      : localStorage.getItem(`marrow-${setting}`) !== 'off' ? 'on' : 'off';
-    syncRailButton(btn, setting, current);
-    btn.addEventListener('click', () => {
-      let next: string;
-      if (setting === 'theme') {
-        next = document.documentElement.dataset['theme'] === 'light' ? 'dark' : 'light';
-        localStorage.setItem('marrow-theme', next);
-      } else {
-        next = localStorage.getItem(`marrow-${setting}`) !== 'off' ? 'off' : 'on';
-        localStorage.setItem(`marrow-${setting}`, next);
-      }
-      applySetting(ctx, setting, next);
-      syncRailButton(btn, setting, next);
-      syncPanel(setting, next);
-    });
-  }
-}
-
-/** Pinned (default), the rail card stays put. Unpinned, it tucks away and the
- *  menu chip becomes the hover/focus handle that slides it back out. */
-function setupRailPin(rail: HTMLElement): void {
-  const pin = rail.querySelector<HTMLButtonElement>('[data-pin]');
-  const wrap = rail.parentElement;
-  if (!pin || !wrap) return;
-
-  const apply = (pinned: boolean): void => {
-    pin.classList.toggle('on', pinned);
-    pin.setAttribute('aria-pressed', String(pinned));
-    pin.dataset['title'] = pinned ? 'Unpin dock' : 'Pin dock';
-    rail.classList.toggle('unpinned', !pinned);
-    if (pinned) rail.classList.remove('reveal');
-  };
-  apply(localStorage.getItem('marrow-rail-pin') !== 'off');
-  pin.addEventListener('click', () => {
-    const pinned = !pin.classList.contains('on');
-    localStorage.setItem('marrow-rail-pin', pinned ? 'on' : 'off');
-    apply(pinned);
-  });
-
-  let hideTimer: number | undefined;
-  const show = (): void => {
-    clearTimeout(hideTimer);
-    rail.classList.add('reveal');
-  };
-  const scheduleHide = (): void => {
-    clearTimeout(hideTimer);
-    hideTimer = window.setTimeout(() => rail.classList.remove('reveal'), 350);
-  };
-  for (const el of [wrap.querySelector('.m-chip-btn'), document.querySelector('.m-rail-trigger'), rail]) {
-    el?.addEventListener('mouseenter', show);
-    el?.addEventListener('mouseleave', scheduleHide);
-  }
-  wrap.addEventListener('focusin', show);
-  wrap.addEventListener('focusout', (ev) => {
-    if (!wrap.contains(ev.relatedTarget as Node)) scheduleHide();
+function setupMobileNav(): void {
+  // the topology selector in the mobile bar opens the page navigation
+  find(document, 'mobile.selector').addEventListener('click', () => {
+    const sidebar = find(document, 'sidebar.panel');
+    const isOpen = sidebar.classList.contains('open');
+    sidebar.classList.toggle('open', !isOpen);
+    if (!isOpen) setParam(find(document, 'inspector.panel'), 'sheet', 'closed');
   });
 }
 
 /** Persist + apply a view setting and keep any sidebar segmented control in step. */
-function setViewSetting(ctx: Ctx | undefined, key: string, value: string): void {
-  localStorage.setItem(`marrow-${key}`, value);
+function setViewSetting(ctx: Ctx | undefined, key: StorageName, value: string): void {
+  localStorage.setItem(storageKey(key), value);
   applySetting(ctx, key, value);
-  for (const b of document.querySelectorAll<HTMLButtonElement>(`.m-seg[data-setting="${key}"] button`)) {
-    b.classList.toggle('active', b.dataset['value'] === value);
-  }
+  for (const seg of findAll(document, 'settings.seg')) if (param(seg, 'setting') === key) syncSeg(seg, value);
 }
 
-function applySetting(ctx: Ctx | undefined, setting: string, value: string): void {
-  const root = document.documentElement;
+function applySetting(ctx: Ctx | undefined, setting: StorageName, value: string): void {
+  const root = rootEl();
   switch (setting) {
     case 'theme':
-      root.dataset['theme'] = value;
-      break;
-    case 'layout':
-      root.dataset['layout'] = 'spacious';
-      document.querySelector('#marrow-shell')?.setAttribute('data-layout', 'spacious');
+      writeRoot(root, 'theme', value === 'light' ? 'light' : 'dark');
       break;
     case 'labels':
-      root.dataset['labels'] = value;
+      writeRoot(root, 'labels', value);
       ctx?.engine?.setLabelMode(value as 'auto' | 'on' | 'off');
       break;
     case 'ports':
-      root.dataset['ports'] = value;
+      writeRoot(root, 'ports', value);
       ctx?.engine?.setPortMode(value as 'auto' | 'on' | 'off');
       break;
     case 'motion':
-      root.dataset['motion'] = value;
+      writeRoot(root, 'motion', value);
       ctx?.engine?.setMotion(value !== 'off');
       break;
     case 'minimap': {
-      const wrap = document.querySelector<HTMLElement>('.m-minimap');
+      const wrap = maybe(document, 'minimap.root');
       if (wrap && (ctx?.data.devices.length ?? 0) >= 2) wrap.hidden = value === 'off';
       break;
     }
@@ -2768,9 +2522,8 @@ function applySetting(ctx: Ctx | undefined, setting: string, value: string): voi
  * details, copy actions. Row click (outside links) opens the drawer too.
  */
 function setupInventoryDetails(data: EmbeddedData): void {
-  if (!document.querySelector('.m-inventory')) return;
-  const panel = document.querySelector<HTMLElement>('.m-inspector');
-  if (!panel || data.devices.length === 0) return;
+  const panel = find(document, 'inspector.panel');
+  if (data.devices.length === 0) return;
 
   registerYamlTabs(data);
   exposePublicApi(undefined);
@@ -2789,21 +2542,20 @@ function setupInventoryDetails(data: EmbeddedData): void {
     const d = deviceById.get(id);
     if (d) fillInspector(maps, d, show); // neighbor links navigate inside the drawer
   };
-  panel.querySelector('.m-inspector-close')?.addEventListener('click', () => {
+  find(panel, 'inspector.close').addEventListener('click', () => {
     panel.hidden = true;
   });
   addEventListener('keydown', (ev) => {
     if (ev.key === 'Escape' && !panel.hidden) panel.hidden = true;
   });
 
-  const rowOf = (target: EventTarget | null): HTMLTableRowElement | null =>
-    (target as Element | null)?.closest?.('tr.m-inv-row[data-id]') ?? null;
+  const rowOf = (target: EventTarget | null): HTMLElement | null => closestHook(target, 'inventory.row');
 
   // click a row (not its link) → drawer
   document.addEventListener('click', (ev) => {
     if ((ev.target as Element).closest('a')) return;
     const row = rowOf(ev.target);
-    if (row) show(row.dataset['id']!);
+    if (row) show(param(row, 'id')!);
   });
 
   // ── row context menu (shadcn ContextMenu) ──
@@ -2820,7 +2572,7 @@ function setupInventoryDetails(data: EmbeddedData): void {
     const row = rowOf(ev.target);
     if (!row) return;
     ev.preventDefault();
-    menuFor = row.dataset['id']!;
+    menuFor = param(row, 'id')!;
     const d = deviceById.get(menuFor);
     if (!d) return;
     const item = (act: string, label: string): string =>
@@ -2848,7 +2600,9 @@ function setupInventoryDetails(data: EmbeddedData): void {
       case 'details': show(id); break;
       case 'diagram': {
         // the row's name link already points at the device's canonical diagram
-        const link = document.querySelector<HTMLAnchorElement>(`tr.m-inv-row[data-id="${CSS.escape(id)}"] a`);
+        const link = findAll(document, 'inventory.row')
+          .find((r) => param(r, 'id') === id)
+          ?.querySelector<HTMLAnchorElement>('a');
         if (link) location.href = link.href;
         break;
       }
@@ -2868,24 +2622,24 @@ function setupInventoryDetails(data: EmbeddedData): void {
 
 /** Inventory page: tabs (by-zone / flat), group-aware filter, per-bucket sort. */
 function setupInventory(): void {
-  const tables = [...document.querySelectorAll<HTMLTableElement>('.m-inventory')];
+  const tables = findAll(document, 'inventory.table') as HTMLTableElement[];
   if (tables.length === 0) return;
 
   // shadcn Tabs: switch the hierarchy and flat views
-  const tabs = [...document.querySelectorAll<HTMLButtonElement>('.m-inv-tabs .m-tab')];
-  const views = [...document.querySelectorAll<HTMLElement>('.m-inv-view')];
+  const tabs = findAll(document, 'inventory.tab');
+  const views = findAll(document, 'inventory.view');
   for (const tab of tabs) {
     tab.addEventListener('click', () => {
       for (const t of tabs) t.classList.toggle('active', t === tab);
-      for (const v of views) v.hidden = v.dataset['view'] !== tab.dataset['tab'];
+      for (const v of views) v.hidden = param(v, 'view') !== param(tab, 'tab');
     });
   }
 
-  const filter = document.querySelector<HTMLInputElement>('.m-inv-filter');
-  const rowsOf = (root: Element): HTMLTableRowElement[] => [...root.querySelectorAll<HTMLTableRowElement>('tr.m-inv-row, tbody > tr[data-search]')];
-  const query = (): string => (filter?.value ?? '').trim().toLowerCase();
+  const filter = find(document, 'inventory.filter');
+  const rowsOf = (root: Element): HTMLTableRowElement[] => findAll(root, 'inventory.row') as HTMLTableRowElement[];
+  const query = (): string => filter.value.trim().toLowerCase();
   const matchesQuery = (row: HTMLTableRowElement): boolean =>
-    query() === '' || (row.dataset['search'] ?? '').includes(query());
+    query() === '' || (param(row, 'search') ?? '').includes(query());
 
   // ── shadcn Pagination, once per table (each zone card AND the flat view) ──
   const PAGE_SIZE = 50;
@@ -2914,11 +2668,8 @@ function setupInventory(): void {
   }
   const byTable = new Map<HTMLTableElement, Pager>();
   for (const table of tables) {
-    const card = table.closest<HTMLElement>('.m-inv-group');
-    const pagerEl =
-      card?.querySelector<HTMLElement>('.m-pagination') ??
-      table.closest<HTMLElement>('.m-inv-view')?.querySelector<HTMLElement>('.m-pagination') ??
-      null;
+    const card = closestHook(table, 'inventory.group');
+    const pagerEl = findAll(card ?? closestHook(table, 'inventory.view') ?? table, 'inventory.pager')[0];
     let pageNo = 0;
     const refresh = (): void => {
       const all = rowsOf(table);
@@ -2929,7 +2680,7 @@ function setupInventory(): void {
       for (const row of matched.slice(pageNo * PAGE_SIZE, (pageNo + 1) * PAGE_SIZE)) row.hidden = false;
       for (const tb of table.tBodies) {
         // a nested-zone header hides when none of its rows are on this page
-        const sub = tb.querySelector<HTMLTableRowElement>('tr.m-inv-sub');
+        const sub = findAll(tb, 'inventory.sub')[0];
         if (sub) sub.hidden = !rowsOf(tb).some((row) => !row.hidden);
       }
       if (card) card.hidden = matched.length === 0; // filter emptied the zone
@@ -2944,7 +2695,7 @@ function setupInventory(): void {
     byTable.set(table, { refresh, reset: () => { pageNo = 0; } });
     refresh();
   }
-  filter?.addEventListener('input', () => {
+  filter.addEventListener('input', () => {
     for (const pager of byTable.values()) {
       pager.reset();
       pager.refresh();
@@ -2955,7 +2706,7 @@ function setupInventory(): void {
   // every table re-paginates after sorting
   for (const table of tables) {
     const dirs = new Map<number, 1 | -1>();
-    table.querySelectorAll<HTMLTableCellElement>('th[data-sort]').forEach((th, col) => {
+    findAll(table, 'inventory.sort').forEach((th, col) => {
       th.addEventListener('click', () => {
         const dir = (dirs.get(col) ?? 1) as 1 | -1;
         dirs.set(col, dir === 1 ? -1 : 1);
@@ -2976,7 +2727,7 @@ function setupInventory(): void {
 
   // ── shadcn Resizable: handles BETWEEN zone panels — dragging trades height
   // between the section above and the section below, like a panel group ──
-  const handles = [...document.querySelectorAll<HTMLElement>('.m-rsz-handle')];
+  const handles = findAll(document, 'inventory.resizeRow');
   const syncHandles = (): void => {
     for (const handle of handles) {
       const prev = handle.previousElementSibling as HTMLElement | null;
@@ -2985,11 +2736,12 @@ function setupInventory(): void {
     }
   };
   syncHandles();
-  filter?.addEventListener('input', syncHandles);
+  filter.addEventListener('input', syncHandles);
   for (const handle of handles) {
     handle.addEventListener('pointerdown', (ev) => {
-      const prev = handle.previousElementSibling?.querySelector<HTMLElement>('.m-inv-scroll');
-      const next = handle.nextElementSibling?.querySelector<HTMLElement>('.m-inv-scroll');
+      const scrollIn = (el: Element | null): HTMLElement | undefined => (el ? findAll(el, 'inventory.scroll')[0] : undefined);
+      const prev = scrollIn(handle.previousElementSibling);
+      const next = scrollIn(handle.nextElementSibling);
       if (!prev || !next) return;
       ev.preventDefault();
       handle.setPointerCapture(ev.pointerId);
@@ -3012,7 +2764,7 @@ function setupInventory(): void {
   }
 
   // vertical handles between columns: dragging trades WIDTH with the neighbor
-  for (const handle of document.querySelectorAll<HTMLElement>('.m-rsz-v')) {
+  for (const handle of findAll(document, 'inventory.resizeCol')) {
     handle.addEventListener('pointerdown', (ev) => {
       const prev = handle.previousElementSibling as HTMLElement | null;
       const next = handle.nextElementSibling as HTMLElement | null;
@@ -3064,8 +2816,8 @@ function setupKeyboard(ctx: Ctx): void {
     }
     if (ev.key === 'f') ctx.camera.fit(true);
     else if (ev.key === 'Escape') {
-      const overlay = document.querySelector<HTMLElement>('.m-spotlight');
-      if (overlay && !overlay.hidden) overlay.hidden = true;
+      const overlay = find(document, 'spotlight.root');
+      if (!overlay.hidden) overlay.hidden = true;
       else deselect(ctx);
     } else if (ev.key === '+' || ev.key === '=') zoomCenter(ctx, 1.35);
     else if (ev.key === '-') zoomCenter(ctx, 1 / 1.35);
@@ -3079,12 +2831,12 @@ function setupKeyboard(ctx: Ctx): void {
       // keyboard focus on a node (tab order) opens it
       const el = document.activeElement;
       if (el instanceof SVGElement) {
-        const nodeEl = el.closest<SVGGElement>('[data-node]');
+        const nodeEl = el.closest<SVGGElement>(STAGE_HOOKS.nodeBound);
         if (nodeEl) {
           ev.preventDefault();
-          const href = nodeEl.dataset['href'];
-          if (href !== undefined) location.href = rootPrefix() + href;
-          else selectDevice(ctx, nodeEl.dataset['node']!, false);
+          const href = nodeEl.getAttribute(STAGE_ATTR.href);
+          if (href !== null) location.href = rootPrefix() + href;
+          else selectDevice(ctx, nodeEl.getAttribute(STAGE_ATTR.node)!, false);
         }
       }
     }
@@ -3138,8 +2890,8 @@ function miniGeometry(ctx: Ctx): MiniGeometry {
   }
   const svg = ctx.svg!;
   const zones: MiniGeometry['zones'] = [];
-  for (const zoneEl of svg.querySelectorAll<SVGGElement>('.m-zone[data-zone]')) {
-    const panel = zoneEl.querySelector<SVGRectElement>('.m-zone-panel');
+  for (const zoneEl of svg.querySelectorAll<SVGGElement>(STAGE_HOOKS.zone)) {
+    const panel = zoneEl.querySelector<SVGRectElement>(STAGE_HOOKS.zonePanel);
     if (!panel) continue;
     const accent = /--m-zone-accent:\s*([^;"]+)/.exec(zoneEl.getAttribute('style') ?? '')?.[1];
     const box = {
@@ -3156,12 +2908,13 @@ function miniGeometry(ctx: Ctx): MiniGeometry {
     const status = [...el.classList].find((c) => c.startsWith('m-status-'))?.slice('m-status-'.length) ?? '';
     nodes.push({ box: { x: b.x, y: b.y, w: b.width, h: b.height }, status });
   }
-  return { sceneW: Number(svg.dataset['w']) || 1, sceneH: Number(svg.dataset['h']) || 1, zones, nodes };
+  const size = sceneSizeOf(svg);
+  return { sceneW: size.w, sceneH: size.h, zones, nodes };
 }
 
-function setupMinimap(ctx: Ctx, stage: HTMLElement): () => void {
-  const wrap = document.querySelector<HTMLElement>('.m-minimap');
-  if (!wrap || ctx.data.devices.length < 2) return () => {};
+function setupMinimap(ctx: Ctx): () => void {
+  const wrap = find(document, 'minimap.root');
+  if (ctx.data.devices.length < 2) return () => {};
   wrap.hidden = false;
   const geo = miniGeometry(ctx);
   const CW = 184;
@@ -3186,7 +2939,7 @@ function setupMinimap(ctx: Ctx, stage: HTMLElement): () => void {
   const GLYPH_CHEVRON =
     '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
 
-  const initiallyCollapsed = localStorage.getItem('marrow-minimap') === 'closed';
+  const initiallyCollapsed = localStorage.getItem(storageKey('minimap')) === 'closed';
 
   wrap.innerHTML =
     `<button class="m-mini-toggle" type="button" aria-label="${initiallyCollapsed ? 'Show minimap' : 'Hide minimap'}">${initiallyCollapsed ? GLYPH_MAP : GLYPH_CHEVRON}</button>` +
@@ -3308,7 +3061,7 @@ function setupMinimap(ctx: Ctx, stage: HTMLElement): () => void {
     ev.stopPropagation();
     const collapsed = !wrap.classList.contains('collapsed');
     applyCollapsed(collapsed);
-    localStorage.setItem('marrow-minimap', collapsed ? 'closed' : 'open');
+    localStorage.setItem(storageKey('minimap'), collapsed ? 'closed' : 'open');
   });
 
   sync();
@@ -3359,4 +3112,3 @@ function isTyping(): boolean {
   return el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement;
 }
 
-document.addEventListener('DOMContentLoaded', boot);

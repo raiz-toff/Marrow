@@ -76,7 +76,7 @@ kbd {
 }
 
 /* Master Island Card: Encompasses Sidebar + Main Column */
-#marrow-shell {
+#marrow-chrome {
   flex: 1;
   min-width: 0;
   height: 100%;
@@ -177,59 +177,6 @@ ${visualCss()}
 @keyframes mZoneIn { from { opacity: 0; } }
 @keyframes mNodeIn { from { opacity: 0; transform: scale(.96) translateY(4px); } }
 .settled .m-enter-zone, .settled .m-enter-node { animation: none; }
-
-/* ── the menu chip (SidebarTrigger) floats top-left; view settings live in
-      the ⌘K command center ── */
-.m-rail-wrap {
-  position: fixed; top: 12px; left: 12px; z-index: 31;
-  display: flex; flex-direction: column; align-items: flex-start; gap: 8px;
-  pointer-events: none;
-  /* travels with the panel when it opens/closes — same curve as the sidebar */
-  transition: left .3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.m-chip-btn {
-  width: 32px; height: 32px; flex: none; border: 1px solid var(--line); border-radius: var(--radius);
-  background: color-mix(in srgb, var(--panel) 85%, transparent); color: var(--ink-dim);
-  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-  display: grid; place-items: center; cursor: pointer; pointer-events: auto;
-  box-shadow: var(--shadow-sm);
-  transition: background .15s, color .15s, border-color .15s, transform .15s;
-}
-.m-chip-btn:hover { background: var(--bg-raise); color: var(--ink); border-color: var(--line-strong); }
-.m-chip-btn:active { transform: scale(.94); }
-/* like shadcn's ghost SidebarTrigger, the chip stays neutral — the sidebar
-   itself is the open/closed signal */
-.m-chip-btn.on { background: var(--bg-raise); color: var(--ink); border-color: var(--line-strong); }
-
-/* ── top dock (hides above the edge, a Search tab peeks out;
-      hover or keyboard focus slides it down) ── */
-.m-dock {
-  position: fixed; top: 0; left: 50%; z-index: 30;
-  transform: translate(-50%, -100%);
-  display: flex; align-items: center; gap: 12px;
-  padding: 9px 16px 10px;
-  background: var(--panel); border: 1px solid var(--line); border-top: none;
-  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
-  box-shadow: var(--shadow);
-  transition: transform .45s cubic-bezier(0.16, 1, 0.3, 1);
-  max-width: min(860px, calc(100vw - 120px));
-}
-.m-dock:hover, .m-dock:focus-within { transform: translate(-50%, 0); }
-.m-dock-div { width: 1px; height: 20px; background: var(--line); flex: none; }
-.m-dock-hint {
-  position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
-  display: flex; align-items: center; gap: 7px;
-  padding: 5px 12px 6px;
-  background: var(--panel); border: 1px solid var(--line); border-top: none;
-  border-radius: 0 0 var(--radius) var(--radius);
-  color: var(--ink-dim); font: inherit; font-size: 12px; cursor: pointer;
-  box-shadow: var(--shadow-sm);
-  white-space: nowrap; pointer-events: auto;
-  transition: opacity .3s cubic-bezier(0.16, 1, 0.3, 1), transform .3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.m-dock:hover .m-dock-hint, .m-dock:focus-within .m-dock-hint {
-  opacity: 0; transform: translateX(-50%) translateY(-10px); pointer-events: none;
-}
 
 /* ── unified command bar: 48px desktop / 44px mobile ── */
 .m-command-bar {
@@ -446,8 +393,6 @@ html[data-theme="dark"] .m-theme-btn.m-desk-only:hover .m-theme-sun {
 /* icon-strip internals: logo only in the header, square icon rows with
    flyout labels, non-nav groups collapsed away */
 .m-sidebar:not(.open) .m-sidebar-inner { overflow: visible; }
-/* strip under a floating chip: leave room for it (chip ends at y=42) */
-body:has(.m-rail-wrap) .m-sidebar:not(.open) .m-sidebar-inner { padding-top: 52px; }
 /* strip mode: the proprietary logo anchors the BOTTOM of the strip (shadcn
    footer position); nav icons start right under the trigger chip */
 .m-sidebar.m-nav:not(.open) .m-side-header { padding: 8px; justify-content: center; order: 99; margin-top: auto; }
@@ -581,17 +526,6 @@ body:has(.m-rail-wrap) .m-sidebar:not(.open) .m-sidebar-inner { padding-top: 52p
   padding: 3px 9px; border-radius: var(--radius-sm); cursor: pointer; transition: background .15s, color .15s;
 }
 .m-seg button.active { background: var(--panel); color: var(--ink); box-shadow: var(--shadow-sm); }
-.m-switch {
-  width: 34px; height: 20px; flex: none; position: relative; cursor: pointer; padding: 0;
-  border: 0; border-radius: 999px; background: var(--line-strong);
-  transition: background .15s;
-}
-.m-switch .m-knob {
-  position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%;
-  background: #fff; box-shadow: var(--shadow-sm); transition: translate .15s;
-}
-.m-switch[aria-checked="true"] { background: var(--m-accent); }
-.m-switch[aria-checked="true"] .m-knob { translate: 14px 0; }
 .m-legend { list-style: none; padding: 0 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 7px 8px; font-size: 12px; color: var(--ink-dim); }
 .m-legend li { display: flex; align-items: center; gap: 7px; }
 .m-legend li:nth-last-child(-n+2) { grid-column: span 2; }
@@ -974,7 +908,7 @@ a.m-side-row.active i, a.m-side-row.active em { color: var(--sidebar-fg); }
     margin: 0 !important;
   }
 
-  #marrow-shell {
+  #marrow-chrome {
     border: none !important;
     border-radius: 0 !important;
     box-shadow: none !important;
@@ -1843,7 +1777,7 @@ html[data-chrome="minimal"] body {
   margin: 0 !important;
   background: var(--bg) !important;
 }
-html[data-chrome="minimal"] #marrow-shell {
+html[data-chrome="minimal"] #marrow-chrome {
   border: none !important;
   border-radius: 0 !important;
   box-shadow: none !important;
@@ -1856,12 +1790,7 @@ html[data-chrome="minimal"] .m-stage {
   box-shadow: none !important;
 }
 html[data-chrome="minimal"] .m-command-bar,
-html[data-chrome="minimal"] .m-status-bar,
-html[data-chrome="minimal"] .m-mobile-nav,
 html[data-chrome="minimal"] .m-breadcrumbs,
-html[data-chrome="minimal"] .m-dock,
-html[data-chrome="minimal"] .m-dock-hint,
-html[data-chrome="minimal"] .m-rail-wrap,
 html[data-chrome="minimal"] .m-backdrop,
 html[data-chrome="minimal"] .m-watermark,
 html[data-chrome="minimal"] .m-minimap,
@@ -1909,8 +1838,8 @@ html[data-watermark="off"] .m-watermark {
 /* ── reduced motion: kill choreography and chrome slides ── */
 @media (prefers-reduced-motion: reduce) {
   .m-enter-zone, .m-enter-node { animation: none !important; }
-  .m-sidebar, .m-dock, .m-dock-hint, .m-breadcrumbs, .m-inspector, .m-spotlight-box,
-  .m-controls, .m-minimap, .m-chip-btn { transition: none !important; animation: none !important; }
+  .m-sidebar, .m-breadcrumbs, .m-inspector, .m-spotlight-box,
+  .m-controls, .m-minimap { transition: none !important; animation: none !important; }
 }
 
 /* ── blueprint static export chrome ── */
@@ -1920,7 +1849,7 @@ html[data-watermark="off"] .m-watermark {
 
 /* ── print ── */
 @media print {
-  .m-sidebar, .m-rail-wrap, .m-dock, .m-breadcrumbs, .m-controls, .m-minimap, .m-inspector, .m-spotlight, .m-tooltip, .m-backdrop { display: none !important; }
+  .m-sidebar, .m-breadcrumbs, .m-controls, .m-minimap, .m-inspector, .m-spotlight, .m-tooltip, .m-backdrop { display: none !important; }
   .m-stage { position: static; inset: auto; border: none; box-shadow: none; }
   body { overflow: visible; background: #fff; }
   .m-portlabel { opacity: 1 !important; }

@@ -47,6 +47,13 @@ existing corpus must still pass the linter.
 **A rendering change** must be verified in both renderers. Unit tests cover the
 scene; the picture needs eyes.
 
+**A chrome or runtime change** goes through the page contract: a new element
+the runtime binds to gets a `HOOKS` entry and `hookAttr(...)` on its markup.
+`packages/runtime/test/boot*.test.ts` build real pages and boot the runtime
+against them in happy-dom, so a hook that is missing, duplicated or unknown
+fails there. Scale-tier (canvas) pages can't boot in happy-dom; check them with
+`marrow snapshot`, which waits for the runtime's ready flag.
+
 ## Verifying visual work
 
 Tests don't tell you whether a diagram looks right. The loop that works:

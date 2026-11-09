@@ -6,13 +6,25 @@ import { layoutTopology, type LayoutOptions, type NodeMeta } from '@marrow/layou
 import { lintScene, type LintReport } from '@marrow/lint';
 import type { Density, Topology } from '@marrow/model';
 import { renderCanvasHost, renderScene, type IconSource } from '@marrow/render-svg';
-import { getRuntimeSource } from '@marrow/runtime';
+import {
+  DEVICE_KEYS,
+  getRuntimeSource,
+  LINK_KEYS,
+  PAGE_DATA_KEYS,
+  pickDefined,
+  SEARCH_GLOBAL,
+  TOPOLOGY_KEYS,
+  ZONE_KEYS,
+  type EmbeddedData,
+  type PageKind,
+  type SearchIndexDoc,
+} from '@marrow/runtime';
 import type { Scene } from '@marrow/scene';
 import type { Brand } from './brand.js';
 import { collapseEndpoints } from './collapse.js';
 import { indexZones, inventoryBody, overviewTopology, pageOf, zoneTopology, deviceTopology, type PageTopo, type ZoneIndex } from './pages.js';
 import { planSite, type OutputShape, type SitePlan } from './planner.js';
-import { renderShell, type Crumb, type NavLink, type ShellOptions } from './shell.js';
+import { renderChrome, type ChromeOptions, type Crumb, type NavLink } from './chrome.js';
 import { buildStylesheet, SITE_CSS } from './styles.js';
 import type { ThemeConfig } from './tokens.js';
 
@@ -48,8 +60,8 @@ export interface BuildOptions {
   /** Embed / kiosk modularity: 'minimal' hides topbar & dock, 'full' preserves all chrome. */
   chrome?: 'full' | 'minimal';
   embed?: boolean;
-  /** Layout archetype for HTML diagram shell: locked to 'spacious'. */
-  shellLayout?: 'spacious';
+  /** Chrome layout archetype: locked to 'spacious'. */
+  chromeLayout?: 'spacious';
 }
 
 export interface PageStats {
@@ -212,7 +224,7 @@ export function createSiteBuilder(
   // How a page is packaged. A Single file inlines styles + runtime, has no
   // nav, and — with no search-data asset to derive it from — embeds the
   // (empty) device-page manifest. Site pages share external assets.
-  const packaging: Pick<ShellOptions, 'assets' | 'navLinks'> = single
+  const packaging: Pick<ChromeOptions, 'assets' | 'navLinks'> = single
     ? { assets: { mode: 'inline', runtime: getRuntimeSource() } }
     : { assets: { mode: 'external' }, navLinks };
 
@@ -231,7 +243,7 @@ export function createSiteBuilder(
     const page = def.topo();
     const collapsed = collapseEndpoints(page.topology);
     const { svg, scene, lint, tier } = await renderPage(collapsed, options, page.nodeMeta);
-    const content = renderShell({
+    const content = renderChrome({
       title: def.crumbs.at(-1)?.label ?? topology.name,
       // a Single file has no inventory page: its header counts the whole topology
       stats: single ? statsOf(collapsed) : `${scene.nodes.length} devices · ${scene.edges.length} links`,
@@ -243,7 +255,8 @@ export function createSiteBuilder(
       ...(topology.description !== undefined ? { subtitle: topology.description } : {}),
       ...(topology.watermark !== undefined ? { watermark: topology.watermark } : {}),
       ...chrome,
-      dataJson: embeddedData(collapsed, {
+      data: embeddedData(collapsed, {
+        kind: 'stage',
         page: path,
         // site pages derive the device-page manifest from the shared search index
         ...(single ? { devicePages: [] } : {}),
@@ -257,7 +270,7 @@ export function createSiteBuilder(
   };
 
   const buildInventory = (): PageCacheEntry => {
-    const content = renderShell({
+    const content = renderChrome({
       title: `Inventory — ${topology.name}`,
       stats: `${topology.devices.length} devices`,
       crumbs: [{ label: topology.name, href: 'index.html' }, { label: 'Inventory' }],
@@ -268,7 +281,7 @@ export function createSiteBuilder(
       ...chrome,
       // full device+link payload: the inventory drawer shows device details in place
       // (devicePages omitted — derived client-side from the shared search index)
-      dataJson: embeddedData(topology, { page: 'inventory.html' }),
+      data: embeddedData(topology, { kind: 'inventory', page: 'inventory.html' }),
       ...packaging,
     });
     return { hash: '', content };
@@ -325,14 +338,14 @@ function withDefaults(t: Topology, defaults: LayoutDefaults | undefined): Topolo
   };
 }
 
-/** Shell options shared by every page of a build. */
-function chromeOptions(options: BuildOptions): Pick<ShellOptions, 'brand' | 'themeConfig' | 'chrome' | 'embed' | 'layout'> {
+/** Chrome options shared by every page of a build. */
+function chromeOptions(options: BuildOptions): Pick<ChromeOptions, 'brand' | 'themeConfig' | 'chrome' | 'embed' | 'layout'> {
   return {
     ...(options.brand !== undefined ? { brand: options.brand } : {}),
     ...(options.themeConfig !== undefined ? { themeConfig: options.themeConfig } : {}),
     ...(options.chrome !== undefined ? { chrome: options.chrome } : {}),
     ...(options.embed !== undefined ? { embed: options.embed } : {}),
-    ...(options.shellLayout !== undefined ? { layout: options.shellLayout } : {}),
+    ...(options.chromeLayout !== undefined ? { layout: options.chromeLayout } : {}),
   };
 }
 
@@ -404,7 +417,7 @@ function statsOf(t: Topology): string {
 
 function searchDataJs(topology: Topology, plan: SitePlan, zi: ZoneIndex): string {
   const searchDocs = topology.devices
-    .map((d) => ({
+    .map((d): SearchIndexDoc => ({
       id: d.id,
       name: d.name,
       ...(d.mgmtIp !== undefined ? { ip: d.mgmtIp } : {}),
@@ -414,72 +427,30 @@ function searchDataJs(topology: Topology, plan: SitePlan, zi: ZoneIndex): string
       page: pageOf(d.id, plan, zi),
     }))
     .sort((a, b) => a.id.localeCompare(b.id));
-  return `window.__MARROW_SEARCH=${JSON.stringify({ docs: searchDocs }).replace(/</g, '\\u003c')};\n`;
+  return `window.${SEARCH_GLOBAL}=${JSON.stringify({ docs: searchDocs }).replace(/</g, '\\u003c')};\n`;
 }
 
+/**
+ * The page payload (see the page contract in @marrow/runtime): explicit key
+ * lists pick what ships, `undefined`/`false` fields are dropped, and
+ * `PAGE_DATA_KEYS` fixes the serialization order so output stays byte-stable.
+ */
 function embeddedData(
   t: Topology,
-  extra: { page: string; devicePages?: string[]; hero?: string | undefined; scene?: Scene | undefined },
-): string {
-  const payload = {
-    name: t.name,
-    ...(extra.scene !== undefined ? { scene: extra.scene } : {}),
-    ...(t.description !== undefined ? { description: t.description } : {}),
-    ...(t.author !== undefined ? { author: t.author } : {}),
-    ...(t.revision !== undefined ? { revision: t.revision } : {}),
-    ...(t.date !== undefined ? { date: t.date } : {}),
-    ...(t.about !== undefined ? { about: t.about } : {}),
-    ...(t.titleBlock !== undefined ? { titleBlock: t.titleBlock } : {}),
+  extra: { kind: PageKind; page: string; devicePages?: string[]; hero?: string | undefined; scene?: Scene | undefined },
+): EmbeddedData {
+  const data: EmbeddedData = {
+    ...pickDefined(t, TOPOLOGY_KEYS),
     zonesCount: t.zones.length,
-    theme: t.theme,
-    page: extra.page,
-    ...(t.inspector !== undefined ? { inspector: t.inspector } : {}),
-    // The full device-page manifest is NOT embedded per page: the runtime derives
-    // it from the shared search index (see devicePageIds). Emitted only when a
-    // caller has no search asset to fall back on.
-    ...(extra.devicePages !== undefined ? { devicePages: extra.devicePages } : {}),
-    ...(extra.hero !== undefined ? { hero: extra.hero } : {}),
-    devices: t.devices.map((d) => ({
-      id: d.id,
-      name: d.name,
-      icon: d.icon,
-      ...(d.tier !== undefined ? { tier: d.tier } : {}),
-      ...(d.zone !== undefined ? { zone: d.zone } : {}),
-      ...(d.role !== undefined ? { role: d.role } : {}),
-      status: d.status,
-      ...(d.mgmtIp !== undefined ? { mgmtIp: d.mgmtIp } : {}),
-      ...(d.haPairWith !== undefined ? { haPairWith: d.haPairWith } : {}),
-      ...(d.note !== undefined ? { note: d.note } : {}),
-      ...(d.config !== undefined ? { config: d.config } : {}),
-      ...(d.stack !== undefined ? { stack: d.stack } : {}),
-      ...(d.customFields !== undefined ? { customFields: d.customFields } : {}),
-      ...(d.sections !== undefined ? { sections: d.sections } : {}),
-      interfaces: d.interfaces,
-    })),
-    links: t.links.map((l) => ({
-      id: l.id,
-      from: l.from,
-      to: l.to,
-      ...(l.kind !== undefined ? { kind: l.kind } : {}),
-      ...(l.speed !== undefined ? { speed: l.speed } : {}),
-      ...(l.lag !== undefined ? { lag: l.lag } : {}),
-      ...(l.mode !== undefined ? { mode: l.mode } : {}),
-      ...(l.vlans !== undefined ? { vlans: l.vlans } : {}),
-      ...(l.nativeVlan !== undefined ? { nativeVlan: l.nativeVlan } : {}),
-      ...(l.encap !== undefined ? { encap: l.encap } : {}),
-      ...(l.protocol !== undefined ? { protocol: l.protocol } : {}),
-      ...(l.lacp !== undefined ? { lacp: l.lacp } : {}),
-      status: l.status,
-      ...(l.animated ? { animated: true } : {}),
-      ...(l.label !== undefined ? { label: l.label } : {}),
-      ...(l.note !== undefined ? { note: l.note } : {}),
-      ...(l.customFields !== undefined ? { customFields: l.customFields } : {}),
-      ...(l.sections !== undefined ? { sections: l.sections } : {}),
-    })),
-    zones: t.zones.map((z) => ({ id: z.id, name: z.name })),
+    ...pickDefined(extra, ['kind', 'page', 'devicePages', 'hero', 'scene']),
+    devices: t.devices.map((d) => pickDefined(d, DEVICE_KEYS)),
+    links: t.links.map((l) => pickDefined(l, LINK_KEYS)),
+    zones: t.zones.map((z) => pickDefined(z, ZONE_KEYS)),
   };
-  // `<` escaped so a note/config containing "</script>" cannot break out.
-  return JSON.stringify(payload).replace(/</g, '\\u003c');
+  // the full device-page manifest is NOT embedded per page: the runtime
+  // derives it from the shared search index (see devicePageIds) — only
+  // callers with no search asset pass `devicePages`
+  return pickDefined(data, PAGE_DATA_KEYS);
 }
 
 function sha1(input: string): string {

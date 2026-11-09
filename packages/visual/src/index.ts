@@ -31,3 +31,4 @@ export {
   type VisualScene,
 } from './resolve.js';
 export { visualCss } from './css.js';
+export { STAGE_ATTR, STAGE_HOOKS } from './hooks.js';

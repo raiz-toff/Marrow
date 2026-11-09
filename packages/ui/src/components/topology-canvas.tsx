@@ -7,7 +7,7 @@ import {
   Minimize2,
 } from 'lucide-react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { cn } from '../lib/utils.js';
+import { cn, MARROW_EMBED } from '../lib/utils.js';
 
 export interface MarrowEmbedPreset {
   label: string;
@@ -233,7 +233,7 @@ export function MarrowEmbed({
     const sendTheme = () => {
       try {
         iframeRef.current?.contentWindow?.postMessage(
-          { type: 'marrow:theme', theme: resolveTheme() },
+          { type: MARROW_EMBED.theme, theme: resolveTheme() },
           '*',
         );
       } catch {}
@@ -242,7 +242,7 @@ export function MarrowEmbed({
     sendTheme();
 
     const handleMessage = (e: MessageEvent) => {
-      if (e.data?.type === 'marrow:ready') {
+      if (e.data?.type === MARROW_EMBED.ready) {
         setIsLoading(false);
         sendTheme();
         onReady?.();

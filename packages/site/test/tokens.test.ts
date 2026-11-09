@@ -55,7 +55,7 @@ describe('Design Token Contract & CSS Generation', () => {
     expect(customCss).toContain('--bg: #112233');
     expect(customCss).toContain('.m-stage');
     expect(customCss).toContain('.m-edge');
-    expect(customCss).toContain('.m-chip-btn');
+    expect(customCss).toContain('.m-icon-btn');
   });
 });
 

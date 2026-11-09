@@ -28,4 +28,4 @@ export {
   type LinkStyleTokens,
   type LinkStyleOverrides,
 } from './tokens.js';
-export { renderShell, type ShellOptions } from './shell.js';
+export { renderChrome, type ChromeOptions } from './chrome.js';

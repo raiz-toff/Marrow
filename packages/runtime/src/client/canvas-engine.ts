@@ -1,5 +1,6 @@
 import type { Scene, SceneEdge, SceneNode, ScenePortChip } from '@marrow/scene';
-import { interactEdge, interactNode, readTheme, resolveScene, type EdgePaint, type Theme, type VisualScene } from '@marrow/visual';
+import { interactEdge, interactNode, readTheme, resolveScene, STAGE_HOOKS, type EdgePaint, type Theme, type VisualScene } from '@marrow/visual';
+import { readRoot } from '../shared/page-contract.js';
 import type { CameraState } from './camera.js';
 
 /**
@@ -26,7 +27,7 @@ interface FocusState {
 /** The theme as the stylesheet currently resolves it (live CSS variables). */
 function liveTheme(): Theme {
   const cs = getComputedStyle(document.documentElement);
-  const scheme = document.documentElement.dataset['theme'] === 'light' ? 'light' : 'dark';
+  const scheme = readRoot(document.documentElement, 'theme') === 'light' ? 'light' : 'dark';
   return readTheme((name) => cs.getPropertyValue(name), scheme);
 }
 
@@ -210,7 +211,7 @@ export class CanvasEngine {
   }
 
   private async loadIcons(): Promise<void> {
-    const sprite = document.querySelector('svg.m-sprite');
+    const sprite = document.querySelector(STAGE_HOOKS.sprite);
     if (!sprite) return;
     const unique = [...new Set(this.scene.nodes.map((n) => n.icon))];
     await Promise.all(

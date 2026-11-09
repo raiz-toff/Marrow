@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, test } from 'vitest';
 import { loadCatalog } from '@marrow/icons';
 import type { Topology } from '@marrow/model';
+import { decodePageData } from '@marrow/runtime';
 import { validateSource } from '@marrow/schema';
 import { createSiteBuilder, SITE_DEVICE_THRESHOLD, type BuildOptions } from '@marrow/site';
 
@@ -93,7 +94,7 @@ describe('output shape', () => {
     const page = out.files.get('index.html')!;
     expect(page).not.toContain('assets/runtime.js'); // runtime + styles inlined
     expect(page).not.toContain('assets/styles.css');
-    const data = JSON.parse(/<script type="application\/json" id="marrow-data">([\s\S]*?)<\/script>/.exec(page)![1]!);
+    const data = decodePageData(/<script type="application\/json" id="marrow-data">([\s\S]*?)<\/script>/.exec(page)?.[1]);
     expect(data.devicePages).toEqual([]); // no search asset to derive the manifest from
   }, 30_000);
 
