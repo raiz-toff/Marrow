@@ -694,6 +694,13 @@ a.m-side-row.active i, a.m-side-row.active em { color: var(--sidebar-fg); }
   touch-action: none;
   pointer-events: all;
 }
+/* the view shows the whole diagram: a quiet accent outline, and a click
+   anywhere pans to that point rather than grabbing the outline */
+.m-mini-view.m-mini-whole {
+  fill: none;
+  stroke-opacity: .5;
+  cursor: crosshair;
+}
 .m-minimap.m-dragging,
 .m-minimap.m-dragging > svg,
 .m-minimap.m-dragging .m-mini-view {

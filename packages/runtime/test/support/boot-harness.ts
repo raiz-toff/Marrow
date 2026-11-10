@@ -129,8 +129,10 @@ export function installHarness(): void {
   });
 }
 
-export async function boot(kind: PageKind): Promise<void> {
+/** Boot a page; `prepare` runs on the loaded document just before the runtime starts (stubs that need its elements). */
+export async function boot(kind: PageKind, prepare?: () => void): Promise<void> {
   load(pages[kind]);
+  prepare?.();
   applyModularParams(document.documentElement, parseModularParams(location.search, location.hash)); // the pre-boot step
   const { boot: run } = await import('../../src/client/main.js');
   recording = true;
@@ -138,6 +140,13 @@ export async function boot(kind: PageKind): Promise<void> {
   await vi.waitFor(() => expect((window as unknown as Record<string, unknown>)[READY_FLAG]).toBe(true));
 }
 
+/** One animation frame (the camera writes its transform, and the minimap follows, on the next frame). */
+export const frame = (): Promise<void> => new Promise((r) => requestAnimationFrame(() => r()));
+/** A pointer event as a mouse delivers it. */
+export const pointer = (el: Element, type: string, x: number, y: number): void =>
+  void el.dispatchEvent(
+    new PointerEvent(type, { bubbles: true, cancelable: true, clientX: x, clientY: y, button: 0, pointerId: 1, pointerType: 'mouse' }),
+  );
 export const click = (el: Element): void => void el.dispatchEvent(new MouseEvent('click', { bubbles: true }));
 /** A key press as a browser delivers it: at the focused element, bubbling to window. */
 export const key = (k: string, mods: KeyboardEventInit = {}): void =>
@@ -169,7 +178,7 @@ export function expectContractHolds(kind: PageKind): void {
   // no recorded lookup spells a chrome class: only hooks, stage hooks, or
   // markup the runtime creates itself (see hooks-guard.test.ts)
   const stage = new Set<string>(Object.values(STAGE_HOOKS));
-  const runtimeOwned = /^(\.m-(ctx-item|menupop|ip-chip|page|mini-view|mini-toggle)|\[data-goto\]|li\[data-idx\])$/;
+  const runtimeOwned = /^(\.m-(ctx-item|menupop|ip-chip|page)|\[data-goto\]|li\[data-idx\])$/;
   for (const sel of recorded) {
     for (const part of sel.split(',').map((p) => p.trim())) {
       if (!/\.m-|\[data-(?!m=)/.test(part)) continue;

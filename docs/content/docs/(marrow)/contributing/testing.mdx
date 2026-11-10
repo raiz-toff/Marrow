@@ -78,6 +78,11 @@ For a quick check, `marrow snapshot` does the same thing in one command:
 npm run marrow -- snapshot fixtures/valid/campus-three-tier.yaml -o /tmp/x.png
 ```
 
+For minimap behaviour, `node scripts/probe-minimap.mjs <built single-file .html>`
+drives fit, zoom, pan, click-to-pan, drag, an open inspector and a resize in
+headless Chromium on either tier and prints a `CHECK` line for each (a dev
+script, not part of `npm test`).
+
 ## Determinism
 
 Determinism is testable and tested: the same input must produce byte-identical

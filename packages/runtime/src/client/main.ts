@@ -2,6 +2,16 @@ import { Camera } from './camera.js';
 import { edgeClasses, linkSemanticsWords } from '@marrow/visual';
 import { CanvasEngine } from './canvas-engine.js';
 import { devicePageIds, globalSearchDocs, loadData, type DataDevice, type DataLink, type DataTitleBlock, type EmbeddedData } from './data.js';
+import {
+  clampTo,
+  containsPoint,
+  drawnView,
+  mapToWorld,
+  viewInMap,
+  worldInMap,
+  type DrawnView,
+  type MiniFrame,
+} from './minimap-geometry.js';
 import { closestHook, find, findAll, markHook, maybe, param, setParam } from './find.js';
 import { parseHash, parseModularParams, serializeHash } from '../shared/hash.js';
 import {
@@ -2949,95 +2959,79 @@ function setupMinimap(ctx: Ctx): () => void {
     wrap.classList.add('collapsed');
   }
 
-  const mini = wrap.querySelector('svg')!;
-  const view = wrap.querySelector<SVGRectElement>('.m-mini-view')!;
+  // by position, not `querySelector('svg')`: the toggle's glyph is an <svg>
+  // too, comes first, and is replaced whenever the toggle flips
+  const mini = wrap.lastElementChild as SVGSVGElement;
+  const view = mini.lastElementChild as SVGRectElement;
+  const frame: MiniFrame = { pad: PAD, scale: k, sceneW: geo.sceneW, sceneH: geo.sceneH };
+  const world = worldInMap(frame);
+  let drawn: DrawnView = { rect: world, covers: true };
 
   const sync = (): void => {
     const cam = ctx.camera.get();
     if (!(cam.k > 0)) return; // never write invalid geometry mid-animation
-    const vis = ctx.camera.visibleArea();
-    const vx = PAD + ((vis.x - cam.x) / cam.k) * k;
-    const vy = PAD + ((vis.y - cam.y) / cam.k) * k;
-    const vw = (vis.w / cam.k) * k;
-    const vh = (vis.h / cam.k) * k;
-    view.setAttribute('x', vx.toFixed(1));
-    view.setAttribute('y', vy.toFixed(1));
-    view.setAttribute('width', Math.max(0, vw).toFixed(1));
-    view.setAttribute('height', Math.max(0, vh).toFixed(1));
+    drawn = drawnView(viewInMap(cam, ctx.camera.visibleArea(), frame), world);
+    view.setAttribute('x', drawn.rect.x.toFixed(1));
+    view.setAttribute('y', drawn.rect.y.toFixed(1));
+    view.setAttribute('width', drawn.rect.w.toFixed(1));
+    view.setAttribute('height', drawn.rect.h.toFixed(1));
+    view.classList.toggle('m-mini-whole', drawn.covers);
   };
 
-  let dragging = false;
-  let dragStart = { x: 0, y: 0 };
-  let initialCam = ctx.camera.get();
-
-  const clampTarget = (targetX: number, targetY: number, camK: number): { x: number; y: number } => {
-    const vis = ctx.camera.visibleArea();
-    const minX = vis.x + vis.w - (geo.sceneW + 400) * camK;
-    const maxX = vis.x + 400 * camK;
-    const minY = vis.y + vis.h - (geo.sceneH + 400) * camK;
-    const maxY = vis.y + 400 * camK;
+  /** client px → map units (the svg may be scaled by CSS) */
+  const toMap = (ev: PointerEvent): { x: number; y: number } => {
+    const box = mini.getBoundingClientRect();
     return {
-      x: Math.max(Math.min(minX, maxX), Math.min(Math.max(minX, maxX), targetX)),
-      y: Math.max(Math.min(minY, maxY), Math.min(Math.max(minY, maxY), targetY)),
+      x: box.width > 0 ? ((ev.clientX - box.left) * W) / box.width : 0,
+      y: box.height > 0 ? ((ev.clientY - box.top) * H) / box.height : 0,
     };
   };
+  /** the world point at the centre of the visible area */
+  const viewCentre = (): { x: number; y: number } => {
+    const cam = ctx.camera.get();
+    const vis = ctx.camera.visibleArea();
+    return { x: (vis.x + vis.w / 2 - cam.x) / cam.k, y: (vis.y + vis.h / 2 - cam.y) / cam.k };
+  };
+
+  // one pointer at a time (mouse, pen or a single finger); the minimap sits
+  // outside the stage, so the stage's pan handler never sees these events
+  let active: { id: number; map: { x: number; y: number }; centre: { x: number; y: number } } | undefined;
 
   const onPointerDown = (ev: PointerEvent): void => {
-    if (ev.button !== 0 && ev.pointerType === 'mouse') return;
+    if (active || (ev.pointerType === 'mouse' && ev.button !== 0)) return;
     ev.preventDefault();
     ev.stopPropagation();
-
-    dragging = true;
-    dragStart = { x: ev.clientX, y: ev.clientY };
-    initialCam = ctx.camera.get();
+    const m = toMap(ev);
+    // inside the drawn viewport: grab it. Elsewhere (or when the view shows
+    // the whole world, so the outline is not a handle): jump there, then
+    // keep dragging from the new position.
+    if (drawn.covers || !containsPoint(drawn.rect, m.x, m.y)) {
+      const target = mapToWorld(m.x, m.y, frame);
+      ctx.camera.centerOn(target.x, target.y, false);
+    }
+    active = { id: ev.pointerId, map: m, centre: viewCentre() };
     wrap.classList.add('m-dragging');
-
     try {
       mini.setPointerCapture(ev.pointerId);
     } catch {}
-
-    const viewRect = view.getBoundingClientRect();
-    const isInsideView =
-      ev.target === view ||
-      (ev.clientX >= viewRect.left &&
-        ev.clientX <= viewRect.right &&
-        ev.clientY >= viewRect.top &&
-        ev.clientY <= viewRect.bottom);
-
-    if (!isInsideView) {
-      // Clicked outside view rect: center camera directly on clicked world point
-      const box = mini.getBoundingClientRect();
-      const wx = (ev.clientX - box.left - PAD) / k;
-      const wy = (ev.clientY - box.top - PAD) / k;
-      ctx.camera.centerOn(wx, wy, false);
-      initialCam = ctx.camera.get();
-      dragStart = { x: ev.clientX, y: ev.clientY };
-    }
   };
 
   const onPointerMove = (ev: PointerEvent): void => {
-    if (!dragging) return;
+    if (!active || ev.pointerId !== active.id) return;
     ev.preventDefault();
     ev.stopPropagation();
-
-    const dx = ev.clientX - dragStart.x;
-    const dy = ev.clientY - dragStart.y;
-    if (!(initialCam.k > 0) || !(k > 0)) return;
-
-    // Moving minimap view by dx minimap pixels corresponds to moving world by dx / k.
-    // In camera screen coordinates, target is initialCam - (dx / k) * initialCam.k.
-    const worldDeltaX = dx / k;
-    const worldDeltaY = dy / k;
-    const nextX = initialCam.x - worldDeltaX * initialCam.k;
-    const nextY = initialCam.y - worldDeltaY * initialCam.k;
-
-    const clamped = clampTarget(nextX, nextY, initialCam.k);
-    ctx.camera.set({ x: clamped.x, y: clamped.y }, false);
+    const m = toMap(ev);
+    // the viewport follows the pointer 1:1 in map units; its centre stays
+    // on the world (or no further off than where the drag began)
+    const { centre } = active;
+    const x = clampTo(centre.x + (m.x - active.map.x) / k, Math.min(0, centre.x), Math.max(geo.sceneW, centre.x));
+    const y = clampTo(centre.y + (m.y - active.map.y) / k, Math.min(0, centre.y), Math.max(geo.sceneH, centre.y));
+    ctx.camera.centerOn(x, y, false);
   };
 
   const onPointerUp = (ev: PointerEvent): void => {
-    if (!dragging) return;
-    dragging = false;
+    if (!active || ev.pointerId !== active.id) return;
+    active = undefined;
     wrap.classList.remove('m-dragging');
     try {
       mini.releasePointerCapture(ev.pointerId);
@@ -3048,8 +3042,9 @@ function setupMinimap(ctx: Ctx): () => void {
   mini.addEventListener('pointermove', onPointerMove);
   mini.addEventListener('pointerup', onPointerUp);
   mini.addEventListener('pointercancel', onPointerUp);
+  mini.addEventListener('lostpointercapture', onPointerUp);
 
-  const toggle = wrap.querySelector<HTMLButtonElement>('.m-mini-toggle')!;
+  const toggle = wrap.firstElementChild as HTMLButtonElement;
   toggle.addEventListener('pointerdown', (ev) => ev.stopPropagation());
   const applyCollapsed = (collapsed: boolean): void => {
     wrap.classList.toggle('collapsed', collapsed);

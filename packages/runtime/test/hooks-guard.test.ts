@@ -18,8 +18,6 @@ const RUNTIME_OWNED: Record<string, string> = {
   '[data-goto]': 'neighbour / HA-pair buttons in the inspector (fillInspector)',
   'li[data-idx]': 'command-center result rows (setupSpotlight)',
   '.m-page': 'inventory pagination buttons (setupInventory)',
-  '.m-mini-view': 'the minimap viewport rect (setupMinimap)',
-  '.m-mini-toggle': 'the minimap collapse button (setupMinimap)',
 };
 
 const clientDir = fileURLToPath(new URL('../src/client', import.meta.url));
