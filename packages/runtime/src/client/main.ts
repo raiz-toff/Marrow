@@ -13,6 +13,7 @@ import {
   type MiniFrame,
 } from './minimap-geometry.js';
 import { closestHook, find, findAll, markHook, maybe, param, setParam } from './find.js';
+import { readStored, writeStored } from './storage.js';
 import { editHash, modularPairs, parseHash, parseModularParams, VIEW_KEYS, viewPairs, withPairs, type ViewState } from '../shared/hash.js';
 import {
   applyModularParams,
@@ -42,7 +43,7 @@ const rootEl = (): HTMLElement => document.documentElement;
 const rootPrefix = (): string => readRoot(rootEl(), 'root') ?? '';
 const currentPage = (): string => readRoot(rootEl(), 'page') ?? 'index.html';
 const inspectorOff = (): boolean => readRoot(rootEl(), 'inspector') === 'off';
-const stored = (name: StorageName, dflt: string): string => localStorage.getItem(storageKey(name)) ?? dflt;
+const stored = (name: StorageName, dflt: string): string => readStored(name) ?? dflt;
 /** Open the ⌘K command center through its own button, so open/close state stays in one place. */
 const openPalette = (): void => findAll(document, 'search.open')[0]?.click();
 
@@ -219,7 +220,7 @@ export function boot(): void {
   // so what it displays must be what the page is actually doing
   for (const key of ['labels', 'ports', 'motion', 'minimap'] as const) {
     if (key === 'minimap' && readRoot(rootEl(), 'minimap') === 'off') continue;
-    const storedValue = localStorage.getItem(storageKey(key));
+    const storedValue = readStored(key);
     if (storedValue !== null) applySetting(ctx, key, storedValue);
   }
 
@@ -2378,7 +2379,7 @@ function setupTheme(): void {
   // `theme: auto` follows the viewer's OS scheme — unless they made an explicit
   // in-diagram choice, which is remembered for standalone viewing.
   const applyAuto = (): void => {
-    if (readRoot(root, 'themeMode') === 'auto' && !localStorage.getItem(storageKey('theme'))) {
+    if (readRoot(root, 'themeMode') === 'auto' && !readStored('theme')) {
       writeRoot(root, 'theme', mql.matches ? 'dark' : 'light');
     }
   };
@@ -2387,7 +2388,7 @@ function setupTheme(): void {
   const url = parseModularParams(location.search, location.hash);
   applyModularParams(root, url);
   if (url.theme === undefined) {
-    const choice = localStorage.getItem(storageKey('theme'));
+    const choice = readStored('theme');
     if (choice === 'dark' || choice === 'light') writeRoot(root, 'theme', choice);
     else applyAuto();
   }
@@ -2433,7 +2434,7 @@ function setupTheme(): void {
       const next = val === 'dark' || val === 'light' ? val : readRoot(root, 'theme') === 'light' ? 'dark' : 'light';
       writeRoot(root, 'theme', next);
       writeRoot(root, 'themeMode', undefined);
-      localStorage.setItem(storageKey('theme'), next);
+      writeStored('theme', next);
     });
   }
 }
@@ -2456,12 +2457,12 @@ function setupSidebar(ctx: Ctx | undefined): void {
     sidebar.classList.toggle('open', open);
     sidebar.classList.toggle('is-collapsed', !open);
     for (const btn of toggles) btn.classList.toggle('on', open);
-    if (!narrow() && !minimal()) localStorage.setItem(storageKey('sidebar'), open ? 'open' : 'closed');
+    if (!narrow() && !minimal()) writeStored('sidebar', open ? 'open' : 'closed');
   };
   const defaultOpen = !sidebar.classList.contains('is-collapsed');
   const initial = (): boolean => {
     if (narrow() || minimal()) return false;
-    const remembered = localStorage.getItem(storageKey('sidebar'));
+    const remembered = readStored('sidebar');
     return remembered !== null ? remembered === 'open' : defaultOpen;
   };
   setOpen(initial());
@@ -2525,7 +2526,7 @@ function setupSidebar(ctx: Ctx | undefined): void {
       if (!btn) return;
       const value = param(btn, 'value')!;
       syncSeg(seg, value);
-      localStorage.setItem(storageKey(setting), value);
+      writeStored(setting, value);
       applySetting(ctx, setting, value);
     });
   }
@@ -2539,7 +2540,7 @@ function syncSeg(seg: HTMLElement, value: string): void {
 
 /** Persist + apply a view setting and keep any sidebar segmented control in step. */
 function setViewSetting(ctx: Ctx | undefined, key: StorageName, value: string): void {
-  localStorage.setItem(storageKey(key), value);
+  writeStored(key, value);
   applySetting(ctx, key, value);
   for (const seg of findAll(document, 'settings.seg')) if (param(seg, 'setting') === key) syncSeg(seg, value);
 }
@@ -2993,7 +2994,7 @@ function setupMinimap(ctx: Ctx): () => void {
   const GLYPH_CHEVRON =
     '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
 
-  const initiallyCollapsed = localStorage.getItem(storageKey('minimap-collapsed')) === '1';
+  const initiallyCollapsed = readStored('minimap-collapsed') === '1';
 
   wrap.innerHTML =
     `<button class="m-mini-toggle" type="button" aria-label="${initiallyCollapsed ? 'Show minimap' : 'Hide minimap'}">${initiallyCollapsed ? GLYPH_MAP : GLYPH_CHEVRON}</button>` +
@@ -3100,7 +3101,7 @@ function setupMinimap(ctx: Ctx): () => void {
     ev.stopPropagation();
     const collapsed = !wrap.classList.contains('collapsed');
     applyCollapsed(collapsed);
-    localStorage.setItem(storageKey('minimap-collapsed'), collapsed ? '1' : '0');
+    writeStored('minimap-collapsed', collapsed ? '1' : '0');
   });
 
   sync();

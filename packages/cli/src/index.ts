@@ -531,6 +531,7 @@ async function cmdSnapshot(rest: string[]): Promise<number> {
     try {
       await page.waitForFunction('window.__MARROW_READY__ === true', { timeout: 15000 });
     } catch {
+      console.error('warning: the diagram did not report ready within 15 s — the snapshot may be incomplete');
       await page.waitForTimeout(values.focus ? 1100 : 450);
     }
     await page.screenshot({ path: outPath });
