@@ -299,7 +299,7 @@ function cmdAdd(rest: string[]): number {
   const registryJsonPath = registryCandidates.find((p) => existsSync(p));
   if (registryJsonPath === undefined) {
     console.error(
-      `error: registry catalog not found (looked for ${registryCandidates.join(', ')}) — run npm run registry:build from the Marrow repository root`,
+      `error: registry catalog not found (looked for ${registryCandidates.join(', ')}) — run npm run registry:build inside the Marrow repository; outside it, use npx shadcn add https://marrowdiagram.vercel.app/r/<item>.json`,
     );
     return 2;
   }

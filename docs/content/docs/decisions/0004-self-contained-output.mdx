@@ -35,7 +35,7 @@ table library was rejected on these grounds. Porting means taking the upstream
 source's literal token values and metrics — approximating from memory produced
 visibly worse results.
 
-**The runtime has a budget.** It sits around 20 KB. Every feature is weighed
+**The runtime has a budget.** It is about 95 KB minified (30 KB gzipped), plus about 75 KB of CSS and a 1.5 KB pre-boot script, and a test caps the pre-boot script. Every feature is weighed
 against that.
 
 **Author-supplied markup must be sanitized**, not trusted — see
