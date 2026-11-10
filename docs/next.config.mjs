@@ -6,7 +6,8 @@ const withMDX = createMDX();
 const config = {
   reactStrictMode: true,
   transpilePackages: ['@marrow/ui'],
-  allowedDevOrigins: ['10.10.20.110', '10.10.20.110:3000'],
+  // LAN hosts allowed to reach the dev server's HMR and assets (Next blocks cross-origin dev requests by default)
+  allowedDevOrigins: ['10.10.20.110', '10.10.30.38', 'coder', 'localhost', '127.0.0.1'],
   async rewrites() {
     // Legacy shadcn clients request /r/styles/<style>/<name>.json.
     return [{ source: '/r/styles/:style/:name.json', destination: '/r/:name.json' }];
