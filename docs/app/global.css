@@ -31,6 +31,93 @@
   --color-brand-200: #ffffff;
 }
 
+/* Landing page. Values come from Marrow's own visual language (packages/visual
+   tokens): zinc ink, the diagram canvas as paper, the selection-ring blue as the
+   signal, and the status colours for LEDs. */
+@theme {
+  --color-paper: #f1f1ee;
+  --color-sheet: #fafafa;
+  --color-ink: #18181b;
+  --color-ink-dim: #52525b;
+  --color-rule: #d4d4d8;
+  --color-signal: #2563eb;
+  --color-sig-ok: #15803d;
+  --color-sig-warn: #a16207;
+  --color-sig-err: #b91c1c;
+  --color-px-fill: #ffffff;
+  --color-px-shade: #c4c4cc;
+  --color-px-screen: #27272a;
+  --color-px-dot: #c9c9c4;
+  --color-px-up: #16a34a;
+  --color-px-warn: #d97706;
+}
+
+.dark {
+  --color-paper: #09090b;
+  --color-sheet: #111113;
+  --color-ink: #fafafa;
+  --color-ink-dim: #a1a1aa;
+  --color-rule: #27272a;
+  --color-signal: #3b82f6;
+  --color-sig-ok: #4ade80;
+  --color-sig-warn: #fbbf24;
+  --color-sig-err: #f87171;
+  --color-px-fill: #27272a;
+  --color-px-shade: #52525b;
+  --color-px-screen: #09090b;
+  --color-px-dot: #1e293b;
+  --color-px-up: #22c55e;
+  --color-px-warn: #f59e0b;
+}
+
+.landing {
+  --color-fd-background: var(--color-paper);
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+}
+
+/* Hero scene: one sequence. The YAML types itself, the devices arrive, the
+   tunnel starts to flow. Final state is the resting state, so reduced motion
+   simply skips to it. */
+.px-type {
+  transform-box: fill-box;
+  transform-origin: right;
+  transform: scaleX(0);
+  animation: px-type calc(var(--n) * 30ms) steps(var(--n)) var(--d) both;
+}
+.px-pop {
+  animation: px-pop 240ms steps(3) var(--d) both;
+}
+.px-blink {
+  animation: px-blink 1s steps(1) infinite;
+}
+.px-flow {
+  animation: px-flow 1.6s steps(5) infinite;
+}
+.px-done {
+  animation: px-done 1ms var(--d) both;
+}
+@keyframes px-type {
+  from { transform: scaleX(1); }
+}
+@keyframes px-pop {
+  from { opacity: 0; transform: translateY(3px); }
+}
+@keyframes px-blink {
+  50% { opacity: 0; }
+}
+@keyframes px-flow {
+  to { stroke-dashoffset: -5; }
+}
+@keyframes px-done {
+  from { fill: var(--color-px-shade); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .px-type, .px-pop, .px-blink, .px-flow, .px-done {
+    animation: none;
+  }
+}
+
 @theme inline {
   --default-font-family: var(--font-sans);
   --default-mono-font-family: var(--font-mono);
