@@ -14,7 +14,7 @@ shortcuts:
 | `npm run validate <file...>` | `marrow validate <file...>` |
 | `npm run snapshot <file>` | `marrow snapshot <file>` |
 | `npm run icons <args>` | `marrow icons <args>` |
-| `npm run marrow <args>` | anything else — `import`, `schema` |
+| `npm run marrow <args>` | anything else — `add`, `import`, `schema` |
 
 ```bash
 npm run marrow <args>
@@ -39,13 +39,15 @@ clone compiles itself: `npm install` runs it for you. Odd behavior from
 
 ```
 marrow validate <file...> [--json] [--no-icons] [--no-geometry] [--packs <dir>] [--config <file.yaml>]
-marrow build    <file> [-o <out>] [--single] [--embed] [--chrome minimal|full] [--packs <dir>] [--config <file.yaml>]
+marrow build    <file> [-o <out>] [--single] [--chrome minimal|full] [--packs <dir>] [--config <file.yaml>]
+marrow add      <component...> [-o|--out <dir>]
 marrow serve    <file-or-dir> [--port <n>] [--host <addr>] [--packs <dir>] [--config <file.yaml>]
 marrow import   <v1-file> [-o <out.yaml>] [--packs <dir>]
-marrow snapshot <file> [-o <out.png>] [--focus <device-id>] [--theme <dark|light>] [--json] [--packs <dir>] [--config <file.yaml>]
+marrow snapshot <file> [-o <out.png>] [--focus <device-id>] [--theme <dark|light>] [--width <px>] [--height <px>] [--json] [--packs <dir>] [--config <file.yaml>]
 marrow icons    search <query...> [--json] [--max <n>] [--packs <dir>]
 marrow icons    packs [--packs <dir>]
 marrow icons    fetch [pack...] [--yes] [--packs <dir>]
+marrow icons    index [pack] [--packs <dir>]
 marrow schema
 marrow help
 ```
@@ -87,8 +89,9 @@ npm run marrow -- validate input/branch.yaml --json
 Geometry runs only when the schema check has no errors. It lays out every page
 the build would emit and reports an L1 defect as `MRW-E018` (a compiler-side
 layout defect — the message names the page, archetype, density, scale and
-offending ids) and a topology over the size cap as `MRW-E019`. Both appear in
-`--json` like any other diagnostic. See [Diagnostic codes](/docs/reference/diagnostics).
+offending ids) and a topology over the size cap — more than 5,000 devices or
+10,000 links in one file (`MAX_DEVICES` / `MAX_LINKS`) — as `MRW-E019`. Both
+appear in `--json` like any other diagnostic. See [Diagnostic codes](/docs/reference/diagnostics).
 
 Accepts multiple files. Exits `1` if any file has errors; warnings alone still
 exit `0`.
@@ -101,26 +104,53 @@ Compile to HTML.
 npm run marrow -- build input/branch.yaml
 npm run marrow -- build input/branch.yaml -o dist/net.html
 npm run marrow -- build input/big.yaml --single
-npm run marrow -- build input/branch.yaml --embed
+npm run marrow -- build input/branch.yaml --chrome minimal
 ```
 
 | Flag | Effect |
 | --- | --- |
 | `-o <out>` | Output path. Defaults to `output/<name>.html` |
 | `--single` | Force one file even above the split threshold |
-| `--embed` | Pre-configure minimal chrome mode (`#embed=true`) for iframe embedding |
-| `--chrome <minimal\|full>` | Specify default UI chrome mode (`minimal` hides topbar, search dock, and sidebar) |
+| `--chrome <minimal\|full>` | Bake a default chrome mode into the output. `minimal` hides the command bar, breadcrumbs, sidebar, backdrop, watermark and minimap — the same as opening it with `?chrome=minimal`, which a URL can still override with `chrome=full` |
 | `--packs <dir>` | Alternative icon-packs directory |
 | `--config <file>` | Alternative `marrow.config.yaml` |
 
 Above 150 devices or 5 zones with devices, output is a directory rather than a
-file — see [Output shapes](/docs/guides/output).
+file (`output/<name>-site/` by default) — see [Output shapes](/docs/guides/output).
+
+<Callout type="info">
+The old `--embed` flag was an alias of `--chrome minimal` and has been removed;
+use `--chrome minimal`, or keep one build and add `?chrome=minimal` to the
+embed URL — see [Embedding](/docs/guides/embedding#embed-and-kiosk-modes).
+</Callout>
 
 One file may hold at most 5,000 devices and 10,000 links (`MAX_DEVICES` /
 `MAX_LINKS` in `@marrow/site`). Above that, `build` exits `1` with the counts
 and the caps instead of running out of memory — split the topology into
 several files. A geometry defect also exits `1`, with a three-line message:
 what failed, the layout in effect, and what to try.
+
+## `add`
+
+Copy the React components from the shadcn registry into a project — the same
+files `npx shadcn add` installs.
+
+```bash
+npm run marrow -- add topology-canvas
+npm run marrow -- add cable-badge device-link --out app/components/marrow
+```
+
+| Flag | Default | Effect |
+| --- | --- | --- |
+| `-o, --out <dir>` | `src/components/marrow` | Directory the files are written to |
+
+Components: `topology-canvas` (`<MarrowEmbed />`), `cable-badge`, `device-link`.
+`add` reads the registry catalog (`registry.json`) from the current directory,
+so it works only inside a Marrow checkout; it exits `2` elsewhere. Outside the
+repo — and in any app that is not a Marrow checkout — use
+`npx shadcn@latest add https://marrowdiagram.vercel.app/r/<component>.json`.
+`add` copies files only: install `lucide-react`, `clsx` and `tailwind-merge`
+yourself. See [Components](/docs/components).
 
 ## `serve`
 
@@ -149,6 +179,7 @@ Render to a PNG. This is how an agent sees its own work.
 npm run marrow -- snapshot input/branch.yaml -o /tmp/branch.png
 npm run marrow -- snapshot input/branch.yaml -o /tmp/x.png --focus core-sw-01
 npm run marrow -- snapshot input/branch.yaml -o /tmp/x.png --theme light
+npm run marrow -- snapshot input/branch.yaml -o /tmp/x.png --width 390 --height 844
 ```
 
 | Flag | Effect |
@@ -156,6 +187,7 @@ npm run marrow -- snapshot input/branch.yaml -o /tmp/x.png --theme light
 | `-o <out.png>` | Output image path |
 | `--focus <device-id>` | Center the camera on one device |
 | `--theme <dark\|light>` | Override the topology's theme |
+| `--width <px>` / `--height <px>` | Viewport size. Default `1440` × `900` |
 | `--json` | Emit metadata about the render |
 | `--packs <dir>` | Alternative icon-packs directory |
 | `--config <file>` | Alternative config |
@@ -181,6 +213,7 @@ npm run marrow -- icons search "layer 3 switch" --max 40 --json
 npm run marrow -- icons packs
 npm run marrow -- icons fetch                 # aws + azure + gcp, with a prompt
 npm run marrow -- icons fetch aws --yes       # one pack, non-interactive
+npm run marrow -- icons index aws             # rebuild one pack's manifest
 ```
 
 | Subcommand | Purpose |
@@ -188,6 +221,7 @@ npm run marrow -- icons fetch aws --yes       # one pack, non-interactive
 | `search <query...>` | Find real icon ids. `--max <n>` defaults to 20 |
 | `packs` | Show the packs root and how many icons loaded |
 | `fetch [pack...]` | Install aws/azure/gcp from the vendors. `--yes` skips consent |
+| `index [pack]` | Rebuild the icon manifest of one pack (or all) from its `svg/` directory. Exits `1` when no pack has an `svg/` directory |
 
 ## `schema`
 

@@ -9,6 +9,16 @@ It supports device role icons, interface port chips, IP badges, operational stat
 
 ---
 
+## Installation
+
+```bash
+npx shadcn@latest add https://marrowdiagram.vercel.app/r/device-link.json
+```
+
+Copies `components/marrow/device-link.tsx`, the `cable-badge.tsx` it composes and `topology-types.ts` into `components/marrow/`, and installs `lucide-react`, `clsx` and `tailwind-merge`.
+
+---
+
 ## Interactive Previews
 
 ### 1. Card Micro-Topology
@@ -19,7 +29,7 @@ A compact card layout designed for architecture callouts, runbooks, and interfac
   name="device-link"
   title="Micro-Topology Card"
   height="200px"
-  code={`import { DeviceLink } from "@marrow/ui";
+  code={`import { DeviceLink } from "@/components/marrow/device-link";
 
 export function Demo() {
   return (
@@ -137,7 +147,7 @@ Use `variant="inline"` to place host-to-host links directly into prose, incident
   name="device-link"
   title="Inline Paragraph Variant"
   height="160px"
-  code={`import { DeviceLink } from "@marrow/ui";
+  code={`import { DeviceLink } from "@/components/marrow/device-link";
 
 export function InlineDemo() {
   return (
@@ -181,7 +191,7 @@ You can pass vendor SVGs from your library directly into the `icon` property. Th
   name="device-link"
   title="Cisco Switches & Routers Demo"
   height="240px"
-  code={`import { DeviceLink } from "@marrow/ui";
+  code={`import { DeviceLink } from "@/components/marrow/device-link";
 
 export function CiscoDemo() {
   return (

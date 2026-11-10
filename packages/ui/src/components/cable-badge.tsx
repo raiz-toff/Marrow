@@ -61,7 +61,7 @@ export function CableBadge({
         />
 
         {/* Center badge chip */}
-        <div className="absolute flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-fd-border bg-fd-background shadow-xs text-[10.5px] font-mono font-bold tracking-tight">
+        <div className="absolute flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-border bg-background shadow-xs text-[10.5px] font-mono font-bold tracking-tight">
           {animated && (
             <span
               className={cn(
@@ -70,9 +70,9 @@ export function CableBadge({
               )}
             />
           )}
-          <span className="text-fd-foreground">{label || speed}</span>
+          <span className="text-foreground">{label || speed}</span>
           {mode === 'trunk' && (
-            <span className="text-[9px] font-sans font-medium text-fd-muted-foreground uppercase">
+            <span className="text-[9px] font-sans font-medium text-muted-foreground uppercase">
               Trunk
             </span>
           )}
@@ -103,7 +103,7 @@ export function CableBadge({
           )}
         />
         {speed && (
-          <span className="absolute -top-3.5 text-[9px] font-mono font-bold tracking-tight text-fd-muted-foreground">
+          <span className="absolute -top-3.5 text-[9px] font-mono font-bold tracking-tight text-muted-foreground">
             {speed}
           </span>
         )}
@@ -118,7 +118,7 @@ export function CableBadge({
   return (
     <div
       className={cn(
-        'inline-flex items-center gap-2 px-2.5 py-1 rounded-xl border border-fd-border bg-fd-card text-xs shadow-xs font-sans select-none',
+        'inline-flex items-center gap-2 px-2.5 py-1 rounded-xl border border-border bg-card text-xs shadow-xs font-sans select-none',
         className,
       )}
     >
@@ -141,12 +141,12 @@ export function CableBadge({
         )}
       </div>
 
-      <span className="font-medium text-fd-foreground">
+      <span className="font-medium text-foreground">
         {label || MODE_LABEL[mode] || mode}
       </span>
 
       {speed && (
-        <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-fd-primary/10 text-fd-primary font-semibold">
+        <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-semibold">
           {speed}
         </span>
       )}

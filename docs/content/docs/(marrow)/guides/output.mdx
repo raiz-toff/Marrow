@@ -23,8 +23,10 @@ Both are checked; either one trips it. Five zones is fine, six is a site.
 
 ## Single file
 
-One `.html` in `output/`. Styles, the ~20 KB runtime client, and the icon
-sprites for the icons you actually used are all inlined.
+One `.html` in `output/`. Everything is inlined: the stylesheet (about 75 KB),
+the runtime client (about 95 KB minified, 30 KB gzipped), the 1.5 KB pre-boot
+script that applies URL flags before first paint, and the sprites for the icons
+you actually used.
 
 Best for: anything you want to attach to a ticket, mail to a vendor, drop in a
 Confluence page, or open from a USB stick on a plane.
@@ -34,7 +36,7 @@ Confluence page, or open from a USB stick on a plane.
 A directory:
 
 ```
-  output/global-enterprise/
+  output/global-enterprise-site/
   ├── index.html              overview — zones as summary tiles
   ├── zones/
   │   ├── campus.html         one page per TOP-LEVEL zone (covers its subtree)
@@ -82,7 +84,11 @@ and everything else is another file you never load until you open it. That holds
 all the way up.
 
 The reference topology — a fictional global enterprise, the [At scale demo](/#at-scale)
-on the home page — is the stress test:
+on the home page — is the stress test. Its source, `global-enterprise.yaml`, is a
+local stress file, not part of the repository, and it is far above the compile
+cap of 5,000 devices and 10,000 links per file (`MAX_DEVICES` / `MAX_LINKS`,
+reported as `MRW-E019`): the figures below were measured before the cap existed.
+Today a network that size is built as several topology files.
 
 | | |
 | --- | --- |
@@ -99,16 +105,14 @@ Two things that matter in practice:
 — which every static host applies — collapses them hard. The 2.4 GB on disk is a
 git-and-deploy concern, not a bandwidth one.
 
-**Very large builds need more heap.** Node's default heap tops out somewhere
-around this size and the build aborts with an out-of-memory error. Raise it for
-the run:
+**Large builds may need more heap.** Near the cap, Node's default heap can run
+out and the build aborts with an out-of-memory error. Raise it for the run:
 
 ```bash
-NODE_OPTIONS=--max-old-space-size=12288 npm run build -- input/global-enterprise.yaml
+NODE_OPTIONS=--max-old-space-size=8192 npm run build -- input/big.yaml
 ```
 
-Scale the number with the topology (~12 GB comfortably covers 15k devices). Small
-and mid-size networks never need this.
+Small and mid-size networks never need this.
 
 <Callout type="info">
 A folder this big is more than GitHub Pages' soft 1 GB repo limit will take.
@@ -193,11 +197,13 @@ The output is just files:
 
 ```bash
 # static host
-aws s3 sync output/global-enterprise s3://docs-bucket/network/
+aws s3 sync output/global-enterprise-site s3://docs-bucket/network/
 
 # or commit it next to your docs
 cp output/branch.html docs/network/branch.html
 ```
 
 For embedding in an existing docs site or wiki, see
-[Embedding diagrams](/docs/guides/embedding).
+[Embedding diagrams](/docs/guides/embedding). The demo diagrams on this docs
+site are not committed either: they are compiled from `docs/demos/*.yaml`
+(`npm run demos`) when the site deploys.

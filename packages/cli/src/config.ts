@@ -103,8 +103,9 @@ const STATUS_KEYS: Record<keyof StatusTokens, true> = {
 };
 
 /**
- * Older single-word names that still mean exactly one palette token. Anything
- * without an unambiguous target (`subtle`, `accent_hover`, `accent_subtle`,
+ * Deprecated single-word names that still mean exactly one palette token.
+ * Accepted with a warning naming the canonical key; anything without an
+ * unambiguous target (`subtle`, `accent_hover`, `accent_subtle`,
  * `admin_down`) is deliberately absent: it warns instead of being dropped.
  */
 const PALETTE_ALIASES: Record<string, keyof PaletteTokens> = {
@@ -138,43 +139,23 @@ const isStatusKey = (k: ThemeColorKey): k is keyof StatusTokens => k in STATUS_K
 const SAFE_SHADOW_REGEX = /^(?!.*\b(?:url|image|image-set|expression)\s*\()[^;{}<>\\"'`]+$/i;
 
 /**
- * `theme.links` keys → LinkTokens fields. Every value is px. The canonical
- * keys are `width_*` / `dash_*` (snake or camel case); the older `*_stroke`
- * spellings stay accepted as aliases.
+ * `theme.links` keys → LinkTokens fields. Every value is px. The accepted
+ * spellings are the canonical `width_*` / `dash_*` keys in snake_case or
+ * camelCase.
  */
 const LINK_STYLE_MAP: Record<string, keyof LinkStyleTokens> = {
   width_default: 'widthDefault',
   widthDefault: 'widthDefault',
-  default_stroke: 'widthDefault',
-  default_stroke_width: 'widthDefault',
-  defaultStrokeWidth: 'widthDefault',
   width_10g: 'width10g',
   width10g: 'width10g',
-  teng_stroke: 'width10g',
-  ten_g_stroke: 'width10g',
-  ten_g_stroke_width: 'width10g',
-  tenGStrokeWidth: 'width10g',
   width_40g: 'width40g',
   width40g: 'width40g',
-  fortyg_stroke: 'width40g',
-  forty_g_stroke: 'width40g',
-  forty_g_stroke_width: 'width40g',
-  fortyGStrokeWidth: 'width40g',
   width_trunk: 'widthTrunk',
   widthTrunk: 'widthTrunk',
-  trunk_stroke: 'widthTrunk',
-  trunk_stroke_width: 'widthTrunk',
-  trunkStrokeWidth: 'widthTrunk',
   width_slot: 'widthSlot',
   widthSlot: 'widthSlot',
-  slot_stroke: 'widthSlot',
-  slot_stroke_width: 'widthSlot',
-  slotStrokeWidth: 'widthSlot',
   width_stack: 'widthStack',
   widthStack: 'widthStack',
-  stack_stroke: 'widthStack',
-  stack_stroke_width: 'widthStack',
-  stackStrokeWidth: 'widthStack',
   dash_tunnel: 'dashTunnel',
   dashTunnel: 'dashTunnel',
   dash_peering: 'dashPeering',
@@ -186,6 +167,26 @@ const LINK_STYLE_MAP: Record<string, keyof LinkStyleTokens> = {
   dash_flow: 'dashFlow',
   dashFlow: 'dashFlow',
 };
+
+/**
+ * Deprecated `*_stroke` spellings of the width keys — the ones the docs have
+ * shown. Still accepted, with a warning naming the canonical key; slated for
+ * removal. (The other legacy spellings — `*_stroke_width`, `*StrokeWidth`,
+ * `teng_stroke`, `fortyg_stroke` — were never documented and are gone.)
+ */
+const LINK_STYLE_ALIASES: Record<string, keyof LinkStyleTokens> = {
+  default_stroke: 'widthDefault',
+  ten_g_stroke: 'width10g',
+  forty_g_stroke: 'width40g',
+  trunk_stroke: 'widthTrunk',
+  slot_stroke: 'widthSlot',
+  stack_stroke: 'widthStack',
+};
+
+/** One-line deprecation warning for an alias key. */
+function deprecated(scope: string, key: string, canonical: string): string {
+  return `${scope}.${key} is deprecated — use ${scope}.${canonical}`;
+}
 
 const RASTER_MIME: Record<string, string> = {
   png: 'image/png',
@@ -212,7 +213,7 @@ function unknownThemeKey(scope: string, key: string, statusOnly: boolean): strin
   const supported = statusOnly ? CANONICAL_STATUS_KEYS : [...CANONICAL_PALETTE_KEYS, ...CANONICAL_STATUS_KEYS];
   const aliases = statusOnly
     ? ''
-    : `; aliases: ${Object.entries(PALETTE_ALIASES)
+    : `; deprecated aliases: ${Object.entries(PALETTE_ALIASES)
         .map(([a, t]) => `${a} → ${snake(t)}`)
         .join(', ')}`;
   return `unknown key "${scope}.${key}" — no theme token by that name; supported: ${supported.join(', ')} (camelCase also accepted${aliases})`;
@@ -273,6 +274,7 @@ function parseTokensBlock(raw: unknown, scope: 'theme.dark' | 'theme.light', pro
       problems.push(unknownThemeKey(scope, key, false));
       continue;
     }
+    if (lookup(PALETTE_ALIASES, key) !== undefined) problems.push(deprecated(scope, key, snake(target)));
     const value = parseTokenValue(scope, key, val, target, problems);
     if (value !== undefined) result[target] = value;
   }
@@ -290,10 +292,16 @@ function parseLinksBlock(raw: unknown, problems: string[]): LinkStyleOverrides |
   const map = raw as Record<string, unknown>;
   for (const [key, val] of Object.entries(map)) {
     if (key.startsWith('x-')) continue;
-    const target = lookup(LINK_STYLE_MAP, key);
+    const alias = lookup(LINK_STYLE_ALIASES, key);
+    const target = alias ?? lookup(LINK_STYLE_MAP, key);
     if (!target) {
       problems.push(`unknown key "theme.links.${key}"`);
       continue;
+    }
+    if (alias) {
+      // the first spelling listed per field is the canonical snake_case one
+      const canonical = Object.keys(LINK_STYLE_MAP).find((k) => LINK_STYLE_MAP[k] === alias)!;
+      problems.push(deprecated('theme.links', key, canonical));
     }
     if (target.startsWith('dash')) {
       const dash = parseDashOverride(val);

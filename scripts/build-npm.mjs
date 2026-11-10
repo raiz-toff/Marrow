@@ -10,19 +10,26 @@
  *   - npm deps (yaml, zod, elkjs, libavoid-js + its .wasm, fflate) stay EXTERNAL
  *     and are declared as real dependencies — bundling the wasm/worker ones
  *     would break them.
- *   - runtime.js and the committed icon packs are shipped as files; the CLI
- *     resolves them relative to the bundle exactly as it does in the monorepo.
+ *   - runtime.js, preboot.js and the committed icon packs are shipped as files;
+ *     the CLI resolves them relative to the bundle exactly as it does in the
+ *     monorepo (`getRuntimeSource` / `getPrebootSource` read dist/<name>).
+ *   - `marrow add` is not part of the published CLI: it reads the repo's
+ *     registry.json. Outside the repo, components install from the hosted
+ *     registry with `npx shadcn add <url>` (see README below).
  *
- * Run:  npm run compile && node scripts/build-npm.mjs
+ * Run:  npm run compile && node scripts/build-npm.mjs [--out <dir>]
  * Then: cd dist-npm && npm publish   (after `npm login`)
+ * packages/cli/test/npm-bundle.test.ts builds into a temp dir and runs it.
  */
 import { build } from 'esbuild';
 import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { parseArgs } from 'node:util';
 
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const out = join(repo, 'dist-npm');
+const { values: args } = parseArgs({ options: { out: { type: 'string' } } });
+const out = resolve(args.out ?? join(repo, 'dist-npm'));
 const VERSION = '0.1.0'; // the published marrow-cli version — bump per release
 
 // committed, redistributable packs only. aws/azure/gcp are fetched per-clone
@@ -78,6 +85,10 @@ links:
 | \`marrow import <v1-file>\` | Convert legacy v1 YAML |
 | \`marrow schema\` | Emit the JSON Schema |
 
+React components (\`MarrowEmbed\`, \`CableBadge\`, \`DeviceLink\`) are not in
+this package: copy them into your app from the hosted shadcn registry, e.g.
+\`npx shadcn@latest add https://marrowdiagram.vercel.app/r/topology-canvas.json\`.
+
 Bundled icon packs: **cisco, affinity, generic, k8s** (~2,000 icons). The
 **aws / azure / gcp** packs are fetched on demand with \`marrow icons fetch\`
 (vendor terms forbid redistribution).
@@ -123,8 +134,8 @@ let code = readFileSync(bundlePath, 'utf8');
 code = code.replace(/^#![^\n]*\n/, '');
 writeFileSync(bundlePath, `#!/usr/bin/env node\n${code}`);
 
-// ── 2 · ship the runtime (read relative to the bundle) + committed icon packs ──
-cpSync(join(repo, 'packages/runtime/dist/runtime.js'), join(out, 'dist/runtime.js'));
+// ── 2 · ship the runtime + pre-boot bundles (read relative to the bundle) + committed icon packs ──
+for (const f of ['runtime.js', 'preboot.js']) cpSync(join(repo, 'packages/runtime/dist', f), join(out, 'dist', f));
 mkdirSync(join(out, 'icon-packs'), { recursive: true });
 for (const p of PACKS) cpSync(join(repo, 'icon-packs', p), join(out, 'icon-packs', p), { recursive: true });
 
@@ -167,5 +178,5 @@ writeFileSync(
   ) + '\n',
 );
 
-console.log(`\n✓ staged marrow-cli@${VERSION} → dist-npm/`);
+console.log(`\n✓ staged marrow-cli@${VERSION} → ${out}`);
 console.log('  next:  cd dist-npm && npm pack   (dry run)   |   npm publish   (after npm login)');

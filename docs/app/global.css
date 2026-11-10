@@ -36,6 +36,24 @@
   --default-mono-font-family: var(--font-mono);
 }
 
+/* shadcn/ui token names mapped onto Fumadocs' palette, so the Marrow UI
+   registry components (which use bg-card, border-border, …) render here
+   exactly as they do in a plain shadcn app. */
+@theme inline {
+  --color-background: var(--color-fd-background);
+  --color-foreground: var(--color-fd-foreground);
+  --color-card: var(--color-fd-card);
+  --color-card-foreground: var(--color-fd-card-foreground);
+  --color-muted: var(--color-fd-muted);
+  --color-muted-foreground: var(--color-fd-muted-foreground);
+  --color-accent: var(--color-fd-accent);
+  --color-accent-foreground: var(--color-fd-accent-foreground);
+  --color-primary: var(--color-fd-primary);
+  --color-primary-foreground: var(--color-fd-primary-foreground);
+  --color-border: var(--color-fd-border);
+  --color-ring: var(--color-fd-ring);
+}
+
 .marrow,
 .studio {
   --color-fd-primary: var(--marrow-color);

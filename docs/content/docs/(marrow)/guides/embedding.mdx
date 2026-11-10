@@ -28,37 +28,57 @@ full-viewport height for a dedicated page.
 
 ## Embed and kiosk modes
 
-When embedding a diagram inside a dashboard, blog post, or kiosk display, strip extraneous chrome using URL query parameters or hash fragments:
+When embedding a diagram inside a dashboard, blog post, or kiosk display, strip the surrounding chrome with URL parameters, in the query string or the hash:
 
 ```html
-<!-- Minimal chrome: hides breadcrumbs, search dock, sidebar, and backdrop frame -->
+<!-- Minimal chrome: command bar, breadcrumbs, sidebar, backdrop, watermark,
+     minimap and mobile bar hidden; the canvas and its controls stay live -->
 <iframe
   src="/diagrams/branch.html?chrome=minimal"
-  title="Branch Office Network"
+  title="Branch office network"
   style="width:100%; height:600px; border:none;"
 ></iframe>
 ```
 
-Marrow executes an inline script synchronously in the `<head>` to evaluate parameters before first paint, preventing flashes of unstyled content (FOUC). Both query strings and hash fragments are supported:
+A small script at the top of `<head>` reads the parameters and sets attributes
+on `<html>` before first paint, so the full chrome never flashes:
 
-| Parameter / Hash Flag | Values | Effect |
+| Parameter | Values | Effect |
 | :--- | :--- | :--- |
-| `chrome` | `minimal` \| `full` | `minimal` hides topbar breadcrumbs, search dock, sidebar rail, and backdrop strip. Controls and canvas remain interactive. |
-| `inspector` | `off` \| `on` | `off` suppresses the right-hand inspector drawer on device or link click. |
-| `minimap` | `off` \| `on` | `off` hides the bottom-right minimap navigation overlay. |
-| `theme` | `dark` \| `light` | Overrides the authored topology theme for the session. |
-| `export_title` | `on` \| `off` | Controls whether title blocks are stamped during static PNG/SVG exports. |
-| `export_legend` | `on` \| `off` | Controls whether dynamic auto-legends are generated during static exports. |
-| `export_ports` | `on` \| `off` | Controls whether interface port chips are forced visible during exports. |
-| `#embed=true` | boolean | Shortcut equivalent to `?chrome=minimal`. |
+| `chrome` | `minimal` \| `full` | `minimal` hides the command bar, breadcrumbs, sidebar, backdrop, watermark, minimap and, on phones, the mobile bar¹. Zoom controls, pan, selection, tooltips and the inspector stay. |
+| `embed` | `true` \| `false` | Shorthand for `chrome=minimal` / `chrome=full`. |
+| `inspector` | `off` \| `on` | `off` keeps the inspector drawer closed when a device or link is clicked. |
+| `minimap` | `off` \| `on` | `off` hides the minimap. |
+| `controls` | `off` \| `on` | `off` hides the zoom controls¹. |
+| `theme` | `dark` \| `light` | Overrides the authored theme for this view. |
+| `d` | device id | Selects that device and flies the camera to it (hash only: `#d=core-sw-01`). |
+| `c` | `x,y,k` | Camera centre and zoom¹ (hash only: `#c=120,-40,1.5`). |
+| `export_title` | `on` \| `off` | Title block on PNG/SVG exports. |
+| `export_legend` | `on` \| `off` | Auto-legend on exports. |
+| `export_ports` | `on` \| `off` | Port chips forced visible on exports. |
 
-Flags can be combined via query parameters (`?chrome=minimal&inspector=off&minimap=off`) or hash fragments (`#chrome=minimal;inspector=off;minimap=off`). Because hash changes do not reload the page, parent frames can toggle UI chrome dynamically by modifying `iframe.src = url + '#chrome=minimal'`.
+¹ Lands with the `arch/chrome-modes` change; earlier builds ignore `controls`
+and `c`, and keep the mobile bar in minimal chrome.
+
+Combine them in the query (`?chrome=minimal&inspector=off`) or the hash
+(`#chrome=minimal;inspector=off;minimap=off` — pairs are `;`-separated, `&`
+also works). When both name the same parameter, the query wins.
+
+**Flags are sticky.** A parameter that is absent changes nothing: dropping
+`minimap=off` from the hash leaves the minimap hidden. To undo a flag, set its
+opposite explicitly — `chrome=full`, `minimap=on`, `inspector=on`. Because a hash
+change does not reload the page, a host can switch modes live by setting
+`iframe.src = url + '#chrome=full'`.
+
+**The diagram writes its own hash.** Selecting a device rewrites it (`d=…`);
+the kiosk flags (`chrome`, `inspector`, `minimap`, `controls`) survive that
+rewrite, and links between the pages of a multi-page site carry them along¹.
 
 <div class="my-6 overflow-hidden rounded-xl border border-border/60 bg-muted/20 shadow-xl not-prose">
-  <img src="/screenshots/embed-kiosk.png" alt="Embedded Marrow Diagram with minimal chrome (#embed=true)" class="w-full object-cover rounded-t-xl" />
+  <img src="/screenshots/embed-kiosk.png" alt="Embedded Marrow diagram with minimal chrome" class="w-full object-cover rounded-t-xl" />
   <div class="px-4 py-2 border-t border-border/40 text-xs text-muted-foreground flex items-center justify-between bg-muted/40">
-    <span>Minimal Chrome Embed (#embed=true): Topbar, search dock, and sidebars stripped; floating canvas controls active</span>
-    <span class="font-mono text-[10px]">Zero FOUC sync</span>
+    <span>Minimal chrome (<code>?chrome=minimal</code>): command bar, breadcrumbs and sidebar hidden; canvas controls live</span>
+    <span class="font-mono text-[10px]">applied before first paint</span>
   </div>
 </div>
 
@@ -101,44 +121,86 @@ host-driven theme overrides the baked `theme:` and isn't persisted — opening t
 same file standalone still shows its authored theme — and it works whatever
 `theme:` the file was built with.
 
+`marrow:ready` arrives after the diagram has painted, so a theme sent only in
+reply to it shows the baked theme for a moment first. To avoid that flash, put
+the host's current theme on the URL as well (`#theme=dark`) and use the message
+for later changes — which is what `<MarrowEmbed />` does. Check `e.source`
+against your iframe's `contentWindow` when a page holds several diagrams.
+
 ### Bi-Directional postMessage Protocol
 
 <EmbeddingProtocolVisual />
 
 ## React & Next.js component (`<MarrowEmbed />`)
 
-For Next.js, Vite, or React applications, install the official shadcn-compatible `<MarrowEmbed />` component:
+For React apps (Next.js, Vite, …) there is a `<MarrowEmbed />` component. It is
+distributed through Marrow's shadcn registry — the source is copied into your
+codebase, nothing is installed from npm under a Marrow name:
 
 ```bash
 npx shadcn@latest add https://marrowdiagram.vercel.app/r/topology-canvas.json
 ```
 
-Or import directly from `@marrow/ui`:
+That writes `components/marrow/topology-canvas.tsx` and
+`components/marrow/topology-types.ts`, and installs `lucide-react`, `clsx` and
+`tailwind-merge`. The components use the standard shadcn theme tokens
+(`bg-card`, `border-border`, `text-muted-foreground`, …). Inside a Marrow checkout,
+`npm run marrow -- add topology-canvas --out <dir>` copies the same files.
 
 ```tsx
-import { MarrowEmbed } from '@marrow/ui';
+import { MarrowEmbed } from '@/components/marrow/topology-canvas';
 
 export function NetworkDashboard() {
   return (
     <MarrowEmbed
       src="/diagrams/campus.html"
-      title="Campus Core Network"
+      title="Campus core network"
       chrome="minimal"
-      inspector="on"
-      minimap="on"
       theme="auto"
-      height="650px"
-      floatingActions={true}
+      aspectRatio="16 / 9"
+      onError={(err) => console.warn(err.message)}
     />
   );
 }
 ```
 
-The component automatically manages:
-- **Zero FOUC theme synchronization**: Subscribes to host DOM dark/light mutations and forwards theme updates via `postMessage`.
-- **Fullscreen Mode**: Integrated camera action button toggling full-viewport presentation.
-- **Standalone Launch**: Direct external link button to open the self-contained diagram in a dedicated tab.
-- **Hash Flag Pre-boot**: Sets minimal chrome, inspector, and minimap flags before the initial paint.
+What it does for you:
+
+- **Flags before first paint.** `chrome`, `inspector`, `minimap` and the theme go
+  on the frame's URL hash, so the diagram's pre-boot script applies them.
+- **Theme without a flash.** With `theme="auto"` it resolves the host's theme when
+  the frame first loads — a `dark`/`light` class or `data-theme` on `<html>`,
+  else `prefers-color-scheme` — and puts it on the URL; later host changes are
+  sent over `postMessage`. The frame starts loading after hydration, so the
+  ready handshake is never missed.
+- **Load errors.** Success is the diagram's `marrow:ready` message. If none
+  arrives within `loadTimeout` (8 s) it calls `onError` and shows `fallback`.
+- **Several embeds per page.** Messages are matched to their own frame
+  (`e.source`).
+- **Fullscreen** through the Fullscreen API, or a fixed full-viewport overlay
+  where that API is missing (iOS Safari); Escape leaves it.
+
+See the [component reference](/docs/components/topology-canvas) for every prop.
+
+### Compiled markup instead of a URL (`html`)
+
+`html` renders a compiled diagram from a string through `srcdoc`. A srcdoc
+document has no URL to carry parameters, so the component writes the same flags
+straight onto its `<html>` element (`data-chrome`, `data-inspector`,
+`data-minimap`, `data-theme`) before handing it to the frame. Two consequences:
+
+- **It inherits your page's Content Security Policy.** The diagram's inline
+  script and styles then need `'unsafe-inline'` (or their hashes) in *your*
+  `script-src` and `style-src`, and PNG export needs `blob:` in `img-src`. A
+  `src` URL is a separate document with its own policy.
+- **It is same-origin with your page,** so `window.marrow` (below) is reachable
+  through the component's `ref`:
+
+```tsx
+const frame = useRef<HTMLIFrameElement>(null);
+// …
+<MarrowEmbed ref={frame} html={compiled} onReady={() => frame.current?.contentWindow?.marrow?.selectDevice('core-sw-01')} />
+```
 
 ## Linking straight to a device
 
@@ -157,7 +219,8 @@ whole diagram.
 ## Content Security Policy
 
 The output loads nothing external, so a strict policy is fine. What it *does*
-need is inline styles and inline script — everything is inlined by design:
+need is inline styles and inline script — everything is inlined by design — and
+`blob:` images, which is how PNG export rasterizes the diagram:
 
 ```
 frame-src 'self';
@@ -166,8 +229,12 @@ frame-src 'self';
 on the host page, and for the diagram document itself:
 
 ```
-default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; script-src 'unsafe-inline';
+default-src 'none'; img-src 'self' data: blob:; style-src 'unsafe-inline'; script-src 'unsafe-inline';
 ```
+
+A diagram rendered through `srcdoc` (the component's `html` prop) has no policy
+of its own: it runs under the host page's, so those sources must be allowed
+there.
 
 <Callout type="warn">
 If your platform forbids inline script outright, single-file output won't run
@@ -178,28 +245,29 @@ handle.
 
 ## JavaScript Client API (`window.marrow`)
 
-When embedded in a portal or host application, Marrow exposes a global `window.marrow` object for programmatic camera navigation, element selection, lifecycle events, and dynamic inspector tabs.
+Every diagram exposes a global `window.marrow` object for camera navigation, selection, events and custom inspector tabs. It lives in the diagram's own window: a host reaches it as `iframe.contentWindow.marrow`, which browsers allow only when the diagram is **same-origin** with the host (served from the same origin, or rendered through `srcdoc`). Cross-origin, use the URL parameters and `postMessage` above.
 
 ### Programmatic camera and selection
 
-Host portals can control focus and camera movement directly:
+Host portals can control focus and camera movement directly (`marrow` below is
+`iframe.contentWindow.marrow`, or `window.marrow` from a script inside the diagram):
 
 ```javascript
 // Focus a specific device and smoothly fly camera to it
-window.marrow.selectDevice('core-sw-01', true);
+marrow.selectDevice('core-sw-01', true);
 
 // Select an interconnect cable and open the link inspector
-window.marrow.selectLink('core-sw-01--dist-sw-01#0');
+marrow.selectLink('core-sw-01--dist-sw-01#0');
 
 // Clear selection and close inspector drawer
-window.marrow.deselect();
+marrow.deselect();
 
 // Retrieve currently inspected item
-const current = window.marrow.getSelected();
+const current = marrow.getSelected();
 // returns { type: 'device', item: DataDevice } | { type: 'edge', item: DataLink } | null
 
 // Open the "About this diagram" document modal
-window.marrow.openAbout();
+marrow.openAbout();
 ```
 
 ### Event listeners
@@ -208,17 +276,17 @@ Subscribe to viewer interactions using `marrow.on(event, handler)`:
 
 ```javascript
 // Listen for selection changes (device or link)
-const unsubSelect = window.marrow.on('select', (selection) => {
+const unsubSelect = marrow.on('select', (selection) => {
   console.log('Selected:', selection.type, selection.item.name ?? selection.item.id);
 });
 
 // Listen for deselection
-const unsubDeselect = window.marrow.on('deselect', () => {
+const unsubDeselect = marrow.on('deselect', () => {
   console.log('Selection cleared');
 });
 
 // Listen for inspector tab switches
-const unsubTab = window.marrow.on('tabchange', (tabId) => {
+const unsubTab = marrow.on('tabchange', (tabId) => {
   console.log('Active inspector tab:', tabId);
 });
 ```
@@ -229,7 +297,7 @@ Host applications can inject custom tabs into the inspector drawer dynamically a
 
 ```javascript
 // Register a live telemetry tab with custom DOM rendering and cleanup
-const unregister = window.marrow.inspector.registerTab({
+const unregister = marrow.inspector.registerTab({
   id: 'live-telemetry',
   label: 'Live Telemetry',
   target: 'device', // 'device' | 'edge' | 'both'

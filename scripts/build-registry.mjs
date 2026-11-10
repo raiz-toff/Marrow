@@ -3,7 +3,8 @@
 // source of the Marrow UI components. Consumers COPY these files into their
 // codebase, so every item must be self-contained: a component may import only
 // allowed npm packages, sibling components (shipped in the same item), and
-// ../lib/utils.js (shipped as ./topology-types.js). Anything else fails loudly.
+// ../lib/utils.js (shipped as ./topology-types.js, which itself may import only
+// UTILS_PACKAGES). Anything else fails loudly.
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -12,6 +13,9 @@ const DEFAULT_ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)));
 
 /** npm packages a copied component may import (react is a peer of every host). */
 const PEER_PACKAGES = new Set(['react', 'react-dom']);
+
+/** npm packages lib/utils.ts (topology-types.ts) may import — added to every item that ships it. */
+const UTILS_PACKAGES = ['clsx', 'tailwind-merge'];
 
 const UTILS_SPECIFIER = '../lib/utils.js';
 const TYPES_SPECIFIER = './topology-types.js';
@@ -76,10 +80,10 @@ export function buildRegistryItems(rootDir = DEFAULT_ROOT) {
   };
 
   const typesContent = read(join(srcDir, 'lib', 'utils.ts'));
-  const typesImports = importSpecifiers(typesContent);
+  const typesImports = importSpecifiers(typesContent).filter((s) => !UTILS_PACKAGES.includes(s));
   if (typesImports.length > 0) {
     throw new Error(
-      `packages/ui/src/lib/utils.ts must not import anything (ships as topology-types.ts); found: ${typesImports.join(', ')}`,
+      `packages/ui/src/lib/utils.ts may import only ${UTILS_PACKAGES.join(', ')} (ships as topology-types.ts); found: ${typesImports.join(', ')}`,
     );
   }
 
@@ -128,8 +132,10 @@ export function buildRegistryItems(rootDir = DEFAULT_ROOT) {
     visit(item.name);
 
     const files = [];
+    const dependencies = [...(item.dependencies ?? [])];
     if ([...loaded.values()].some((c) => c.usesTypes)) {
       files.push({ ...TYPES_FILE, content: typesContent });
+      for (const pkg of UTILS_PACKAGES) if (!dependencies.includes(pkg)) dependencies.push(pkg);
     }
     for (const name of order) {
       files.push({
@@ -143,6 +149,7 @@ export function buildRegistryItems(rootDir = DEFAULT_ROOT) {
     return {
       $schema: 'https://ui.shadcn.com/schema/registry-item.json',
       ...item,
+      dependencies,
       files,
     };
   });

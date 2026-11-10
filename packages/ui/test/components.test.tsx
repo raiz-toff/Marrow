@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, test } from 'vitest';
 import * as ui from '@marrow/ui';
 import { CableBadge, DeviceLink, MarrowEmbed } from '@marrow/ui';
+import { buildEmbedUrl, withRootFlags } from '../src/components/topology-canvas.js';
 
 describe('@marrow/ui interface', () => {
   test('exports exactly the ADR-0019 components plus cn', () => {
@@ -11,32 +12,49 @@ describe('@marrow/ui interface', () => {
   test('cn drops falsy class names', () => {
     expect(ui.cn('a', false, undefined, null, '', 'b')).toBe('a b');
   });
+
+  test('cn lets later Tailwind classes win (clsx + tailwind-merge)', () => {
+    expect(ui.cn('p-2', 'p-4')).toBe('p-4');
+    expect(ui.cn('h-[600px] bg-card/30', { 'h-full': true })).toBe('bg-card/30 h-full');
+  });
 });
 
-describe('MarrowEmbed', () => {
-  test('renders an iframe with minimal-chrome hash flags and the loading overlay', () => {
+describe('MarrowEmbed (server render)', () => {
+  test('defers the frame URL to the client and renders the loading status', () => {
     const html = renderToStaticMarkup(
       <MarrowEmbed src="/diagrams/dc.html" title="DC Fabric" minimap="off" theme="dark" height={480} />,
     );
     expect(html).toContain('<iframe');
-    expect(html).toContain('src="/diagrams/dc.html#chrome=minimal&amp;minimap=off&amp;theme=dark"');
+    expect(html).not.toContain('src="/diagrams/dc.html'); // no load before the ready listener exists
     expect(html).toContain('title="DC Fabric"');
     expect(html).toContain('height:480px');
+    expect(html).not.toContain('h-[600px]');
+    expect(html).toContain('role="status"');
+    expect(html).toContain('aria-live="polite"');
     expect(html).toContain('Loading diagram…');
     expect(html).toContain('title="Fullscreen"');
     expect(html).toContain('href="/diagrams/dc.html"');
   });
 
-  test('renders in-memory html via srcDoc and hides floating actions on request', () => {
-    const html = renderToStaticMarkup(
-      <MarrowEmbed html="<p>diagram</p>" floatingActions={false} />,
-    );
-    expect(html).toContain('srcDoc="&lt;p&gt;diagram&lt;/p&gt;"');
+  test('defaults to 600px via a class className can override; aspectRatio replaces it', () => {
+    expect(renderToStaticMarkup(<MarrowEmbed src="/a.html" />)).toContain('h-[600px]');
+    const custom = renderToStaticMarkup(<MarrowEmbed src="/a.html" className="h-full min-h-0" />);
+    expect(custom).not.toContain('h-[600px]');
+    expect(custom).not.toContain('min-h-[320px]');
+    expect(custom).not.toContain('style="height');
+    const ratio = renderToStaticMarkup(<MarrowEmbed src="/a.html" aspectRatio="16 / 9" minHeight={200} />);
+    expect(ratio).toContain('aspect-ratio:16 / 9');
+    expect(ratio).toContain('min-height:200px');
+    expect(ratio).not.toContain('h-[600px]');
+  });
+
+  test('hides floating actions on request', () => {
+    const html = renderToStaticMarkup(<MarrowEmbed html="<p>diagram</p>" floatingActions={false} />);
     expect(html).not.toContain('title="Fullscreen"');
     expect(html).not.toContain('<a ');
   });
 
-  test('renders preset switcher buttons', () => {
+  test('presets: the first is the source without src, buttons expose aria-pressed', () => {
     const html = renderToStaticMarkup(
       <MarrowEmbed
         presets={[
@@ -45,8 +63,49 @@ describe('MarrowEmbed', () => {
         ]}
       />,
     );
-    expect(html).toContain('>Core</button>');
-    expect(html).toContain('>Edge</button>');
+    expect(html).toContain('aria-pressed="true"');
+    expect(html).toMatch(/aria-pressed="true"[^>]*>Core<\/button>/);
+    expect(html).toMatch(/aria-pressed="false"[^>]*>Edge<\/button>/);
+    expect(html).toContain('href="/a.html"');
+  });
+
+  test('uses shadcn tokens, not Fumadocs-only ones', () => {
+    const html = renderToStaticMarkup(<MarrowEmbed src="/a.html" />);
+    expect(html).not.toContain('fd-');
+    expect(html).toContain('border-border/70');
+  });
+
+  test('the source is required by the type', () => {
+    // @ts-expect-error — src, html or presets is required
+    void (<MarrowEmbed title="nothing" />);
+    // @ts-expect-error — src and html are exclusive
+    void (<MarrowEmbed src="/a.html" html="<p/>" />);
+  });
+});
+
+describe('buildEmbedUrl / withRootFlags', () => {
+  test('merges flags into the hash, keeping the author hash', () => {
+    expect(buildEmbedUrl('/d.html', { chrome: 'minimal', inspector: 'on', minimap: 'off', theme: 'dark' })).toBe(
+      '/d.html#chrome=minimal;minimap=off;theme=dark',
+    );
+    expect(buildEmbedUrl('/d.html#embed=true;inspector=off', { chrome: 'full', inspector: 'on', minimap: 'on' })).toBe(
+      '/d.html',
+    );
+    // Marrow's own deep-link pairs stay raw: `;`-joined, commas unescaped
+    expect(buildEmbedUrl('/d.html#d=core-01;c=10,-20,1.5', { chrome: 'minimal', inspector: 'on', minimap: 'on', theme: 'light' })).toBe(
+      '/d.html#d=core-01;c=10,-20,1.5;chrome=minimal;theme=light',
+    );
+  });
+
+  test('writes the flags onto <html> and drops theme-mode', () => {
+    const doc = '<!doctype html><html lang="en" data-theme="light" data-theme-mode="auto" data-chrome=minimal><head></head></html>';
+    const out = withRootFlags(doc, { chrome: 'full', inspector: 'off', minimap: 'off', theme: 'dark' });
+    expect(out).toBe(
+      '<!doctype html><html lang="en" data-inspector="off" data-minimap="off" data-theme="dark"><head></head></html>',
+    );
+    expect(withRootFlags('<p>x</p>', { chrome: 'minimal', inspector: 'on', minimap: 'on', theme: 'light' })).toBe(
+      '<html data-chrome="minimal" data-theme="light"><p>x</p>',
+    );
   });
 });
 

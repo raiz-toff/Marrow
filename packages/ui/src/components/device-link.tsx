@@ -105,7 +105,7 @@ function renderDeviceIcon(
   }
 
   const RoleIcon = (role && ROLE_ICONS[role]) || Server;
-  return <RoleIcon className={cn('shrink-0 text-fd-foreground/80', className)} />;
+  return <RoleIcon className={cn('shrink-0 text-foreground/80', className)} />;
 }
 
 export function DeviceLink({
@@ -119,7 +119,7 @@ export function DeviceLink({
     return (
       <span
         className={cn(
-          'inline-flex items-center gap-2 px-2.5 py-1 rounded-xl border border-fd-border bg-fd-card text-xs font-sans text-fd-foreground shadow-xs align-middle select-none',
+          'inline-flex items-center gap-2 px-2.5 py-1 rounded-xl border border-border bg-card text-xs font-sans text-foreground shadow-xs align-middle select-none',
           className,
         )}
       >
@@ -134,7 +134,7 @@ export function DeviceLink({
           {renderDeviceIcon(from.icon, from.role, 'size-3.5')}
           <span>{from.name}</span>
           {from.port && (
-            <span className="font-mono text-[10px] text-fd-muted-foreground bg-fd-muted px-1 rounded">
+            <span className="font-mono text-[10px] text-muted-foreground bg-muted px-1 rounded">
               {from.port}
             </span>
           )}
@@ -146,7 +146,7 @@ export function DeviceLink({
         {/* Host B */}
         <span className="inline-flex items-center gap-1.5 font-medium">
           {to.port && (
-            <span className="font-mono text-[10px] text-fd-muted-foreground bg-fd-muted px-1 rounded">
+            <span className="font-mono text-[10px] text-muted-foreground bg-muted px-1 rounded">
               {to.port}
             </span>
           )}
@@ -167,7 +167,7 @@ export function DeviceLink({
   return (
     <div
       className={cn(
-        'relative inline-flex items-center justify-between gap-3 px-4 py-3 rounded-2xl border border-fd-border bg-fd-card/80 backdrop-blur-xs text-fd-foreground shadow-xs font-sans select-none overflow-hidden max-w-full',
+        'relative inline-flex items-center justify-between gap-3 px-4 py-3 rounded-2xl border border-border bg-card/80 backdrop-blur-xs text-foreground shadow-xs font-sans select-none overflow-hidden max-w-full',
         className,
       )}
     >
@@ -176,11 +176,11 @@ export function DeviceLink({
 
       {/* Device A */}
       <div className="flex items-center gap-3 shrink-0">
-        <div className="relative flex items-center justify-center size-10 rounded-xl border border-fd-border bg-fd-muted/50 text-fd-foreground shadow-xs p-1.5">
+        <div className="relative flex items-center justify-center size-10 rounded-xl border border-border bg-muted/50 text-foreground shadow-xs p-1.5">
           {renderDeviceIcon(from.icon, from.role, 'size-6')}
           <span
             className={cn(
-              'absolute -top-1 -right-1 size-2.5 rounded-full ring-2 ring-fd-background shadow-xs',
+              'absolute -top-1 -right-1 size-2.5 rounded-full ring-2 ring-background shadow-xs',
               STATUS_LED[from.status ?? 'up'],
             )}
             title={`Status: ${from.status ?? 'up'}`}
@@ -190,12 +190,12 @@ export function DeviceLink({
           <span className="text-sm font-semibold tracking-tight">{from.name}</span>
           <div className="flex items-center gap-1.5 mt-0.5">
             {from.ip && (
-              <span className="font-mono text-[10.5px] text-fd-muted-foreground bg-fd-muted/70 px-1.5 py-0.5 rounded-md">
+              <span className="font-mono text-[10.5px] text-muted-foreground bg-muted/70 px-1.5 py-0.5 rounded-md">
                 {from.ip}
               </span>
             )}
             {from.role && (
-              <span className="text-[10px] font-medium uppercase tracking-wider text-fd-muted-foreground/80">
+              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/80">
                 {from.role}
               </span>
             )}
@@ -205,7 +205,7 @@ export function DeviceLink({
 
       {/* Interconnect Cable with Ports and composed CableBadge */}
       <div className="flex flex-col items-center justify-center flex-1 min-w-[120px] px-2">
-        <div className="flex items-center justify-between w-full text-[10.5px] font-mono text-fd-muted-foreground font-medium mb-1 px-1">
+        <div className="flex items-center justify-between w-full text-[10.5px] font-mono text-muted-foreground font-medium mb-1 px-1">
           <span>{from.port || 'port'}</span>
           <span>{to.port || 'port'}</span>
         </div>
@@ -213,7 +213,7 @@ export function DeviceLink({
         {/* Unified CableBadge wire */}
         <CableBadge {...cable} variant="wire" />
 
-        <div className="text-[10px] text-fd-muted-foreground/70 uppercase tracking-wider font-semibold mt-1">
+        <div className="text-[10px] text-muted-foreground/70 uppercase tracking-wider font-semibold mt-1">
           {cable.mode || 'routed'}
         </div>
       </div>
@@ -224,22 +224,22 @@ export function DeviceLink({
           <span className="text-sm font-semibold tracking-tight">{to.name}</span>
           <div className="flex items-center justify-end gap-1.5 mt-0.5">
             {to.role && (
-              <span className="text-[10px] font-medium uppercase tracking-wider text-fd-muted-foreground/80">
+              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/80">
                 {to.role}
               </span>
             )}
             {to.ip && (
-              <span className="font-mono text-[10.5px] text-fd-muted-foreground bg-fd-muted/70 px-1.5 py-0.5 rounded-md">
+              <span className="font-mono text-[10.5px] text-muted-foreground bg-muted/70 px-1.5 py-0.5 rounded-md">
                 {to.ip}
               </span>
             )}
           </div>
         </div>
-        <div className="relative flex items-center justify-center size-10 rounded-xl border border-fd-border bg-fd-muted/50 text-fd-foreground shadow-xs p-1.5">
+        <div className="relative flex items-center justify-center size-10 rounded-xl border border-border bg-muted/50 text-foreground shadow-xs p-1.5">
           {renderDeviceIcon(to.icon, to.role, 'size-6')}
           <span
             className={cn(
-              'absolute -top-1 -right-1 size-2.5 rounded-full ring-2 ring-fd-background shadow-xs',
+              'absolute -top-1 -right-1 size-2.5 rounded-full ring-2 ring-background shadow-xs',
               STATUS_LED[to.status ?? 'up'],
             )}
             title={`Status: ${to.status ?? 'up'}`}

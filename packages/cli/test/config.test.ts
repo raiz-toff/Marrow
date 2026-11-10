@@ -105,8 +105,8 @@ theme:
     bg: "#ffffff"
     accent: "#0284c7"
   links:
-    default_stroke: 2
-    ten_g_stroke: 3.5
+    width_default: 2
+    width10g: 3.5
 `;
     const { theme, problems } = parseConfig(yaml, dir);
     expect(problems).toEqual([]);
@@ -127,15 +127,15 @@ theme:
     bg: "red; } evil { display: none; }"
     panel: "#222"
   links:
-    default_stroke: -4
-    trunk_stroke: "not-a-number"
+    width_default: -4
+    width_trunk: "not-a-number"
 `;
     const { theme, problems } = parseConfig(yaml, dir);
     expect(theme?.dark?.panel).toBe('#222');
     expect(theme?.dark?.bg).toBeUndefined();
     expect(theme?.links?.widthDefault).toBeUndefined();
     expect(problems.some((p) => p.includes('theme.dark.bg: invalid color'))).toBe(true);
-    expect(problems.some((p) => p.includes('theme.links.default_stroke: must be a positive number'))).toBe(true);
+    expect(problems.some((p) => p.includes('theme.links.width_default: must be a positive number'))).toBe(true);
   });
 
   test('theme.links overrides reach the built stylesheet (px widths and dashes)', () => {
@@ -157,7 +157,7 @@ theme:
     expect(css).toContain('--planned: #123456;');
   });
 
-  test('palette keys reach :root and [data-theme="light"] in both spellings, aliases included', () => {
+  test('palette keys reach :root and [data-theme="light"] in both spellings, deprecated aliases included', () => {
     const yaml = `
 theme:
   dark:
@@ -174,7 +174,10 @@ theme:
     surface: "#d0d0d0"
 `;
     const { theme, problems } = parseConfig(yaml, dir);
-    expect(problems).toEqual([]);
+    expect(problems).toEqual([
+      'theme.dark.muted is deprecated — use theme.dark.ink_dim',
+      'theme.light.surface is deprecated — use theme.light.panel',
+    ]);
     const css = buildStylesheet(theme);
     const dark = /^:root \{([^}]*)\}/.exec(css)?.[1] ?? '';
     const light = /:root\[data-theme="light"\] \{([^}]*)\}/.exec(css)?.[1] ?? '';
@@ -219,12 +222,41 @@ theme:
       const p = problems.find((m) => m.includes(`"${key}"`));
       expect(p, key).toBeDefined();
       expect(p).toContain('supported: bg, bg_raise, panel');
-      expect(p).toContain('surface → panel');
+      expect(p).toContain('deprecated aliases: surface → panel');
     }
     expect(theme?.dark).toEqual({ accent: '#555555' });
     expect(theme?.light).toBeUndefined();
     const links = parseConfig('theme:\n  links:\n    constructor: 2\n', dir);
     expect(links.problems).toEqual(['unknown key "theme.links.constructor"']);
+  });
+
+  test('documented *_stroke link keys still apply but warn; undocumented legacy spellings are unknown', () => {
+    const yaml = `
+theme:
+  links:
+    default_stroke: 2
+    ten_g_stroke: 3
+    forty_g_stroke: 4
+    trunk_stroke: 5
+    slot_stroke: 6
+    stack_stroke: 7
+    defaultStrokeWidth: 8
+    teng_stroke: 9
+    trunk_stroke_width: 10
+`;
+    const { theme, problems } = parseConfig(yaml, dir);
+    expect(theme?.links).toEqual({ widthDefault: 2, width10g: 3, width40g: 4, widthTrunk: 5, widthSlot: 6, widthStack: 7 });
+    expect(problems).toEqual([
+      'theme.links.default_stroke is deprecated — use theme.links.width_default',
+      'theme.links.ten_g_stroke is deprecated — use theme.links.width_10g',
+      'theme.links.forty_g_stroke is deprecated — use theme.links.width_40g',
+      'theme.links.trunk_stroke is deprecated — use theme.links.width_trunk',
+      'theme.links.slot_stroke is deprecated — use theme.links.width_slot',
+      'theme.links.stack_stroke is deprecated — use theme.links.width_stack',
+      'unknown key "theme.links.defaultStrokeWidth"',
+      'unknown key "theme.links.teng_stroke"',
+      'unknown key "theme.links.trunk_stroke_width"',
+    ]);
   });
 
   test('status colours are accepted flat or nested under status:', () => {
