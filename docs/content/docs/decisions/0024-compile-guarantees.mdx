@@ -1,0 +1,89 @@
+---
+title: ADR-0024 — Compile guarantees: locale-free order, geometry in validate, a size cap
+description: Byte-identical output is enforced with one code-unit id comparator; validate runs the same layout and geometry lint as build; topologies above a documented cap are refused with a diagnostic instead of exhausting memory.
+---
+
+**Status:** accepted · refines [ADR-0007](/docs/decisions/0007-determinism-and-the-geometry-gate) and [ADR-0014](/docs/decisions/0014-density-presets-and-layout-metrics)
+
+Three guarantees that ADR-0007 promised are now enforced in code rather than
+assumed:
+
+1. **One order.** Every sort of ids in the compile packages uses
+   `compareIds` from `@marrow/model`, a plain code-unit comparison. No compile
+   package calls `localeCompare`; a static guard test fails if one appears.
+2. **`validate` runs the geometry gate.** `marrow validate` lays out and lints
+   every page the build would emit and reports L1 defects as `MRW-E018`
+   (`--no-geometry` skips it). What passes validate builds.
+3. **A size cap.** `createSiteBuilder` refuses topologies above
+   `MAX_DEVICES` (5000) or `MAX_LINKS` (10000) with `MRW-E019`, naming the
+   counts and the caps.
+
+Alongside, radial placement (ring, mesh, hub-spoke) allocates arc length from
+each node's larger dimension plus the density-scaled gap, so every corpus
+fixture is lint-clean at every density and scale.
+
+## Why
+
+**Order.** Thirty-one `localeCompare` calls had no locale argument, so Node's
+ICU took the collation from the machine's `LANG`. Under `da_DK` the id
+`aaa-01` sorts last (Danish treats "aa" as "å"); under `lt_LT`, `y` sorts
+before `j`. Because draw order feeds placement, this changed geometry, not just
+ordering: a probe topology produced different HTML under `C`, `da_DK` and
+`lt_LT`. Real inputs contain such ids (`dc1-aaa-01`). Bare `.sort()` calls
+elsewhere already used code-unit order, so two "canonical" orders coexisted.
+One comparator in the model package is the smallest fix and the only one a
+test can guard.
+
+**Validate.** Validate checked schema and references only, so a topology could
+pass validate and then fail build on an L1 defect. The agent workflow in
+AGENTS.md treats a clean validate as "ready", which made that gap a lie.
+Running layout costs 0.1 s to 1.4 s on real inputs, which is acceptable for a
+command whose purpose is to say whether the file will build.
+
+**Cap.** A 16,600-device topology ran for 203 s and died with a raw V8
+out-of-memory trace. Measured: 1,250 devices take 34 s and 0.7 GB, 5,000 take
+85 s and 1.8 GB. The cap is set where a build still finishes on an ordinary
+machine; above it the tool now answers in under 4 s with a diagnostic.
+
+**Radial placement.** `placeCircle` used the fixed `RING_GAP` constant instead
+of the density metric, and both radial layouts sized arcs by node width only.
+Compact density, and several scales, produced overlapping nodes that the L1
+gate rejected, so an author who followed ADR-0014 could not build a ring.
+
+## Consequences
+
+**Output is identical across locales.** A test builds a probe topology as child
+processes under `LANG=C`, `da_DK.UTF-8` and `lt_LT.UTF-8` and asserts identical
+bytes. Six radial corpus fixtures changed geometry once, from the placement
+fix; everything else is byte-identical to before.
+
+**Validate is slower and honest.** Small files add about 0.1 s; the largest
+real input adds about 1.3 s. `--json` carries geometry diagnostics with stable
+codes.
+
+**Geometry failures tell the author what to do.** The message names the
+archetype, density and scale in effect, lists the offending ids, and says this
+is a compiler-side defect: try `density: standard` / `scale: 1`, or report the
+file.
+
+**Radial diagrams are 15–20 % larger** because arcs are sized by the larger
+node dimension. The density × scale sweep (3 densities × 5 scales over the
+whole corpus) runs in the test suite, split per density to keep it near 20 s.
+
+**The viewer's inventory table still sorts with `localeCompare`.** It sorts
+display text in the browser and never reaches compiled output, so it is the
+one allowed exception.
+
+## Considered and rejected
+
+**Passing an explicit locale (`'en'`) to every `localeCompare`.** Rejected: it
+still depends on ICU data shipped with Node and is slower; code-unit order is
+the only order every JavaScript engine computes identically.
+
+**Making validate geometry opt-in.** Rejected because the default is what
+agents and CI run; an opt-in flag would leave the validate-passes-build-fails
+gap in place for everyone who does not know about it.
+
+**Making very large topologies work.** Rejected for now: memory grows roughly
+linearly with device count and a 16k-device diagram is unreadable in any
+output shape. The cap is a named constant so it can be raised with evidence.

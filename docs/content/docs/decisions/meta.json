@@ -22,6 +22,7 @@
     "0021-one-compile-entry",
     "0022-one-visual-language-module",
     "0023-typed-page-contract",
+    "0024-compile-guarantees",
     "---v1 Foundation---",
     "0001-declare-structure-not-layout",
     "0002-agent-driven-no-gui",
