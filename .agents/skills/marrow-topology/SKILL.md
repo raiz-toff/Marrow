@@ -222,7 +222,7 @@ theme:
 ```
 
 `width_*` / `dash_*` are the canonical link keys; the older `default_stroke` /
-`ten_g_stroke` spellings remain accepted aliases. Palette and status keys
+`ten_g_stroke` spellings are deprecated aliases (accepted with a warning). Palette and status keys
 (`bg_raise`, `ink_dim`, `up`, …) are listed in
 `docs/content/docs/(marrow)/reference/config.mdx`; an unsupported key warns.
 

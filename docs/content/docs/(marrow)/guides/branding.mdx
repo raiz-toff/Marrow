@@ -170,7 +170,8 @@ Every palette and status key, the CSS variable it sets, and what it paints is
 listed in the [config reference](/docs/reference/config#palette-and-status-keys);
 a key that is not listed warns rather than being silently ignored. The older
 `default_stroke` / `ten_g_stroke` / `forty_g_stroke` / `trunk_stroke` /
-`stack_stroke` spellings still work. Dash patterns are px runs, so a pattern
+`stack_stroke` spellings are deprecated: they still apply, but the loader
+warns and names the `width_*` key to use instead. Dash patterns are px runs, so a pattern
 reads the same on a short link and a long one.
 
 Color values accept hex, `rgb()`, `rgba()`, `hsl()`, `hsla()`, `oklch()`, and `color-mix()`. The configuration parser validates all color entries against CSS injection attacks and enforces positive finite numbers for link stroke widths.
