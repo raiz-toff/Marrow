@@ -138,6 +138,27 @@ Colour values accept hex, `rgb()`, `rgba()`, `hsl()`, `hsla()`, `oklch()`,
 reject `url()`. Values containing semicolons, braces, or angle brackets are
 rejected with warnings.
 
+## Watermark
+
+A build-wide default for the attribution watermark drawn on every page. A
+topology's own `watermark:` keys win over these.
+
+```yaml
+watermark:
+  mode: subtle          # off | minimal | subtle | blueprint | full
+  opacity: 0.08
+  casing: uppercase     # uppercase | sentence | as-is
+  font: mono            # mono | sans
+```
+
+| Key | Type | Notes |
+| --- | --- | --- |
+| `enabled` | boolean | `false` is the same as `mode: off` |
+| `mode` | `off` \| `minimal` \| `subtle` \| `blueprint` \| `full` | How much of the title block is drawn |
+| `opacity` | number | 0–1 |
+| `casing` | `uppercase` \| `sentence` \| `as-is` | Letter casing of the watermark text |
+| `font` | `mono` \| `sans` | Typeface family |
+
 ## `layout`
 
 Default density preset and scale multiplier for every compiled diagram. Each value applies **only when the topology does not declare its own** `density` or `scale` in its header — a value written in the topology always wins. With neither set, diagrams use `standard` and `1.0`.
