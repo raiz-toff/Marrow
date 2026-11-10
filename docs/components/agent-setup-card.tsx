@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Check, Copy } from 'lucide-react';
 
 const AGENT_SETUP_PROMPT = `Set up Marrow on this machine and help me draw my first network diagram.
@@ -26,49 +26,79 @@ When setup passes, ask me what network I want to diagram.`;
 
 import { copyToClipboard } from '../lib/copy';
 
-export function SetupPrompt() {
+function useCopy(text: string) {
   const [copied, setCopied] = useState(false);
-  const [open, setOpen] = useState(false);
-
   const copy = async () => {
-    const success = await copyToClipboard(AGENT_SETUP_PROMPT);
-    if (success) {
+    if (await copyToClipboard(text)) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
   };
+  return [copied, copy] as const;
+}
+
+const FOCUS = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal';
+
+/** The primary call to action: copy a prompt that sets Marrow up through your agent. */
+export function SetupPrompt({ children, id = 'setup' }: { children?: ReactNode; id?: string }) {
+  const [copied, copy] = useCopy(AGENT_SETUP_PROMPT);
+  const [open, setOpen] = useState(false);
 
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-3">
         <button
-          id="copy-setup-prompt"
+          id={`copy-${id}-prompt`}
           type="button"
           onClick={copy}
-          className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-lg bg-fd-primary px-4 py-2.5 text-sm font-medium text-fd-primary-foreground transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fd-ring cursor-pointer"
+          className={`inline-flex h-11 w-full sm:w-auto items-center justify-center gap-2 bg-ink px-5 text-[15px] font-medium text-paper transition-opacity hover:opacity-85 cursor-pointer ${FOCUS}`}
         >
           {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
           {copied ? 'Copied' : 'Copy setup prompt'}
         </button>
+        {children}
+      </div>
+      <div className="flex max-w-xl flex-col items-start gap-1 sm:block">
+        <p className="inline text-sm text-ink-dim leading-relaxed">
+          Paste it into your agent. It clones the repo, runs setup and the tests, then asks which
+          network to diagram.{' '}
+        </p>
         <button
-          id="toggle-setup-prompt"
+          id={`toggle-${id}-prompt`}
           type="button"
           aria-expanded={open}
           onClick={() => setOpen((v) => !v)}
-          className="text-sm text-fd-muted-foreground underline-offset-4 hover:text-fd-foreground hover:underline py-1 cursor-pointer"
+          className={`inline-flex min-h-11 sm:min-h-0 items-center text-sm text-ink underline underline-offset-4 decoration-rule hover:decoration-ink cursor-pointer ${FOCUS}`}
         >
-          {open ? 'Hide prompt' : 'Read it first'}
+          {open ? 'Hide the prompt' : 'Read it first'}
         </button>
       </div>
-      <p className="max-w-xl text-xs sm:text-sm text-fd-muted-foreground leading-relaxed">
-        Paste it into your agent. It clones the repo, runs setup and the tests, then asks what you
-        want to draw.
-      </p>
       {open && (
-        <pre className="max-w-3xl overflow-x-auto rounded-lg border bg-fd-secondary p-3 sm:p-4 font-mono text-xs sm:text-[13px] leading-relaxed whitespace-pre-wrap text-fd-secondary-foreground">
+        <pre className="max-w-3xl overflow-x-auto border border-rule bg-sheet p-4 font-mono text-xs sm:text-[13px] leading-relaxed whitespace-pre-wrap text-ink">
           {AGENT_SETUP_PROMPT}
         </pre>
       )}
+    </div>
+  );
+}
+
+/** A shell command in a box, with a copy button. */
+export function CopyCommand({ command }: { command: string }) {
+  const [copied, copy] = useCopy(command);
+  return (
+    <div className="flex h-11 w-full sm:w-auto min-w-0 items-stretch border border-ink/70 bg-sheet font-mono text-xs sm:text-[13px]">
+      <code className="flex min-w-0 flex-1 items-center overflow-x-auto whitespace-nowrap px-3 text-ink">
+        <span className="select-none text-ink-dim">$&nbsp;</span>
+        {command}
+      </code>
+      <button
+        type="button"
+        onClick={copy}
+        aria-label={copied ? 'Copied' : `Copy ${command}`}
+        className={`grid w-11 shrink-0 place-items-center border-l border-ink/70 text-ink-dim hover:text-ink cursor-pointer ${FOCUS}`}
+      >
+        {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
+      </button>
     </div>
   );
 }
