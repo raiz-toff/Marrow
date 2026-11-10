@@ -80,3 +80,66 @@ describe('stylesheet ⇄ visual language', () => {
     expect(generateThemeCss({ dark: { status: { down: '#ff0001' } } })).toContain('--down: #ff0001;');
   });
 });
+
+/** The bodies of every `@media <query> { … }` block (balanced braces), joined. */
+function media(css: string, query: string): string {
+  const bodies: string[] = [];
+  for (let start = css.indexOf(`@media ${query} {`); start >= 0; start = css.indexOf(`@media ${query} {`, start + 1)) {
+    const open = css.indexOf('{', start);
+    let depth = 0;
+    for (let i = open; i < css.length; i++) {
+      if (css[i] === '{') depth++;
+      else if (css[i] === '}' && --depth === 0) {
+        bodies.push(css.slice(open + 1, i));
+        break;
+      }
+    }
+  }
+  expect(bodies.length, `@media ${query}`).toBeGreaterThan(0);
+  return bodies.join('\n');
+}
+
+/** Declarations of every top-level rule in `css` whose selector list names `selector`. */
+function declsFor(css: string, selector: string): string {
+  return [...css.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+    .filter(([, sel]) => sel!.split(',').some((s) => s.trim() === selector))
+    .map(([, , body]) => body)
+    .join(';');
+}
+
+describe('chrome modes in the stylesheet', () => {
+  const css = buildStylesheet();
+
+  test('minimal chrome has no sidebar backdrop and no mobile bar', () => {
+    for (const sel of ['.m-sidebar', '.m-sidebar-backdrop', '.m-mobile-bar']) {
+      expect(declsFor(css, `html[data-chrome="minimal"] ${sel}`), sel).toContain('display: none !important');
+    }
+  });
+
+  test('44 px touch targets follow a coarse pointer, not only phone widths', () => {
+    const touch = media(css, '(max-width: 767px), (pointer: coarse)');
+    for (const sel of ['.m-controls .m-btn', '.m-inspector-close', '.m-sidebar-close']) {
+      expect(declsFor(touch, sel), sel).toContain('min-height: 44px');
+    }
+    expect(declsFor(media(css, '(max-width: 767px)'), '.m-mob-selector-btn')).toContain('min-height: 44px');
+  });
+
+  test('the minimap sits in the stage frame, clear of the controls', () => {
+    const decls = declsFor(css, '.m-minimap');
+    expect(decls).toContain('position: absolute');
+    expect(decls).toContain('var(--ctl-w)');
+  });
+
+  test('print: light palette, no chrome, one flowing document', () => {
+    const custom = buildStylesheet({ light: { bg: '#eeeeee' } });
+    const tokens = declsFor(media(custom, 'print'), ':root[data-theme]');
+    expect(tokens).toContain('--bg: #eeeeee'); // the light palette, with overrides
+    expect(tokens).toContain(`--ink: ${DEFAULT_LIGHT_PALETTE.ink}`);
+    const print = media(css, 'print');
+    for (const sel of ['.m-command-bar', '.m-mobile-bar', '.m-watermark', '.m-sidebar-backdrop', '.m-backdrop', '.m-controls']) {
+      expect(declsFor(print, sel), sel).toContain('display: none !important');
+    }
+    expect(declsFor(print, 'html')).toMatch(/height: auto !important; overflow: visible !important/);
+    expect(declsFor(print, '.m-camera')).toContain('transform: none !important');
+  });
+});

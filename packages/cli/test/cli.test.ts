@@ -75,6 +75,18 @@ describe('marrow build (end to end)', () => {
     expect(html).not.toContain('#111111');
   });
 
+  test('a marrow.config.yaml watermark reaches the built page', () => {
+    const config = join(out, 'watermark.config.yaml');
+    writeFileSync(config, 'watermark:\n  mode: blueprint\n  font: mono\n');
+    const file = join(out, 'watermarked.html');
+    const res = run(['build', validFixture, '--single', '--config', config, '-o', file], out);
+    expect(res.status, res.stderr).toBe(0);
+    const html = readFileSync(file, 'utf8');
+    expect(html).toContain('data-watermark="blueprint"');
+    expect(html).toMatch(/<div class="m-watermark" data-mode="blueprint" data-font="mono"/);
+    expect(html).toContain('fig. 01 — ');
+  });
+
   test('a large topology builds a Site; --single forces one file', () => {
     const xl = join(repoRoot, 'fixtures', 'corpus', 'xl-campus-01.yaml');
     const site = join(out, 'campus-site');

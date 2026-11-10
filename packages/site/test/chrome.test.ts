@@ -110,12 +110,6 @@ describe('renderChrome', () => {
     expect(offHtml).not.toContain('<span>Test Topology</span><small>');
   });
 
-  test('locks layout to spacious on <html> and the chrome root', () => {
-    const html = renderChrome(stageOptions);
-    expect(html).toContain('<html lang="en" data-theme="dark" data-layout="spacious"');
-    expect(html).toMatch(/<div id="marrow-chrome"[^>]* data-layout="spacious"/);
-  });
-
   test('theme: auto ships a dark default plus the auto mode marker', () => {
     const html = renderChrome({ ...stageOptions, theme: 'auto' });
     expect(html).toContain('<html lang="en" data-theme="dark" data-theme-mode="auto"');

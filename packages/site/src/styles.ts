@@ -16,11 +16,20 @@
  *   z       stage 0 · watermark 4 · hud 20 · inspector 25 · drawer 26 ·
  *           topbar/dock 30 · rail 31 · spotlight 40
  */
-import { visualCss } from '@marrow/visual';
-import { generateThemeCss, type ThemeConfig } from './tokens.js';
+import { themeVars, visualCss } from '@marrow/visual';
+import { generateThemeCss, mergeTheme, type ThemeConfig } from './tokens.js';
 
 export function buildStylesheet(config?: ThemeConfig): string {
+  // paper is white: print uses the light palette whatever the screen theme
+  const light = themeVars(mergeTheme('light', config))
+    .map(([k, v]) => `    ${k}: ${v};`)
+    .join('\n');
   return `${generateThemeCss(config)}
+@media print {
+  :root, :root[data-theme] {
+${light}
+  }
+}
 
 ${BASE_CSS}`;
 }
@@ -70,6 +79,8 @@ kbd {
   --sidebar-width: 260px;
   --mobile-nav-height: 52px;
   --frame-top: 52px; --frame-x: 20px; --frame-bottom: 20px; --frame-left: 20px;
+  /* outer width of the zoom-controls stack; the minimap and watermark keep clear of it */
+  --ctl-w: 42px;
 }
 
 /* Master Island Card: Encompasses Sidebar + Main Column */
@@ -294,15 +305,17 @@ html[data-theme="dark"] .m-theme-btn.m-desk-only:hover .m-theme-sun {
 .m-watermark {
   position: absolute; left: 16px; bottom: 16px; z-index: 4;
   pointer-events: none; user-select: none; line-height: .88;
-  max-width: calc(100vw - 32px); overflow: hidden;
+  /* the stage's width, less the zoom controls on the right */
+  max-width: calc(100% - 44px - var(--ctl-w)); overflow: hidden;
 }
 .m-watermark span {
-  display: block; white-space: nowrap;
+  display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   font-size: clamp(40px, 7.5vw, 108px); font-weight: 800; letter-spacing: -.01em; text-transform: uppercase;
   color: color-mix(in srgb, var(--ink) 4%, transparent);
 }
 .m-watermark small {
   display: block; margin: 8px 0 6px 4px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   font-size: 11px; font-weight: 600; letter-spacing: .25em; text-transform: uppercase;
   color: color-mix(in srgb, var(--ink) 11%, transparent);
 }
@@ -348,6 +361,12 @@ html[data-theme="dark"] .m-theme-btn.m-desk-only:hover .m-theme-sun {
   color: color-mix(in srgb, var(--ink) 38%, transparent);
 }
 .m-backdrop-text svg { flex: none; }
+/* light theme: the brand marks keep ≥ 3:1 against their surface (dark already does) */
+html[data-theme="light"] .m-backdrop-text { color: color-mix(in srgb, var(--ink) 54%, transparent); }
+html[data-theme="light"] .m-side-foot { color: color-mix(in srgb, var(--sidebar-fg) 54%, transparent); }
+html[data-theme="light"] .m-drawer-foot { color: color-mix(in srgb, var(--ink) 54%, transparent); }
+/* … and the sidebar's page counts, which are text, reach 4.5:1 */
+html[data-theme="light"] .m-side-row em { color: color-mix(in srgb, var(--sidebar-fg) 64%, transparent); }
 .m-backdrop-note {
   position: absolute; bottom: 0; left: 0; right: 0; height: var(--statusbar-height);
   display: flex; align-items: center; justify-content: center;
@@ -611,9 +630,10 @@ a.m-side-row.active i, a.m-side-row.active em { color: var(--sidebar-fg); }
 
 /* ── minimap ── */
 .m-minimap {
-  position: fixed;
-  right: calc(var(--frame-x, 0px) + 58px);
-  bottom: calc(var(--frame-bottom, 0px) + 12px);
+  /* in the stage frame, so a docked inspector moves it rather than covering it */
+  position: absolute;
+  right: calc(24px + var(--ctl-w));
+  bottom: 16px;
   z-index: 20;
   background: var(--panel);
   border: 1px solid var(--line);
@@ -633,8 +653,9 @@ a.m-side-row.active i, a.m-side-row.active em { color: var(--sidebar-fg); }
   user-select: none;
   -webkit-user-select: none;
 }
+/* above the map's top edge, never over the drawable area */
 .m-mini-toggle {
-  position: absolute; top: 4px; right: 4px; z-index: 1;
+  position: absolute; bottom: calc(100% + 2px); right: 0; z-index: 1;
   width: 20px; height: 20px; display: grid; place-items: center;
   background: var(--panel);
   border: 1px solid var(--line); border-radius: var(--radius-sm); color: var(--ink-dim);
@@ -642,7 +663,7 @@ a.m-side-row.active i, a.m-side-row.active em { color: var(--sidebar-fg); }
   transition: opacity .15s, background .15s, color .15s;
 }
 .m-mini-toggle svg { width: 14px; height: 14px; display: block; }
-.m-minimap:hover .m-mini-toggle { opacity: 1; }
+.m-minimap:hover .m-mini-toggle, .m-mini-toggle:focus-visible { opacity: 1; }
 .m-mini-toggle:hover { background: var(--bg-raise); color: var(--ink); }
 /* collapsed: an icon card matching the zoom controls */
 .m-minimap.collapsed { padding: 4px; border-radius: var(--radius); }
@@ -926,45 +947,12 @@ a.m-side-row.active i, a.m-side-row.active em { color: var(--sidebar-fg); }
     overflow: hidden;
   }
 
-  /* Mobile Tap Target Optimization: Minimum 44x44px per touch target criteria */
   .m-controls {
     right: 12px;
     bottom: 16px;
   }
-  .m-controls .m-btn {
-    width: 44px !important;
-    height: 44px !important;
-    min-width: 44px !important;
-    min-height: 44px !important;
-  }
-  .m-controls .m-btn svg {
-    width: 20px;
-    height: 20px;
-  }
-  .m-inspector-close {
-    width: 44px !important;
-    height: 44px !important;
-    min-width: 44px !important;
-    min-height: 44px !important;
-    display: grid !important;
-    place-items: center !important;
-  }
-  .m-inspector-close svg {
-    width: 20px;
-    height: 20px;
-  }
-  .m-sidebar-close {
-    width: 44px !important;
-    height: 44px !important;
-    min-width: 44px !important;
-    min-height: 44px !important;
-    display: grid !important;
-    place-items: center !important;
-  }
-  .m-sidebar-close svg {
-    width: 20px;
-    height: 20px;
-  }
+  .m-watermark { max-width: calc(100% - 40px - var(--ctl-w)); }
+  .m-watermark small { display: none; }
   .m-inspector-tabs .m-tab-btn {
     min-height: 38px;
     padding: 8px 14px;
@@ -1092,6 +1080,7 @@ a.m-side-row.active i, a.m-side-row.active em { color: var(--sidebar-fg); }
     color: var(--ink);
     cursor: pointer;
     max-width: 140px;
+    min-height: 44px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -1123,6 +1112,30 @@ a.m-side-row.active i, a.m-side-row.active em { color: var(--sidebar-fg); }
 
 .m-mobile-bar {
   display: none;
+}
+
+/* ── touch targets: 44 × 44 px wherever the pointer is a finger (phones and
+   tablets alike) and on every phone-width viewport ── */
+@media (max-width: 767px), (pointer: coarse) {
+  :root { --ctl-w: 54px; }
+  .m-controls .m-btn,
+  .m-inspector-close,
+  .m-sidebar-close {
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
+    display: grid !important;
+    place-items: center !important;
+  }
+  .m-controls .m-btn svg,
+  .m-inspector-close svg,
+  .m-sidebar-close svg {
+    width: 20px;
+    height: 20px;
+  }
+  /* no hover to reveal it */
+  .m-mini-toggle { opacity: 1; }
 }
 .m-inspector-close {
   width: 28px; height: 28px; border-radius: var(--radius-sm); background: none; border: 0;
@@ -1760,7 +1773,9 @@ html[data-chrome="minimal"] .m-breadcrumbs,
 html[data-chrome="minimal"] .m-backdrop,
 html[data-chrome="minimal"] .m-watermark,
 html[data-chrome="minimal"] .m-minimap,
-html[data-chrome="minimal"] .m-sidebar {
+html[data-chrome="minimal"] .m-sidebar,
+html[data-chrome="minimal"] .m-sidebar-backdrop,
+html[data-chrome="minimal"] .m-mobile-bar {
   display: none !important;
 }
 
@@ -1815,10 +1830,25 @@ html[data-watermark="off"] .m-watermark {
 
 /* ── print ── */
 @media print {
-  .m-sidebar, .m-breadcrumbs, .m-controls, .m-minimap, .m-inspector, .m-spotlight, .m-tooltip, .m-backdrop { display: none !important; }
-  .m-stage { position: static; inset: auto; border: none; box-shadow: none; }
-  body { overflow: visible; background: #fff; }
-  .m-portlabel { opacity: 1 !important; }
+  @page { margin: 10mm; }
+  .m-sidebar, .m-sidebar-backdrop, .m-command-bar, .m-breadcrumbs, .m-mobile-bar, .m-controls, .m-minimap,
+  .m-inspector, .m-spotlight, .m-tooltip, .m-backdrop, .m-watermark, .m-ctxmenu, .m-menupop,
+  .m-inv-bar, .m-pagination, .m-rsz-v, .m-rsz-handle, dialog { display: none !important; }
+  /* one flowing document: no viewport-height boxes, no inner scrollers */
+  html, body { height: auto !important; overflow: visible !important; }
+  body { display: block; padding: 0 !important; background: #fff !important; }
+  #marrow-chrome, .m-main-column, .m-stage-body, .m-stage-wrap, .m-doc, .m-inv-scroll {
+    display: block; height: auto !important; max-height: none !important; overflow: visible !important;
+    border: 0 !important; border-radius: 0 !important; box-shadow: none !important; padding: 0;
+  }
+  .m-doc-inner { max-width: none; }
+  /* the diagram fills the page: the runtime puts a viewBox over the scene
+     while printing, and the camera transform is dropped */
+  .m-stage-wrap, .m-stage { height: calc(100vh - 1px) !important; }
+  .m-stage { position: static; inset: auto; border: none; box-shadow: none; background: #fff; break-inside: avoid; }
+  .m-camera { transform: none !important; }
+  /* paper is vector and zoomable: every device name prints, whatever the screen zoom */
+  .m-label, .m-portlabel { opacity: 1 !important; }
   .m-edge, .m-edge.m-flow { animation: none !important; }
 }
 `;

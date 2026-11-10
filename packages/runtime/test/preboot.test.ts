@@ -29,12 +29,13 @@ describe('URL → <html> attributes', () => {
     ['?inspector=false&minimap=off', '', {}, { inspector: 'off', minimap: 'off' }],
     ['?theme=light', '', { theme: 'dark' }, { theme: 'light' }],
     ['?theme=sepia', '', { theme: 'dark' }, { theme: 'dark' }],
-    ['?layout=spacious', '', {}, { layout: 'spacious' }],
+    ['?controls=off', '#minimap=false', {}, { controls: 'off', minimap: 'off' }],
+    ['?layout=spacious', '', {}, {}], // retired: nothing read it
     ['?theme=dark', '#theme=light', {}, { theme: 'dark' }], // query beats hash
     // full / false / on undo what the page shipped — before first paint now
     ['?chrome=full', '', { chrome: 'minimal' }, {}],
     ['', '#embed=false', { chrome: 'minimal' }, {}],
-    ['?inspector=on&minimap=true', '', { inspector: 'off', minimap: 'off' }, {}],
+    ['?inspector=on&minimap=true&controls=on', '', { inspector: 'off', minimap: 'off', controls: 'off' }, {}],
     // unrelated params leave shipped attributes alone
     ['?export_title=off', '', { chrome: 'minimal', theme: 'light' }, { chrome: 'minimal', theme: 'light' }],
   ] as const)('%s %s on %j → %j', (search, hash, initial, expected) => {

@@ -13,7 +13,7 @@ import {
   type MiniFrame,
 } from './minimap-geometry.js';
 import { closestHook, find, findAll, markHook, maybe, param, setParam } from './find.js';
-import { parseHash, parseModularParams, serializeHash } from '../shared/hash.js';
+import { editHash, modularPairs, parseHash, parseModularParams, VIEW_KEYS, viewPairs, withPairs, type ViewState } from '../shared/hash.js';
 import {
   applyModularParams,
   ATTR,
@@ -81,7 +81,7 @@ export function boot(): void {
     setupAboutDialog();
     setupInventory();
     setupInventoryDetails(data);
-    setupMobileNav();
+    setupKioskLinks();
     markReady();
     return;
   }
@@ -142,9 +142,9 @@ export function boot(): void {
     },
     () => {
       const insets = { top: 0, right: 0, bottom: 0, left: 0 };
+      const stageRect = stage.getBoundingClientRect();
       const inspector = find(document, 'inspector.panel');
       if (!inspector.hidden && param(inspector, 'sheet') !== 'closed') {
-        const stageRect = stage.getBoundingClientRect();
         const inspRect = inspector.getBoundingClientRect();
         if (inspRect.top < stageRect.bottom && inspRect.bottom > stageRect.top) {
           if (inspRect.left <= stageRect.left && inspRect.right >= stageRect.right) {
@@ -153,6 +153,20 @@ export function boot(): void {
             insets.right = Math.max(0, stageRect.right - inspRect.left);
           }
         }
+      }
+      // the corner HUD (zoom controls + minimap) floats over the stage: keep
+      // the view clear of it, on whichever side costs the fit less zoom
+      const hud = hudCorner(stageRect);
+      if (hud) {
+        const right = Math.max(0, stageRect.right - hud.left - insets.right);
+        const bottom = Math.max(0, stageRect.bottom - hud.top - insets.bottom);
+        const k = (r: number, b: number): number =>
+          Math.min(
+            (stageRect.width - insets.left - insets.right - r) / sceneSize.w,
+            (stageRect.height - insets.top - insets.bottom - b) / sceneSize.h,
+          );
+        if (k(right, 0) >= k(0, bottom)) insets.right += right;
+        else insets.bottom += bottom;
       }
       return insets;
     },
@@ -193,10 +207,13 @@ export function boot(): void {
   minimapSync = setupMinimap(ctx);
   setupSidebar(ctx);
   setupClickAway(ctx);
-  setupMobileNav();
   hashSyncSoon = setupHash(ctx);
   syncModularParams(ctx);
   addEventListener('hashchange', () => syncModularParams(ctx));
+  setupKioskLinks();
+  // the inspector changes the visible area without moving the camera
+  for (const evt of ['select', 'deselect']) onEvent(evt, () => requestAnimationFrame(() => minimapSync()));
+  if (svg) setupPrintFit(svg, sceneSize);
 
   // re-apply persisted view settings — the ⌘K palette reads AND writes these,
   // so what it displays must be what the page is actually doing
@@ -210,32 +227,32 @@ export function boot(): void {
   const navEntry = performance.getEntriesByType?.('navigation')?.[0] as PerformanceNavigationTiming | undefined;
   const isReload = navEntry?.type === 'reload' || (performance as any).navigation?.type === 1;
 
-  if (isReload && location.hash && (location.hash.includes('d=') || location.hash.includes('c='))) {
-    history.replaceState(null, '', location.pathname + location.search);
-  }
+  // a reload starts from the page's own view, but keeps kiosk / embed flags
+  if (isReload) replaceHash(editHash(location.hash, VIEW_KEYS, []));
 
   const initial = parseHash(location.hash);
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  camera.fit(false);
-  if (!reduced) {
-    setTimeout(() => camera.fit(true), 120);
+  if (initial.camera) {
+    // deep link to a view: `c=` is the world point at the centre, and the zoom
+    camera.set({ k: initial.camera.k });
+    camera.centerOn(initial.camera.x, initial.camera.y);
+    cameraInHash = true;
+  } else {
+    camera.fit(false);
+    if (!reduced) setTimeout(() => camera.fit(true), 120);
   }
-
-  window.addEventListener('resize', () => {
-    if (window.innerWidth < 768 && !ctx.selected) {
-      camera.fit(false);
-    }
-  });
 
   if (typeof ResizeObserver !== 'undefined') {
     let lastW = stage.clientWidth;
     let lastH = stage.clientHeight;
+    let refit: ReturnType<typeof setTimeout> | undefined;
     const ro = new ResizeObserver(() => {
       const nw = stage.clientWidth;
       const nh = stage.clientHeight;
       if (nw === 0 || nh === 0) return;
       if (nw === lastW && nh === lastH) return;
+      const changed = Math.abs(nw - lastW) > 4 || Math.abs(nh - lastH) > 4;
       lastW = nw;
       lastH = nh;
       if (ctx.selected) {
@@ -243,17 +260,30 @@ export function boot(): void {
         if (b) {
           ctx.camera.reCenter(b, false);
         }
+      } else if (changed && ctx.camera.atFit()) {
+        // nothing selected and no pan or zoom since the last fit: a window
+        // or an embedding iframe that resizes refits
+        clearTimeout(refit);
+        refit = setTimeout(() => ctx.camera.fit(false), 120);
       }
       minimapSync();
     });
     ro.observe(stage);
+  } else {
+    window.addEventListener('resize', () => {
+      if (!ctx.selected && ctx.camera.atFit()) ctx.camera.fit(false);
+    });
   }
   const wanted = !isReload ? (initial.device ?? data.hero) : undefined;
   if (wanted !== undefined) {
     const resolved = resolveNodeFor(ctx, wanted);
     if (resolved !== undefined) selectDevice(ctx, resolved, false);
   }
-  const settle = (): void => rootEl().classList.add('settled');
+  // after the entrance, camera moves are the viewer's: deep-link them
+  const settle = (): void => {
+    rootEl().classList.add('settled');
+    cameraInHash = true;
+  };
   setTimeout(settle, reduced ? 0 : 1900);
   addEventListener('pointerdown', settle, { once: true });
 
@@ -468,7 +498,7 @@ function setupSvgPointer(ctx: Ctx): void {
     if (nodeEl) {
       const href = nodeEl.getAttribute(STAGE_ATTR.href);
       if (href !== null) {
-        location.href = rootPrefix() + href;
+        go(rootPrefix() + href);
         return;
       }
       selectDevice(ctx, nodeEl.getAttribute(STAGE_ATTR.node)!, true);
@@ -555,7 +585,7 @@ function setupCanvasPointer(ctx: Ctx): void {
     const node = hitNode(ctx, ev);
     if (node) {
       if (node.href !== undefined) {
-        location.href = rootPrefix() + node.href;
+        go(rootPrefix() + node.href);
         return;
       }
       selectDevice(ctx, node.id, true);
@@ -600,6 +630,8 @@ interface TabInstance {
 }
 
 let activeCtx: Ctx | undefined;
+/** Whether the hash carries the camera (`c=`): once the viewer may have moved it, or when the URL arrived with one. */
+let cameraInHash = false;
 let activeMaps: DeviceMaps | undefined;
 let activeGoto: ((id: string) => void) | undefined;
 const customTabsRegistry = new Map<string, InspectorTabDef>();
@@ -1376,7 +1408,7 @@ function setupSpotlight(ctx: Ctx | undefined, data: EmbeddedData): void {
         return;
       }
     }
-    location.href = `${rootPrefix()}${page ?? 'index.html'}#d=${encodeURIComponent(id)}`;
+    go(`${rootPrefix()}${page ?? 'index.html'}#d=${encodeURIComponent(id)}`);
   };
 
   // ── command center (shadcn Command): grouped items — Devices, Navigation,
@@ -1483,7 +1515,7 @@ function setupSpotlight(ctx: Ctx | undefined, data: EmbeddedData): void {
         icon: a.querySelector('i')?.innerHTML ?? '',
         keywords: 'go to open page',
         run: () => {
-          location.href = a.href;
+          go(a.href);
         },
       });
     }
@@ -2020,7 +2052,7 @@ function setupContextMenu(ctx: Ctx): void {
     switch (btn.dataset['act']) {
       case 'open': close(); if (id !== undefined) selectDevice(ctx, id, false); break;
       case 'fly': close(); if (id !== undefined) selectDevice(ctx, id); break;
-      case 'page': close(); if (id !== undefined) location.href = `${rootPrefix()}devices/${encodeURIComponent(id)}.html#d=${encodeURIComponent(id)}`; break;
+      case 'page': close(); if (id !== undefined) go(`${rootPrefix()}devices/${encodeURIComponent(id)}.html#d=${encodeURIComponent(id)}`); break;
       case 'copy-id': close(); if (id !== undefined) void navigator.clipboard?.writeText(id); break;
       case 'copy-ip': close(); if (id !== undefined) void navigator.clipboard?.writeText(ctx.deviceById.get(id)?.mgmtIp ?? ''); break;
       case 'fit': close(); ctx.camera.fit(true); break;
@@ -2413,27 +2445,49 @@ function setupSidebar(ctx: Ctx | undefined): void {
   const toggles = findAll(document, 'sidebar.toggle');
   const root = rootEl();
 
-  const setOpen = (open: boolean): void => {
+  const selector = find(document, 'mobile.selector');
+  // ≤1024 px the sidebar is a drawer over the page: it starts closed, and
+  // the remembered state (a desktop preference) is neither read nor written
+  const narrow = (): boolean => window.innerWidth <= 1024;
+  // minimal chrome has no sidebar at all — it can never be open
+  const minimal = (): boolean => readRoot(root, 'chrome') === 'minimal';
+  const setOpen = (want: boolean): void => {
+    const open = want && !minimal();
     sidebar.classList.toggle('open', open);
     sidebar.classList.toggle('is-collapsed', !open);
     for (const btn of toggles) btn.classList.toggle('on', open);
-    localStorage.setItem(storageKey('sidebar'), open ? 'open' : 'closed');
+    if (!narrow() && !minimal()) localStorage.setItem(storageKey('sidebar'), open ? 'open' : 'closed');
   };
   const defaultOpen = !sidebar.classList.contains('is-collapsed');
-  const remembered = localStorage.getItem(storageKey('sidebar'));
-  setOpen(remembered !== null ? remembered === 'open' : defaultOpen);
+  const initial = (): boolean => {
+    if (narrow() || minimal()) return false;
+    const remembered = localStorage.getItem(storageKey('sidebar'));
+    return remembered !== null ? remembered === 'open' : defaultOpen;
+  };
+  setOpen(initial());
+  // crossing the drawer breakpoint restores the state that width starts in
+  matchMedia('(max-width: 1024px)').addEventListener?.('change', () => setOpen(initial()));
+  addEventListener('hashchange', () => {
+    if (minimal()) setOpen(false);
+  });
 
   for (const btn of toggles) {
     btn.addEventListener('click', () => setOpen(!sidebar.classList.contains('open')));
   }
+  // the topology selector in the mobile bar opens the page navigation
+  selector.addEventListener('click', () => {
+    const open = !sidebar.classList.contains('open');
+    setOpen(open);
+    if (open && !minimal()) setParam(find(document, 'inspector.panel'), 'sheet', 'closed');
+  });
   find(sidebar, 'sidebar.close').addEventListener('click', () => setOpen(false));
   document.addEventListener('pointerdown', (ev) => {
-    if (window.innerWidth <= 1024 && sidebar.classList.contains('open')) {
+    if (narrow() && sidebar.classList.contains('open')) {
       const target = ev.target as Node;
       // the menubar popover is runtime-created (setupMenubar), not a page hook
       const menupop = document.querySelector<HTMLElement>('.m-menupop');
       if (menupop && !menupop.hidden && menupop.contains(target)) return;
-      if (!sidebar.contains(target) && !toggles[0]?.contains(target)) {
+      if (!sidebar.contains(target) && !selector.contains(target) && !toggles.some((t) => t.contains(target))) {
         setOpen(false);
       }
     }
@@ -2481,16 +2535,6 @@ function setupSidebar(ctx: Ctx | undefined): void {
 function syncSeg(seg: HTMLElement, value: string): void {
   for (const b of seg.querySelectorAll('button')) b.classList.toggle('active', param(b, 'value') === value);
 
-}
-
-function setupMobileNav(): void {
-  // the topology selector in the mobile bar opens the page navigation
-  find(document, 'mobile.selector').addEventListener('click', () => {
-    const sidebar = find(document, 'sidebar.panel');
-    const isOpen = sidebar.classList.contains('open');
-    sidebar.classList.toggle('open', !isOpen);
-    if (!isOpen) setParam(find(document, 'inspector.panel'), 'sheet', 'closed');
-  });
 }
 
 /** Persist + apply a view setting and keep any sidebar segmented control in step. */
@@ -2613,7 +2657,7 @@ function setupInventoryDetails(data: EmbeddedData): void {
         const link = findAll(document, 'inventory.row')
           .find((r) => param(r, 'id') === id)
           ?.querySelector<HTMLAnchorElement>('a');
-        if (link) location.href = link.href;
+        if (link) go(link.href);
         break;
       }
       case 'copy-id': void navigator.clipboard?.writeText(id); break;
@@ -2845,7 +2889,7 @@ function setupKeyboard(ctx: Ctx): void {
         if (nodeEl) {
           ev.preventDefault();
           const href = nodeEl.getAttribute(STAGE_ATTR.href);
-          if (href !== null) location.href = rootPrefix() + href;
+          if (href !== null) go(rootPrefix() + href);
           else selectDevice(ctx, nodeEl.getAttribute(STAGE_ATTR.node)!, false);
         }
       }
@@ -2949,7 +2993,7 @@ function setupMinimap(ctx: Ctx): () => void {
   const GLYPH_CHEVRON =
     '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
 
-  const initiallyCollapsed = localStorage.getItem(storageKey('minimap')) === 'closed';
+  const initiallyCollapsed = localStorage.getItem(storageKey('minimap-collapsed')) === '1';
 
   wrap.innerHTML =
     `<button class="m-mini-toggle" type="button" aria-label="${initiallyCollapsed ? 'Show minimap' : 'Hide minimap'}">${initiallyCollapsed ? GLYPH_MAP : GLYPH_CHEVRON}</button>` +
@@ -3056,7 +3100,7 @@ function setupMinimap(ctx: Ctx): () => void {
     ev.stopPropagation();
     const collapsed = !wrap.classList.contains('collapsed');
     applyCollapsed(collapsed);
-    localStorage.setItem(storageKey('minimap'), collapsed ? 'closed' : 'open');
+    localStorage.setItem(storageKey('minimap-collapsed'), collapsed ? '1' : '0');
   });
 
   sync();
@@ -3074,10 +3118,109 @@ function setupHash(ctx: Ctx): () => void {
   };
 }
 
+/** Write the view (`d`, `c`) into the hash; every other pair — `chrome`,
+ *  `minimap`, `theme`, export flags — stays as the URL had it. */
 function syncHash(ctx: Ctx): void {
-  const state: { device?: string } = {};
+  const state: ViewState = {};
   if (ctx.selected !== undefined) state.device = ctx.selected;
-  history.replaceState(null, '', serializeHash(state) || location.pathname + location.search);
+  const cam = ctx.camera.get();
+  if (cameraInHash && cam.k > 0) {
+    const vis = ctx.camera.visibleArea();
+    state.camera = { x: (vis.x + vis.w / 2 - cam.x) / cam.k, y: (vis.y + vis.h / 2 - cam.y) / cam.k, k: cam.k };
+  }
+  replaceHash(editHash(location.hash, VIEW_KEYS, viewPairs(state)));
+}
+
+function replaceHash(next: string): void {
+  if (next === location.hash || (next === '' && location.hash === '#')) return;
+  try {
+    history.replaceState(history.state, '', next || location.pathname + location.search);
+  } catch {
+    /* about:srcdoc (an inline-HTML embed) and sandboxed frames refuse URL writes */
+  }
+}
+
+// ─── embed / kiosk flags across pages ───────────────────────────────────────
+
+/** `url` with the URL options in effect (`chrome=minimal`, `minimap=off`, …)
+ *  carried over when it is a page of this site; anything else unchanged. */
+function withKiosk(url: string): string {
+  const pairs = modularPairs(parseModularParams(location.search, location.hash));
+  if (pairs.length === 0) return url;
+  try {
+    const site = new URL(rootPrefix() || './', location.href);
+    const u = new URL(url, location.href);
+    if (u.protocol !== site.protocol || u.host !== site.host || !u.pathname.startsWith(site.pathname)) return url;
+    u.hash = withPairs(u.hash, pairs);
+    return u.href;
+  } catch {
+    return url;
+  }
+}
+
+/** Navigate to a page of this site, keeping embed / kiosk mode. */
+function go(url: string): void {
+  location.href = withKiosk(url);
+}
+
+/** Each link's href as the page shipped it, so a later pass starts from it. */
+const shippedHref = new WeakMap<HTMLAnchorElement, string>();
+
+/** Point every link to another page of this site at the same embed / kiosk
+ *  mode: once at boot, on every `hashchange`, and — for links the runtime
+ *  renders later — at the moment one is followed. */
+function setupKioskLinks(): void {
+  const rewrite = (a: HTMLAnchorElement): void => {
+    const shipped = shippedHref.get(a) ?? a.getAttribute('href');
+    if (shipped === null || shipped.startsWith('#') || a.hasAttribute('download')) return;
+    shippedHref.set(a, shipped);
+    const next = withKiosk(shipped);
+    if (a.getAttribute('href') !== next) a.setAttribute('href', next);
+  };
+  const pass = (): void => {
+    for (const a of document.querySelectorAll<HTMLAnchorElement>('a[href]')) rewrite(a);
+  };
+  pass();
+  addEventListener('hashchange', pass);
+  for (const type of ['click', 'auxclick']) {
+    document.addEventListener(
+      type,
+      (ev) => {
+        const a = ev.target instanceof Element ? ev.target.closest<HTMLAnchorElement>('a[href]') : null;
+        if (a) rewrite(a);
+      },
+      true,
+    );
+  }
+}
+
+// ─── print ──────────────────────────────────────────────────────────────────
+
+/** Print the whole diagram on the page, whatever the camera shows: a viewBox
+ *  over the scene while printing (the print stylesheet drops the camera
+ *  transform), removed afterwards. */
+function setupPrintFit(svg: SVGSVGElement, size: { w: number; h: number }): void {
+  const fit = (on: boolean): void => {
+    if (on) svg.setAttribute('viewBox', `0 0 ${size.w} ${size.h}`);
+    else svg.removeAttribute('viewBox');
+  };
+  addEventListener('beforeprint', () => fit(true));
+  addEventListener('afterprint', () => fit(false));
+  matchMedia('print').addEventListener?.('change', (e) => fit(e.matches));
+}
+
+/** Top-left corner of the visible zoom controls + minimap, when they overlap the stage. */
+function hudCorner(stageRect: DOMRect): { left: number; top: number } | undefined {
+  let left = Infinity;
+  let top = Infinity;
+  for (const el of [maybe(document, 'camera.controls'), maybe(document, 'minimap.root')]) {
+    if (!el || el.hidden) continue;
+    const r = el.getBoundingClientRect();
+    if (r.width < 1 || r.height < 1 || r.right <= stageRect.left || r.left >= stageRect.right || r.bottom <= stageRect.top || r.top >= stageRect.bottom) continue;
+    left = Math.min(left, r.left);
+    top = Math.min(top, r.top);
+  }
+  return left < Infinity ? { left, top } : undefined;
 }
 
 // ─── utils ──────────────────────────────────────────────────────────────────

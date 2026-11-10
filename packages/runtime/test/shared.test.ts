@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { parseHash, parseModularParams, serializeHash } from '../src/shared/hash.js';
+import { editHash, modularPairs, parseHash, parseModularParams, serializeHash, VIEW_KEYS, viewPairs, withPairs } from '../src/shared/hash.js';
 import { searchDocs, type SearchDoc } from '../src/shared/search.js';
 
 describe('hash deep links', () => {
@@ -21,6 +21,33 @@ describe('hash deep links', () => {
   test('encodes device ids safely', () => {
     const parsed = parseHash(serializeHash({ device: 'a;b=c' }));
     expect(parsed.device).toBe('a;b=c');
+  });
+});
+
+describe('the runtime writes only its own hash keys', () => {
+  test('view pairs replace d/c and keep every kiosk pair, in order', () => {
+    const write = (hash: string, device?: string) =>
+      editHash(hash, VIEW_KEYS, viewPairs(device !== undefined ? { device } : {}));
+    expect(write('#chrome=minimal;minimap=off')).toBe('#chrome=minimal;minimap=off');
+    expect(write('#chrome=minimal;minimap=off', 'fw-1')).toBe('#chrome=minimal;minimap=off;d=fw-1');
+    expect(write('#d=old;theme=light&controls=off;c=1,2,3', 'new')).toBe('#theme=light;controls=off;d=new');
+    expect(write('#d=old')).toBe('');
+    expect(write('#export_title=off;future=1')).toBe('#export_title=off;future=1'); // unknown keys survive
+  });
+
+  test('withPairs sets keys on a link hash without duplicating them', () => {
+    expect(withPairs('', ['chrome=minimal'])).toBe('#chrome=minimal');
+    expect(withPairs('#d=core', ['chrome=minimal', 'minimap=off'])).toBe('#d=core;chrome=minimal;minimap=off');
+    expect(withPairs('#chrome=full;d=core', ['chrome=minimal'])).toBe('#d=core;chrome=minimal');
+  });
+
+  test('modularPairs normalizes the URL options for the next page', () => {
+    expect(modularPairs(parseModularParams('?theme=light', '#embed=1;controls=off;d=x'))).toEqual([
+      'chrome=minimal',
+      'controls=off',
+      'theme=light',
+    ]);
+    expect(modularPairs(parseModularParams('', '#d=x'))).toEqual([]);
   });
 });
 

@@ -20,7 +20,7 @@
  */
 import type { Device, Link, Topology, Zone } from '@marrow/model';
 import type { Scene } from '@marrow/scene';
-import type { ModularUiOptions } from './hash.js';
+import { ON_OFF_PARTS, type ModularUiOptions } from './hash.js';
 
 export { STAGE_ATTR, STAGE_HOOKS } from '@marrow/visual';
 
@@ -172,7 +172,7 @@ export const ROOT_ATTR = {
   chrome: 'data-chrome',
   inspector: 'data-inspector',
   minimap: 'data-minimap',
-  layout: 'data-layout',
+  controls: 'data-controls',
   watermark: 'data-watermark',
   root: 'data-root',
   page: 'data-page',
@@ -190,7 +190,7 @@ export interface RootState {
   chrome: 'minimal';
   inspector: 'off';
   minimap: 'off';
-  layout: 'spacious';
+  controls: 'off';
   watermark: 'off' | 'minimal' | 'subtle' | 'blueprint';
   /** '' for root pages, '../' one level deep. */
   root: string;
@@ -225,12 +225,11 @@ export function writeRoot<K extends RootKey>(root: RootLike, key: K, value: Root
 export function applyModularParams(root: RootLike, o: ModularUiOptions): void {
   if (o.chrome === 'minimal') writeRoot(root, 'chrome', 'minimal');
   else if (o.chrome === 'full') writeRoot(root, 'chrome', undefined);
-  if (o.inspector === 'off') writeRoot(root, 'inspector', 'off');
-  else if (o.inspector === 'on') writeRoot(root, 'inspector', undefined);
-  if (o.minimap === 'off') writeRoot(root, 'minimap', 'off');
-  else if (o.minimap === 'on') writeRoot(root, 'minimap', undefined);
+  for (const k of ON_OFF_PARTS) {
+    if (o[k] === 'off') writeRoot(root, k, 'off');
+    else if (o[k] === 'on') writeRoot(root, k, undefined);
+  }
   if (o.theme !== undefined) writeRoot(root, 'theme', o.theme);
-  if (o.layout !== undefined) writeRoot(root, 'layout', o.layout);
 }
 
 // ─── globals, storage, embed protocol ───────────────────────────────────────
@@ -254,8 +253,9 @@ export interface SearchIndexDoc {
   page: string;
 }
 
-/** View settings persisted per viewer. */
-export type StorageName = 'theme' | 'labels' | 'ports' | 'motion' | 'minimap' | 'sidebar';
+/** View settings persisted per viewer. `minimap` is shown/hidden (`on`/`off`);
+ *  `minimap-collapsed` is folded to its icon (`1`/`0`) — two settings, two keys. */
+export type StorageName = 'theme' | 'labels' | 'ports' | 'motion' | 'minimap' | 'minimap-collapsed' | 'sidebar';
 export function storageKey(name: StorageName): string {
   return `marrow-${name}`;
 }

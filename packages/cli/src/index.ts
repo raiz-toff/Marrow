@@ -29,16 +29,17 @@ usage:
 exit codes: 0 valid · 1 validation errors · 2 usage or I/O error`;
 
 /** The slice of build options that marrow.config.yaml contributes to every build. */
-type GlobalConfig = Pick<BuildOptions, 'brand' | 'themeConfig' | 'defaults'>;
+type GlobalConfig = Pick<BuildOptions, 'brand' | 'themeConfig' | 'defaults' | 'watermark'>;
 
 /** Global settings from marrow.config.yaml, as build options; --config points elsewhere. */
 function globalConfig(explicit?: string): GlobalConfig {
-  const { brand, theme, layout, problems } = loadConfig(explicit);
+  const { brand, theme, layout, watermark, problems } = loadConfig(explicit);
   for (const problem of problems) console.error(`warning: ${problem}`);
   return {
     ...(brand !== undefined ? { brand } : {}),
     ...(theme !== undefined ? { themeConfig: theme } : {}),
     ...(layout !== undefined ? { defaults: layout } : {}),
+    ...(watermark !== undefined ? { watermark } : {}),
   };
 }
 

@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import type { IconCatalog } from '@marrow/icons';
 import { layoutTopology, type LayoutOptions, type NodeMeta } from '@marrow/layout';
 import { lintScene, type LintIssue, type LintReport } from '@marrow/lint';
-import { byId, compareIds, type Density, type Topology } from '@marrow/model';
+import { byId, compareIds, type Density, type Topology, type WatermarkConfig } from '@marrow/model';
 import { renderCanvasHost, renderScene, type IconSource } from '@marrow/render-svg';
 import {
   DEVICE_KEYS,
@@ -140,8 +140,8 @@ export interface BuildOptions {
   themeConfig?: ThemeConfig;
   /** Embed / kiosk modularity: 'minimal' hides topbar & dock, 'full' preserves all chrome. */
   chrome?: 'full' | 'minimal';
-  /** Chrome layout archetype: locked to 'spacious'. */
-  chromeLayout?: 'spacious';
+  /** Build-wide watermark (`watermark:` in marrow.config.yaml); a topology's own `watermark:` keys win. */
+  watermark?: WatermarkConfig;
 }
 
 export interface PageStats {
@@ -249,6 +249,10 @@ export function createSiteBuilder(
     { label: 'Inventory', href: 'inventory.html', kind: 'inventory' as const, count: topology.devices.length },
   ];
   const chrome = chromeOptions(options);
+  const watermark =
+    options.watermark !== undefined || topology.watermark !== undefined
+      ? { ...options.watermark, ...topology.watermark }
+      : undefined;
 
   // everything that feeds EVERY page — part of every page hash, so a nav
   // count change, theme flip, rebrand or shape switch invalidates the lot
@@ -257,7 +261,7 @@ export function createSiteBuilder(
     name: topology.name,
     theme: topology.theme,
     description: topology.description ?? null,
-    watermark: topology.watermark ?? null,
+    watermark: watermark ?? null,
     navLinks,
     devicePages: plan.devicePages,
     forceRenderer: options.forceRenderer ?? null,
@@ -341,7 +345,7 @@ export function createSiteBuilder(
       theme: topology.theme,
       stage: svg,
       ...(topology.description !== undefined ? { subtitle: topology.description } : {}),
-      ...(topology.watermark !== undefined ? { watermark: topology.watermark } : {}),
+      ...(watermark !== undefined ? { watermark } : {}),
       ...chrome,
       data: embeddedData(collapsed, {
         kind: 'stage',
@@ -437,12 +441,11 @@ function withDefaults(t: Topology, defaults: LayoutDefaults | undefined): Topolo
 }
 
 /** Chrome options shared by every page of a build. */
-function chromeOptions(options: BuildOptions): Pick<ChromeOptions, 'brand' | 'themeConfig' | 'chrome' | 'layout'> {
+function chromeOptions(options: BuildOptions): Pick<ChromeOptions, 'brand' | 'themeConfig' | 'chrome'> {
   return {
     ...(options.brand !== undefined ? { brand: options.brand } : {}),
     ...(options.themeConfig !== undefined ? { themeConfig: options.themeConfig } : {}),
     ...(options.chrome !== undefined ? { chrome: options.chrome } : {}),
-    ...(options.chromeLayout !== undefined ? { layout: options.chromeLayout } : {}),
   };
 }
 

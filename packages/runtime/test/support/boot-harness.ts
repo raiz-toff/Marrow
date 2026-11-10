@@ -140,6 +140,14 @@ export async function boot(kind: PageKind, prepare?: () => void): Promise<void> 
   await vi.waitFor(() => expect((window as unknown as Record<string, unknown>)[READY_FLAG]).toBe(true));
 }
 
+/** Resize the happy-dom window (it starts at 1024 × 768); media queries follow. */
+export function viewport(width: number, height = 768): void {
+  (window as unknown as { happyDOM: { setViewport(v: { width: number; height: number }): void } }).happyDOM.setViewport({
+    width,
+    height,
+  });
+}
+
 /** One animation frame (the camera writes its transform, and the minimap follows, on the next frame). */
 export const frame = (): Promise<void> => new Promise((r) => requestAnimationFrame(() => r()));
 /** A pointer event as a mouse delivers it. */

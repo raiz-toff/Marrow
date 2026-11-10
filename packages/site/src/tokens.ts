@@ -65,7 +65,7 @@ function mergeLinks(base: LinkTokens, o: LinkStyleOverrides | undefined): LinkTo
 }
 
 /** Merge user overrides onto a default theme. */
-function mergeTheme(scheme: 'dark' | 'light', config?: ThemeConfig): Theme {
+export function mergeTheme(scheme: 'dark' | 'light', config?: ThemeConfig): Theme {
   const base = DEFAULT_THEMES[scheme];
   const block = config?.[scheme];
   return {

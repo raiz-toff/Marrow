@@ -23,6 +23,16 @@ async function build(rel: string) {
   return buildSingle(validated.topology, { icons: catalog });
 }
 
+describe('build-wide watermark', () => {
+  test('the config watermark applies; a topology\'s own keys win', async () => {
+    const t = validateSource(readFileSync(join(repoRoot, 'fixtures/valid/small-office.yaml'), 'utf8'), { icons: catalog }).topology!;
+    const configOnly = await buildSingle(t, { icons: catalog, watermark: { mode: 'blueprint', font: 'mono' } });
+    expect(configOnly.html).toMatch(/<div class="m-watermark" data-mode="blueprint" data-font="mono"/);
+    const both = await buildSingle({ ...t, watermark: { mode: 'minimal' } }, { icons: catalog, watermark: { mode: 'blueprint', font: 'mono' } });
+    expect(both.html).toMatch(/<div class="m-watermark" data-mode="minimal" data-font="mono"/);
+  });
+});
+
 describe('Single file output', () => {
   test('produces a complete, self-contained page', async () => {
     const { html, scene } = await build('valid/small-office.yaml');

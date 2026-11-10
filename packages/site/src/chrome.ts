@@ -62,8 +62,6 @@ export interface ChromeOptions {
   /** Embed / kiosk modularity: 'minimal' hides topbar & dock, 'full' preserves all chrome. */
   chrome?: 'full' | 'minimal';
   watermark?: WatermarkConfig;
-  /** Layout archetype inspired by Fumadocs: locked to 'spacious'. */
-  layout?: 'spacious';
 }
 
 export function renderChrome(o: ChromeOptions): string {
@@ -124,10 +122,9 @@ export function renderChrome(o: ChromeOptions): string {
   const chromeAttr = o.chrome === 'minimal' ? ` ${ROOT_ATTR.chrome}="minimal"` : '';
   const watermarkAttr =
     !wmEnabled || wmMode === 'off' ? ` ${ROOT_ATTR.watermark}="off"` : wmMode !== 'full' ? ` ${ROOT_ATTR.watermark}="${wmMode}"` : '';
-  const layoutAttr = ` ${ROOT_ATTR.layout}="spacious"`;
 
   return `<!DOCTYPE html>
-<html lang="en" ${ROOT_ATTR.theme}="${themeAttr}"${modeAttr}${chromeAttr}${watermarkAttr}${layoutAttr} ${ROOT_ATTR.root}="${esc(o.rootPrefix)}" ${ROOT_ATTR.page}="${esc(o.page)}">
+<html lang="en" ${ROOT_ATTR.theme}="${themeAttr}"${modeAttr}${chromeAttr}${watermarkAttr} ${ROOT_ATTR.root}="${esc(o.rootPrefix)}" ${ROOT_ATTR.page}="${esc(o.page)}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -137,7 +134,7 @@ export function renderChrome(o: ChromeOptions): string {
 ${css}
 </head>
 <body${o.stage ? '' : ' class="m-doc-body"'}>
-<div id="marrow-chrome" ${hookAttr('chrome.root')}${layoutAttr} data-single-file="${isSingle ? 'true' : 'false'}" data-view-mode="default">
+<div id="marrow-chrome" ${hookAttr('chrome.root')} data-single-file="${isSingle ? 'true' : 'false'}" data-view-mode="default">
 ${backdrop}
 ${sidebar(o)}
 <div class="m-sidebar-backdrop"></div>

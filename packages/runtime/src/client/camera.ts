@@ -27,6 +27,7 @@ export class Camera {
   private state: CameraState = { x: 0, y: 0, k: 1 };
   private raf = 0;
   private anim: number | undefined;
+  private fitTarget: CameraState | undefined;
 
   constructor(
     private readonly group: SVGGElement,
@@ -99,7 +100,15 @@ export class Camera {
   }
 
   fit(animate = false): void {
-    this.set(this.fitState(), animate);
+    this.fitTarget = this.fitState();
+    this.set(this.fitTarget, animate);
+  }
+
+  /** True while the camera still shows its last fit — no pan or zoom since. */
+  atFit(): boolean {
+    const f = this.fitTarget;
+    const s = this.state;
+    return f !== undefined && Math.abs(f.k - s.k) < 1e-3 && Math.abs(f.x - s.x) < 1 && Math.abs(f.y - s.y) < 1;
   }
 
   /** Frame a world rect at a comfortable zoom. */
