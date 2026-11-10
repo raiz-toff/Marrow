@@ -47,6 +47,7 @@
     "test:watch": "vitest",
     "icons:index": "node packages/cli/dist/index.js icons index",
     "registry:build": "node scripts/build-registry.mjs",
+    "predocs": "node docs/scripts/build-demos.mjs",
     "docs": "npm run dev -w @marrow/docs",
     "docs:build": "npm run registry:build && npm run demos && npm run build -w @marrow/docs",
     "demos": "node docs/scripts/build-demos.mjs",

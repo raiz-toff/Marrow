@@ -9,7 +9,7 @@
  * Run from the repo root:  npm run demos
  */
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, readdirSync } from 'node:fs';
+import { mkdirSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -26,13 +26,22 @@ if (demos.length === 0) {
   process.exit(1);
 }
 
+// A demo is fresh when its page is newer than its YAML and than the compiler
+// that produced it, so `npm run docs` (which runs this first) stays quick.
+const mtime = (path) => { try { return statSync(path).mtimeMs; } catch { return 0; } };
+const compilerStamp = Math.max(mtime(cli), mtime(join(repo, 'packages/runtime/dist/runtime.js')), mtime(join(repo, 'packages/runtime/dist/preboot.js')));
+const force = process.argv.includes('--force');
+
+let built = 0;
 for (const file of demos) {
   const src = join(docs, 'demos', file);
   const dest = join(out, file.replace(/\.yaml$/, '.html'));
+  if (!force && mtime(dest) > Math.max(mtime(src), compilerStamp)) continue;
 
   // never ship a demo that does not validate
   execFileSync('node', [cli, 'validate', src], { stdio: 'inherit' });
   execFileSync('node', [cli, 'build', src, '--single', '-o', dest], { stdio: 'inherit' });
+  built++;
 }
 
-console.log(`\n${demos.length} demo diagram(s) written to docs/public/demo/`);
+console.log(built === 0 ? `demo diagrams up to date (${demos.length}); pass --force to rebuild` : `\n${built} of ${demos.length} demo diagram(s) written to docs/public/demo/`);
