@@ -14,7 +14,7 @@ import { dashPeriod, tokenValue, type Theme } from './tokens.js';
 
 export type Ctx = 'far' | 'dimmed';
 
-export interface Rule {
+interface Rule {
   /** Class the edge must carry (absent = base rule). */
   readonly cls?: string;
   /** Classes the edge must NOT carry. */
@@ -26,7 +26,7 @@ export interface Rule {
 
 const STATE_GUARD = ['is-path', 'is-selected'] as const;
 
-export const EDGE_RULES: readonly Rule[] = [
+const EDGE_RULES: readonly Rule[] = [
   {
     set: {
       color: '--edge',
@@ -107,7 +107,7 @@ const CTX_PREFIX: Record<Ctx, string> = {
 
 const v = (name: string): string => `var(${name})`;
 
-export function declCss(d: Decl, flowCss: string): string {
+function declCss(d: Decl, flowCss: string): string {
   const out: string[] = [];
   if (d.color !== undefined) out.push(`stroke: ${v(d.color)}`);
   if (d.width !== undefined) out.push(`stroke-width: ${v(d.width)}`);
@@ -119,7 +119,7 @@ export function declCss(d: Decl, flowCss: string): string {
   return out.join('; ');
 }
 
-export function ruleSelector(r: Rule, el = 'm-edge'): string {
+function ruleSelector(r: Rule, el = 'm-edge'): string {
   return (
     (r.ctx !== undefined ? CTX_PREFIX[r.ctx] : '') +
     `.${el}` +

@@ -23,7 +23,7 @@ export interface SitePlan {
 }
 
 export const SITE_DEVICE_THRESHOLD = 150;
-export const SITE_ZONE_THRESHOLD = 5;
+const SITE_ZONE_THRESHOLD = 5;
 
 export function planSite(t: Topology, shape?: OutputShape): SitePlan {
   const zonesWithDevices = new Set(t.devices.map((d) => d.zone).filter((z) => z !== undefined));

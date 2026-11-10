@@ -6,16 +6,15 @@
 
 # Generated Marrow build output
 output/
-.output/
-.nuxt/
-docs/.output/
-docs/.nuxt/
 
 # Archived Python v1 (reference only) + its virtualenvs
 legacy-v1/
 
-# Vendor icon SVGs — the docs use pre-built demo HTML, not these
-icon-packs/
+# Vendor icon packs fetched per user (never committed). The demos, compiled
+# during the deploy, use only the bundled packs (cisco, affinity, k8s, generic).
+icon-packs/aws/
+icon-packs/azure/
+icon-packs/gcp/
 
 # Corpus fixtures and sample inputs — not needed to build the docs
 fixtures/

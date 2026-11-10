@@ -19,7 +19,7 @@ import {
 
 const asEnum = <T extends string>(values: readonly T[]) => z.enum(values as unknown as [T, ...T[]]);
 
-export const watermarkSchema = z.strictObject({
+const watermarkSchema = z.strictObject({
   enabled: z.boolean().default(true),
   mode: asEnum(WATERMARK_MODES).default('full'),
   opacity: z.number().min(0.01).max(0.5).optional(),
@@ -27,21 +27,21 @@ export const watermarkSchema = z.strictObject({
   font: asEnum(WATERMARK_FONTS).default('sans'),
 });
 
-export const endpointObjectSchema = z.strictObject({
+const endpointObjectSchema = z.strictObject({
   device: z.string(),
   port: z.string().optional(),
 });
 
-export const endpointSchema = z.union([z.string(), endpointObjectSchema]);
+const endpointSchema = z.union([z.string(), endpointObjectSchema]);
 
-export const interfaceSchema = z.strictObject({
+const interfaceSchema = z.strictObject({
   name: z.string(),
   description: z.string().optional(),
   vlan: z.number().int().min(1).max(4094).optional(),
   ip: z.string().optional(),
 });
 
-export const zoneSchema = z.strictObject({
+const zoneSchema = z.strictObject({
   id: z.string(),
   name: z.string().optional(),
   parent: z.string().optional(),
@@ -50,17 +50,17 @@ export const zoneSchema = z.strictObject({
   note: z.string().optional(),
 });
 
-export const customFieldsSchema = z.record(z.string(), z.union([z.string(), z.number(), z.boolean()]));
+const customFieldsSchema = z.record(z.string(), z.union([z.string(), z.number(), z.boolean()]));
 
-export const customSectionContentSchema = z.union([
+const customSectionContentSchema = z.union([
   z.string(),
   z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()])),
   z.array(z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()]))),
 ]);
 
-export const customSectionsSchema = z.record(z.string(), customSectionContentSchema);
+const customSectionsSchema = z.record(z.string(), customSectionContentSchema);
 
-export const deviceSchema = z.strictObject({
+const deviceSchema = z.strictObject({
   id: z.string(),
   name: z.string().optional(),
   icon: z.string(),
@@ -80,7 +80,7 @@ export const deviceSchema = z.strictObject({
   sections: customSectionsSchema.optional(),
 });
 
-export const linkSchema = z.strictObject({
+const linkSchema = z.strictObject({
   from: endpointSchema,
   to: endpointSchema,
   kind: asEnum(LINK_KINDS).optional(),
@@ -100,7 +100,7 @@ export const linkSchema = z.strictObject({
   sections: customSectionsSchema.optional(),
 });
 
-export const titleBlockSchema = z.strictObject({
+const titleBlockSchema = z.strictObject({
   title: z.string().optional(),
   author: z.string().optional(),
   date: z.string().optional(),
@@ -108,7 +108,7 @@ export const titleBlockSchema = z.strictObject({
   logo: z.string().optional(),
 });
 
-export const inspectorTabSchema = z.strictObject({
+const inspectorTabSchema = z.strictObject({
   id: z.string().min(1),
   label: z.string().min(1),
   target: z.enum(['device', 'edge', 'both']).default('device'),
@@ -117,7 +117,7 @@ export const inspectorTabSchema = z.strictObject({
   template: z.string().optional(),
 });
 
-export const inspectorSchema = z.strictObject({
+const inspectorSchema = z.strictObject({
   tabs: z.array(inspectorTabSchema).default([]),
 });
 
@@ -145,9 +145,6 @@ export const topologySchema = z.strictObject({
 });
 
 export type RawTopology = z.output<typeof topologySchema>;
-export type RawDevice = z.output<typeof deviceSchema>;
-export type RawZone = z.output<typeof zoneSchema>;
-export type RawLink = z.output<typeof linkSchema>;
 
 /** JSON Schema artifact of the authoring format (embedded in the agent skill). */
 export function topologyJsonSchema(): unknown {

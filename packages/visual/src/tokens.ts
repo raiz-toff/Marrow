@@ -63,7 +63,7 @@ type Kind = 'color' | 'raw' | 'px' | 'dash';
 type Value = string | number | readonly number[];
 
 /** @internal */
-export interface TokenRow {
+interface TokenRow {
   readonly cssVar: string;
   readonly group: keyof Theme;
   readonly key: string;
@@ -98,7 +98,7 @@ const ln = (cssVar: string, key: keyof LinkTokens, v: number | readonly number[]
 });
 
 /** @internal Emission order of the theme variables. */
-export const TOKEN_ROWS: readonly TokenRow[] = [
+const TOKEN_ROWS: readonly TokenRow[] = [
   pal('--bg', 'bg', '#09090b', '#fafafa'),
   pal('--bg-raise', 'bgRaise', '#18181b', '#f4f4f5'),
   pal('--panel', 'panel', '#111113', '#ffffff'),
@@ -212,7 +212,7 @@ function parsePx(raw: string): number | undefined {
 }
 
 /** @internal Parse a dash list: `9 6`, `9px 6px`, `9, 6`. */
-export function parseDash(raw: string): number[] | undefined {
+function parseDash(raw: string): number[] | undefined {
   const parts = raw.split(/[\s,]+/).filter((s) => s !== '');
   if (parts.length === 0) return undefined;
   const out: number[] = [];

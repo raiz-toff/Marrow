@@ -26,7 +26,7 @@ export function Body({ children }: { children: ReactNode }) {
   return <div className={cn(mode, 'flex flex-1 flex-col')}>{children}</div>;
 }
 
-export function useMode(): string | undefined {
+function useMode(): string | undefined {
   const { slug = [] } = useParams();
   if (Array.isArray(slug)) return getSection(slug[0]);
 }

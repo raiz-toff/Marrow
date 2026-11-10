@@ -2,7 +2,7 @@
  *  view settings, about rows and the brand footer. */
 import { ATTR, hookAttr, MENUS, type Menu } from '@marrow/runtime';
 import type { ChromeOptions, NavLink } from '../chrome.js';
-import { esc } from '../html.js';
+import { escapeHtml as esc } from '@marrow/visual';
 import { brandFoot } from './brand-mark.js';
 import { I, NAV_ICON } from './icons.js';
 

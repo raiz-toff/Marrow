@@ -13,6 +13,7 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "dependencies": {
+    "@marrow/model": "0.0.1",
     "@marrow/scene": "0.0.1"
   }
 }

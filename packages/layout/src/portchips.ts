@@ -16,14 +16,14 @@ import { rectsOverlap, type Rect, type SceneEdge, type SceneNode, type ScenePort
 import type { LayoutMetrics } from './metrics.js';
 
 /** Chip geometry — must match .m-portlabel CSS and the canvas port pass. */
-export const PORT_CHIP_H = 16;
-export const PORT_CHIP_CHAR = 5.6; // 9px ui-monospace advance estimate
-export const PORT_CHIP_PAD = 10;
+const PORT_CHIP_H = 16;
+const PORT_CHIP_CHAR = 5.6; // 9px ui-monospace advance estimate
+const PORT_CHIP_PAD = 10;
 const BASE_D = 26; // preferred distance from the attachment point
 const STEP = 10; // walk increment while colliding
 const MIN_D = 12; // closer than this reads as part of the node
 
-export function chipWidth(label: string, charAdvance = PORT_CHIP_CHAR, pad = PORT_CHIP_PAD): number {
+function chipWidth(label: string, charAdvance = PORT_CHIP_CHAR, pad = PORT_CHIP_PAD): number {
   return [...label].length * charAdvance + pad;
 }
 

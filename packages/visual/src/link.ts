@@ -4,6 +4,7 @@
  * takes the chip — it's the aggregation identity — while the mode still drives
  * the pattern (so a LAG'd trunk reads as a double rail).
  */
+import { cssSafe } from './escape.js';
 import { effectiveMode, modeSpec, normalizeStatus, type LinkFields, type LinkGlyph, type LinkPattern } from './spec.js';
 
 export interface LinkPresentation {
@@ -34,10 +35,6 @@ export function linkSemanticsWords(l: LinkFields & { nativeVlan?: number }): str
   const words = [...(modeSpec(effectiveMode(l))?.words(l) ?? [])];
   if (l.lag !== undefined) words.push(l.lacp !== undefined ? `${l.lag} · LACP ${l.lacp}` : l.lag);
   return words;
-}
-
-function cssSafe(s: string): string {
-  return s.toLowerCase().replace(/[^a-z0-9-]/g, '-');
 }
 
 /** The class list both tiers key paint off: `m-edge m-status-… m-speed-… m-mode-… m-flow`. */

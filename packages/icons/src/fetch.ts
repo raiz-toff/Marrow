@@ -32,9 +32,6 @@ export interface FetchResult {
   urls: string[];
 }
 
-/** Packs `marrow icons fetch` knows how to install (kept in sync with icon-sources.json). */
-export const FETCHABLE_PACKS = ['aws', 'azure', 'gcp'];
-
 export async function fetchPack(
   pack: string,
   source: IconSource,

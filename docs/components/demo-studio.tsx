@@ -20,14 +20,14 @@ export interface TopologyDemoPreset {
   fullSrc: string;
 }
 
-export const DEMO_PRESETS: TopologyDemoPreset[] = [
+const DEMO_PRESETS: TopologyDemoPreset[] = [
   {
     id: 'tiered',
     name: 'Tiered Campus Core',
     description: 'Hierarchical Core, Distribution, and Access switching fabric with dual HA uplinks.',
     archetype: 'tiered',
     tags: ['Hierarchical', 'HA Pair', 'Campus'],
-    src: '/demo/tiered-embed.html',
+    src: '/demo/tiered.html?chrome=minimal',
     fullSrc: '/demo/tiered.html',
   },
   {
@@ -36,7 +36,7 @@ export const DEMO_PRESETS: TopologyDemoPreset[] = [
     description: 'Isolated perimeter DMZ, application tier, and database subnets partitioned into mosaic cards.',
     archetype: 'zoned',
     tags: ['Zoned Mosaic', 'DMZ', 'Datacenter'],
-    src: '/demo/zoned-embed.html',
+    src: '/demo/zoned.html?chrome=minimal',
     fullSrc: '/demo/zoned.html',
   },
   {
@@ -45,7 +45,7 @@ export const DEMO_PRESETS: TopologyDemoPreset[] = [
     description: 'Radial WAN topology connecting remote regional offices into redundant central spine hubs.',
     archetype: 'hub-spoke',
     tags: ['Radial', 'WAN Spine', 'Spokes'],
-    src: '/demo/hub-spoke-embed.html',
+    src: '/demo/hub-spoke.html?chrome=minimal',
     fullSrc: '/demo/hub-spoke.html',
   },
   {
@@ -54,7 +54,7 @@ export const DEMO_PRESETS: TopologyDemoPreset[] = [
     description: 'VLAN tagging semantics visualized with double-line trunks and native VLAN indicators.',
     archetype: 'tiered',
     tags: ['802.1Q', 'Trunking', 'VLANs'],
-    src: '/demo/trunk-vlans-embed.html',
+    src: '/demo/trunk-vlans.html?chrome=minimal',
     fullSrc: '/demo/trunk-vlans.html',
   },
   {
@@ -63,7 +63,7 @@ export const DEMO_PRESETS: TopologyDemoPreset[] = [
     description: 'Encrypted overlay tunnels with animated dashed flows and protocol telemetry chips.',
     archetype: 'hub-spoke',
     tags: ['Overlay', 'IPsec', 'Animated'],
-    src: '/demo/vpn-tunnels-embed.html',
+    src: '/demo/vpn-tunnels.html?chrome=minimal',
     fullSrc: '/demo/vpn-tunnels.html',
   },
   {
@@ -72,7 +72,7 @@ export const DEMO_PRESETS: TopologyDemoPreset[] = [
     description: 'Physical link aggregation with bundled interface indicators and member negotiation states.',
     archetype: 'tiered',
     tags: ['LACP', 'LAG', 'Bundles'],
-    src: '/demo/lacp-portchannel-embed.html',
+    src: '/demo/lacp-portchannel.html?chrome=minimal',
     fullSrc: '/demo/lacp-portchannel.html',
   },
   {
@@ -81,7 +81,7 @@ export const DEMO_PRESETS: TopologyDemoPreset[] = [
     description: 'High-density multi-rack cloud fabric demonstrating canvas LOD streaming and radar minimap.',
     archetype: 'scale',
     tags: ['High Density', '300+ Nodes', 'Canvas'],
-    src: '/demo/scale-embed.html',
+    src: '/demo/scale.html?chrome=minimal',
     fullSrc: '/demo/scale.html',
   },
 ];

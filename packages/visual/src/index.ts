@@ -4,8 +4,8 @@
  * chip/LED proportions and the theme tokens behind them live here once.
  * Both tiers consume it: render-svg (hero tier) translates `resolveScene`
  * into markup styled by `visualCss()`; the runtime canvas engine (scale tier)
- * turns the same paint into draw calls. Zero runtime dependencies; types only
- * from @marrow/scene.
+ * turns the same paint into draw calls. Its only runtime dependency is the
+ * dependency-free @marrow/model (tier and status order); types from @marrow/scene.
  */
 export {
   DEFAULT_THEMES,
@@ -31,4 +31,5 @@ export {
   type VisualScene,
 } from './resolve.js';
 export { visualCss } from './css.js';
+export { cssSafe, escapeHtml } from './escape.js';
 export { STAGE_ATTR, STAGE_HOOKS } from './hooks.js';

@@ -1,4 +1,4 @@
-import { byId, compareIds, type Device, type DeviceStatus, type Link, type LinkStatus, type Topology } from '@marrow/model';
+import { byId, compareIds, worseStatus, type Device, type DeviceStatus, type Link, type LinkStatus, type Topology } from '@marrow/model';
 
 /**
  * Build-time cluster collapse (the Auvik pattern): endpoint devices that hang
@@ -7,8 +7,6 @@ import { byId, compareIds, type Device, type DeviceStatus, type Link, type LinkS
  * otherwise exceed its rendered-node budget; the members stay reachable
  * through the inspector (and the zone/device pages in site mode).
  */
-
-const STATUS_RANK: Record<DeviceStatus, number> = { down: 0, degraded: 1, planned: 2, unknown: 3, up: 4 };
 
 export interface CollapseOptions {
   /** Collapse only when the topology exceeds this many devices. */
@@ -45,10 +43,7 @@ export function collapseEndpoints(t: Topology, options: CollapseOptions = {}): T
   for (const [parentId, members] of [...groups.entries()].sort((a, b) => compareIds(a[0], b[0]))) {
     if (members.length < minMembers) continue;
     members.sort(byId);
-    const worst = members.reduce<DeviceStatus>(
-      (acc, m) => (STATUS_RANK[m.status] < STATUS_RANK[acc] ? m.status : acc),
-      'up',
-    );
+    const worst = members.reduce<DeviceStatus>((acc, m) => worseStatus(acc, m.status), 'up');
     const icon = modalIcon(members);
     const parent = t.devices.find((d) => d.id === parentId);
     const stack: Device = {
@@ -85,7 +80,7 @@ export function collapseEndpoints(t: Topology, options: CollapseOptions = {}): T
     const existing = aggregate.get(key);
     if (existing) {
       existing.count++;
-      if (STATUS_RANK[l.status] < STATUS_RANK[existing.worst]) existing.worst = l.status;
+      existing.worst = worseStatus(existing.worst, l.status);
     } else {
       aggregate.set(key, {
         link: {
@@ -109,8 +104,9 @@ export function collapseEndpoints(t: Topology, options: CollapseOptions = {}): T
   return { ...t, devices, links };
 }
 
-function modalIcon(members: readonly Device[]): string {
+/** The most common icon among `members` (ties → smallest id). */
+export function modalIcon(members: readonly Device[]): string {
   const counts = new Map<string, number>();
   for (const m of members) counts.set(m.icon, (counts.get(m.icon) ?? 0) + 1);
-  return [...counts.entries()].sort((a, b) => b[1] - a[1] || compareIds(a[0], b[0]))[0]![0];
+  return [...counts.entries()].sort((a, b) => b[1] - a[1] || compareIds(a[0], b[0]))[0]?.[0] ?? 'cisco/misc/generic';
 }

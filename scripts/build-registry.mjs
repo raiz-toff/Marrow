@@ -159,7 +159,7 @@ export function buildRegistryItems(rootDir = DEFAULT_ROOT) {
 export function writeRegistry(rootDir = DEFAULT_ROOT) {
   const builtItems = buildRegistryItems(rootDir);
   const publicDir = join(rootDir, 'docs', 'public', 'r');
-  mkdirSync(join(publicDir, 'styles', 'default'), { recursive: true });
+  mkdirSync(publicDir, { recursive: true });
 
   const registryCatalog = {
     $schema: 'https://ui.shadcn.com/schema/registry.json',
@@ -178,11 +178,11 @@ export function writeRegistry(rootDir = DEFAULT_ROOT) {
   writeFileSync(join(publicDir, 'index.json'), JSON.stringify(builtItems, null, 2));
   console.log('✔ Generated docs/public/r/registry.json and index.json');
 
-  // 3. Individual docs/public/r/[name].json & styles/default/[name].json
+  // 3. Individual docs/public/r/[name].json (/r/styles/<style>/[name].json is a
+  //    rewrite to these in docs/next.config.mjs)
   for (const item of builtItems) {
     const itemJson = JSON.stringify(item, null, 2);
     writeFileSync(join(publicDir, `${item.name}.json`), itemJson);
-    writeFileSync(join(publicDir, 'styles', 'default', `${item.name}.json`), itemJson);
   }
   console.log(`✔ Generated ${builtItems.length} individual component registry endpoints in docs/public/r/`);
 }

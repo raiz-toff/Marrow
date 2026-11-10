@@ -31,7 +31,7 @@
     "docs"
   ],
   "scripts": {
-    "prepare": "node scripts/prepare.mjs",
+    "prepare": "npm run compile",
     "setup": "node scripts/setup.mjs",
     "dev": "node packages/cli/dist/index.js serve",
     "dev:lan": "node packages/cli/dist/index.js serve --host 0.0.0.0",
@@ -45,26 +45,18 @@
     "clean": "tsc -b --clean",
     "test": "vitest run",
     "test:watch": "vitest",
-    "gen:icons": "node packages/cli/dist/index.js icons index",
     "icons:index": "node packages/cli/dist/index.js icons index",
     "registry:build": "node scripts/build-registry.mjs",
     "docs": "npm run dev -w @marrow/docs",
-    "docs:dev": "npm run dev -w @marrow/docs",
-    "docs:lan": "npm run dev -w @marrow/docs -- --hostname 0.0.0.0",
-    "docs:build": "npm run registry:build && npm run build -w @marrow/docs",
+    "docs:build": "npm run registry:build && npm run demos && npm run build -w @marrow/docs",
     "demos": "node docs/scripts/build-demos.mjs",
     "build:npm": "npm run compile && node scripts/build-npm.mjs"
   },
   "devDependencies": {
     "@types/node": "^24.13.3",
-    "@types/react": "^19.3.0",
-    "@types/react-dom": "^19.3.0",
     "esbuild": "^0.28.1",
     "happy-dom": "^21.0.4",
-    "lucide-react": "^1.59.0",
     "playwright": "^1.61.1",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
     "typescript": "^5.6.0",
     "vitest": "^3.0.0"
   },

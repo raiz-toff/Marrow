@@ -7,7 +7,7 @@
 
 export type DataPath = ReadonlyArray<string | number>;
 
-export const ROOT_KEYS = [
+const ROOT_KEYS = [
   'marrow',
   'name',
   'description',
@@ -25,11 +25,8 @@ export const ROOT_KEYS = [
   'devices',
   'links',
 ] as const;
-export const TITLE_BLOCK_KEYS = ['title', 'author', 'date', 'revision', 'logo'] as const;
-export const INSPECTOR_KEYS = ['tabs'] as const;
-export const INSPECTOR_TAB_KEYS = ['id', 'label', 'target', 'field', 'fields', 'template'] as const;
-export const ZONE_KEYS = ['id', 'name', 'parent', 'collapse', 'accent', 'note'] as const;
-export const DEVICE_KEYS = [
+const ZONE_KEYS = ['id', 'name', 'parent', 'collapse', 'accent', 'note'] as const;
+const DEVICE_KEYS = [
   'id',
   'name',
   'icon',
@@ -48,7 +45,7 @@ export const DEVICE_KEYS = [
   'custom_fields',
   'sections',
 ] as const;
-export const LINK_KEYS = [
+const LINK_KEYS = [
   'from',
   'to',
   'kind',
@@ -67,9 +64,9 @@ export const LINK_KEYS = [
   'custom_fields',
   'sections',
 ] as const;
-export const INTERFACE_KEYS = ['name', 'description', 'vlan', 'ip'] as const;
-export const PIN_KEYS = ['x', 'y'] as const;
-export const ENDPOINT_KEYS = ['device', 'port'] as const;
+const INTERFACE_KEYS = ['name', 'description', 'vlan', 'ip'] as const;
+const PIN_KEYS = ['x', 'y'] as const;
+const ENDPOINT_KEYS = ['device', 'port'] as const;
 
 /** Known keys of the object at `path` (the path of the object itself). */
 export function knownKeysAt(path: DataPath): readonly string[] {

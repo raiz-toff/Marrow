@@ -25,8 +25,6 @@ export interface ThemeConfig {
 export const DEFAULT_DARK_PALETTE: PaletteTokens = DEFAULT_THEMES.dark.palette;
 export const DEFAULT_DARK_STATUS: StatusTokens = DEFAULT_THEMES.dark.status;
 export const DEFAULT_LIGHT_PALETTE: PaletteTokens = DEFAULT_THEMES.light.palette;
-export const DEFAULT_LIGHT_STATUS: StatusTokens = DEFAULT_THEMES.light.status;
-export const DEFAULT_LINK_TOKENS: LinkStyleTokens = DEFAULT_THEMES.dark.links;
 
 /** Parse a px dash override: `"9 6"`, `"9px, 6px"` or `[9, 6]`. */
 export function parseDashOverride(v: unknown): number[] | undefined {
@@ -67,7 +65,7 @@ function mergeLinks(base: LinkTokens, o: LinkStyleOverrides | undefined): LinkTo
 }
 
 /** Merge user overrides onto a default theme. */
-export function mergeTheme(scheme: 'dark' | 'light', config?: ThemeConfig): Theme {
+function mergeTheme(scheme: 'dark' | 'light', config?: ThemeConfig): Theme {
   const base = DEFAULT_THEMES[scheme];
   const block = config?.[scheme];
   return {

@@ -21,7 +21,7 @@ const EXAMPLES: Example[] = [
     label: 'Enterprise backbone',
     shortLabel: 'Backbone',
     file: 'tiered.yaml',
-    src: '/demo/tiered-embed.html',
+    src: '/demo/tiered.html?chrome=minimal',
     yaml: `marrow: 2
 name: Enterprise Campus Backbone
 description: Multi-tier spine-and-leaf campus fabric with HA firewalls, IPsec cloud tunnel, 802.1Q trunks, and LACP port-channels
@@ -273,7 +273,7 @@ links:
     label: 'VLAN trunks',
     shortLabel: 'Trunks',
     file: 'trunk-vlans.yaml',
-    src: '/demo/trunk-vlans-embed.html',
+    src: '/demo/trunk-vlans.html?chrome=minimal',
     yaml: `marrow: 2
 name: Trunking & VLANs
 description: 802.1Q trunks between distribution and access; VLAN access ports to hosts
@@ -302,7 +302,7 @@ links:
     label: 'WAN hub',
     shortLabel: 'Hub',
     file: 'hub-spoke.yaml',
-    src: '/demo/hub-spoke-embed.html',
+    src: '/demo/hub-spoke.html?chrome=minimal',
     yaml: `marrow: 2
 name: WAN Branches
 description: One hub, spokes touching only the hub — a radial layout
@@ -425,7 +425,7 @@ export function DemoExample() {
 
             {/* Standalone Link */}
             <a
-              href={active.src.replace('-embed.html', '.html')}
+              href={active.src.split('?')[0]}
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center p-1.5 rounded-lg border border-fd-border/70 bg-fd-background/80 text-fd-muted-foreground hover:text-fd-foreground hover:border-fd-foreground/40 transition-all cursor-pointer"

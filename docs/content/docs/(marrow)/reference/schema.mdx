@@ -4,8 +4,8 @@ description: Every key in the Marrow 2 topology format, with types, defaults, an
 ---
 
 The complete format. A machine-readable JSON Schema is served at
-[`/schema.json`](/schema.json) and can be regenerated with
-`npm run marrow -- schema`.
+[`/schema.json`](/schema.json); it is the output of `marrow schema`, and a
+test fails when the two drift.
 
 <Callout type="warn">
 Unknown keys are **errors** (`MRW-E005`), not warnings. Prefix a key with

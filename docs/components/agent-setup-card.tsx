@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Check, Copy } from 'lucide-react';
 
-export const AGENT_SETUP_PROMPT = `Set up Marrow on this machine and help me draw my first network diagram.
+const AGENT_SETUP_PROMPT = `Set up Marrow on this machine and help me draw my first network diagram.
 
 Marrow compiles network topology YAML into an interactive HTML diagram that works offline.
 Repo: https://github.com/raiz-toff/Marrow

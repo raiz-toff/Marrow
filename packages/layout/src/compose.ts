@@ -1,6 +1,5 @@
-import { byId, compareIds, type Device, type Topology } from '@marrow/model';
+import { byId, compareIds, TIER_RANK, type Device, type Topology } from '@marrow/model';
 import type { Rect, SceneZone, Vec } from '@marrow/scene';
-import { TIER_RANK } from './classify.js';
 import { elkLayout } from './elk.js';
 import type { LayoutMetrics } from './metrics.js';
 import type { NodeSizing } from './size.js';
@@ -15,8 +14,6 @@ import type { NodeSizing } from './size.js';
  */
 
 const PAD_X = 28;
-const PAD_TOP = 46; // room for the zone label
-const PAD_BOTTOM = 28;
 const GAP = 56;
 
 export interface ComposeResult {
@@ -247,7 +244,7 @@ function boundsOf(boxes: ReadonlyMap<string, Rect>): { w: number; h: number } {
  * Deterministic shelf packing that PRESERVES input order — callers pre-sort
  * by story rank, so rows read top-to-bottom in network order.
  */
-export function shelfPack(
+function shelfPack(
   items: ReadonlyArray<{ id: string; w: number; h: number }>,
   gap: number,
 ): { positions: Map<string, Vec>; w: number; h: number } {

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import { parseArgs } from 'node:util';
 import { diag, formatPretty, hasErrors, toJsonReport, type Diagnostic, type JsonReport } from '@marrow/diagnostics';
@@ -186,7 +186,6 @@ async function cmdBuild(rest: string[]): Promise<number> {
         packs: { type: 'string' },
         single: { type: 'boolean', default: false },
         config: { type: 'string' },
-        embed: { type: 'boolean', default: false },
         chrome: { type: 'string' },
       },
       allowPositionals: true,
@@ -194,7 +193,7 @@ async function cmdBuild(rest: string[]): Promise<number> {
   );
   if (!parsed.ok) {
     console.error(
-      `${parsed.message}\n\nusage: marrow build <file> [-o <out>] [--single] [--embed] [--chrome minimal|full] [--packs <dir>] [--config <file.yaml>]`,
+      `${parsed.message}\n\nusage: marrow build <file> [-o <out>] [--single] [--chrome minimal|full] [--packs <dir>] [--config <file.yaml>]`,
     );
     return 2;
   }
@@ -237,7 +236,6 @@ async function cmdBuild(rest: string[]): Promise<number> {
       icons: packs.catalog,
       ...globalConfig(values.config),
       ...(values.single ? { shape: 'single' as const } : {}),
-      ...(values.embed ? { embed: true } : {}),
       ...(values.chrome === 'minimal' || values.chrome === 'full' ? { chrome: values.chrome } : {}),
     });
     if (builder.plan.mode === 'site') {

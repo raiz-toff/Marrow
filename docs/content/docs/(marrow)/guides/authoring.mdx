@@ -307,8 +307,10 @@ The repository includes four reference topologies located in `input/` that illus
 
 - **`input/branch-hq.yaml`**: Multi-vendor branch discovery lab featuring Cisco CDP and multi-vendor LLDP zones, routed backbones, and custom BGP inspection tables.
 - **`input/feature-showcase.v2.yaml`**: Full schema showcase demonstrating tiers, zones, status LEDs, LAG bundles, VLAN chips, hero highlighting, port chips, custom fields, sections, density presets (`density: spacious`), and scaling (`scale: 1.15`).
-- **`input/global-enterprise.yaml`**: Large-scale enterprise fabric containing over 15,000 simulated devices, 194 locations, EVPN/VXLAN data centers, cloud on-ramps, and multi-tier zone nesting.
 - **`input/multivendor_discovery.v2.yaml`**: Discovery lab generated from multi-vendor switch and router neighbors across Cisco and open network devices.
+- **`input/zoned-hierarchy.yaml`**: Core → distribution → access tiers inside clustered zones, with spline edge routing.
+
+`input/global-enterprise.yaml` (15,000+ devices) is a local stress-test file that is not in the repository; the compile size cap (5,000 devices) refuses it anyway.
 
 Test, inspect, and compile these reference topologies using the command line:
 

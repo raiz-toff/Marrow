@@ -2,7 +2,7 @@
  *  camera controls and the mobile bottom bar. */
 import { ATTR, BUILTIN_TABS, hookAttr, type BuiltinTab } from '@marrow/runtime';
 import type { ChromeOptions } from '../chrome.js';
-import { esc } from '../html.js';
+import { escapeHtml as esc } from '@marrow/visual';
 import { brandFoot, brandLogo, brandName } from './brand-mark.js';
 import { I } from './icons.js';
 

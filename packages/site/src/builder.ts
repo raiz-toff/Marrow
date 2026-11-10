@@ -29,9 +29,9 @@ import { buildStylesheet, SITE_CSS } from './styles.js';
 import type { ThemeConfig } from './tokens.js';
 
 /** SVG carries pages to this many rendered nodes; canvas takes over above. */
-export const SVG_NODE_LIMIT = 250;
+const SVG_NODE_LIMIT = 250;
 /** No single page may exceed this many rendered nodes — the planner splits instead. */
-export const PAGE_NODE_LIMIT = 1200;
+const PAGE_NODE_LIMIT = 1200;
 
 /**
  * Size caps for one compile. Above either, `createSiteBuilder` refuses the
@@ -140,7 +140,6 @@ export interface BuildOptions {
   themeConfig?: ThemeConfig;
   /** Embed / kiosk modularity: 'minimal' hides topbar & dock, 'full' preserves all chrome. */
   chrome?: 'full' | 'minimal';
-  embed?: boolean;
   /** Chrome layout archetype: locked to 'spacious'. */
   chromeLayout?: 'spacious';
 }
@@ -438,12 +437,11 @@ function withDefaults(t: Topology, defaults: LayoutDefaults | undefined): Topolo
 }
 
 /** Chrome options shared by every page of a build. */
-function chromeOptions(options: BuildOptions): Pick<ChromeOptions, 'brand' | 'themeConfig' | 'chrome' | 'embed' | 'layout'> {
+function chromeOptions(options: BuildOptions): Pick<ChromeOptions, 'brand' | 'themeConfig' | 'chrome' | 'layout'> {
   return {
     ...(options.brand !== undefined ? { brand: options.brand } : {}),
     ...(options.themeConfig !== undefined ? { themeConfig: options.themeConfig } : {}),
     ...(options.chrome !== undefined ? { chrome: options.chrome } : {}),
-    ...(options.embed !== undefined ? { embed: options.embed } : {}),
     ...(options.chromeLayout !== undefined ? { layout: options.chromeLayout } : {}),
   };
 }

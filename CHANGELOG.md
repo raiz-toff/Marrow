@@ -19,8 +19,6 @@ All notable changes to this project are documented here. The format is based on
 - Optional `brand.link` and `brand.github` render the brand mark as a hyperlink
   and add a source-repo mark. Both are http(s)-only navigation links, never
   resource loads, so diagrams still render fully offline.
-- `npm run icons:pack` to build an icon-pack manifest from a directory of SVGs,
-  so proprietary/company artwork can be used as first-class icons.
 - Inspector link cards now show a **miniature of the link as the canvas draws
   it** — stroke width from speed, colour and dash from status, plus the flow
   animation — next to the media type, speed, and LAG text.
@@ -51,6 +49,18 @@ All notable changes to this project are documented here. The format is based on
   manifest is retained, so topologies referencing Cisco icons still validate;
   supply your own SVGs under `icon-packs/cisco/svg/` to render them. See
   [icon-packs/LICENSES.md](icon-packs/LICENSES.md).
+- **`marrow build --embed`.** Use `--chrome minimal`, or open any compiled page
+  with `?chrome=minimal`. The docs embed the regular demo pages that way.
+- The `gen:icons`, `docs:dev` and `docs:lan` npm scripts (use `icons:index` and
+  `docs`).
+- The `dual-colo-enterprise`, `dual-colo-showcase` and `homelab` sample inputs.
+  `input/global-enterprise.yaml` (12 MB, over the compile size cap) is no
+  longer in the repository.
+
+### Fixed
+- `/schema.json` on the docs site is valid JSON again and lists every root key;
+  a test keeps it identical to `marrow schema`.
+- The dev server's error page now escapes `"` in diagnostic text.
 
 ### Known issues
 - Degraded and planned links render as **solid** lines on the canvas instead of

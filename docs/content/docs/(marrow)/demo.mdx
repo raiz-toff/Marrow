@@ -14,22 +14,22 @@ Marrow produces deterministic layouts based on semantic network structure rather
 ### 1. Tiered Hierarchical Core
 - **Engine Strategy**: Structured rank separation with core, distribution, and access tiers aligned horizontally.
 - **HA Link Bundles**: Redundant pairs are aligned as adjacent partner nodes with virtual inter-chassis links (StackWise-Virtual, vPC, MLAG).
-- **Preset**: Tiered Campus Core (`/demo/tiered-embed.html`)
+- **Preset**: Tiered Campus Core (`/demo/tiered.html?chrome=minimal`)
 
 ### 2. Multi-Zone Datacenter
 - **Engine Strategy**: Logical security and management boundaries partitioned into styled perimeter cards (DMZ, App Tier, Storage Fabric).
 - **Cross-Zone Routing**: Inter-zone firewalls and spine switches route traffic across border interfaces.
-- **Preset**: Multi-Zone Datacenter (`/demo/zoned-embed.html`)
+- **Preset**: Multi-Zone Datacenter (`/demo/zoned.html?chrome=minimal`)
 
 ### 3. Radial WAN Hub-and-Spoke
 - **Engine Strategy**: Radial coordinate calculation placing central redundant core routers in the nucleus with remote spokes distributed evenly along an orbital perimeter.
 - **Overlay Semantics**: Visualizes encrypted IPsec / DMVPN tunnels as animated dashed lines with cryptographic telemetry chips.
-- **Preset**: Hub & Spoke Fabric (`/demo/hub-spoke-embed.html`)
+- **Preset**: Hub & Spoke Fabric (`/demo/hub-spoke.html?chrome=minimal`)
 
 ### 4. High-Density Scale Fabric
 - **Engine Strategy**: Canvas LOD (Level-of-Detail) rendering designed for topologies exceeding 300+ devices.
 - **Performance**: High frame rate panning with radar minimap culling and instantaneous sub-millisecond node search.
-- **Preset**: Scale Test (`/demo/scale-embed.html`)
+- **Preset**: Scale Test (`/demo/scale.html?chrome=minimal`)
 
 ---
 
@@ -52,7 +52,7 @@ import { MarrowEmbed } from '@marrow/ui';
 export function NetworkDashboard() {
   return (
     <MarrowEmbed
-      src="/demo/tiered-embed.html"
+      src="/demo/tiered.html?chrome=minimal"
       chrome="minimal"
       inspector="on"
       minimap="on"
@@ -70,7 +70,7 @@ You can embed any compiled Marrow HTML file using a standard `<iframe>` and cont
 
 ```html
 <iframe
-  src="/demo/tiered-embed.html#chrome=minimal;inspector=on;minimap=on"
+  src="/demo/tiered.html#chrome=minimal;inspector=on;minimap=on"
   width="100%"
   height="600"
   style="border: 1px solid var(--fd-border); border-radius: 1rem;"

@@ -15,6 +15,7 @@
     "@marrow/diagnostics": "0.0.1",
     "@marrow/icons": "0.0.1",
     "@marrow/schema": "0.0.1",
-    "@marrow/site": "0.0.1"
+    "@marrow/site": "0.0.1",
+    "@marrow/visual": "0.0.1"
   }
 }

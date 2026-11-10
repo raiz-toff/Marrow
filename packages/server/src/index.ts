@@ -5,6 +5,7 @@ import { toJsonReport, type Diagnostic } from '@marrow/diagnostics';
 import type { IconCatalog } from '@marrow/icons';
 import { validateSource } from '@marrow/schema';
 import { createSiteBuilder, type BuildOptions, type SiteBuilder, type SiteCache } from '@marrow/site';
+import { escapeHtml } from '@marrow/visual';
 import { LIVE_CLIENT } from './inject.js';
 
 export { LIVE_CLIENT } from './inject.js';
@@ -434,6 +435,3 @@ code{color:#e5484d}em{color:#8a93a6;font-style:normal}li{margin-bottom:10px}pre{
 <p>Fix the YAML and this page will update itself.</p>${LIVE_CLIENT}</body></html>`;
 }
 
-function escapeHtml(s: string): string {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}

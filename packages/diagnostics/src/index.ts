@@ -1,7 +1,4 @@
 export {
-  DIAGNOSTIC_CODES,
-  severityOf,
-  titleOf,
   type DiagnosticCode,
   type Severity,
 } from './codes.js';

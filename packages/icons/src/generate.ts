@@ -14,7 +14,7 @@ export function kebab(input: string): string {
     .replace(/^-|-$/g, '');
 }
 
-export function titleize(fileBase: string): string {
+function titleize(fileBase: string): string {
   return fileBase
     .replace(/[_-]+/g, ' ')
     .replace(/\s+/g, ' ')

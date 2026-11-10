@@ -1,16 +1,15 @@
-import { byId, compareIds, type Device, type DeviceStatus, type Link, type LinkStatus, type Tier, type Topology } from '@marrow/model';
+import { byId, compareIds, TIER_RANK, worseStatus, type Device, type DeviceStatus, type Link, type LinkStatus, type Tier, type Topology } from '@marrow/model';
 import type { NodeMeta } from '@marrow/layout';
 import { extractSvg } from '@marrow/render-svg';
 import { ATTR, hookAttr, type InventoryView } from '@marrow/runtime';
-import { esc } from './html.js';
+import { cssSafe, escapeHtml as esc } from '@marrow/visual';
+import { modalIcon } from './collapse.js';
 import type { SitePlan } from './planner.js';
 
 /** Sub-topology builders for the multi-page site. All ids stay real device
  *  ids so deep links (`#d=`) work identically on every page. */
 
-const STATUS_RANK: Record<DeviceStatus, number> = { down: 0, degraded: 1, planned: 2, unknown: 3, up: 4 };
 const RANK_TIER: Record<number, Tier> = { 0: 'edge', 1: 'core', 2: 'distribution', 3: 'access', 4: 'endpoint' };
-const TIER_RANK: Record<string, number> = { edge: 0, core: 1, distribution: 2, access: 3, endpoint: 4, management: 4 };
 
 export interface PageTopo {
   topology: Topology;
@@ -79,12 +78,10 @@ export function overviewTopology(t: Topology, plan: SitePlan, zi: ZoneIndex): Pa
   const zoneMeta = new Map(t.zones.map((z) => [z.id, z]));
   const devices: Device[] = plan.zonePages.map((page) => {
     const members = t.devices.filter((d) => zi.topZoneOf.get(d.id) === page.zoneId);
-    const worst = members.reduce<DeviceStatus>(
-      (acc, m) => (STATUS_RANK[m.status] < STATUS_RANK[acc] ? m.status : acc),
-      'up',
-    );
+    const worst = members.reduce<DeviceStatus>((acc, m) => worseStatus(acc, m.status), 'up');
     const minRank = Math.min(...members.map((m) => (m.tier !== undefined ? (TIER_RANK[m.tier] ?? 4) : 4)));
-    const icon = representativeIcon(members);
+    const infra = members.filter((m) => m.tier === 'core' || m.tier === 'distribution' || m.tier === 'edge');
+    const icon = modalIcon(infra.length > 0 ? infra : members);
     const meta = zoneMeta.get(page.zoneId);
     nodeMeta.set(page.zoneId, { href: `zones/${page.zoneId}.html`, badge: String(members.length) });
     const device: Device = {
@@ -111,7 +108,7 @@ export function overviewTopology(t: Topology, plan: SitePlan, zi: ZoneIndex): Pa
     if (existing) {
       existing.count++;
       existing.animated ||= l.animated;
-      if (STATUS_RANK[l.status] < STATUS_RANK[existing.worst]) existing.worst = l.status;
+      existing.worst = worseStatus(existing.worst, l.status);
     } else {
       aggregates.set(key, {
         link: { id: `${key}#trunk`, from: { device: x! }, to: { device: y! }, status: l.status, animated: l.animated },
@@ -295,7 +292,6 @@ export function inventoryBody(
 
   // subset sprite of the icons this inventory actually uses, referenced per
   // row via <use> — one copy per icon, not one per device
-  const cssSafe = (v: string): string => v.toLowerCase().replace(/[^a-z0-9-]/g, '-');
   const symbols: string[] = [];
   const symbolOf = new Map<string, string>();
   if (iconSvg) {
@@ -411,12 +407,4 @@ export function inventoryBody(
   ${view('zones', ' m-inv-cols')}>${colHtml}</div>
   ${view('all')} hidden>${flatTable()}${pager('Pagination')}</div>
 </div>`;
-}
-
-function representativeIcon(members: readonly Device[]): string {
-  const infra = members.filter((m) => m.tier === 'core' || m.tier === 'distribution' || m.tier === 'edge');
-  const pool = infra.length > 0 ? infra : members;
-  const counts = new Map<string, number>();
-  for (const m of pool) counts.set(m.icon, (counts.get(m.icon) ?? 0) + 1);
-  return [...counts.entries()].sort((a, b) => b[1] - a[1] || compareIds(a[0], b[0]))[0]?.[0] ?? 'cisco/misc/generic';
 }

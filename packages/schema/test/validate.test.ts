@@ -1,7 +1,9 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
-import { validateSource } from '@marrow/schema';
+import { topologyJsonSchema, validateSource } from '@marrow/schema';
 import type { Diagnostic } from '@marrow/diagnostics';
-import { ciscoCatalog, fixtureSource } from './helpers.js';
+import { ciscoCatalog, fixtureSource, repoRoot } from './helpers.js';
 
 function run(rel: string) {
   return validateSource(fixtureSource(rel), { icons: ciscoCatalog() });
@@ -190,4 +192,10 @@ describe('logical link semantics', () => {
     const cs = codes(withLink('{ from: a, to: b, mdoe: trunk }').diagnostics);
     expect(cs).toContain('MRW-E005');
   });
+});
+
+test('docs/public/schema.json is the current `marrow schema` output', () => {
+  // regenerate: node packages/cli/dist/index.js schema > docs/public/schema.json
+  const published = readFileSync(join(repoRoot, 'docs', 'public', 'schema.json'), 'utf8');
+  expect(published).toBe(`${JSON.stringify(topologyJsonSchema(), null, 2)}\n`);
 });

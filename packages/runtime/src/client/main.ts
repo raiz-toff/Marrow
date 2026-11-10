@@ -1,5 +1,5 @@
 import { Camera } from './camera.js';
-import { edgeClasses, linkSemanticsWords } from '@marrow/visual';
+import { cssSafe, edgeClasses, escapeHtml as html, linkSemanticsWords } from '@marrow/visual';
 import { CanvasEngine } from './canvas-engine.js';
 import { devicePageIds, globalSearchDocs, loadData, type DataDevice, type DataLink, type DataTitleBlock, type EmbeddedData } from './data.js';
 import {
@@ -646,7 +646,7 @@ function refreshInspector(): void {
   }
 }
 
-export function registerYamlTabs(data: EmbeddedData): void {
+function registerYamlTabs(data: EmbeddedData): void {
   if (!data.inspector?.tabs) return;
   for (const tab of data.inspector.tabs) {
     customTabsRegistry.set(tab.id, {
@@ -702,7 +702,7 @@ export function registerYamlTabs(data: EmbeddedData): void {
   }
 }
 
-export function exposePublicApi(ctx?: Ctx): void {
+function exposePublicApi(ctx?: Ctx): void {
   if (ctx) activeCtx = ctx;
   (window as any).marrow = {
     inspector: {
@@ -743,7 +743,7 @@ export function exposePublicApi(ctx?: Ctx): void {
   };
 }
 
-export function selectDevice(ctx: Ctx, id: string, fly = true): void {
+function selectDevice(ctx: Ctx, id: string, fly = true): void {
   activeCtx = ctx;
   const device = ctx.deviceById.get(id);
   if (!device || !hasNode(ctx, id)) return;
@@ -788,7 +788,7 @@ function deselect(ctx?: Ctx): void {
   emitEvent('deselect');
 }
 
-export function selectLink(ctx: Ctx, link: DataLink, fly = true): void {
+function selectLink(ctx: Ctx, link: DataLink, fly = true): void {
   activeCtx = ctx;
   currentInspectedItem = { type: 'edge', item: link };
   clearFocus(ctx);
@@ -3082,10 +3082,6 @@ function syncHash(ctx: Ctx): void {
 
 // ─── utils ──────────────────────────────────────────────────────────────────
 
-function html(s: string): string {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-
 /**
  * A miniature of the link exactly as the diagram draws it.
  *
@@ -3096,10 +3092,6 @@ function html(s: string): string {
  */
 function linkSwatch(l: DataLink): string {
   return `<svg class="m-swatch" viewBox="0 0 56 10" aria-hidden="true"><path class="${edgeClasses(l)}" d="M1 5H55"/></svg>`;
-}
-
-function cssSafe(s: string): string {
-  return s.toLowerCase().replace(/[^a-z0-9-]/g, '-');
 }
 
 function isTyping(): boolean {

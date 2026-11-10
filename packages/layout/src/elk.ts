@@ -1,7 +1,7 @@
 import ELKRaw from 'elkjs/lib/elk.bundled.js';
-import { byId, type Topology } from '@marrow/model';
+import { byId, TIER_RANK, type Topology } from '@marrow/model';
 import type { Rect, Vec } from '@marrow/scene';
-import { TIER_RANK, type Archetype } from './classify.js';
+import type { Archetype } from './classify.js';
 import type { NodeSizing } from './size.js';
 
 /** Minimal structural typing of the elkjs surface we use. */

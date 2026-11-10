@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Vercel Ignored Build Step Script
-# Exit 0: Skip build (no docs/registry/ui changes detected)
+# Exit 0: Skip build (no docs/registry/toolchain changes detected)
 # Exit 1: Proceed with build
 
 BASE_SHA=""
@@ -46,14 +46,15 @@ echo "Inspecting changes between $BASE_SHA and HEAD..."
 if git diff --quiet "$BASE_SHA" HEAD -- \
   docs/ \
   registry.json \
-  packages/ui/ \
+  packages/ \
+  icon-packs/ \
   scripts/build-registry.mjs \
   scripts/vercel-ignore.sh \
   vercel.json \
   .vercelignore \
   package.json \
   package-lock.json; then
-  echo "🛑 No changes in docs, registry, packages/ui, or build config. Skipping Vercel deployment."
+  echo "🛑 No changes in docs, registry, packages, icon packs, or build config. Skipping Vercel deployment."
   exit 0
 else
   echo "✅ Changes detected in docs-related paths. Proceeding with Vercel build."

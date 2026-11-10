@@ -7,7 +7,7 @@ Marrow compiles declarative network topology YAML (`input/*.yaml`) into self-con
 | Mode | Trigger | Context to Load | Invariant / Boundary |
 | :--- | :--- | :--- | :--- |
 | **Mode 1: Network Diagrams** | Creating, importing, or editing network topologies | Load `.agents/skills/marrow-topology/SKILL.md` | Author in `input/`. Run `validate` & `snapshot`. **Do NOT read `packages/` source code.** |
-| **Mode 2: Compiler Coding** | Modifying Marrow's TypeScript compiler or packages | Read `docs/content/6.contributing/3.packages.md` & `2.architecture.md` | Modify `packages/`. Run `npm test` & `compile`. **Do NOT load `marrow-topology`.** |
+| **Mode 2: Compiler Coding** | Modifying Marrow's TypeScript compiler or packages | Read `docs/content/docs/(marrow)/contributing/packages.mdx` & `architecture.mdx` | Modify `packages/`. Run `npm test` & `compile`. **Do NOT load `marrow-topology`.** |
 | **Mode 3: Writing Docs / ADRs** | Writing technical docs, ADRs, or runbooks | Load `.agents/skills/technical-documentation/SKILL.md` | Follow Diátaxis framework standards. Use Nygard format for ADRs. |
 
 ## Quick Command Reference

@@ -1,11 +1,10 @@
 #!/usr/bin/env node
 /**
  * Compile docs/demos/*.yaml into docs/public/demo/*.html — the diagrams embedded
- * on the landing page.
+ * on the landing page. Embeds load the same file with `?chrome=minimal`.
  *
- * The outputs are committed. Marrow builds are deterministic, so the diff stays
- * empty unless a demo actually changed, and the docs site can be built on a host
- * that has no compiled toolchain (Vercel installs docs/ only).
+ * The outputs are generated, not committed: `npm run docs:build` runs this
+ * before the Next.js build, so the toolchain must be compiled first.
  *
  * Run from the repo root:  npm run demos
  */
@@ -30,12 +29,10 @@ if (demos.length === 0) {
 for (const file of demos) {
   const src = join(docs, 'demos', file);
   const dest = join(out, file.replace(/\.yaml$/, '.html'));
-  const destEmbed = join(out, file.replace(/\.yaml$/, '-embed.html'));
 
   // never ship a demo that does not validate
   execFileSync('node', [cli, 'validate', src], { stdio: 'inherit' });
   execFileSync('node', [cli, 'build', src, '--single', '-o', dest], { stdio: 'inherit' });
-  execFileSync('node', [cli, 'build', src, '--single', '--embed', '-o', destEmbed], { stdio: 'inherit' });
 }
 
-console.log(`\n${demos.length} demo diagram(s) (full and embed) written to docs/public/demo/`);
+console.log(`\n${demos.length} demo diagram(s) written to docs/public/demo/`);

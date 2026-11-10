@@ -55,7 +55,7 @@ export async function routeEdges(
 ): Promise<Map<string, Vec[]>> {
   const out = await routePass(nodeBoxes, edges, style === 'polyline', style);
   if (style === 'polyline') return out; // straight segments are legitimate here
-  // L2 auto-repair: when directional pins make a connector infeasible (tight
+  // Repair: when directional pins make a connector infeasible (tight
   // corridors), libavoid silently falls back to a straight centre line —
   // detect the diagonal and re-route those edges with open pin visibility.
   const failed = edges.filter((e) => {

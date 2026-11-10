@@ -120,7 +120,7 @@ function tokenize(query: string): string[] {
 }
 
 /** Load one pack directory (must contain manifest.json). Throws naming the file. */
-export function loadPack(packDir: string): IconPackManifest {
+function loadPack(packDir: string): IconPackManifest {
   const manifestPath = join(packDir, 'manifest.json');
   let raw: unknown;
   try {

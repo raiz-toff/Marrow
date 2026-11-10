@@ -4,7 +4,7 @@ export type Severity = 'error' | 'warning' | 'info';
  * The stable diagnostic code registry. Codes are part of the public contract:
  * agents and tests key off them, so codes are never renumbered or reused.
  */
-export const DIAGNOSTIC_CODES = {
+const DIAGNOSTIC_CODES = {
   'MRW-E001': 'YAML syntax error',
   'MRW-E002': 'Document root must be a mapping',
   'MRW-E003': 'Missing marrow version',
@@ -36,8 +36,4 @@ export type DiagnosticCode = keyof typeof DIAGNOSTIC_CODES;
 
 export function severityOf(code: DiagnosticCode): Severity {
   return code.startsWith('MRW-E') ? 'error' : 'warning';
-}
-
-export function titleOf(code: DiagnosticCode): string {
-  return DIAGNOSTIC_CODES[code];
 }

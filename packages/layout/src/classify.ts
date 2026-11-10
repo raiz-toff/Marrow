@@ -12,16 +12,6 @@ import { compareIds, type Topology } from '@marrow/model';
  */
 export type Archetype = 'zoned' | 'tiered' | 'ring' | 'hub-spoke' | 'mesh' | 'flat';
 
-/** Visual rank per tier: smaller = higher on the page. */
-export const TIER_RANK: Record<string, number> = {
-  edge: 0,
-  core: 1,
-  distribution: 2,
-  access: 3,
-  endpoint: 4,
-  management: 4,
-};
-
 export function classify(t: Topology): Archetype {
   const n = t.devices.length;
   if (n === 0) return 'flat';

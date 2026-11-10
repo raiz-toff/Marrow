@@ -15,7 +15,7 @@ git clone https://github.com/raiz-toff/Marrow.git
 cd Marrow
 npm install
 npm run compile
-npm test          # 244 tests should pass
+npm test          # the whole suite should pass
 ```
 
 The aws/azure/gcp icon packs are fetched on demand and are **not** required to
@@ -92,7 +92,7 @@ This site is the canonical documentation and lives in `docs/`:
 
 ```bash
 npm run docs           # dev server
-npm run docs:build     # production build + Pagefind search index
+npm run docs:build     # production build (compiles the demo diagrams first)
 ```
 
 If you change the schema, the CLI surface, or the diagnostic registry, update

@@ -144,7 +144,7 @@ export const MENUS = ['view', 'export', 'help'] as const;
 export type Menu = (typeof MENUS)[number];
 
 /** Inventory views (`data-tab` on `inventory.tab`, `data-view` on `inventory.view`). */
-export const INVENTORY_VIEWS = ['zones', 'all'] as const;
+const INVENTORY_VIEWS = ['zones', 'all'] as const;
 export type InventoryView = (typeof INVENTORY_VIEWS)[number];
 
 /** Parameters the chrome writes on hooked elements and the runtime reads. */

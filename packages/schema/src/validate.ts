@@ -615,7 +615,7 @@ function firstLine(text: string): string {
 }
 
 /** Thrown when a YAML alias makes the document contain itself. */
-export class CircularDocumentError extends Error {
+class CircularDocumentError extends Error {
   constructor() {
     super('circular document');
     this.name = 'CircularDocumentError';
@@ -629,7 +629,7 @@ export class CircularDocumentError extends Error {
  * `__proto__` become ordinary own properties (which Zod's strict mode then
  * rejects as unknown keys) instead of silently rewriting the prototype.
  */
-export function stripAnnotations(value: unknown): unknown {
+function stripAnnotations(value: unknown): unknown {
   return strip(value, new WeakSet());
 }
 

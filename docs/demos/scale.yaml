@@ -7919,7 +7919,7 @@ devices:
       - { name: "ser0", description: "RS-232 local config port" }
   - id: dc1-crac-01
     name: "Vertiv Liebert DSE — CRAC 1"
-    icon: azure/other/defender-freezer-monitor
+    icon: cisco/design/sensor
     tier: endpoint
     zone: dc1-facilities
     note: "Supply air 18C; economizer active; BMS-monitored, N+1 group."
@@ -7929,7 +7929,7 @@ devices:
       - { name: "modbus0", description: "Modbus/BACnet to BMS head-end" }
   - id: dc1-crac-02
     name: "Vertiv Liebert DSE — CRAC 2"
-    icon: azure/other/defender-freezer-monitor
+    icon: cisco/design/sensor
     tier: endpoint
     zone: dc1-facilities
     note: "Supply air 20C; economizer active; BMS-monitored, N+1 group."
@@ -7939,7 +7939,7 @@ devices:
       - { name: "modbus0", description: "Modbus/BACnet to BMS head-end" }
   - id: dc1-crac-03
     name: "Vertiv Liebert DSE — CRAC 3"
-    icon: azure/other/defender-freezer-monitor
+    icon: cisco/design/sensor
     tier: endpoint
     zone: dc1-facilities
     note: "Supply air 18C; economizer active; BMS-monitored, N+1 group."
@@ -7949,7 +7949,7 @@ devices:
       - { name: "modbus0", description: "Modbus/BACnet to BMS head-end" }
   - id: dc1-crac-04
     name: "Vertiv Liebert DSE — CRAC 4"
-    icon: azure/other/defender-freezer-monitor
+    icon: cisco/design/sensor
     tier: endpoint
     zone: dc1-facilities
     note: "Supply air 20C; economizer idle; BMS-monitored, N+1 group."

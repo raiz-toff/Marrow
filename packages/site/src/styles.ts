@@ -57,9 +57,6 @@ kbd {
 
 /* thin themed scrollbars (shadcn ScrollArea feel) */
 * { scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
-*::-webkit-scrollbar { width: 8px; height: 8px; }
-*::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 999px; }
-*::-webkit-scrollbar-track { background: transparent; }
 
 /* ── shell root & island: Fumadocs Spacious Master Island Architecture ── */
 :root {
@@ -212,11 +209,6 @@ ${visualCss()}
 }
 .m-sidebar-btn, .m-theme-btn {
   width: 32px; height: 32px; padding: 0;
-}
-.m-stats-chip {
-  font-size: 12px; color: var(--ink-dim);
-  background: var(--bg-raise); padding: 4px 8px;
-  border-radius: var(--radius-xs, 4px); border: 1px solid var(--line);
 }
 .m-mob-only { display: none !important; }
 
@@ -381,12 +373,6 @@ html[data-theme="dark"] .m-theme-btn.m-desk-only:hover .m-theme-sun {
   width: var(--sidebar-width) !important;
   opacity: 1;
   pointer-events: auto;
-}
-.m-sidebar-header {
-  height: var(--topbar-height);
-  padding: 0 16px; border-bottom: 1px solid var(--line);
-  display: flex; align-items: center; justify-content: space-between;
-  box-sizing: border-box; flex-shrink: 0;
 }
 .m-sidebar-close { border: none; padding: 4px; }
 
@@ -597,11 +583,6 @@ a.m-side-row.active i, a.m-side-row.active em { color: var(--sidebar-fg); }
 .m-side-static { cursor: default; }
 .m-side-static span { color: color-mix(in srgb, var(--sidebar-fg) 65%, transparent); font-weight: 400; }
 .m-side-static em { color: var(--sidebar-fg); font-weight: 500; }
-.m-side-actions { display: flex; flex-direction: column; gap: 6px; }
-.m-side-actions .m-btn { width: 100%; }
-.m-about { font-size: 12px; display: grid; gap: 2px; }
-.m-about dt { color: var(--ink-faint); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; margin-top: 7px; }
-.m-about dd { color: var(--ink); }
 
 /* view settings applied via root data attributes */
 :root[data-labels="off"] .m-label { opacity: 0 !important; }
@@ -627,7 +608,6 @@ a.m-side-row.active i, a.m-side-row.active em { color: var(--sidebar-fg); }
 }
 .m-btn:hover { background: var(--bg-raise); border-color: var(--line-strong); }
 .m-btn:active { background: color-mix(in srgb, var(--ink) 10%, transparent); }
-.m-kbd { color: var(--ink-faint); font-size: 11px; border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; margin-left: 6px; }
 
 /* ── minimap ── */
 .m-minimap {
@@ -1144,9 +1124,6 @@ a.m-side-row.active i, a.m-side-row.active em { color: var(--sidebar-fg); }
 .m-mobile-bar {
   display: none;
 }
-.m-pane-empty {
-  padding: 24px 16px; text-align: center; color: var(--ink-dim); font-size: 13px; font-style: italic;
-}
 .m-inspector-close {
   width: 28px; height: 28px; border-radius: var(--radius-sm); background: none; border: 0;
   color: var(--ink-dim); cursor: pointer; display: grid; place-items: center;
@@ -1369,24 +1346,6 @@ a.m-side-row.active i, a.m-side-row.active em { color: var(--sidebar-fg); }
 .m-ha-chip:hover {
   background: color-mix(in srgb, var(--m-accent) 18%, var(--bg-raise));
   border-color: var(--m-accent);
-}
-.m-link-flow {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font: 500 12px/1 ui-monospace, monospace;
-}
-.m-port-badge {
-  display: inline-block;
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: var(--bg-raise);
-  border: 1px solid var(--line);
-  color: var(--ink);
-  font: 500 11px/1.2 ui-monospace, monospace;
-}
-.m-flow-arrow {
-  color: var(--ink-dim);
 }
 
 /* Search Canvas Real-time Interaction */

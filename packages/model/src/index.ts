@@ -56,6 +56,24 @@ export const WATERMARK_FONTS: readonly WatermarkFont[] = ['mono', 'sans'];
 export const TIERS: readonly Tier[] = ['core', 'distribution', 'access', 'edge', 'endpoint', 'management'];
 export const DEVICE_STATUSES: readonly DeviceStatus[] = ['up', 'down', 'degraded', 'planned', 'unknown'];
 export const LINK_STATUSES: readonly LinkStatus[] = ['up', 'down', 'degraded', 'planned'];
+
+/** Vertical rank per tier: smaller = higher on the page. */
+export const TIER_RANK: Readonly<Record<string, number>> = {
+  edge: 0,
+  core: 1,
+  distribution: 2,
+  access: 3,
+  endpoint: 4,
+  management: 4,
+};
+
+/** Status severity, worst first: `down` 0 … `up` 4. */
+export const STATUS_SEVERITY: Readonly<Record<DeviceStatus, number>> = { down: 0, degraded: 1, planned: 2, unknown: 3, up: 4 };
+
+/** The more severe of two statuses (`a` on a tie). */
+export function worseStatus<S extends DeviceStatus>(a: S, b: S): S {
+  return STATUS_SEVERITY[b] < STATUS_SEVERITY[a] ? b : a;
+}
 export const LINK_KINDS: readonly LinkKind[] = ['copper', 'fiber', 'dac', 'wireless', 'virtual', 'wan', 'serial'];
 export const LINK_SPEEDS: readonly LinkSpeed[] = ['10M', '100M', '1G', '2.5G', '5G', '10G', '25G', '40G', '100G', '400G'];
 export const LINK_MODES: readonly LinkMode[] = ['access', 'trunk', 'routed', 'tunnel', 'peering', 'stack'];
@@ -185,47 +203,6 @@ export interface Topology {
   zones: Zone[];
   devices: Device[];
   links: Link[];
-}
-
-export interface TopologyIndex {
-  deviceById: ReadonlyMap<string, Device>;
-  zoneById: ReadonlyMap<string, Zone>;
-  linksByDevice: ReadonlyMap<string, readonly Link[]>;
-  devicesByZone: ReadonlyMap<string, readonly Device[]>;
-}
-
-export function indexTopology(t: Topology): TopologyIndex {
-  const deviceById = new Map<string, Device>();
-  for (const d of t.devices) deviceById.set(d.id, d);
-  const zoneById = new Map<string, Zone>();
-  for (const z of t.zones) zoneById.set(z.id, z);
-  const linksByDevice = new Map<string, Link[]>();
-  for (const l of t.links) {
-    for (const id of [l.from.device, l.to.device]) {
-      const arr = linksByDevice.get(id);
-      if (arr) arr.push(l);
-      else linksByDevice.set(id, [l]);
-    }
-  }
-  const devicesByZone = new Map<string, Device[]>();
-  for (const d of t.devices) {
-    if (!d.zone) continue;
-    const arr = devicesByZone.get(d.zone);
-    if (arr) arr.push(d);
-    else devicesByZone.set(d.zone, [d]);
-  }
-  return { deviceById, zoneById, linksByDevice, devicesByZone };
-}
-
-/** Distinct neighbor device ids, in first-link order. */
-export function neighborsOf(idx: TopologyIndex, deviceId: string): string[] {
-  const links = idx.linksByDevice.get(deviceId) ?? [];
-  const seen = new Set<string>();
-  for (const l of links) {
-    const other = l.from.device === deviceId ? l.to.device : l.from.device;
-    if (other !== deviceId) seen.add(other);
-  }
-  return [...seen];
 }
 
 /**

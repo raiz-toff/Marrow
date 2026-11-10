@@ -22,7 +22,7 @@ export interface IconPackManifest {
   icons: IconEntry[];
 }
 
-export const ICON_ID_PATTERN = /^[a-z0-9-]+(\/[a-z0-9-]+){1,3}$/;
+const ICON_ID_PATTERN = /^[a-z0-9-]+(\/[a-z0-9-]+){1,3}$/;
 
 /** Structural check for a loaded manifest.json; throws with a plain message. */
 export function assertManifest(value: unknown, source: string): IconPackManifest {

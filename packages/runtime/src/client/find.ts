@@ -18,7 +18,7 @@ interface TagElements {
 /** The element type a hook resolves to. */
 export type El<K extends HookId> = TagElements[(typeof HOOKS)[K]['tag']];
 
-export class HookError extends Error {
+class HookError extends Error {
   constructor(
     readonly kind: 'missing' | 'duplicate' | 'wrong-element',
     readonly hook: HookId,

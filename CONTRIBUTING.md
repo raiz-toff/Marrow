@@ -11,7 +11,7 @@ git clone https://github.com/raiz-toff/Marrow.git
 cd Marrow
 npm install
 npm run compile
-npm test          # 244 tests should pass
+npm test          # the whole suite should pass
 ```
 
 Optional icon packs (aws/azure/gcp) are fetched from the vendors on demand and
@@ -24,9 +24,9 @@ npm run marrow -- icons fetch --yes
 ## Development loop
 
 The design of Marrow is documented on the docs site, which lives in this repo:
-[architecture](docs/content/6.contributing/2.architecture.md),
-[package map](docs/content/6.contributing/3.packages.md), and
-[testing](docs/content/6.contributing/4.testing.md). The agent operating guide is
+[architecture](docs/content/docs/(marrow)/contributing/architecture.mdx),
+[package map](docs/content/docs/(marrow)/contributing/packages.mdx), and
+[testing](docs/content/docs/(marrow)/contributing/testing.mdx). The agent operating guide is
 [AGENTS.md](AGENTS.md). In short:
 
 1. Make your change in the relevant `packages/*` module.
@@ -68,11 +68,11 @@ The docs site is the canonical reference and lives in [`docs/`](docs/):
 
 ```bash
 npm run docs           # dev server
-npm run docs:build     # static build → docs/.output/public
+npm run docs:build     # production build (compiles the demo diagrams first)
 ```
 
 If you change the schema, the CLI surface, or the diagnostic registry, update
-`docs/content/4.reference/` in the same PR. Root files (`README.md`,
+`docs/content/docs/(marrow)/reference/` in the same PR. Root files (`README.md`,
 `AGENTS.md`, `packages/README.md`) deliberately point at the site rather than
 restating it — keep it that way.
 

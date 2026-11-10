@@ -1,6 +1,6 @@
 import { truncateToWidth } from '@marrow/metrics';
 import type { Scene, SceneEdge, SceneNode, ScenePortChip, SceneZone } from '@marrow/scene';
-import { linkPresentation, resolveScene, type EdgePaint, type NodePaint } from '@marrow/visual';
+import { cssSafe, escapeHtml as esc, linkPresentation, resolveScene, type EdgePaint, type NodePaint } from '@marrow/visual';
 
 /**
  * @marrow/render-svg — the "lush tier" renderer: Scene → classed, data-attributed
@@ -349,13 +349,5 @@ export function extractSvg(raw: string, symbolPrefix?: string): { viewBox: strin
   }
 
   return { viewBox, inner };
-}
-
-function esc(s: string): string {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-
-function cssSafe(s: string): string {
-  return s.toLowerCase().replace(/[^a-z0-9-]/g, '-');
 }
 

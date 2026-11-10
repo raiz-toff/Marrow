@@ -9,6 +9,7 @@
     { "path": "../diagnostics" },
     { "path": "../icons" },
     { "path": "../schema" },
-    { "path": "../site" }
+    { "path": "../site" },
+    { "path": "../visual" }
   ]
 }

@@ -15,7 +15,7 @@ import { aboutDialog, shortcutsDialog, spotlight } from './chrome/dialogs.js';
 import { I } from './chrome/icons.js';
 import { cameraControls, commandBar, inspector, mobileBar } from './chrome/panels.js';
 import { sidebar } from './chrome/sidebar.js';
-import { esc } from './html.js';
+import { escapeHtml as esc } from '@marrow/visual';
 import { buildStylesheet, SITE_CSS } from './styles.js';
 import type { ThemeConfig } from './tokens.js';
 
@@ -61,7 +61,6 @@ export interface ChromeOptions {
   themeConfig?: ThemeConfig;
   /** Embed / kiosk modularity: 'minimal' hides topbar & dock, 'full' preserves all chrome. */
   chrome?: 'full' | 'minimal';
-  embed?: boolean;
   watermark?: WatermarkConfig;
   /** Layout archetype inspired by Fumadocs: locked to 'spacious'. */
   layout?: 'spacious';
@@ -122,8 +121,7 @@ export function renderChrome(o: ChromeOptions): string {
   const auto = o.theme === 'auto';
   const themeAttr = auto ? 'dark' : esc(o.theme);
   const modeAttr = auto ? ` ${ROOT_ATTR.themeMode}="auto"` : '';
-  const isMinimal = o.chrome === 'minimal' || o.embed === true;
-  const chromeAttr = isMinimal ? ` ${ROOT_ATTR.chrome}="minimal"` : '';
+  const chromeAttr = o.chrome === 'minimal' ? ` ${ROOT_ATTR.chrome}="minimal"` : '';
   const watermarkAttr =
     !wmEnabled || wmMode === 'off' ? ` ${ROOT_ATTR.watermark}="off"` : wmMode !== 'full' ? ` ${ROOT_ATTR.watermark}="${wmMode}"` : '';
   const layoutAttr = ` ${ROOT_ATTR.layout}="spacious"`;

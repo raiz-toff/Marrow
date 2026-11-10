@@ -4,6 +4,7 @@
  * nothing throws. Both tiers translate this verbatim (SVG to markup, canvas to
  * draw calls), so geometry, proportions and precedence are shared.
  */
+import { TIER_RANK } from '@marrow/model';
 import type { Scene, SceneEdge, SceneNode } from '@marrow/scene';
 import { linkPresentation, edgeClasses } from './link.js';
 import { foldEdge, flowOf, strokeOf, type Ctx, type Stroke } from './rules.js';
@@ -16,7 +17,6 @@ import {
   normalizeStatus,
   PILL,
   statusRank,
-  TIER_ORDER,
   type LinkGlyph,
 } from './spec.js';
 import { DEFAULT_THEMES, tokenValue, type Theme } from './tokens.js';
@@ -361,7 +361,7 @@ export function resolveScene(scene: Scene, theme: Theme = DEFAULT_THEMES.dark): 
 
   const rankIndex = new Map<number, number>();
   const nodePaints = nodes.map((n) => {
-    const rank = TIER_ORDER[n.tier ?? ''] ?? 2;
+    const rank = TIER_RANK[n.tier ?? ''] ?? 2; // entrance stagger by tier
     const idx = rankIndex.get(rank) ?? 0;
     rankIndex.set(rank, idx + 1);
     return resolveNode(n, Math.min(0.15 + rank * 0.13 + idx * 0.03, 1.4), theme);

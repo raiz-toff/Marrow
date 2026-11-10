@@ -1,21 +1,19 @@
 import { byId, type Topology } from '@marrow/model';
 import type { Rect, Scene, SceneEdge, SceneNode, SceneZone, Vec } from '@marrow/scene';
-import { classify, findHubs, TIER_RANK, type Archetype } from './classify.js';
+import { classify, findHubs, type Archetype } from './classify.js';
 import { composeZones } from './compose.js';
 import { elkLayout } from './elk.js';
 import { placeCircle, placePolar } from './presets.js';
 import { routeEdges, type RouteStyle } from './router.js';
 import { placePortChips } from './portchips.js';
 import { tidyEdges } from './tidy.js';
-import { CHIP, LABEL_GAP, sizeNode, type NodeSizing } from './size.js';
+import { sizeNode, type NodeSizing } from './size.js';
 import { zoneHulls } from './zones.js';
 import { resolveLayoutMetrics, type LayoutMetrics } from './metrics.js';
 
-export { classify, findHubs, TIER_RANK, type Archetype } from './classify.js';
-export { CHIP, LABEL_GAP, LABEL_SIZE, MAX_LABEL_W, sizeNode, type NodeSizing } from './size.js';
+export { classify, findHubs, type Archetype } from './classify.js';
+export { sizeNode, type NodeSizing } from './size.js';
 export { resolveLayoutMetrics, type LayoutMetrics } from './metrics.js';
-export { routeEdges, type RoutableEdge, type RouteStyle } from './router.js';
-export { placeCircle, placePolar } from './presets.js';
 
 const SCENE_MARGIN = 24;
 

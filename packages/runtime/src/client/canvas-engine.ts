@@ -1,5 +1,5 @@
 import type { Scene, SceneEdge, SceneNode, ScenePortChip } from '@marrow/scene';
-import { interactEdge, interactNode, readTheme, resolveScene, STAGE_HOOKS, type EdgePaint, type Theme, type VisualScene } from '@marrow/visual';
+import { cssSafe, interactEdge, interactNode, readTheme, resolveScene, STAGE_HOOKS, type EdgePaint, type Theme, type VisualScene } from '@marrow/visual';
 import { readRoot } from '../shared/page-contract.js';
 import type { CameraState } from './camera.js';
 
@@ -613,6 +613,3 @@ function pointSegmentDistance(px: number, py: number, a: { x: number; y: number 
   return Math.hypot(px - cx, py - cy);
 }
 
-function cssSafe(s: string): string {
-  return s.toLowerCase().replace(/[^a-z0-9-]/g, '-');
-}

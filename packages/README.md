@@ -2,14 +2,14 @@
 
 Agent-authored YAML in → a self-contained, offline, interactive network-diagram
 site out. The contributor documentation is on the docs site, which lives in this
-repository under [`../docs/content/6.contributing/`](../docs/content/6.contributing/):
+repository under [`../docs/content/docs/(marrow)/contributing/`](../docs/content/docs/(marrow)/contributing/):
 
 | | |
 | --- | --- |
-| [Architecture](../docs/content/6.contributing/2.architecture.md) | The compile pipeline, stage by stage, and the design invariants |
-| [Package map](../docs/content/6.contributing/3.packages.md) | What lives in each package, and where to make a given change |
-| [Testing](../docs/content/6.contributing/4.testing.md) | The suite, the fixture corpus, and verifying visual work |
-| [Adding an icon pack](../docs/content/6.contributing/5.adding-an-icon-pack.md) | Directory layout, manifest generation, licensing |
+| [Architecture](../docs/content/docs/(marrow)/contributing/architecture.mdx) | The compile pipeline, stage by stage, and the design invariants |
+| [Package map](../docs/content/docs/(marrow)/contributing/packages.mdx) | What lives in each package, and where to make a given change |
+| [Testing](../docs/content/docs/(marrow)/contributing/testing.mdx) | The suite, the fixture corpus, and verifying visual work |
+| [Adding an icon pack](../docs/content/docs/(marrow)/contributing/adding-an-icon-pack.mdx) | Directory layout, manifest generation, licensing |
 
 User-facing docs: [root README](../README.md). Agent operating guide:
 [AGENTS.md](../AGENTS.md). Contribution process: [CONTRIBUTING.md](../CONTRIBUTING.md).
@@ -26,12 +26,13 @@ packages/
 ├─ icons         icon packs: manifest, generator, search, suggestions
 ├─ schema        YAML parse → strict validation (line/col, did-you-mean) → model
 ├─ layout        classify → place (ELK / compose / polar / circle) → route (libavoid)
-├─ lint          geometry linter: L1 fails builds, L2 auto-repairs, L3 advises
+├─ lint          geometry linter: L1 fails builds, L3 advises
 ├─ render-svg    scene → SVG (hero tier) or canvas host (scale tier)
-├─ runtime       the ~20 KB client: camera, inspector, spotlight, minimap, export
+├─ runtime       the client (about 95 KB minified, 30 KB gzipped): camera, inspector, spotlight, minimap, export
 ├─ site          collapse, page planner, single-file + multi-page compiler
 ├─ server        dev server: watch, rebuild, SSE live reload, /api
-└─ cli           the marrow command
+├─ cli           the marrow command
+└─ ui            React components for host apps (source of the shadcn registry)
 ```
 
 ## Build & test
@@ -39,7 +40,7 @@ packages/
 ```
 npm install
 npm run compile            # tsc -b + bundle the runtime client
-npm test                 # 244 tests (vitest)
+npm test                   # vitest
 ```
 
 ## Design rules

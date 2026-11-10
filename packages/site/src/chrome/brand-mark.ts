@@ -2,7 +2,7 @@
    Branding is GLOBAL and comes from brand/brand.html only. Topology YAML
    deliberately has no say: a diagram describes a network, not who owns it. */
 import type { ChromeOptions } from '../chrome.js';
-import { esc } from '../html.js';
+import { escapeHtml as esc } from '@marrow/visual';
 import { I } from './icons.js';
 
 /** The logo mark: the company logo when configured, the Marrow mark otherwise. */

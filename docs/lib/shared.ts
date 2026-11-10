@@ -2,7 +2,7 @@ import { createGetUrl } from 'fumadocs-core/source';
 
 export const appName = 'Marrow';
 export const docsRoute = '/docs';
-export const docsImageRoute = '/og/docs';
+const docsImageRoute = '/og/docs';
 export const docsContentRoute = '/llms.mdx/docs';
 
 export const gitConfig = {

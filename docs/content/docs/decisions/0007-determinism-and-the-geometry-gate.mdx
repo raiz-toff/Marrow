@@ -8,7 +8,7 @@ description: The same YAML produces byte-identical output, and geometry defects 
 Two coupled invariants:
 
 1. **Determinism.** The same input produces byte-identical output — no timestamps, no randomness, no iteration-order dependence.
-2. **The geometry gate.** The scene is linted before rendering. L1 defects (node overlap on label-inclusive boxes, edges crossing foreign node interiors, endpoints not touching their node, port-chip overlap) **fail the build**. L2 auto-repairs; L3 advises.
+2. **The geometry gate.** The scene is linted before rendering. L1 defects (node overlap on label-inclusive boxes, edges crossing foreign node interiors, endpoints not touching their node, port-chip overlap) **fail the build**. L3 findings (excessive crossings, extreme aspect ratio) are advisory. There is no repair tier: the only automatic repair happens in the router, before the linter runs. An edge that libavoid drops to a straight diagonal is re-routed once with open pin visibility.
 
 ## Why
 
@@ -61,6 +61,6 @@ blocked start shipping.
 **Warn on overlap and render anyway.** Rejected: with no manual layout control,
 a warning gives the author nothing to act on.
 
-**Auto-repair everything.** Rejected: L2 handles what's safely fixable.
+**Auto-repair lint defects.** Rejected: apart from the router's diagonal fallback, nothing is repaired.
 Silently "repairing" a genuine placement failure would hide the bug that caused
 it, and the repair would itself be non-obvious and hard to reason about.

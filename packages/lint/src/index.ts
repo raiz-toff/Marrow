@@ -15,7 +15,6 @@ import {
  *        an edge passing through a node it isn't attached to, an edge not
  *        reaching its endpoint node.
  *   L3 — advisory: excessive crossings, extreme aspect ratio.
- * (L2 auto-repair hooks arrive with the router integration.)
  */
 
 export interface LintIssue {

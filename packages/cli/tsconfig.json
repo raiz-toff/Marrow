@@ -9,8 +9,6 @@
     { "path": "../diagnostics" },
     { "path": "../model" },
     { "path": "../icons" },
-    { "path": "../layout" },
-    { "path": "../render-svg" },
     { "path": "../schema" },
     { "path": "../server" },
     { "path": "../site" }

@@ -2,6 +2,7 @@
  * The visual language as data: one table per dimension. Everything downstream
  * — link semantics, the paint rule list, the generated stylesheet — reads these.
  */
+import { STATUS_SEVERITY, type DeviceStatus } from '@marrow/model';
 
 /** At-a-glance stroke pattern, set by the link's mode. Status dash still wins. */
 export type LinkPattern = 'solid' | 'double' | 'dashed' | 'dotted' | 'thick';
@@ -51,15 +52,14 @@ export const STATUSES: readonly StatusSpec[] = [
   { id: 'down', color: '--down', edge: { color: '--down' } },
 ];
 
-const STATUS_RANK = new Map(STATUSES.map((s, i) => [s.id, i]));
-
 /** Unknown/foreign status ids collapse to `unknown`. */
 export function normalizeStatus(s: string | undefined): string {
-  return s !== undefined && STATUS_RANK.has(s) ? s : 'unknown';
+  return s !== undefined && Object.hasOwn(STATUS_SEVERITY, s) ? s : 'unknown';
 }
 
+/** Draw rank: the reverse of severity, so alarms paint last (on top). */
 export function statusRank(s: string): number {
-  return STATUS_RANK.get(normalizeStatus(s)) ?? 1;
+  return STATUS_SEVERITY.up - STATUS_SEVERITY[normalizeStatus(s) as DeviceStatus];
 }
 
 // ─── speeds ──────────────────────────────────────────────────────────────────
@@ -218,12 +218,3 @@ export const BEND_RADIUS = 8;
 /** Chords used to measure one quadratic fillet. */
 export const FILLET_CHORDS = 8;
 
-/** Entrance stagger by tier (rank → delay). */
-export const TIER_ORDER: Readonly<Record<string, number>> = {
-  edge: 0,
-  core: 1,
-  distribution: 2,
-  access: 3,
-  endpoint: 4,
-  management: 4,
-};

@@ -6,9 +6,9 @@ import type { LayoutMetrics } from './metrics.js';
 export const CHIP = 64;
 /** MUST match the font-size renderers draw labels at (.m-label CSS + canvas
  *  engine) — the reservation is only honest if we measure what we draw. */
-export const LABEL_SIZE = 12;
-export const LABEL_GAP = 6;
-export const MAX_LABEL_W = 168;
+const LABEL_SIZE = 12;
+const LABEL_GAP = 6;
+const MAX_LABEL_W = 168;
 
 export interface NodeSizing {
   /** Full node footprint (chip ∪ label), what layout must reserve. */
