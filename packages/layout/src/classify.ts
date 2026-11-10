@@ -1,4 +1,4 @@
-import type { Topology } from '@marrow/model';
+import { compareIds, type Topology } from '@marrow/model';
 
 /**
  * Layout archetypes, in precedence order:
@@ -31,7 +31,7 @@ export function classify(t: Topology): Archetype {
   if (n >= 4) {
     const neighbors = neighborMap(t);
     const degrees = [...neighbors.entries()].sort(
-      (a, b) => b[1].size - a[1].size || a[0].localeCompare(b[0]),
+      (a, b) => b[1].size - a[1].size || compareIds(a[0], b[0]),
     );
     // ring: connected, every device has exactly two neighbors
     if (degrees.every(([, nb]) => nb.size === 2) && isConnected(neighbors)) return 'ring';
@@ -52,7 +52,7 @@ export function classify(t: Topology): Archetype {
  */
 function detectHubs(t: Topology): string[] | undefined {
   const neighbors = neighborMap(t);
-  const degrees = [...neighbors.entries()].sort((a, b) => b[1].size - a[1].size || a[0].localeCompare(b[0]));
+  const degrees = [...neighbors.entries()].sort((a, b) => b[1].size - a[1].size || compareIds(a[0], b[0]));
   const candidates: string[][] = [];
   if (degrees[0] && degrees[0][1].size >= 3) candidates.push([degrees[0][0]]);
   if (degrees[0] && degrees[1] && degrees[0][1].size >= 3 && degrees[1][1].size >= 3) {

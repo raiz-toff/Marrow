@@ -227,3 +227,20 @@ export function neighborsOf(idx: TopologyIndex, deviceId: string): string[] {
   }
   return [...seen];
 }
+
+/**
+ * THE canonical string order (ADR-0007: "sort everywhere order would be
+ * arbitrary — by id, consistently"). UTF-16 code-unit comparison, the same
+ * order a bare `Array.prototype.sort()` gives — never `localeCompare`, whose
+ * result follows the process locale (`LANG=da_DK` sorts `aa` after `z`,
+ * `lt_LT` sorts `y` before `j`) and would make output machine-dependent.
+ * Use for every order that reaches compiled output or diagnostics.
+ */
+export function compareIds(a: string, b: string): number {
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+
+/** `compareIds` on the `id` field — `[...devices].sort(byId)`. */
+export function byId(a: { readonly id: string }, b: { readonly id: string }): number {
+  return compareIds(a.id, b.id);
+}

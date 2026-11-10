@@ -2,6 +2,7 @@ import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { closestMatches } from '@marrow/diagnostics';
 import { assertManifest, type IconEntry, type IconPackManifest } from './manifest.js';
+import { compareIds } from '@marrow/model';
 
 export interface CatalogEntry extends IconEntry {
   /** Absolute path of the pack directory this icon came from. */
@@ -106,7 +107,7 @@ export class IconCatalog {
         results.push({ id: entry.id, title: entry.title, category: entry.category, score });
       }
     }
-    results.sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
+    results.sort((a, b) => b.score - a.score || compareIds(a.id, b.id));
     return results.slice(0, max);
   }
 }

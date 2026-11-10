@@ -38,7 +38,7 @@ clone compiles itself: `npm install` runs it for you. Odd behavior from
 ## Synopsis
 
 ```
-marrow validate <file...> [--json] [--no-icons] [--packs <dir>]
+marrow validate <file...> [--json] [--no-icons] [--no-geometry] [--packs <dir>] [--config <file.yaml>]
 marrow build    <file> [-o <out>] [--single] [--embed] [--chrome minimal|full] [--packs <dir>] [--config <file.yaml>]
 marrow serve    <file-or-dir> [--port <n>] [--host <addr>] [--packs <dir>] [--config <file.yaml>]
 marrow import   <v1-file> [-o <out.yaml>] [--packs <dir>]
@@ -66,7 +66,9 @@ stack trace.
 
 ## `validate`
 
-Schema and reference check. Run it before you claim anything is ready.
+Schema and reference check, then the same layout and geometry lint `build`
+runs — so a file that validates also builds. Run it before you claim anything
+is ready.
 
 ```bash
 npm run marrow -- validate input/branch.yaml
@@ -78,7 +80,15 @@ npm run marrow -- validate input/branch.yaml --json
 | --- | --- |
 | `--json` | Machine-readable diagnostic report |
 | `--no-icons` | Skip icon-existence checking — faster, and useful when packs aren't installed |
+| `--no-geometry` | Skip layout and geometry lint — schema and references only. Much faster on large files (`dual-colo-enterprise.yaml`: 0.2 s instead of 1.6 s) |
 | `--packs <dir>` | Use an icon-packs directory other than `./icon-packs` |
+| `--config <file>` | Alternative `marrow.config.yaml` (its `layout:` density/scale defaults change the geometry checked) |
+
+Geometry runs only when the schema check has no errors. It lays out every page
+the build would emit and reports an L1 defect as `MRW-E018` (a compiler-side
+layout defect — the message names the page, archetype, density, scale and
+offending ids) and a topology over the size cap as `MRW-E019`. Both appear in
+`--json` like any other diagnostic. See [Diagnostic codes](/docs/reference/diagnostics).
 
 Accepts multiple files. Exits `1` if any file has errors; warnings alone still
 exit `0`.
@@ -105,6 +115,12 @@ npm run marrow -- build input/branch.yaml --embed
 
 Above 150 devices or 5 zones with devices, output is a directory rather than a
 file — see [Output shapes](/docs/guides/output).
+
+One file may hold at most 5,000 devices and 10,000 links (`MAX_DEVICES` /
+`MAX_LINKS` in `@marrow/site`). Above that, `build` exits `1` with the counts
+and the caps instead of running out of memory — split the topology into
+several files. A geometry defect also exits `1`, with a three-line message:
+what failed, the layout in effect, and what to try.
 
 ## `serve`
 

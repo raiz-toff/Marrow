@@ -1,4 +1,4 @@
-import type { Topology } from '@marrow/model';
+import { byId, compareIds, type Topology } from '@marrow/model';
 
 /**
  * The page planner: decides whether a topology ships as ONE self-contained
@@ -42,7 +42,7 @@ export function planSite(t: Topology, shape?: OutputShape): SitePlan {
   };
 
   const zonePages: SitePlan['zonePages'] = [];
-  for (const z of [...t.zones].sort((a, b) => a.id.localeCompare(b.id))) {
+  for (const z of [...t.zones].sort(byId)) {
     if (z.parent !== undefined) continue;
     const zoneIds = new Set(subtree(z.id));
     const devices = t.devices.filter((d) => d.zone !== undefined && zoneIds.has(d.zone)).length;
@@ -60,7 +60,7 @@ export function planSite(t: Topology, shape?: OutputShape): SitePlan {
         d.config !== undefined,
     )
     .map((d) => d.id)
-    .sort();
+    .sort(compareIds);
 
   return { mode: 'site', zonePages, devicePages };
 }

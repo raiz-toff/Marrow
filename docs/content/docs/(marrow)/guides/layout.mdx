@@ -107,6 +107,12 @@ deliberate: a diagram with overlapping nodes is worse than no diagram, and the
 guarantee "output is never overlapping" is only worth something if it's
 enforced. See [ADR-0007](/docs/decisions/0007-determinism-and-the-geometry-gate).
 
+`marrow validate` runs the same check (as `MRW-E018`), so a file that
+validates also builds. Since layout is computed, an L1 defect is a compiler
+bug: the message names the archetype, density and scale in effect and the
+offending ids. Try `density: standard` and `scale: 1`, or report it with the
+YAML file.
+
 ## Density presets and scaling
 
 Marrow sizes node boxes, port chips, typography, and ELK layout spacing using layout metrics presets. Set `density` in the topology header, or under `layout.density` in `marrow.config.yaml` as a default for every diagram, to adjust diagram compactness. The config value applies only to topologies that do not declare their own; the topology header always wins:

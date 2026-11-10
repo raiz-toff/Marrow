@@ -44,7 +44,7 @@
 ```bash
 npm i -g marrow-cli
 
-marrow validate net.yaml            # Verify syntax & reference integrity
+marrow validate net.yaml            # Verify syntax, references & layout geometry
 marrow build net.yaml               # Compile to a self-contained net.html
 marrow serve input/                 # Live preview with instant hot-reloading
 marrow snapshot net.yaml -o out.png # High-res static PNG export
@@ -190,7 +190,7 @@ links:
 | :--- | :--- |
 | `npm run dev` | Live hot-reloading preview server (`http://127.0.0.1:5200`) |
 | `npm run dev:lan` | Bind dev server to `0.0.0.0` for local network access |
-| `npm run validate <file...>` | Schema verification & reference check (exit code `0` required) |
+| `npm run validate <file...>` | Schema, reference & geometry-lint check (exit code `0` required) |
 | `npm run build <file> [-o OUT]` | Compile standalone HTML or multi-page site above ~150 devices |
 | `npm run snapshot <file> [-o OUT.png]` | Headless visual verification & 2x Retina PNG export |
 | `npm run icons search <query...>` | Batch search verified icon catalog (Cisco, AWS, Azure, GCP, K8s) |

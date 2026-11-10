@@ -57,6 +57,8 @@ catalog, so the first one is right far more often than a guess is.
 | `MRW-E015` | Unknown reference | A reference of another kind that can't be resolved |
 | `MRW-E016` | Zone hierarchy cycle | Zone `parent` links form a loop — A parents B parents A |
 | `MRW-E017` | Internal validator error | A bug. Please [file an issue](https://github.com/raiz-toff/Marrow/issues) with the file that triggered it |
+| `MRW-E018` | Geometry defect in the computed layout | The layout `validate` computed has an L1 defect (overlap, edge through a node) — a compiler bug, not a YAML error. The message names the page, archetype, density, scale and offending ids. Try `density: standard` / `scale: 1`, or file an issue with the YAML |
+| `MRW-E019` | Topology exceeds the compile size cap | More than 5,000 devices or 10,000 links in one file. Split it into several topology files (per region or site) |
 
 ## Warnings
 
@@ -81,8 +83,10 @@ without parsing anything.
 
 ## Geometry defects are different
 
-The `MRW` registry covers the **schema**. Layout problems are caught later by
-the geometry linter, which has its own levels:
+Most of the `MRW` registry covers the **schema**. Layout problems are caught
+by the geometry linter, which `validate` (unless `--no-geometry`) and `build`
+both run; `validate` reports an L1 defect as `MRW-E018`. The linter has its own
+levels:
 
 | Level | Behavior |
 | --- | --- |

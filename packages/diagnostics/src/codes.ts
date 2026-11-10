@@ -22,6 +22,8 @@ export const DIAGNOSTIC_CODES = {
   'MRW-E015': 'Unknown reference',
   'MRW-E016': 'Zone hierarchy cycle',
   'MRW-E017': 'Internal validator error',
+  'MRW-E018': 'Geometry defect in the computed layout',
+  'MRW-E019': 'Topology exceeds the compile size cap',
   'MRW-W101': 'Port used by multiple links',
   'MRW-W102': 'Empty zone',
   'MRW-W103': 'Isolated device',

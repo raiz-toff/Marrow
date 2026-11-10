@@ -1,6 +1,7 @@
 import { AvoidLib } from 'libavoid-js';
 import type { Rect, Vec } from '@marrow/scene';
 import { CHIP } from './size.js';
+import { byId, compareIds } from '@marrow/model';
 
 /**
  * The dedicated edge-routing pass: libavoid (Adaptagrams) running in WASM at
@@ -97,7 +98,7 @@ async function routePass(
 
   try {
     const shapes = new Map<string, Anything>();
-    for (const [id, box] of [...nodeBoxes.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
+    for (const [id, box] of [...nodeBoxes.entries()].sort((a, b) => compareIds(a[0], b[0]))) {
       const rect = new Avoid.Rectangle(
         new Avoid.Point(box.x, box.y),
         new Avoid.Point(box.x + box.w, box.y + box.h),
@@ -129,7 +130,7 @@ async function routePass(
 
     const pinClass = new Map<string, number>(); // `${edgeId}@${nodeId}` → classId
     let nextClass = 1;
-    for (const [nodeId, ends] of [...endsByNode.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
+    for (const [nodeId, ends] of [...endsByNode.entries()].sort((a, b) => compareIds(a[0], b[0]))) {
       const shape = shapes.get(nodeId);
       const box = nodeBoxes.get(nodeId);
       if (!shape || !box) continue;
@@ -148,7 +149,7 @@ async function routePass(
           const ca = centerOf(a.other);
           const cb = centerOf(b.other);
           const axis = side === 'N' || side === 'S' ? ca.x - cb.x : ca.y - cb.y;
-          return axis !== 0 ? axis : a.edgeId.localeCompare(b.edgeId);
+          return axis !== 0 ? axis : compareIds(a.edgeId, b.edgeId);
         });
         // Chip rect derived from the box (same convention as scene assembly):
         // CHIP px square, centered horizontally, flush with the box top.
@@ -177,7 +178,7 @@ async function routePass(
     }
 
     const conns = new Map<string, Anything>();
-    for (const e of [...edges].sort((a, b) => a.id.localeCompare(b.id))) {
+    for (const e of [...edges].sort(byId)) {
       const fromClass = pinClass.get(`${e.id}@${e.from}`);
       const toClass = pinClass.get(`${e.id}@${e.to}`);
       const fromShape = shapes.get(e.from);

@@ -1,4 +1,4 @@
-import type { Topology } from '@marrow/model';
+import { byId, compareIds, type Topology } from '@marrow/model';
 import { union, type Rect } from '@marrow/scene';
 import type { SceneZone } from '@marrow/scene';
 
@@ -63,7 +63,7 @@ export function zoneHulls(
   };
 
   const zones: SceneZone[] = [];
-  for (const z of [...t.zones].sort((a, b) => a.id.localeCompare(b.id))) {
+  for (const z of [...t.zones].sort(byId)) {
     const box = computeHull(z.id, new Set());
     if (!box) continue; // empty zone: nothing to draw
     const zone: SceneZone = { id: z.id, name: z.name, box, depth: depthOf(z.id) };
@@ -71,6 +71,6 @@ export function zoneHulls(
     zones.push(zone);
   }
   // deeper zones draw later (on top)
-  zones.sort((a, b) => a.depth - b.depth || a.id.localeCompare(b.id));
+  zones.sort((a, b) => a.depth - b.depth || compareIds(a.id, b.id));
   return zones;
 }

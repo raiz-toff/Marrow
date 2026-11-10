@@ -13,6 +13,7 @@
   "types": "./dist/index.d.ts",
   "dependencies": {
     "@marrow/diagnostics": "0.0.1",
+    "@marrow/model": "0.0.1",
     "fflate": "^0.8.3"
   }
 }

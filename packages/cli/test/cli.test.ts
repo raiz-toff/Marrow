@@ -113,6 +113,45 @@ describe('multi-file validation', () => {
   });
 });
 
+describe('validate runs the geometry gate too', () => {
+  let dir: string;
+  beforeAll(() => {
+    dir = mkdtempSync(join(tmpdir(), 'marrow-validate-'));
+  });
+  afterAll(() => rmSync(dir, { recursive: true, force: true }));
+
+  test('a clean topology passes with layout checked; --no-geometry skips it', () => {
+    const report = JSON.parse(run(['validate', validFixture, '--json'], dir).stdout);
+    expect(report.valid).toBe(true);
+    expect(report.diagnostics.map((d: { code: string }) => d.code)).not.toContain('MRW-E018');
+    expect(run(['validate', validFixture, '--no-geometry'], dir).status).toBe(0);
+  });
+
+  // generated, never committed: one device over the 5,000 cap, chained so
+  // nothing warns about isolated devices
+  test('over the size cap: validate reports MRW-E019, build fails cleanly — both fast, no stack trace', () => {
+    const n = 5001;
+    let yaml = 'marrow: 2\nname: too-big\ndevices:\n';
+    for (let i = 0; i < n; i++) yaml += `  - { id: d${i}, icon: cisco/routers/router }\n`;
+    yaml += 'links:\n';
+    for (let i = 1; i < n; i++) yaml += `  - { from: d${i - 1}, to: d${i} }\n`;
+    const file = join(dir, 'too-big.yaml');
+    writeFileSync(file, yaml);
+
+    const res = run(['validate', file, '--json'], dir);
+    expect(res.status).toBe(1);
+    const report = JSON.parse(res.stdout);
+    const e019 = report.diagnostics.find((d: { code: string }) => d.code === 'MRW-E019');
+    expect(e019?.message).toContain('5001 devices (cap 5000)');
+    expect(e019?.hint).toContain('split it into several topology files');
+
+    const built = run(['build', file, '-o', join(dir, 'out')], dir);
+    expect(built.status).toBe(1);
+    expect(built.stderr).toContain('topology too large to compile: 5001 devices (cap 5000), 5000 links (cap 10000)');
+    expect(built.stderr).not.toMatch(/\n\s+at .*\(/);
+  }, 30_000);
+});
+
 describe('icon pack resolution', () => {
   const tmp = mkdtempSync(join(tmpdir(), 'marrow-cli-'));
   afterAll(() => rmSync(tmp, { recursive: true, force: true }));

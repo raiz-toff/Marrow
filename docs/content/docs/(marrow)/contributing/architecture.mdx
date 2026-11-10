@@ -32,7 +32,9 @@ machines, which rules out asking a browser.
 **Place** runs the engine that suits the archetype: ELK layered for zoned,
 tiered, and flat; a compose pass to pack zone mosaics; polar for hub-spoke;
 circular for rings and meshes. Radial presets allocate arc space from actual
-node widths, so they're overlap-free by construction.
+node footprints, then grow the radius until every pair of boxes clears by the
+density's ring gap, so they're overlap-free by construction at every density
+and scale.
 
 **Route** uses libavoid for orthogonal routing, polylines for radial shapes
 (orthogonal channels look wrong on a ring).

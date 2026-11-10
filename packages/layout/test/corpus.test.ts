@@ -1,20 +1,15 @@
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { describe, expect, test } from 'vitest';
 import { validateSource } from '@marrow/schema';
 import { layoutTopology } from '@marrow/layout';
 import { lintScene } from '@marrow/lint';
+import { corpusDir, corpusFiles as files, sweepDensity } from './corpus-sweep.js';
 
 /**
  * The P1 exit gate: the full fixture corpus — tiered, zoned, hub-spoke,
  * mesh, edge cases — lays out with ZERO build-failing geometry defects.
  */
-const repoRoot = fileURLToPath(new URL('../../..', import.meta.url));
-const corpusDir = join(repoRoot, 'fixtures', 'corpus');
-const files = readdirSync(corpusDir)
-  .filter((f) => f.endsWith('.yaml'))
-  .sort();
 
 describe('layout corpus gate', () => {
   test('corpus is complete', () => {
@@ -42,3 +37,7 @@ describe('layout corpus gate', () => {
     }
   });
 });
+
+// Density × scale sweep (ADR-0014): the standard shard runs here; compact and
+// spacious run from corpus-sweep-{compact,spacious}.test.ts in parallel workers.
+sweepDensity('standard');

@@ -1,4 +1,5 @@
 import type { Rect, SceneEdge, SceneNode, Vec } from '@marrow/scene';
+import { compareIds } from '@marrow/model';
 
 /**
  * The tidy pass — cable-tray discipline for routed edges.
@@ -95,7 +96,7 @@ export function tidyEdges(nodes: readonly SceneNode[], edges: SceneEdge[]): void
 
   const lanes: Array<{ y: number; minX: number; maxX: number }> = [];
   const rerouted = new Set<string>();
-  for (const fan of [...fans.values()].sort((a, b) => a.parent.id.localeCompare(b.parent.id))) {
+  for (const fan of [...fans.values()].sort((a, b) => compareIds(a.parent.id, b.parent.id))) {
     const distinctChildren = new Set(fan.items.map((i) => i.child.id));
     if (distinctChildren.size < MIN_FAN) continue;
     const parent = fan.parent;
@@ -172,7 +173,7 @@ export function tidyEdges(nodes: readonly SceneNode[], edges: SceneEdge[]): void
     const fan = upFans.get(key) ?? upFans.set(key, { parent, items: [] }).get(key)!;
     fan.items.push({ edge: e, child, childIsFrom });
   }
-  for (const fan of [...upFans.values()].sort((a, b) => a.parent.id.localeCompare(b.parent.id))) {
+  for (const fan of [...upFans.values()].sort((a, b) => compareIds(a.parent.id, b.parent.id))) {
     const distinctChildren = new Set(fan.items.map((i) => i.child.id));
     if (distinctChildren.size < MIN_FAN) continue;
     const parent = fan.parent;
@@ -260,7 +261,7 @@ export function tidyEdges(nodes: readonly SceneNode[], edges: SceneEdge[]): void
       rowTop: Math.min(left.box.y, right.box.y),
     });
   }
-  candidates.sort((x, y) => x.span[0] - y.span[0] || x.span[1] - y.span[1] || x.group[0]!.id.localeCompare(y.group[0]!.id));
+  candidates.sort((x, y) => x.span[0] - y.span[0] || x.span[1] - y.span[1] || compareIds(x.group[0]!.id, y.group[0]!.id));
   for (const c of candidates) {
     const [x0, x1] = c.span;
     let laneY: number | undefined;

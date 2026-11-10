@@ -1,5 +1,5 @@
 import ELKRaw from 'elkjs/lib/elk.bundled.js';
-import type { Topology } from '@marrow/model';
+import { byId, type Topology } from '@marrow/model';
 import type { Rect, Vec } from '@marrow/scene';
 import { TIER_RANK, type Archetype } from './classify.js';
 import type { NodeSizing } from './size.js';
@@ -68,7 +68,7 @@ export async function elkLayout(
   const edgeEdgeLayers = Math.round(layerSpacing * 0.16);
 
   const children: ElkChildIn[] = [...t.devices]
-    .sort((a, b) => a.id.localeCompare(b.id))
+    .sort(byId)
     .map((d) => {
       const s = sizing.get(d.id);
       if (!s) throw new Error(`no sizing for device ${d.id}`);
@@ -80,7 +80,7 @@ export async function elkLayout(
     });
 
   const edges: ElkEdgeIn[] = [...t.links]
-    .sort((a, b) => a.id.localeCompare(b.id))
+    .sort(byId)
     .filter((l) => l.from.device !== l.to.device)
     .map((l) => ({ id: l.id, sources: [l.from.device], targets: [l.to.device] }));
 

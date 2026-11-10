@@ -3,8 +3,8 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { IconCatalog } from '@marrow/icons';
 import { layoutTopology, type LayoutOptions, type NodeMeta } from '@marrow/layout';
-import { lintScene, type LintReport } from '@marrow/lint';
-import type { Density, Topology } from '@marrow/model';
+import { lintScene, type LintIssue, type LintReport } from '@marrow/lint';
+import { byId, compareIds, type Density, type Topology } from '@marrow/model';
 import { renderCanvasHost, renderScene, type IconSource } from '@marrow/render-svg';
 import {
   DEVICE_KEYS,
@@ -32,6 +32,87 @@ import type { ThemeConfig } from './tokens.js';
 export const SVG_NODE_LIMIT = 250;
 /** No single page may exceed this many rendered nodes — the planner splits instead. */
 export const PAGE_NODE_LIMIT = 1200;
+
+/**
+ * Size caps for one compile. Above either, `createSiteBuilder` refuses the
+ * topology with a `TopologyTooLargeError` instead of running the V8 heap out.
+ * Measured on whole-zone slices of the 15.6k-device global-enterprise input
+ * (its shape is the worst seen: every device earns a page): 1.25k devices →
+ * 34 s / 0.73 GB peak RSS, 2.5k → 59 s / 1.09 GB, 5k → 85 s / 1.79 GB and
+ * 368 MB of output; the full file exhausts the ~4 GB default V8 heap after
+ * 200 s. 5,000 devices keeps that worst shape under half the default heap.
+ * Links are capped at twice that (the input averages 1.5 links per device).
+ */
+export const MAX_DEVICES = 5000;
+export const MAX_LINKS = 10_000;
+
+/** Thrown by `createSiteBuilder` for a topology over `MAX_DEVICES` / `MAX_LINKS`. */
+export class TopologyTooLargeError extends Error {
+  override readonly name = 'TopologyTooLargeError';
+  readonly summary: string;
+  readonly remedy = 'split it into several topology files (e.g. one per region or site) and build each';
+  constructor(
+    readonly devices: number,
+    readonly links: number,
+  ) {
+    const summary = `topology too large to compile: ${devices} devices (cap ${MAX_DEVICES}), ${links} links (cap ${MAX_LINKS})`;
+    super(summary);
+    this.summary = summary;
+    this.message = `${summary} — ${this.remedy}`;
+  }
+}
+
+/** The size-cap verdict for a topology, or undefined when it fits. */
+export function topologySizeError(t: Topology): TopologyTooLargeError | undefined {
+  return t.devices.length > MAX_DEVICES || t.links.length > MAX_LINKS
+    ? new TopologyTooLargeError(t.devices.length, t.links.length)
+    : undefined;
+}
+
+/**
+ * Thrown when a page's laid-out scene has L1 geometry defects. The layout is
+ * computed (ADR-0001), so this is a compiler defect — the message says so,
+ * names the layout in effect and the two things an author can do about it.
+ */
+export class GeometryDefectError extends Error {
+  override readonly name = 'GeometryDefectError';
+  /** Offending device/link ids, deduplicated, in defect order. */
+  readonly ids: string[];
+  readonly defects: LintIssue[];
+  readonly archetype: string;
+  readonly density: string;
+  readonly scale: number;
+  /** The message's three lines: what failed, the layout in effect, what to try. */
+  readonly summary: string;
+  readonly detail: string;
+  readonly remedy: string;
+  constructor(
+    readonly page: string,
+    scene: Scene,
+    lint: LintReport,
+  ) {
+    const ids = [...new Set(lint.l1.flatMap((i) => i.ids))];
+    const kinds = [...new Set(lint.l1.map((i) => i.kind))].join(', ');
+    const archetype = scene.archetype ?? 'flat';
+    const density = scene.density ?? 'standard';
+    const scale = scene.scale ?? 1;
+    const remedy =
+      density !== 'standard' || scale !== 1
+        ? 'try `density: standard` and `scale: 1` in the topology header, or report it with this YAML file attached'
+        : 'try `density: spacious` in the topology header, or report it with this YAML file attached';
+    const summary = `geometry lint failed on ${page}: ${lint.l1.length} L1 defect${lint.l1.length === 1 ? '' : 's'} (${kinds}) — a compiler-side layout defect, not an error in your YAML`;
+    const detail = `layout: ${archetype}, density ${density}, scale ${scale}; offending ids: ${ids.join(', ')}`;
+    super(`${summary}\n  ${detail}\n  ${remedy}`);
+    this.summary = summary;
+    this.detail = detail;
+    this.ids = ids;
+    this.defects = lint.l1;
+    this.archetype = archetype;
+    this.density = density;
+    this.scale = scale;
+    this.remedy = remedy;
+  }
+}
 
 /**
  * Build-wide layout defaults — the `layout:` block of marrow.config.yaml.
@@ -113,6 +194,12 @@ export interface SiteBuilder {
   buildPage(path: string): Promise<PageCacheEntry | undefined>;
   /** Build every file of the output. */
   buildAll(): Promise<BuildOutput>;
+  /**
+   * Lay out and lint every diagram page without rendering — what `marrow
+   * validate` checks so it rejects exactly what a build would. One entry per
+   * failing page; empty when every page is L1-clean.
+   */
+  geometryDefects(): Promise<GeometryDefectError[]>;
 }
 
 interface StagePageDef {
@@ -144,6 +231,8 @@ export function createSiteBuilder(
   options: BuildOptions,
   cache: SiteCache = new Map(),
 ): SiteBuilder {
+  const tooLarge = topologySizeError(input);
+  if (tooLarge) throw tooLarge;
   const topology = withDefaults(input, options.defaults);
   const plan = planSite(topology, options.shape);
   const single = plan.mode === 'single';
@@ -231,7 +320,7 @@ export function createSiteBuilder(
   const pageHash = (path: string, def: PageDef): string => {
     if (def.kind === 'inventory') return sha1(sharedInputs + '\0inventory\0' + JSON.stringify(topology));
     const page = def.topo();
-    const meta = [...page.nodeMeta.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+    const meta = [...page.nodeMeta.entries()].sort((a, b) => compareIds(a[0], b[0]));
     return sha1(
       sharedInputs +
         '\0' +
@@ -242,7 +331,7 @@ export function createSiteBuilder(
   const buildStage = async (path: string, def: StagePageDef): Promise<PageCacheEntry> => {
     const page = def.topo();
     const collapsed = collapseEndpoints(page.topology);
-    const { svg, scene, lint, tier } = await renderPage(collapsed, options, page.nodeMeta);
+    const { svg, scene, lint, tier } = await renderPage(path, collapsed, options, page.nodeMeta);
     const content = renderChrome({
       title: def.crumbs.at(-1)?.label ?? topology.name,
       // a Single file has no inventory page: its header counts the whole topology
@@ -323,6 +412,16 @@ export function createSiteBuilder(
       for (const path of assetPaths) files.set(path, assetContent(path)!);
       return { files, plan, pageStats };
     },
+    geometryDefects: async () => {
+      const failures: GeometryDefectError[] = [];
+      for (const [path, def] of defs) {
+        if (def.kind !== 'stage') continue;
+        const page = def.topo();
+        const { scene, lint } = await layoutPage(collapseEndpoints(page.topology), options, page.nodeMeta);
+        if (!lint.clean) failures.push(new GeometryDefectError(path, scene, lint));
+      }
+      return failures;
+    },
   };
 }
 
@@ -351,20 +450,26 @@ function chromeOptions(options: BuildOptions): Pick<ChromeOptions, 'brand' | 'th
 
 // ─── shared internals ───────────────────────────────────────────────────────
 
+/** Layout + geometry lint for one page — shared by rendering and `geometryDefects()`. */
+async function layoutPage(
+  t: Topology,
+  options: BuildOptions,
+  nodeMeta: Map<string, NodeMeta> | undefined,
+): Promise<{ scene: Scene; lint: LintReport }> {
+  const layoutOptions: LayoutOptions = { ...(options.layout ?? {}) };
+  if (nodeMeta) layoutOptions.nodeMeta = nodeMeta;
+  const scene = await layoutTopology(t, layoutOptions);
+  return { scene, lint: lintScene(scene) };
+}
+
 async function renderPage(
+  path: string,
   t: Topology,
   options: BuildOptions,
   nodeMeta: Map<string, NodeMeta> | undefined,
 ): Promise<{ svg: string; scene: Scene; lint: LintReport; tier: 'svg' | 'canvas' }> {
-  const layoutOptions: LayoutOptions = { ...(options.layout ?? {}) };
-  if (nodeMeta) layoutOptions.nodeMeta = nodeMeta;
-  const scene = await layoutTopology(t, layoutOptions);
-  const lint = lintScene(scene);
-  if (!lint.clean) {
-    throw new Error(
-      `geometry lint failed (${lint.l1.length} L1 defects):\n` + lint.l1.map((i) => `  - ${i.message}`).join('\n'),
-    );
-  }
+  const { scene, lint } = await layoutPage(t, options, nodeMeta);
+  if (!lint.clean) throw new GeometryDefectError(path, scene, lint);
   if (scene.nodes.length > PAGE_NODE_LIMIT) {
     throw new Error(`page renders ${scene.nodes.length} nodes — over the ${PAGE_NODE_LIMIT} hard cap; split into zones`);
   }
@@ -426,7 +531,7 @@ function searchDataJs(topology: Topology, plan: SitePlan, zi: ZoneIndex): string
       ...(d.role !== undefined ? { role: d.role } : {}),
       page: pageOf(d.id, plan, zi),
     }))
-    .sort((a, b) => a.id.localeCompare(b.id));
+    .sort(byId);
   return `window.${SEARCH_GLOBAL}=${JSON.stringify({ docs: searchDocs }).replace(/</g, '\\u003c')};\n`;
 }
 

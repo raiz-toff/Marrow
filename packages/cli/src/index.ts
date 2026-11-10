@@ -2,9 +2,11 @@
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import { parseArgs } from 'node:util';
-import { formatPretty, toJsonReport, type JsonReport } from '@marrow/diagnostics';
+import { diag, formatPretty, hasErrors, toJsonReport, type Diagnostic, type JsonReport } from '@marrow/diagnostics';
+import { IconCatalog } from '@marrow/icons';
+import type { Topology } from '@marrow/model';
 import { topologyJsonSchema, validateSource } from '@marrow/schema';
-import { createSiteBuilder, type BuildOptions } from '@marrow/site';
+import { createSiteBuilder, TopologyTooLargeError, type BuildOptions } from '@marrow/site';
 import { loadConfig } from './config.js';
 import { importV1 } from './import-v1.js';
 import { loadIconCatalog } from './packs.js';
@@ -12,7 +14,7 @@ import { loadIconCatalog } from './packs.js';
 const USAGE = `marrow — agent-driven network topology studio (v2)
 
 usage:
-  marrow validate <file...> [--json] [--no-icons] [--packs <dir>]
+  marrow validate <file...> [--json] [--no-icons] [--no-geometry] [--packs <dir>] [--config <file.yaml>]
   marrow build <file> [-o <out.html>] [--single] [--packs <dir>]
   marrow add <component...> [--out <dir>]
   marrow serve [file-or-dir] [--port <n>] [--packs <dir>]      (defaults to ./input)
@@ -83,27 +85,37 @@ function safeParseArgs<T>(fn: () => T): ParsedArgs<T> {
   }
 }
 
-function cmdValidate(rest: string[]): number {
+const VALIDATE_USAGE = 'usage: marrow validate <file...> [--json] [--no-icons] [--no-geometry] [--packs <dir>] [--config <file.yaml>]';
+
+/**
+ * Schema + references, then — unless --no-geometry — the same layout and
+ * geometry lint a build runs, so validate rejects exactly what build would.
+ */
+async function cmdValidate(rest: string[]): Promise<number> {
   const parsed = safeParseArgs(() =>
     parseArgs({
       args: rest,
       options: {
         json: { type: 'boolean', default: false },
         'no-icons': { type: 'boolean', default: false },
+        'no-geometry': { type: 'boolean', default: false },
         packs: { type: 'string' },
+        config: { type: 'string' },
       },
       allowPositionals: true,
     }),
   );
   if (!parsed.ok) {
-    console.error(`${parsed.message}\n\nusage: marrow validate <file...> [--json] [--no-icons] [--packs <dir>]`);
+    console.error(`${parsed.message}\n\n${VALIDATE_USAGE}`);
     return 2;
   }
   const { values, positionals: files } = parsed.args;
   if (files.length === 0) {
-    console.error('usage: marrow validate <file...> [--json]');
+    console.error(VALIDATE_USAGE);
     return 2;
   }
+  // build-wide density/scale defaults change the layout, so geometry honours them
+  const defaults = values['no-geometry'] ? undefined : globalConfig(values.config).defaults;
 
   let icons;
   if (!values['no-icons']) {
@@ -133,9 +145,13 @@ function cmdValidate(rest: string[]): number {
       return 2;
     }
     const result = validateSource(source, icons ? { icons } : {});
-    reports.push(toJsonReport(result.diagnostics, file));
+    const diagnostics = [...result.diagnostics];
+    if (!values['no-geometry'] && result.topology && !hasErrors(diagnostics)) {
+      diagnostics.push(...(await geometryDiagnostics(result.topology, defaults)));
+    }
+    reports.push(toJsonReport(diagnostics, file));
     if (!values.json) {
-      pretty.push(formatPretty(result.diagnostics, { color: process.stdout.isTTY ?? false, filename: file }));
+      pretty.push(formatPretty(diagnostics, { color: process.stdout.isTTY ?? false, filename: file }));
     }
   }
 
@@ -145,6 +161,20 @@ function cmdValidate(rest: string[]): number {
     console.log(pretty.join('\n\n'));
   }
   return reports.every((r) => r.valid) ? 0 : 1;
+}
+
+/** Lay out every page the build would emit and report L1 defects (MRW-E018)
+ *  and the size cap (MRW-E019) as diagnostics. Icons are not needed: nothing renders. */
+async function geometryDiagnostics(topology: Topology, defaults: BuildOptions['defaults']): Promise<Diagnostic[]> {
+  try {
+    const builder = createSiteBuilder(topology, { icons: new IconCatalog(), ...(defaults !== undefined ? { defaults } : {}) });
+    return (await builder.geometryDefects()).map((e) =>
+      diag('MRW-E018', { path: '', message: `${e.summary}; ${e.detail}`, hint: e.remedy }),
+    );
+  } catch (err) {
+    if (err instanceof TopologyTooLargeError) return [diag('MRW-E019', { path: '', message: err.summary, hint: err.remedy })];
+    throw err;
+  }
 }
 
 async function cmdBuild(rest: string[]): Promise<number> {

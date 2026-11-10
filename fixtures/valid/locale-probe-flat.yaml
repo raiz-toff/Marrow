@@ -1,0 +1,73 @@
+marrow: 2
+# Ids chosen to sort differently under locale collation: "aa" sorts after
+# "z" in da_DK, "y" before "j" in lt_LT. Builds must be byte-identical in
+# every locale (packages/cli/test/locale.test.ts).
+name: locale-probe-flat
+devices:
+  - id: aaa-01
+    name: "aaa-01"
+    icon: cisco/switches/workgroup-switch
+  - id: aaa-02
+    name: "aaa-02"
+    icon: cisco/switches/workgroup-switch
+  - id: ab-sw1
+    name: "ab-sw1"
+    icon: cisco/switches/workgroup-switch
+  - id: acc-sw1
+    name: "acc-sw1"
+    icon: cisco/switches/workgroup-switch
+  - id: acc-sw2
+    name: "acc-sw2"
+    icon: cisco/switches/workgroup-switch
+  - id: ya-1
+    name: "ya-1"
+    icon: cisco/switches/workgroup-switch
+  - id: ja-1
+    name: "ja-1"
+    icon: cisco/switches/workgroup-switch
+  - id: za-1
+    name: "za-1"
+    icon: cisco/switches/workgroup-switch
+  - id: core-1
+    name: "core-1"
+    icon: cisco/switches/workgroup-switch
+  - id: core-2
+    name: "core-2"
+    icon: cisco/switches/workgroup-switch
+  - id: iot-1
+    name: "iot-1"
+    icon: cisco/switches/workgroup-switch
+  - id: iot-2
+    name: "iot-2"
+    icon: cisco/switches/workgroup-switch
+links:
+  - from: aaa-01:p1
+    to: aaa-02:q1
+  - from: aaa-02:p2
+    to: ab-sw1:q2
+  - from: ab-sw1:p3
+    to: acc-sw1:q3
+  - from: acc-sw1:p4
+    to: acc-sw2:q4
+  - from: acc-sw2:p5
+    to: ya-1:q5
+  - from: ya-1:p6
+    to: ja-1:q6
+  - from: ja-1:p7
+    to: za-1:q7
+  - from: za-1:p8
+    to: core-1:q8
+  - from: core-1:p9
+    to: core-2:q9
+  - from: core-2:p10
+    to: iot-1:q10
+  - from: iot-1:p11
+    to: iot-2:q11
+  - from: aaa-01:x1
+    to: acc-sw1:x2
+  - from: aaa-01:x3
+    to: ya-1:x4
+  - from: aaa-02:x5
+    to: za-1:x6
+  - from: ja-1:x7
+    to: core-1:x8

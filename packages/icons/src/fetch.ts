@@ -2,6 +2,7 @@ import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { unzipSync } from 'fflate';
 import { generateManifestFromSvgDir, kebab } from './generate.js';
+import { compareIds } from '@marrow/model';
 
 /**
  * Fetch vendor icon packs from their OFFICIAL sources. The repo never ships
@@ -156,7 +157,7 @@ export const EXTRACTORS: Record<string, Extractor> = {
       (byProduct.get(product) ?? byProduct.set(product, []).get(product)!).push([path, data]);
     }
     for (const [product, variants] of byProduct) {
-      variants.sort((a, b) => a[0].localeCompare(b[0]));
+      variants.sort((a, b) => compareIds(a[0], b[0]));
       const pick = variants.find(([p]) => p.includes('-color')) ?? variants[0];
       if (pick) put(out, `svg/current/${kebab(product)}.svg`, pick[1]);
     }

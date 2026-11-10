@@ -1,4 +1,4 @@
-import type { Device, Topology } from '@marrow/model';
+import { byId, compareIds, type Device, type Topology } from '@marrow/model';
 import type { Rect, SceneZone, Vec } from '@marrow/scene';
 import { TIER_RANK } from './classify.js';
 import { elkLayout } from './elk.js';
@@ -68,7 +68,7 @@ export async function composeZones(
     const own = devicesByZone.get(zoneId) ?? [];
     const ownBoxes = own.length > 0 ? await layoutOwn(t, own, sizing, metrics) : new Map<string, Rect>();
     const children: ZoneLayout[] = [];
-    for (const childId of (childZones.get(zoneId) ?? []).filter((c) => hasContent(c)).sort()) {
+    for (const childId of (childZones.get(zoneId) ?? []).filter((c) => hasContent(c)).sort(compareIds)) {
       children.push(await measure(childId));
     }
     return finishZone(zoneId, own, ownBoxes, children, metrics);
@@ -76,7 +76,7 @@ export async function composeZones(
 
   // Root items: top-level zones with content + a pseudo-unit for zoneless devices.
   const rootItems: ZoneLayout[] = [];
-  for (const z of [...t.zones].sort((a, b) => a.id.localeCompare(b.id))) {
+  for (const z of [...t.zones].sort(byId)) {
     if (z.parent !== undefined) continue;
     if (!hasContent(z.id)) continue;
     rootItems.push(await measure(z.id));
@@ -98,7 +98,13 @@ export async function composeZones(
 
   // Pack the root mosaic in story order (edge/core zones first).
   const rootGap = metrics?.composeGap ?? GAP;
-  rootItems.sort((a, b) => a.minRank - b.minRank || (a.id ?? '~').localeCompare(b.id ?? '~'));
+  // Ties: the zoneless pseudo-unit first, then zones by id (the order the
+  // former locale sort gave its '~' sentinel — kept so layouts do not move).
+  rootItems.sort(
+    (a, b) =>
+      a.minRank - b.minRank ||
+      (a.id === undefined ? (b.id === undefined ? 0 : -1) : b.id === undefined ? 1 : compareIds(a.id, b.id)),
+  );
   const rootPack = shelfPack(
     rootItems.map((z) => ({ id: z.id ?? '~unzoned', w: z.w, h: z.h })),
     rootGap,
@@ -142,7 +148,7 @@ export async function composeZones(
     const pos = rootPack.positions.get(zl.id ?? '~unzoned');
     if (pos) place(zl, pos.x, pos.y, 0);
   }
-  result.zones.sort((a, b) => a.depth - b.depth || a.id.localeCompare(b.id));
+  result.zones.sort((a, b) => a.depth - b.depth || compareIds(a.id, b.id));
   return result;
 }
 
@@ -201,7 +207,7 @@ function finishZone(
   for (const child of children) {
     items.push({ id: child.id ?? '~unzoned', w: child.w, h: child.h, rank: child.minRank });
   }
-  items.sort((a, b) => a.rank - b.rank || a.id.localeCompare(b.id));
+  items.sort((a, b) => a.rank - b.rank || compareIds(a.id, b.id));
   const gap = metrics?.composeGap ?? GAP;
   const packed = shelfPack(items, gap);
   const padX = metrics?.zonePad ?? PAD_X;

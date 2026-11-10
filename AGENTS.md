@@ -14,7 +14,7 @@ Marrow compiles declarative network topology YAML (`input/*.yaml`) into self-con
 Run from repository root. Flags require `--` separator (e.g., `npm run validate -- input/net.yaml --json`).
 
 ```bash
-npm run validate <file> [--json]       # Schema & reference verification (exit code 0 required)
+npm run validate <file> [--json]       # Schema, reference & geometry-lint verification (exit code 0 required)
 npm run build <file> [--single] [-o X] # Compile standalone HTML or multi-page site
 npm run dev                            # Live hot-reloading preview server (127.0.0.1:5200)
 npm run snapshot <file> [-o X.png]     # Headless visual verification (Playwright Chromium)

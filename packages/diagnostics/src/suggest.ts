@@ -1,3 +1,5 @@
+import { compareIds } from '@marrow/model';
+
 /** Levenshtein edit distance with an early-exit cap for speed. */
 export function editDistance(a: string, b: string, cap = Infinity): number {
   if (a === b) return 0;
@@ -42,6 +44,6 @@ export function closestMatches(input: string, candidates: Iterable<string>, max 
     }
     if (dist <= threshold) scored.push({ candidate, dist });
   }
-  scored.sort((x, y) => x.dist - y.dist || x.candidate.localeCompare(y.candidate));
+  scored.sort((x, y) => x.dist - y.dist || compareIds(x.candidate, y.candidate));
   return scored.slice(0, max).map((s) => s.candidate);
 }

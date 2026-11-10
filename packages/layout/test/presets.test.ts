@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import type { Device, Link, Topology } from '@marrow/model';
-import { classify, findHubs, layoutTopology } from '@marrow/layout';
+import { classify, findHubs, layoutTopology, resolveLayoutMetrics } from '@marrow/layout';
 import { lintScene } from '@marrow/lint';
 
 function dev(id: string): Device {
@@ -106,4 +106,36 @@ describe('preset layouts stay linter-clean and deterministic', () => {
     const avg = lengths.reduce((s, l) => s + l, 0) / lengths.length;
     for (const l of lengths) expect(l).toBeLessThan(avg * 1.8);
   });
+
+  // Regression: placeCircle sized arcs with the fixed 48px gap (not the
+  // density metric) and by width only, so compact rings and nodes taller than
+  // wide (short names: chip + label under it) overlapped on the diagonals.
+  for (const [density, scale] of [
+    ['compact', 1],
+    ['compact', 0.4],
+    ['spacious', 2.5],
+  ] as const) {
+    test(`ring, mesh and star of tall nodes stay clean at ${density}@${scale}`, async () => {
+      const metrics = resolveLayoutMetrics(density, scale);
+      const ids = Array.from({ length: 10 }, (_, i) => `n${i}`);
+      const ring = topo(ids.map(dev), ids.map((id, i) => link(id, ids[(i + 1) % ids.length]!)));
+      const mesh = topo(
+        ids.slice(0, 6).map(dev),
+        ids.slice(0, 6).flatMap((a, i) => ids.slice(i + 1, 6).map((b) => link(a, b))),
+      );
+      const star = topo(
+        [{ ...dev('hub'), name: 'a-very-wide-hub-router-label' }, ...ids.slice(0, 3).map(dev)],
+        ids.slice(0, 3).map((id) => link('hub', id)),
+      );
+      for (const [t, archetype] of [
+        [ring, 'ring'],
+        [mesh, 'mesh'],
+        [star, 'hub-spoke'],
+      ] as const) {
+        const scene = await layoutTopology(t, { metrics });
+        expect(scene.archetype).toBe(archetype);
+        expect(lintScene(scene).l1.map((i) => i.message)).toEqual([]);
+      }
+    });
+  }
 });

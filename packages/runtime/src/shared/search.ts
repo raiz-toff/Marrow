@@ -1,3 +1,5 @@
+import { compareIds } from '@marrow/model';
+
 /** Pure spotlight-search scoring — unit-tested outside the DOM. */
 
 export interface SearchDoc {
@@ -50,6 +52,6 @@ export function searchDocs(query: string, docs: readonly SearchDoc[], max = 12):
     }
     if (allHit) hits.push({ id: doc.id, score });
   }
-  hits.sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
+  hits.sort((a, b) => b.score - a.score || compareIds(a.id, b.id));
   return hits.slice(0, max);
 }

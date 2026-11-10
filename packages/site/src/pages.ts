@@ -1,4 +1,4 @@
-import type { Device, DeviceStatus, Link, LinkStatus, Tier, Topology } from '@marrow/model';
+import { byId, compareIds, type Device, type DeviceStatus, type Link, type LinkStatus, type Tier, type Topology } from '@marrow/model';
 import type { NodeMeta } from '@marrow/layout';
 import { extractSvg } from '@marrow/render-svg';
 import { ATTR, hookAttr, type InventoryView } from '@marrow/runtime';
@@ -105,7 +105,7 @@ export function overviewTopology(t: Topology, plan: SitePlan, zi: ZoneIndex): Pa
     const a = zi.topZoneOf.get(l.from.device);
     const b = zi.topZoneOf.get(l.to.device);
     if (a === undefined || b === undefined || a === b) continue;
-    const [x, y] = [a, b].sort();
+    const [x, y] = [a, b].sort(compareIds);
     const key = `${x}--${y}`;
     const existing = aggregates.get(key);
     if (existing) {
@@ -122,7 +122,7 @@ export function overviewTopology(t: Topology, plan: SitePlan, zi: ZoneIndex): Pa
     }
   }
   const links: Link[] = [...aggregates.entries()]
-    .sort((a, b) => a[0].localeCompare(b[0]))
+    .sort((a, b) => compareIds(a[0], b[0]))
     .map(([, agg]) => {
       const link: Link = { ...agg.link, status: agg.worst, animated: agg.animated };
       if (agg.count > 1) link.label = `×${agg.count}`;
@@ -299,7 +299,7 @@ export function inventoryBody(
   const symbols: string[] = [];
   const symbolOf = new Map<string, string>();
   if (iconSvg) {
-    for (const id of [...new Set(t.devices.map((d) => d.icon))].sort()) {
+    for (const id of [...new Set(t.devices.map((d) => d.icon))].sort(compareIds)) {
       const raw = iconSvg(id);
       const extracted = raw !== undefined ? extractSvg(raw) : undefined;
       if (!extracted) continue;
@@ -339,7 +339,7 @@ export function inventoryBody(
   <p class="m-dim">${t.devices.length} devices · ${t.links.length} links · click a column to sort</p>`;
   const flatTable = (): string =>
     `${table}${thead}<tbody>${[...t.devices]
-      .sort((a, b) => a.id.localeCompare(b.id))
+      .sort(byId)
       .map(row)
       .join('\n')}</tbody></table>`;
 
@@ -364,7 +364,7 @@ export function inventoryBody(
       .map((key) => {
         const devices = buckets
           .get(key)!
-          .sort((a, b) => tierRank(a) - tierRank(b) || a.name.localeCompare(b.name));
+          .sort((a, b) => tierRank(a) - tierRank(b) || compareIds(a.name.toLowerCase(), b.name.toLowerCase()) || compareIds(a.name, b.name));
         const isNested = href !== undefined && key !== '' && `zones/${key}.html` !== href;
         const sub = isNested
           ? `<tr class="m-inv-sub" ${hookAttr('inventory.sub')}><td colspan="6">${esc(zoneName.get(key) ?? key)}</td></tr>`
@@ -418,5 +418,5 @@ function representativeIcon(members: readonly Device[]): string {
   const pool = infra.length > 0 ? infra : members;
   const counts = new Map<string, number>();
   for (const m of pool) counts.set(m.icon, (counts.get(m.icon) ?? 0) + 1);
-  return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0]?.[0] ?? 'cisco/misc/generic';
+  return [...counts.entries()].sort((a, b) => b[1] - a[1] || compareIds(a[0], b[0]))[0]?.[0] ?? 'cisco/misc/generic';
 }

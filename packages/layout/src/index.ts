@@ -1,4 +1,4 @@
-import type { Topology } from '@marrow/model';
+import { byId, type Topology } from '@marrow/model';
 import type { Rect, Scene, SceneEdge, SceneNode, SceneZone, Vec } from '@marrow/scene';
 import { classify, findHubs, TIER_RANK, type Archetype } from './classify.js';
 import { composeZones } from './compose.js';
@@ -86,7 +86,7 @@ export async function layoutTopology(t: Topology, options: LayoutOptions = {}): 
   }
 
   const nodes: SceneNode[] = [];
-  for (const d of [...t.devices].sort((a, b) => a.id.localeCompare(b.id))) {
+  for (const d of [...t.devices].sort(byId)) {
     const box = nodeBoxes.get(d.id);
     const s = sizing.get(d.id);
     if (!box || !s) continue;
@@ -121,7 +121,7 @@ export async function layoutTopology(t: Topology, options: LayoutOptions = {}): 
   }
 
   const edges: SceneEdge[] = [];
-  for (const l of [...t.links].sort((a, b) => a.id.localeCompare(b.id))) {
+  for (const l of [...t.links].sort(byId)) {
     let points = edgePoints.get(l.id);
     if (l.from.device === l.to.device) {
       points = selfLoop(nodeBoxes.get(l.from.device));

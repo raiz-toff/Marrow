@@ -1,4 +1,4 @@
-import type { Device, DeviceStatus, Link, LinkStatus, Topology } from '@marrow/model';
+import { byId, compareIds, type Device, type DeviceStatus, type Link, type LinkStatus, type Topology } from '@marrow/model';
 
 /**
  * Build-time cluster collapse (the Auvik pattern): endpoint devices that hang
@@ -42,9 +42,9 @@ export function collapseEndpoints(t: Topology, options: CollapseOptions = {}): T
 
   const folded = new Map<string, Device>(); // member id → its stack node
   const stacks: Device[] = [];
-  for (const [parentId, members] of [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
+  for (const [parentId, members] of [...groups.entries()].sort((a, b) => compareIds(a[0], b[0]))) {
     if (members.length < minMembers) continue;
-    members.sort((a, b) => a.id.localeCompare(b.id));
+    members.sort(byId);
     const worst = members.reduce<DeviceStatus>(
       (acc, m) => (STATUS_RANK[m.status] < STATUS_RANK[acc] ? m.status : acc),
       'up',
@@ -100,7 +100,7 @@ export function collapseEndpoints(t: Topology, options: CollapseOptions = {}): T
       });
     }
   }
-  for (const [, agg] of [...aggregate.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
+  for (const [, agg] of [...aggregate.entries()].sort((a, b) => compareIds(a[0], b[0]))) {
     agg.link.status = agg.worst;
     agg.link.label = `×${agg.count}`;
     links.push(agg.link);
@@ -112,5 +112,5 @@ export function collapseEndpoints(t: Topology, options: CollapseOptions = {}): T
 function modalIcon(members: readonly Device[]): string {
   const counts = new Map<string, number>();
   for (const m of members) counts.set(m.icon, (counts.get(m.icon) ?? 0) + 1);
-  return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0]![0];
+  return [...counts.entries()].sort((a, b) => b[1] - a[1] || compareIds(a[0], b[0]))[0]![0];
 }
