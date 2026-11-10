@@ -32,3 +32,20 @@ In addition, `@marrow/runtime` listens for `hashchange` events. Host pages embed
 **Separate embed build artifacts.** Rejected because maintaining multiple build flavors doubled compilation times and asset storage requirements.
 
 **Asynchronous `postMessage` negotiation.** Rejected because asynchronous handshake messages cannot prevent the initial frame from painting full chrome before hiding it.
+
+## Amendments (November 2026)
+
+- **Parameters.** Alongside `chrome`, `inspector`, `minimap` and `theme`, the pre-boot
+  script also applies `controls=on|off` (`data-controls`) and the runtime applies
+  `d=<device-id>` and `c=<x>,<y>,<zoom>` deep links on boot. The `layout` parameter
+  and `data-layout` attribute were removed; nothing read them.
+- **What minimal chrome hides.** Command bar, breadcrumbs, sidebar, sidebar backdrop,
+  watermark, minimap and the phone bottom bar. Zoom controls, pan, selection and
+  tooltips stay live. Earlier builds left the bottom bar and the backdrop in place,
+  which blurred Site pages on narrow viewports.
+- **Flags survive.** The runtime rewrites only its own `d` and `c` hash keys and
+  preserves every other pair, and links between the pages of a Site carry the
+  active flags, so an embedded Site stays in kiosk mode as the viewer navigates.
+- **Hooks.** The chrome elements the runtime looks up are `data-m` attributes
+  defined by the page contract ([ADR-0023](/docs/decisions/0023-typed-page-contract)),
+  not CSS classes; the CSS selectors in this record illustrate the mechanism only.

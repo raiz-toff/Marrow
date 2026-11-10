@@ -45,20 +45,18 @@ on `<html>` before first paint, so the full chrome never flashes:
 
 | Parameter | Values | Effect |
 | :--- | :--- | :--- |
-| `chrome` | `minimal` \| `full` | `minimal` hides the command bar, breadcrumbs, sidebar, backdrop, watermark, minimap and, on phones, the mobile bar¹. Zoom controls, pan, selection, tooltips and the inspector stay. |
+| `chrome` | `minimal` \| `full` | `minimal` hides the command bar, breadcrumbs, sidebar, backdrop, watermark, minimap and, on phones, the mobile bar. Zoom controls, pan, selection, tooltips and the inspector stay. |
 | `embed` | `true` \| `false` | Shorthand for `chrome=minimal` / `chrome=full`. |
 | `inspector` | `off` \| `on` | `off` keeps the inspector drawer closed when a device or link is clicked. |
 | `minimap` | `off` \| `on` | `off` hides the minimap. |
-| `controls` | `off` \| `on` | `off` hides the zoom controls¹. |
+| `controls` | `off` \| `on` | `off` hides the zoom controls. |
 | `theme` | `dark` \| `light` | Overrides the authored theme for this view. |
 | `d` | device id | Selects that device and flies the camera to it (hash only: `#d=core-sw-01`). |
-| `c` | `x,y,k` | Camera centre and zoom¹ (hash only: `#c=120,-40,1.5`). |
+| `c` | `x,y,k` | Camera centre and zoom (hash only: `#c=120,-40,1.5`). |
 | `export_title` | `on` \| `off` | Title block on PNG/SVG exports. |
 | `export_legend` | `on` \| `off` | Auto-legend on exports. |
 | `export_ports` | `on` \| `off` | Port chips forced visible on exports. |
 
-¹ Lands with the `arch/chrome-modes` change; earlier builds ignore `controls`
-and `c`, and keep the mobile bar in minimal chrome.
 
 Combine them in the query (`?chrome=minimal&inspector=off`) or the hash
 (`#chrome=minimal;inspector=off;minimap=off` — pairs are `;`-separated, `&`
@@ -72,7 +70,7 @@ change does not reload the page, a host can switch modes live by setting
 
 **The diagram writes its own hash.** Selecting a device rewrites it (`d=…`);
 the kiosk flags (`chrome`, `inspector`, `minimap`, `controls`) survive that
-rewrite, and links between the pages of a multi-page site carry them along¹.
+rewrite, and links between the pages of a multi-page site carry them along.
 
 <div class="my-6 overflow-hidden rounded-xl border border-border/60 bg-muted/20 shadow-xl not-prose">
   <img src="/screenshots/embed-kiosk.png" alt="Embedded Marrow diagram with minimal chrome" class="w-full object-cover rounded-t-xl" />
