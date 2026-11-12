@@ -10,7 +10,7 @@ and is imported by the site compiler (which produces pages) and by the runtime
 client (which consumes them). It owns four things:
 
 1. **Hooks.** Every element the runtime looks up carries a `data-m="feature.hook"`
-   attribute drawn from a typed registry (`HOOKS`, 52 ids) that records each
+   attribute drawn from a typed registry (`HOOKS`) that records each
    hook's element kind, cardinality (`one` or `many`) and the page kinds it
    appears on. The site renders hooks with `hookAttr(id)`; the runtime finds
    them with `find`, `maybe` and `findAll`, which throw a `HookError` naming
