@@ -133,6 +133,26 @@ export const CLOUD: Sprite = [
   '..###############...',
 ];
 
+/** A phone, a diagram on its screen. */
+export const PHONE: Sprite = [
+  '.##########.',
+  '#oooooooooo#',
+  '#oooo##oooo#',
+  '#o########o#',
+  '#o#kkkkkk#o#',
+  '#o#kkbkkk#o#',
+  '#o#kkskkk#o#',
+  '#o#kbsbkk#o#',
+  '#o#kkkkkk#o#',
+  '#o#kgkkgk#o#',
+  '#o#kkkkkk#o#',
+  '#o########o#',
+  '#oooooooooo#',
+  '#oooo##oooo#',
+  '#oooooooooo#',
+  '.##########.',
+];
+
 /** A file with a folded corner and a tiny diagram on it. */
 export const FILE: Sprite = [
   '########....',

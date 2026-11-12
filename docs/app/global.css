@@ -50,6 +50,7 @@
   --color-px-dot: #c9c9c4;
   --color-px-up: #16a34a;
   --color-px-warn: #d97706;
+  --color-bezel: #27272a;
 }
 
 .dark {
@@ -68,12 +69,27 @@
   --color-px-dot: #1e293b;
   --color-px-up: #22c55e;
   --color-px-warn: #f59e0b;
+  --color-bezel: #3f3f46;
 }
 
 .landing {
   --color-fd-background: var(--color-paper);
   background-color: var(--color-paper);
   color: var(--color-ink);
+}
+
+/* Showcase device frames: a bezel with stepped, pixel-art corners, two
+   steps of --px each. */
+.px-corners {
+  --s: var(--px, 6px);
+  clip-path: polygon(
+    calc(2 * var(--s)) 0, calc(100% - 2 * var(--s)) 0, calc(100% - 2 * var(--s)) var(--s), calc(100% - var(--s)) var(--s),
+    calc(100% - var(--s)) calc(2 * var(--s)), 100% calc(2 * var(--s)), 100% calc(100% - 2 * var(--s)),
+    calc(100% - var(--s)) calc(100% - 2 * var(--s)), calc(100% - var(--s)) calc(100% - var(--s)),
+    calc(100% - 2 * var(--s)) calc(100% - var(--s)), calc(100% - 2 * var(--s)) 100%, calc(2 * var(--s)) 100%,
+    calc(2 * var(--s)) calc(100% - var(--s)), var(--s) calc(100% - var(--s)), var(--s) calc(100% - 2 * var(--s)),
+    0 calc(100% - 2 * var(--s)), 0 calc(2 * var(--s)), var(--s) calc(2 * var(--s)), var(--s) var(--s), calc(2 * var(--s)) var(--s)
+  );
 }
 
 /* Hero scene: one sequence. The YAML types itself, the devices arrive, the
@@ -161,6 +177,7 @@
 :root {
   --marrow-color: #09090b;
   --studio-color: #09090b;
+  --showcase-color: var(--color-signal);
   --components-color: hsl(217, 100%, 58%);
   --agents-color: hsl(250, 80%, 54%);
   --decisions-color: hsl(160, 84%, 39%);
@@ -169,6 +186,7 @@
 .dark {
   --marrow-color: #ffffff;
   --studio-color: #ffffff;
+  --showcase-color: var(--color-signal);
   --components-color: #a9ceff;
   --agents-color: hsl(250 100% 80%);
   --decisions-color: #6ee7b7;

@@ -1,0 +1,59 @@
+---
+title: Headless and dev
+description: The outputs that are not an interactive page, PNGs from the CLI, print and the export menu, and the live-reload preview you work in.
+full: true
+---
+
+import { Pair, Shot } from '@/components/showcase/plates';
+
+The images on this page are committed to the repo, because the host serving these docs has no
+browser to make them. `node docs/scripts/build-showcase-assets.mjs` regenerates every one.
+
+## marrow snapshot
+
+`snapshot` compiles the YAML and photographs it in headless Chromium, at the size you ask for
+(1440 × 900 unless you say otherwise). Agents use it to look at a diagram before you do; it
+is also the quickest way to get a picture into a ticket or a chat. `--focus` selects a device
+first, and `--theme` overrides the YAML's theme.
+
+<Shot src="snapshot-zoned-1366.png" w={1366} h={900} alt="Two-site diagram in full chrome, dark theme, 1366 by 900" command="npm run snapshot -- docs/demos/zoned.yaml -o zoned.png --width 1366 --height 900" />
+
+<Pair>
+  <Shot src="snapshot-tiered-light-800.png" w={800} h={600} alt="Campus backbone diagram in the light theme, 800 by 600" command="npm run snapshot -- docs/demos/tiered.yaml -o tiered.png --width 800 --height 600 --theme light" />
+  <Shot src="snapshot-zoned-focus-800.png" w={800} h={600} alt="Two-site diagram with the Database selected and its inspector open, 800 by 600" command="npm run snapshot -- docs/demos/zoned.yaml -o focus.png --width 800 --height 600 --focus dc-srv-02" />
+</Pair>
+
+<Shot src="snapshot-hub-spoke-1366.png" w={1366} h={900} alt="WAN hub and branches in the light theme, 1366 by 900" command="npm run snapshot -- docs/demos/hub-spoke.yaml -o wan.png --width 1366 --height 900 --theme light" />
+
+## Print
+
+Printing uses the light palette on white paper, whatever the screen theme. The interface
+(sidebar, command bar, minimap, controls, inspector) is hidden, every device name and port label
+prints regardless of the zoom on screen, and animation stops. On SVG pages the whole diagram is
+fitted to the page rather than the part the camera shows. This is `zoned.html`, a dark diagram, as Chromium lays
+it out for an A4 page.
+
+<figure className="not-prose my-8 mx-auto max-w-[560px] border border-ink/70 bg-sheet">
+  <img src="/showcase/print-zoned.png" alt="The two-site diagram laid out for print: white page, light palette, no interface" width={794} height={1123} loading="lazy" className="block h-auto w-full" />
+</figure>
+
+## Export menu
+
+Every diagram can save itself: open the sidebar's **Export** menu, the command center
+(<kbd>Ctrl</kbd> <kbd>K</kbd>, or <kbd>⌘</kbd> <kbd>K</kbd> on a Mac) or the right-click menu.
+**Export PNG** works on every page; **Export SVG**, a standalone vector file, appears on pages
+drawn as SVG. **Print…** is in the same menu.
+
+<Shot src="export-menu.png" w={1100} h={680} alt="The diagram's sidebar with the Export menu open: Export PNG, Export SVG, Print" />
+
+## marrow serve
+
+`npm run dev` runs `marrow serve`: a preview on 127.0.0.1 (port 5200 by default) that rebuilds
+when you save a YAML file and reloads the open page over server-sent events. Here, the file
+gained a device and `dc-srv-02` was marked `status: down`; the page reloaded on its own. A save
+that does not validate shows the diagnostics in a banner and leaves the last good diagram up.
+
+<Pair>
+  <Shot src="serve-before.png" w={1100} h={680} alt="marrow serve showing the two-site diagram before the edit" command="node packages/cli/dist/index.js serve live/ --port 5277">Before: the file as it started.</Shot>
+  <Shot src="serve-after.png" w={1100} h={680} alt="The same page after the save: a DR Replica server added and the Database marked down" >After the save: the new DR Replica, and the Database's status light is red.</Shot>
+</Pair>

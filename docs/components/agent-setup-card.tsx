@@ -82,13 +82,13 @@ export function SetupPrompt({ children, id = 'setup' }: { children?: ReactNode; 
   );
 }
 
-/** A shell command in a box, with a copy button. */
-export function CopyCommand({ command }: { command: string }) {
+/** A shell command (or, with `prompt={false}`, a URL) in a box, with a copy button. */
+export function CopyCommand({ command, prompt = true }: { command: string; prompt?: boolean }) {
   const [copied, copy] = useCopy(command);
   return (
     <div className="flex h-11 w-full sm:w-auto min-w-0 items-stretch border border-ink/70 bg-sheet font-mono text-xs sm:text-[13px]">
       <code className="flex min-w-0 flex-1 items-center overflow-x-auto whitespace-nowrap px-3 text-ink">
-        <span className="select-none text-ink-dim">$&nbsp;</span>
+        {prompt && <span className="select-none text-ink-dim">$&nbsp;</span>}
         {command}
       </code>
       <button

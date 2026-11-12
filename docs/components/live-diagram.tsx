@@ -15,12 +15,17 @@ export interface Example {
 
 const TAB = 'inline-flex h-11 sm:h-9 shrink-0 items-center px-3 text-sm cursor-pointer focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-signal';
 
-/** The live diagram: a compiled Marrow page in minimal chrome, with the YAML it came from. */
-export function DemoExample({ examples }: { examples: Example[] }) {
+/**
+ * The live diagram: a compiled Marrow page with the YAML it came from. With
+ * `modes`, the reader also switches between minimal and full chrome.
+ */
+export function DemoExample({ examples, modes = false }: { examples: Example[]; modes?: boolean }) {
   const [active, setActive] = useState(examples[0]!);
   const [yamlOpen, setYamlOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [chrome, setChrome] = useState<'minimal' | 'full'>('minimal');
   const page = `/demo/${active.file.replace(/\.yaml$/, '.html')}`;
+  const url = chrome === 'minimal' ? `${page}#chrome=minimal` : page;
 
   const copy = async () => {
     if (await copyToClipboard(active.yaml)) {
@@ -48,6 +53,18 @@ export function DemoExample({ examples }: { examples: Example[] }) {
           ))}
         </div>
         <div className="flex w-full sm:w-auto items-stretch border-t sm:border-t-0 border-rule">
+          {modes &&
+            (['minimal', 'full'] as const).map((c) => (
+              <button
+                key={c}
+                type="button"
+                aria-pressed={chrome === c}
+                onClick={() => setChrome(c)}
+                className={`${TAB} border-r border-rule font-mono text-xs ${chrome === c ? 'text-ink underline underline-offset-4' : 'text-ink-dim hover:text-ink'}`}
+              >
+                {c}
+              </button>
+            ))}
           <button
             type="button"
             aria-expanded={yamlOpen}
@@ -56,7 +73,7 @@ export function DemoExample({ examples }: { examples: Example[] }) {
           >
             {yamlOpen ? 'Hide' : 'Show'} {active.file}
           </button>
-          <a href={page} target="_blank" rel="noreferrer" title="Open the diagram on its own page" className={`${TAB} justify-center border-l border-rule text-ink-dim hover:text-ink`}>
+          <a href={url} target="_blank" rel="noreferrer" title="Open the diagram on its own page" className={`${TAB} justify-center border-l border-rule text-ink-dim hover:text-ink`}>
             <ExternalLink className="size-4" />
             <span className="sr-only">Open {active.label} on its own page</span>
           </a>
@@ -80,10 +97,10 @@ export function DemoExample({ examples }: { examples: Example[] }) {
         )}
         <div className="relative h-[420px] sm:h-[520px] lg:h-[640px] w-full min-w-0 lg:flex-1 bg-paper">
           <MarrowEmbed
-            key={page}
-            src={`${page}?chrome=minimal`}
+            key={url}
+            src={page}
             title={`${active.label} diagram compiled by Marrow`}
-            chrome="minimal"
+            chrome={chrome}
             height="100%"
             floatingActions={false}
             className="h-full min-h-0 rounded-none border-0"

@@ -1,0 +1,76 @@
+---
+title: Chrome modes
+description: One compiled file, nine URLs. Flags in the address decide how much interface surrounds the diagram.
+full: true
+---
+
+import { Devices, Specimen } from '@/components/showcase/plates';
+
+Every frame on this page loads the same file, `zoned.html`, built from `docs/demos/zoned.yaml`
+(<Devices demo="zoned.yaml" /> devices in two zones). Only the URL changes.
+
+Flags go in the query (`?chrome=minimal`) or in the hash (`#chrome=minimal;inspector=off`).
+When both name the same flag, the query wins. Separate hash pairs with `;`. The examples
+here use the hash, so your browser fetches the file once for all of them.
+
+## Full chrome
+
+<Specimen title="Full chrome (no flags)" url="/demo/zoned.html">
+  What the build writes: the command bar with search and the theme switch, the sidebar, the minimap, the zoom controls and the watermark. Clicking a device opens the inspector.
+</Specimen>
+
+## Minimal chrome
+
+<Specimen title="chrome=minimal" url="/demo/zoned.html#chrome=minimal">
+  Hides the command bar, breadcrumbs, sidebar, backdrop, watermark, minimap and the phone bottom bar. Zoom controls, panning, selection, tooltips and the inspector stay. `#embed=true` is an alias.
+</Specimen>
+
+## One part at a time
+
+<Specimen title="inspector=off" url="/demo/zoned.html#inspector=off">
+  Clicking a device still selects it and highlights its links; no drawer opens.
+</Specimen>
+
+<Specimen title="minimap=off" url="/demo/zoned.html#minimap=off">
+  Removes the minimap and nothing else.
+</Specimen>
+
+<Specimen title="controls=off" url="/demo/zoned.html#controls=off">
+  Removes the zoom buttons. Dragging to pan and scrolling to zoom still work.
+</Specimen>
+
+## Theme
+
+Without a flag the YAML decides: `zoned.yaml` declares `theme: dark`, so this file is dark
+whatever your site's theme is. A YAML with `theme: auto` follows the reader's system setting.
+`theme=` overrides both. The [React component](/docs/showcase/embedding#react-component) sets it
+for you from your site's theme.
+
+<Specimen title="theme=light" url="/demo/zoned.html#chrome=minimal;theme=light">
+  The light palette, whatever the YAML declares.
+</Specimen>
+
+<Specimen title="theme=dark" url="/demo/zoned.html#chrome=minimal;theme=dark">
+  The dark palette, whatever the YAML declares.
+</Specimen>
+
+## Deep links
+
+<Specimen title="d=dc-srv-02" url="/demo/zoned.html#d=dc-srv-02">
+  Opens with the device `dc-srv-02` (Database) selected, its link highlighted and its inspector open.
+</Specimen>
+
+<Specimen title="c=x,y,zoom" url="/demo/zoned.html#chrome=minimal;c=140,330,0.9">
+  Opens with the point (140, 330) of the diagram, the datacenter, at the centre, at zoom 0.9. Once the reader pans or selects, the diagram writes `c` and `d` back into the address, so the URL in the address bar always opens the current view.
+</Specimen>
+
+## Flags stay put
+
+The diagram rewrites only its own `d` and `c` pairs and keeps every other pair as you wrote it,
+so panning and clicking never drop your flags. On a multi-page Site, links between pages carry
+the active flags, so a reader who navigates stays in the mode you embedded. Try it below: click a
+zone on the overview, and the zone page opens still minimal and light.
+
+<Specimen title="Flags across Site pages" url="/demo/scale-site/index.html#chrome=minimal;theme=light">
+  The overview of the 625-device Site from [Single file or Site](/docs/showcase/output). Each page it links to opens with `chrome=minimal;theme=light`.
+</Specimen>

@@ -17,6 +17,7 @@ export function getSection(path: string | undefined) {
   if (!dir) return 'marrow';
   return (
     {
+      showcase: 'showcase',
       components: 'components',
       agents: 'agents',
       decisions: 'decisions',

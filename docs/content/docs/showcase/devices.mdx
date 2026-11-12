@@ -1,0 +1,67 @@
+---
+title: Phones and tablets
+description: Real iframes at phone and tablet viewports, so the diagram's own breakpoints fire as they would on the device.
+full: true
+---
+
+import { DeviceFrame, ResizableFrame } from '@/components/showcase/frames';
+
+The diagram picks its layout from the width of its own viewport. Inside an iframe that is the
+iframe's width, not the reader's screen. Each frame below is an iframe of exactly the device's
+CSS viewport, drawn inside a bezel; on a narrow screen the whole device scales down instead of
+overflowing.
+
+- **Below 768 px (phone):** the command bar and the minimap are hidden, a bottom bar holds the
+  brand, the page selector, search, the sidebar and the theme switch, the sidebar is a drawer,
+  and the inspector opens as a bottom sheet. Drag its handle to snap it between peek, half and full.
+- **768 to 1024 px (tablet):** the sidebar becomes a drawer over the page and starts closed; the
+  inspector stays beside the diagram.
+- **Touch:** controls are at least 44 × 44 px on phones and wherever the pointer is coarse.
+
+## Phone, full chrome
+
+<div className="not-prose my-8 grid gap-10 md:grid-cols-2">
+  <figure className="min-w-0">
+    <DeviceFrame device="phone" src="/demo/zoned.html" title="zoned.html on a 360 px phone" />
+    <figcaption className="mt-3 text-center font-mono text-xs text-ink-dim">/demo/zoned.html</figcaption>
+  </figure>
+  <figure className="min-w-0">
+    <DeviceFrame device="phone" src="/demo/zoned.html#d=dc-srv-02" title="zoned.html on a phone with a device selected" />
+    <figcaption className="mt-3 text-center font-mono text-xs text-ink-dim">/demo/zoned.html#d=dc-srv-02</figcaption>
+  </figure>
+</div>
+
+The left phone shows the bottom bar. The right one opens with `dc-srv-02` selected, so the
+inspector is already up as a bottom sheet.
+
+## Phone, minimal chrome
+
+<div className="not-prose my-8 grid gap-10 md:grid-cols-2">
+  <figure className="min-w-0">
+    <DeviceFrame device="phone" src="/demo/zoned.html#chrome=minimal" title="zoned.html in minimal chrome on a phone" />
+    <figcaption className="mt-3 text-center font-mono text-xs text-ink-dim">/demo/zoned.html#chrome=minimal</figcaption>
+  </figure>
+  <figure className="min-w-0">
+    <DeviceFrame device="phone" src="/demo/zoned.html#chrome=minimal;d=dc-srv-02" title="zoned.html in minimal chrome on a phone with the inspector open" />
+    <figcaption className="mt-3 text-center font-mono text-xs text-ink-dim">/demo/zoned.html#chrome=minimal;d=dc-srv-02</figcaption>
+  </figure>
+</div>
+
+Minimal chrome drops the bottom bar too, leaving the diagram and the zoom controls. The
+inspector still opens as a bottom sheet.
+
+## Tablet
+
+<figure className="not-prose my-8 mx-auto max-w-[812px]">
+  <DeviceFrame device="tablet" src="/demo/zoned.html" title="zoned.html on a 768 px tablet" />
+  <figcaption className="mt-3 text-center font-mono text-xs text-ink-dim">/demo/zoned.html at 768 × 1024</figcaption>
+</figure>
+
+## Drag the width
+
+Resize this frame by its bottom-right corner and watch the chrome change at 768 px and at
+1024 px. The readout is the frame's width, which is the width the diagram sees.
+
+<div className="not-prose my-8">
+  <ResizableFrame src="/demo/zoned.html" title="zoned.html in a resizable frame" />
+</div>

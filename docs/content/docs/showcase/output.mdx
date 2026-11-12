@@ -1,0 +1,43 @@
+---
+title: Single file or Site
+description: What marrow build writes, measured from this site's own build. One HTML file, or a folder of linked pages for a large network.
+full: true
+---
+
+import { Devices, Nodes, ShapeTable, SiteAssets, SitePages, Size, TierPair } from '@/components/showcase/plates';
+
+`marrow build` writes one of two shapes. A topology with more than 150 devices, or more than 5
+top-level zones that contain devices, becomes a **Site**: a folder with an overview, a page per
+top-level zone, a page per device and an inventory table. Anything smaller is a **Single file**. `--single`
+forces a Single file whatever the size. The thresholds are fixed; [ADR-0008](/docs/decisions/0008-page-split-thresholds)
+explains why.
+
+Below, `docs/demos/scale.yaml` (<Devices demo="scale.yaml" /> devices) is built both ways. Every
+number on this page is read from the files this site serves.
+
+<ShapeTable />
+
+## A Single file
+
+One HTML file with the styles, the runtime and every icon it uses inlined. It makes no network
+requests, so it opens the same from a laptop, a wiki attachment or an air-gapped share. Copy it
+anywhere and it works.
+
+## A Site
+
+The pages share three files: <SiteAssets />. The folder works offline too, but it is a folder:
+publish or copy it whole. Pages link to each other, and search covers every device across pages.
+The zone page and the inventory are large, so they load when you open their tab.
+
+<SitePages />
+
+## SVG up to 250 nodes, canvas above
+
+A page that draws up to 250 nodes renders as SVG; above that, it draws on a canvas. Both read
+the same visual tokens, so links, chips and colours match. Built as a Single file, `scale.yaml`
+folds each group of endpoint devices that hang off a single parent into one stack node, and still
+draws <Nodes path="/demo/scale.html" /> nodes, so it uses the canvas. `zoned.html`
+draws <Nodes path="/demo/zoned.html" /> and uses SVG. The diagram's own **Export SVG** command
+exists only on SVG pages; **Export PNG** works on both.
+
+<TierPair />

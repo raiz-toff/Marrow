@@ -1,0 +1,56 @@
+---
+title: Embedding contexts
+description: How a compiled diagram sits in a host page, from a narrow text column to a full-width band, and the markup for each.
+full: true
+---
+
+import { CardGrid, HeroBand, InProse, ReactEmbed, Sidebar } from '@/components/showcase/contexts';
+
+A compiled diagram is one HTML file, so any page can hold it in an `<iframe>`. Each example
+below is a mock host page with the real diagram inside, followed by the markup that produced
+it. The diagram lays itself out for the size of the iframe, not of the reader's screen: an
+iframe narrower than 768 px gets the phone layout.
+
+## In prose
+
+A narrow column, the way a runbook or a wiki page reads. Minimal chrome keeps the diagram
+from competing with the text.
+
+<InProse />
+
+## In a card grid
+
+Cards about 300 px wide. `controls=off` drops the zoom buttons, which crowd a small card;
+scrolling to zoom still works.
+
+<CardGrid />
+
+## As a hero band
+
+The full width of the page. With the inspector and the zoom buttons off, the band reads as a
+picture until someone drags it.
+
+<HeroBand />
+
+## In a sidebar
+
+A 320 px aside next to the text it illustrates. The minimap is off; at this width the phone
+layout would hide it anyway.
+
+<Sidebar />
+
+## React component
+
+`MarrowEmbed` wraps the iframe for React. It switches between `presets`, opens the diagram full
+screen (the Fullscreen API, or a fixed overlay where that is missing, as on iOS Safari) and keeps
+the diagram's theme in step with your site's: switch this site's theme and the diagram follows
+without reloading. This one is the real component, rendered by this page.
+
+```bash
+npx shadcn@latest add https://marrowdiagram.vercel.app/r/topology-canvas.json
+```
+
+<ReactEmbed />
+
+Every prop is listed in the [component reference](/docs/components/topology-canvas); the
+iframe flags it sets are on [Chrome modes](/docs/showcase/chrome).

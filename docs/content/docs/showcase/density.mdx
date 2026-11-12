@@ -1,0 +1,41 @@
+---
+title: Density and theme
+description: The same diagram at three densities and under a config theme, each built from docs/demos/zoned.yaml with a different marrow.config.yaml.
+full: true
+---
+
+import { DemoFile, DensityRow, ThemePair } from '@/components/showcase/plates';
+
+Density and theme are build settings. Put them in `marrow.config.yaml` and every diagram you
+build gets them; point at another file with `--config`. A topology that declares its own
+`density` or `scale` keeps it. Each frame here is `zoned.yaml` built with one of the files in
+`docs/demos/config/`.
+
+## Density
+
+`compact`, `standard` and `spacious` set the size of node chips, labels, port chips and the
+spacing between layers. The frames open at zoom 1 on the centre of each scene (`c=` from the
+scene's measured size), so what you see is the real difference in size.
+
+<DensityRow />
+
+<DemoFile path="config/compact.yaml" />
+
+`config/standard.yaml` and `config/spacious.yaml` differ only in the value.
+
+```bash
+npm run build -- docs/demos/zoned.yaml --single --config docs/demos/config/compact.yaml -o zoned-compact.html
+```
+
+## Theme
+
+A `theme:` block overrides the palette and status colours for the dark and light schemes, and
+link widths and dash patterns for both. Below, Marrow's own theme next to a config with a
+different background and accent, a different colour for devices that are up, and heavier
+10G links. Both frames open with `dc-sw` selected, so the accent shows on its links.
+
+<ThemePair />
+
+<DemoFile path="config/themed.yaml" />
+
+Every key is in the [configuration reference](/docs/reference/config#theme).
