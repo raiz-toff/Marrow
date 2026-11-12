@@ -11,9 +11,12 @@ iframe's width, not the reader's screen. Each frame below is an iframe of exactl
 CSS viewport, drawn inside a bezel; on a narrow screen the whole device scales down instead of
 overflowing.
 
-- **Below 768 px (phone):** the command bar and the minimap are hidden, a bottom bar holds the
-  brand, the page selector, search, the sidebar and the theme switch, the sidebar is a drawer,
-  and the inspector opens as a bottom sheet. Drag its handle to snap it between peek, half and full.
+- **Below 768 px (phone):** the command bar, the minimap and the zoom controls are hidden. A
+  bottom tab bar holds Pages (the sidebar drawer, with the page picker on a Site), Search, Fit
+  and Menu (theme, labels, ports, motion, export, about); a thin strip at the top shows the
+  title and the theme switch; the watermark shrinks to a one-line attribution. Pinch or
+  double-tap to zoom. The inspector opens as a bottom sheet over the tab bar. Drag its handle to
+  snap it between peek, half and full.
 - **768 to 1024 px (tablet):** the sidebar becomes a drawer over the page and starts closed; the
   inspector stays beside the diagram.
 - **Touch:** controls are at least 44 × 44 px on phones and wherever the pointer is coarse.
@@ -31,7 +34,7 @@ overflowing.
   </figure>
 </div>
 
-The left phone shows the bottom bar. The right one opens with `dc-srv-02` selected, so the
+The left phone shows the tab bar and the title strip. The right one opens with `dc-srv-02` selected, so the
 inspector is already up as a bottom sheet.
 
 ## Phone, minimal chrome
@@ -47,8 +50,8 @@ inspector is already up as a bottom sheet.
   </figure>
 </div>
 
-Minimal chrome drops the bottom bar too, leaving the diagram and the zoom controls. The
-inspector still opens as a bottom sheet.
+Minimal chrome drops the tab bar and the title strip too, leaving only the diagram, which
+still pans and pinch-zooms. The inspector still opens as a bottom sheet.
 
 ## Tablet
 

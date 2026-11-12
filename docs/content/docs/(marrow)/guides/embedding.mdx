@@ -32,7 +32,7 @@ When embedding a diagram inside a dashboard, blog post, or kiosk display, strip 
 
 ```html
 <!-- Minimal chrome: command bar, breadcrumbs, sidebar, backdrop, watermark,
-     minimap and mobile bar hidden; the canvas and its controls stay live -->
+     minimap and the phone tab bar hidden; the canvas and its controls stay live -->
 <iframe
   src="/diagrams/branch.html?chrome=minimal"
   title="Branch office network"
@@ -45,11 +45,11 @@ on `<html>` before first paint, so the full chrome never flashes:
 
 | Parameter | Values | Effect |
 | :--- | :--- | :--- |
-| `chrome` | `minimal` \| `full` | `minimal` hides the command bar, breadcrumbs, sidebar, backdrop, watermark, minimap and, on phones, the mobile bar. Zoom controls, pan, selection, tooltips and the inspector stay. |
+| `chrome` | `minimal` \| `full` | `minimal` hides the command bar, breadcrumbs, sidebar, backdrop, watermark, minimap and, on phones, the tab bar and title strip. Zoom controls (wider than a phone), pan, selection, tooltips and the inspector stay. |
 | `embed` | `true` \| `false` | Shorthand for `chrome=minimal` / `chrome=full`. |
 | `inspector` | `off` \| `on` | `off` keeps the inspector drawer closed when a device or link is clicked. |
 | `minimap` | `off` \| `on` | `off` hides the minimap. |
-| `controls` | `off` \| `on` | `off` hides the zoom controls. |
+| `controls` | `off` \| `on` | `off` hides the zoom controls. Phones never show them: they zoom by pinch and double-tap. |
 | `theme` | `dark` \| `light` | Overrides the authored theme for this view. |
 | `d` | device id | Selects that device and flies the camera to it (hash only: `#d=core-sw-01`). |
 | `c` | `x,y,k` | Camera centre and zoom (hash only: `#c=120,-40,1.5`). |
