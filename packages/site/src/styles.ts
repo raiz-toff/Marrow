@@ -851,6 +851,11 @@ a.m-side-row.active i, a.m-side-row.active em { color: var(--sidebar-fg); }
 
 
 
+/* phone-only chrome; the phone block below shows it */
+.m-mobile-bar, .m-mobile-strip, .m-side-picker, .m-wm-attr {
+  display: none;
+}
+
 /* ── Tablet overrides (768px - 1024px) ── */
 @media (max-width: 1024px) and (min-width: 768px) {
   :root {
@@ -908,7 +913,10 @@ a.m-side-row.active i, a.m-side-row.active em { color: var(--sidebar-fg); }
     --shell-padding: 0px !important;
     --card-radius: 0px !important;
     --topbar-height: 0px !important;
-    --mobile-nav-height: 52px !important;
+    /* phone chrome: the bottom tab bar and the top strip both float over the
+       stage, and the runtime adds them to the camera insets */
+    --mobile-nav-height: 56px !important;
+    --strip-height: 36px;
   }
 
   body {
@@ -947,12 +955,24 @@ a.m-side-row.active i, a.m-side-row.active em { color: var(--sidebar-fg); }
     overflow: hidden;
   }
 
-  .m-controls {
-    right: 12px;
-    bottom: 16px;
+  /* no floating zoom stack on phones: pinch and double-tap zoom, Fit is in the tab bar */
+  .m-controls { display: none !important; }
+  /* the watermark shrinks to its attribution line, 8 px above the tab bar
+     (on the stage edge while the inspector sheet covers the bar) */
+  .m-watermark[data-mode] {
+    left: 12px; bottom: calc(var(--mobile-nav-height) + 8px + env(safe-area-inset-bottom, 0px));
+    max-width: calc(100% - 24px); line-height: 1;
   }
-  .m-watermark { max-width: calc(100% - 40px - var(--ctl-w)); }
-  .m-watermark small { display: none; }
+  .m-stage-body:has(> .m-inspector:not([hidden]):not([data-sheet-snap="closed"])) .m-watermark[data-mode] { bottom: 8px; }
+  .m-watermark span, .m-watermark small { display: none !important; }
+  .m-wm-attr {
+    display: inline-flex; align-items: center; gap: 5px;
+    font: normal 600 10px/1 -apple-system, system-ui, "Segoe UI", sans-serif;
+    letter-spacing: .14em; text-transform: uppercase;
+    color: color-mix(in srgb, var(--ink) 32%, transparent);
+  }
+  .m-wm-attr svg { width: 12px; height: 12px; }
+  .m-wm-attr b { font-weight: 600; }
   .m-inspector-tabs .m-tab-btn {
     min-height: 38px;
     padding: 8px 14px;
@@ -1011,6 +1031,18 @@ a.m-side-row.active i, a.m-side-row.active em { color: var(--sidebar-fg); }
     opacity: 1;
     pointer-events: auto;
   }
+  /* the drawer ends at the tab bar, which stays live above the backdrop */
+  .m-sidebar { bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px)); height: auto; }
+  .m-side-picker {
+    display: flex; flex-direction: column; gap: 6px; flex: none;
+    padding: 10px 14px 12px; border-bottom: 1px solid var(--line); background: var(--panel);
+    font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-dim);
+  }
+  .m-side-picker select {
+    width: 100%; min-height: 44px; padding: 0 12px;
+    background: var(--bg-raise); color: var(--ink); border: 1px solid var(--line); border-radius: var(--radius);
+    font: 500 14px -apple-system, system-ui, "Segoe UI", sans-serif; letter-spacing: 0; text-transform: none;
+  }
 
   /* Flexible Dedicated Space Bottom Sheet for Inspector: physically shrinks stage-wrap */
   .m-inspector {
@@ -1022,7 +1054,9 @@ a.m-side-row.active i, a.m-side-row.active em { color: var(--sidebar-fg); }
     border-radius: 16px 16px 0 0;
     background: var(--panel);
     box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.25);
-    z-index: 25;
+    /* covers the tab bar: the sheet has its own close */
+    z-index: 59;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
     margin-right: 0 !important;
     transform: none !important;
     transition: height .3s cubic-bezier(0.16, 1, 0.3, 1), opacity .2s ease;
@@ -1042,76 +1076,52 @@ a.m-side-row.active i, a.m-side-row.active em { color: var(--sidebar-fg); }
   .m-inspector[data-sheet-snap="half"], .m-inspector[data-sheet="half"] { height: 42vh !important; max-height: 48vh; }
   .m-inspector[data-sheet-snap="full"], .m-inspector[data-sheet="full"] { height: 72vh !important; max-height: 80vh; }
 
-  /* Single Mobile Bottom Nav Bar (Flux) */
+  /* Bottom tab bar: equal slots, 20 px icon over an 11 px label */
   .m-mobile-bar {
-    display: flex !important;
-    height: 52px;
-    background: var(--panel);
-    border-top: 1px solid var(--line);
-    padding: 0 12px;
-    align-items: center;
-    justify-content: space-between;
-    z-index: 50;
-    flex-shrink: 0;
-    box-sizing: border-box;
-  }
-  .m-mob-left {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--ink);
-    min-width: 0;
-  }
-  .m-mob-brand {
-    white-space: nowrap;
-  }
-  .m-mob-selector-btn {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: 3px 8px;
-    border-radius: var(--radius-sm, 6px);
-    background: var(--bg-raise);
-    border: 1px solid var(--line);
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--ink);
-    cursor: pointer;
-    max-width: 140px;
-    min-height: 44px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .m-mob-caret {
-    font-size: 8px;
-    color: var(--ink-dim);
-    flex-shrink: 0;
-  }
-  .m-mob-right {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    flex-shrink: 0;
-  }
-  .m-mob-right .m-icon-btn {
-    width: 44px !important;
-    height: 44px !important;
-    min-width: 44px !important;
-    min-height: 44px !important;
     display: grid !important;
-    place-items: center !important;
+    grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr);
+    position: fixed; left: 0; right: 0; bottom: 0;
+    height: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background: color-mix(in srgb, var(--panel) 92%, transparent);
+    -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+    border-top: 1px solid var(--line);
+    z-index: 58;
   }
-  .m-mob-right .m-icon-btn svg {
-    width: 20px;
-    height: 20px;
+  .m-tab {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+    min-width: 44px; height: var(--mobile-nav-height); padding: 0;
+    background: none; border: 0; color: var(--ink-dim); cursor: pointer;
+    font: 500 11px/1 -apple-system, system-ui, "Segoe UI", sans-serif;
+    -webkit-tap-highlight-color: transparent; transition: color .15s;
   }
-}
+  .m-tab svg { width: 20px; height: 20px; flex: none; }
+  .m-tab:active { background: color-mix(in srgb, var(--ink) 6%, transparent); }
+  .m-tab[aria-expanded="true"] { color: var(--m-accent); }
 
-.m-mobile-bar {
-  display: none;
+  /* Top strip: the title and the theme toggle, over the top of the stage */
+  .m-mobile-strip {
+    display: flex !important; align-items: center; gap: 8px;
+    position: fixed; top: 0; left: 0; right: 0; z-index: 30;
+    height: calc(var(--strip-height) + env(safe-area-inset-top, 0px));
+    padding: env(safe-area-inset-top, 0px) 0 0 14px;
+    background: linear-gradient(var(--panel), color-mix(in srgb, var(--panel) 72%, transparent) 65%, transparent);
+    pointer-events: none;
+  }
+  .m-strip-title {
+    flex: 0 1 auto; min-width: 0; margin-right: auto; padding: 0;
+    background: none; border: 0; color: var(--ink); text-align: left; cursor: pointer;
+    font: 600 13px/var(--strip-height) -apple-system, system-ui, "Segoe UI", sans-serif;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    pointer-events: auto; -webkit-tap-highlight-color: transparent;
+  }
+  .m-strip-theme {
+    flex: none; width: 36px; height: 36px; display: grid; place-items: center;
+    background: none; border: 0; color: var(--ink-dim); cursor: pointer;
+    pointer-events: auto; -webkit-tap-highlight-color: transparent;
+  }
+  html[data-theme="dark"] .m-strip-moon, html:not([data-theme="dark"]) .m-strip-sun { display: none; }
+  .m-strip-sun, .m-strip-moon { display: grid; }
 }
 
 /* ── touch targets: 44 × 44 px wherever the pointer is a finger (phones and
@@ -1740,6 +1750,16 @@ a.m-side-row.active i, a.m-side-row.active em { color: var(--sidebar-fg); }
 .m-full-link:hover { text-decoration: underline; }
 .m-members { list-style: none; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 3px 10px; font-size: 12px; color: var(--ink-dim); }
 
+/* ── phone chrome over the overlays defined above (< 768 px) ── */
+@media (max-width: 767px) {
+  /* dialogs cover the tab bar; search stops at it, so the bar stays live */
+  .m-about-dialog, .m-shortcuts { z-index: 72; }
+  .m-spotlight { bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px)); padding-top: 9vh; }
+  .m-menupop { max-height: calc(100vh - var(--mobile-nav-height) - 24px); overflow-y: auto; }
+  /* the inventory document scrolls clear of the tab bar */
+  .m-doc { padding-bottom: calc(var(--mobile-nav-height) + 24px + env(safe-area-inset-bottom, 0px)); }
+}
+
 /* ── embed & modular UI chrome (minimal/kiosk) ── */
 html[data-chrome="minimal"] {
   --topbar-height: 0px !important;
@@ -1775,7 +1795,8 @@ html[data-chrome="minimal"] .m-watermark,
 html[data-chrome="minimal"] .m-minimap,
 html[data-chrome="minimal"] .m-sidebar,
 html[data-chrome="minimal"] .m-sidebar-backdrop,
-html[data-chrome="minimal"] .m-mobile-bar {
+html[data-chrome="minimal"] .m-mobile-bar,
+html[data-chrome="minimal"] .m-mobile-strip {
   display: none !important;
 }
 
@@ -1831,7 +1852,7 @@ html[data-watermark="off"] .m-watermark {
 /* ── print ── */
 @media print {
   @page { margin: 10mm; }
-  .m-sidebar, .m-sidebar-backdrop, .m-command-bar, .m-breadcrumbs, .m-mobile-bar, .m-controls, .m-minimap,
+  .m-sidebar, .m-sidebar-backdrop, .m-command-bar, .m-breadcrumbs, .m-mobile-bar, .m-mobile-strip, .m-controls, .m-minimap,
   .m-inspector, .m-spotlight, .m-tooltip, .m-backdrop, .m-watermark, .m-ctxmenu, .m-menupop,
   .m-inv-bar, .m-pagination, .m-rsz-v, .m-rsz-handle, dialog { display: none !important; }
   /* one flowing document: no viewport-height boxes, no inner scrollers */

@@ -68,6 +68,17 @@ export function sidebar(o: ChromeOptions): string {
   <div class="m-side-id"><strong class="m-side-title">Lab Overview</strong>${o.stats ? `<small class="m-side-stats">${esc(o.stats)}</small>` : ''}</div>
   <button class="m-icon-btn m-sidebar-close m-mob-only" ${hookAttr('sidebar.close')} type="button" aria-label="Close sidebar">${I.x}</button>
 </div>`;
+  /* phones: the Site's pages as one full-width picker under the sheet header
+     (a native select, so the phone's own picker UI handles a long list) */
+  const picker =
+    o.navLinks && o.navLinks.length > 0
+      ? `<label class="m-side-picker"><span>Page</span><select ${hookAttr('mobile.selector')}>${o.navLinks
+          .map(
+            (l) =>
+              `<option value="${o.rootPrefix}${esc(l.href)}"${l.href === o.page ? ' selected' : ''}>${esc(l.label)}</option>`,
+          )
+          .join('')}</select></label>`
+      : '';
   const pages =
     o.navLinks && o.navLinks.length > 0
       ? `<section class="m-side-section"><h4>Browse</h4><nav class="m-side-nav">${groupedNav(o.navLinks, o)}</nav></section>`
@@ -109,7 +120,7 @@ ${MENUS.map((m) => `  <button class="m-tab-btn" ${hookAttr('menubar.trigger')} t
   return `<aside class="m-sidebar${hasNav ? ' m-nav' : ''}${isSingle ? ' is-collapsed' : ''}" ${hookAttr('sidebar.panel')} id="m-sidebar">
 <div class="m-sidebar-inner">
 ${header}
-${menubar}
+${picker}${menubar}
 ${pages}
 ${view}
 ${about}

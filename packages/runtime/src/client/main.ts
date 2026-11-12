@@ -75,9 +75,9 @@ export function boot(): void {
   if (data.kind === 'inventory') {
     // document page: chrome only
     setupTheme();
-    setupSidebar(undefined);
-    setupSpotlight(undefined, data);
-    setupMenubar(undefined);
+    const pages = setupSidebar(undefined);
+    const search = setupSpotlight(undefined, data);
+    setupMobileBar(undefined, { pages, search, menu: setupMenubar(undefined) });
     setupShortcutsDialog();
     setupAboutDialog();
     setupInventory();
@@ -155,6 +155,14 @@ export function boot(): void {
           }
         }
       }
+      // phone chrome floats over the stage: the top strip and the tab bar
+      // (hidden at wider widths, so they measure nothing there)
+      for (const el of [maybe(document, 'mobile.strip'), maybe(document, 'mobile.bar')]) {
+        const r = el?.getBoundingClientRect();
+        if (!r || r.width < 1 || r.height < 1 || r.bottom <= stageRect.top || r.top >= stageRect.bottom) continue;
+        if (r.top <= stageRect.top) insets.top = Math.max(insets.top, r.bottom - stageRect.top);
+        else insets.bottom = Math.max(insets.bottom, stageRect.bottom - r.top);
+      }
       // the corner HUD (zoom controls + minimap) floats over the stage: keep
       // the view clear of it, on whichever side costs the fit less zoom
       const hud = hudCorner(stageRect);
@@ -197,16 +205,16 @@ export function boot(): void {
   setupInspector(ctx);
   registerYamlTabs(data);
   exposePublicApi(ctx);
-  setupSpotlight(ctx, data);
+  const search = setupSpotlight(ctx, data);
   setupControls(ctx);
   setupTheme();
   setupKeyboard(ctx);
   setupContextMenu(ctx);
-  setupMenubar(ctx);
+  const menu = setupMenubar(ctx);
   setupShortcutsDialog();
   setupAboutDialog();
   minimapSync = setupMinimap(ctx);
-  setupSidebar(ctx);
+  setupMobileBar(ctx, { pages: setupSidebar(ctx), search, menu });
   setupClickAway(ctx);
   hashSyncSoon = setupHash(ctx);
   syncModularParams(ctx);
@@ -418,6 +426,16 @@ function setupPanZoom(ctx: Ctx, stage: HTMLElement): void {
   const pointers = new Map<number, { x: number; y: number }>();
   let initialPinchDist = 0;
   let moved = false;
+  // touch double-tap on empty stage zooms ×1.6 at the tap (pinch does the rest)
+  let lastTap = { t: -Infinity, x: 0, y: 0 };
+  const tapped = (ev: PointerEvent): void => {
+    if (ev.pointerType !== 'touch') return;
+    if (ev.timeStamp - lastTap.t < 320 && Math.hypot(ev.clientX - lastTap.x, ev.clientY - lastTap.y) < 30) {
+      const rect = stage.getBoundingClientRect();
+      ctx.camera.zoomAt(ev.clientX - rect.left, ev.clientY - rect.top, 1.6);
+      lastTap.t = -Infinity;
+    } else lastTap = { t: ev.timeStamp, x: ev.clientX, y: ev.clientY };
+  };
 
   stage.addEventListener('pointerdown', (ev) => {
     if (ctx.mode === 'svg' && (ev.target as Element).closest(`${STAGE_HOOKS.node}, ${STAGE_HOOKS.edgeBound}`)) return;
@@ -466,6 +484,7 @@ function setupPanZoom(ctx: Ctx, stage: HTMLElement): void {
     const wasPointer = pointers.has(ev.pointerId);
     pointers.delete(ev.pointerId);
     if (pointers.size === 0) {
+      if (wasPointer && !moved && ev.type === 'pointerup') tapped(ev);
       if (wasPointer && !moved && ctx.mode === 'canvas' && !hitNode(ctx, ev)) deselect(ctx);
       stage.classList.remove('m-grabbing');
       initialPinchDist = 0;
@@ -1364,8 +1383,15 @@ function fillLinkInspector(maps: DeviceMaps, l: DataLink, onGoto: (id: string) =
 
 // ─── spotlight ──────────────────────────────────────────────────────────────
 
-function setupSpotlight(ctx: Ctx | undefined, data: EmbeddedData): void {
+/** Open / close a panel the phone tab bar drives. */
+interface Surface {
+  isOpen(): boolean;
+  set(open: boolean): void;
+}
+
+function setupSpotlight(ctx: Ctx | undefined, data: EmbeddedData): Surface {
   const overlay = find(document, 'spotlight.root');
+  const tab = find(document, 'mobile.search');
   const input = find(overlay, 'spotlight.input');
   const list = find(overlay, 'spotlight.list');
 
@@ -1599,12 +1625,14 @@ function setupSpotlight(ctx: Ctx | undefined, data: EmbeddedData): void {
 
   const open = (): void => {
     overlay.hidden = false;
+    tab.setAttribute('aria-expanded', 'true');
     input.value = '';
     render('');
     input.focus();
   };
   const close = (): void => {
     overlay.hidden = true;
+    tab.setAttribute('aria-expanded', 'false');
     clearSearchCanvas();
   };
   const runEntry = (entry: Entry | undefined): void => {
@@ -1692,6 +1720,7 @@ function setupSpotlight(ctx: Ctx | undefined, data: EmbeddedData): void {
       else close();
     }
   });
+  return { isOpen: () => !overlay.hidden, set: (want) => (want ? open() : close()) };
 }
 
 // ─── menubar (shadcn Menubar; popovers share the DropdownMenu spec) ─────────
@@ -1792,14 +1821,16 @@ function setupShortcutsDialog(): void {
   });
 }
 
-function setupMenubar(ctx: Ctx | undefined): void {
+function setupMenubar(ctx: Ctx | undefined): Surface {
   const bar = find(document, 'menubar.root');
   const triggers = findAll(bar, 'menubar.trigger');
+  // the phone tab bar's Menu: View, Export and Help in one popover
+  const tab = find(document, 'mobile.menu');
   const pop = document.createElement('div');
   pop.className = 'm-ctxmenu m-menupop';
   pop.hidden = true;
   document.body.append(pop);
-  let openMenu: Menu | undefined;
+  let openMenu: Menu | 'all' | undefined;
 
   const CHECK =
     '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
@@ -1817,7 +1848,8 @@ function setupMenubar(ctx: Ctx | undefined): void {
     `</button>`;
   const sep = (): string => '<div class="m-ctx-sep"></div>';
 
-  const content = (menu: Menu): string => {
+  const content = (menu: Menu | 'all'): string => {
+    if (menu === 'all') return content('view') + sep() + content('export') + sep() + content('help');
     if (menu === 'view') {
       const stage = ctx !== undefined;
       const hasDevices = ctx !== undefined && ctx.data.devices.length > 0;
@@ -1860,6 +1892,7 @@ function setupMenubar(ctx: Ctx | undefined): void {
   const menuOf = (btn: HTMLElement): Menu => param(btn, 'menu') as Menu;
   const syncTriggers = (): void => {
     for (const b of triggers) b.classList.toggle('open', menuOf(b) === openMenu);
+    tab.setAttribute('aria-expanded', String(openMenu === 'all'));
   };
   const close = (): void => {
     pop.hidden = true;
@@ -1883,6 +1916,16 @@ function setupMenubar(ctx: Ctx | undefined): void {
       pop.style.left = `${Math.max(8, Math.min(r.left, innerWidth - pop.offsetWidth - 8))}px`;
       pop.style.top = `${Math.min(r.bottom + 6, innerHeight - pop.offsetHeight - 8)}px`;
     }
+    syncTriggers();
+  };
+  const openAll = (): void => {
+    openMenu = 'all';
+    pop.innerHTML = content('all');
+    pop.hidden = false;
+    // right-aligned, just above the tab bar
+    const barTop = find(document, 'mobile.bar').getBoundingClientRect().top || innerHeight;
+    pop.style.left = `${Math.max(8, innerWidth - pop.offsetWidth - 8)}px`;
+    pop.style.top = `${Math.max(8, barTop - pop.offsetHeight - 8)}px`;
     syncTriggers();
   };
 
@@ -1935,11 +1978,12 @@ function setupMenubar(ctx: Ctx | undefined): void {
 
   addEventListener('pointerdown', (ev) => {
     const t = ev.target as Node;
-    if (!pop.hidden && !pop.contains(t) && !bar.contains(t)) close();
+    if (!pop.hidden && !pop.contains(t) && !bar.contains(t) && !tab.contains(t)) close();
   }, true);
   addEventListener('keydown', (ev) => {
     if (ev.key === 'Escape' && !pop.hidden) close();
   });
+  return { isOpen: () => openMenu === 'all', set: (want) => (want ? openAll() : close()) };
 }
 
 // ─── context menu (shadcn ContextMenu) ──────────────────────────────────────
@@ -2427,7 +2471,8 @@ function setupTheme(): void {
     }
   }
 
-  for (const btn of findAll(document, 'theme.toggle')) {
+  const stripToggle = maybe(document, 'mobile.theme');
+  for (const btn of [...findAll(document, 'theme.toggle'), ...(stripToggle ? [stripToggle] : [])]) {
     btn.addEventListener('click', (ev) => {
       const opt = closestHook(ev.target, 'theme.option');
       const val = opt ? param(opt, 'themeVal') : undefined;
@@ -2441,12 +2486,13 @@ function setupTheme(): void {
 
 // ─── sidebar ────────────────────────────────────────────────────────────────
 
-function setupSidebar(ctx: Ctx | undefined): void {
+function setupSidebar(ctx: Ctx | undefined): Surface {
   const sidebar = find(document, 'sidebar.panel');
   const toggles = findAll(document, 'sidebar.toggle');
   const root = rootEl();
 
-  const selector = find(document, 'mobile.selector');
+  // the phone tab bar's Pages opens this drawer (wired in setupMobileBar)
+  const pagesTab = find(document, 'mobile.pages');
   // ≤1024 px the sidebar is a drawer over the page: it starts closed, and
   // the remembered state (a desktop preference) is neither read nor written
   const narrow = (): boolean => window.innerWidth <= 1024;
@@ -2457,6 +2503,7 @@ function setupSidebar(ctx: Ctx | undefined): void {
     sidebar.classList.toggle('open', open);
     sidebar.classList.toggle('is-collapsed', !open);
     for (const btn of toggles) btn.classList.toggle('on', open);
+    pagesTab.setAttribute('aria-expanded', String(open));
     if (!narrow() && !minimal()) writeStored('sidebar', open ? 'open' : 'closed');
   };
   const defaultOpen = !sidebar.classList.contains('is-collapsed');
@@ -2475,12 +2522,9 @@ function setupSidebar(ctx: Ctx | undefined): void {
   for (const btn of toggles) {
     btn.addEventListener('click', () => setOpen(!sidebar.classList.contains('open')));
   }
-  // the topology selector in the mobile bar opens the page navigation
-  selector.addEventListener('click', () => {
-    const open = !sidebar.classList.contains('open');
-    setOpen(open);
-    if (open && !minimal()) setParam(find(document, 'inspector.panel'), 'sheet', 'closed');
-  });
+  // Site pages: the phone page picker in the drawer header switches pages
+  const picker = maybe(sidebar, 'mobile.selector');
+  if (picker) picker.addEventListener('change', () => go(picker.value));
   find(sidebar, 'sidebar.close').addEventListener('click', () => setOpen(false));
   document.addEventListener('pointerdown', (ev) => {
     if (narrow() && sidebar.classList.contains('open')) {
@@ -2488,7 +2532,7 @@ function setupSidebar(ctx: Ctx | undefined): void {
       // the menubar popover is runtime-created (setupMenubar), not a page hook
       const menupop = document.querySelector<HTMLElement>('.m-menupop');
       if (menupop && !menupop.hidden && menupop.contains(target)) return;
-      if (!sidebar.contains(target) && !selector.contains(target) && !toggles.some((t) => t.contains(target))) {
+      if (!sidebar.contains(target) && !pagesTab.contains(target) && !toggles.some((t) => t.contains(target))) {
         setOpen(false);
       }
     }
@@ -2530,6 +2574,34 @@ function setupSidebar(ctx: Ctx | undefined): void {
       applySetting(ctx, setting, value);
     });
   }
+  return { isOpen: () => sidebar.classList.contains('open'), set: setOpen };
+}
+
+/**
+ * The phone chrome (< 768 px; hidden, but wired, at every width): the tab
+ * bar's Pages / Search / Fit / Menu and the top strip's title. The bar's
+ * panels are exclusive — opening one closes the others — and each owner
+ * keeps its tab's aria-expanded current. Pages also closes the inspector
+ * sheet, which would otherwise cover the drawer.
+ */
+function setupMobileBar(ctx: Ctx | undefined, panels: { pages: Surface; search: Surface; menu: Surface }): void {
+  const all = [panels.pages, panels.search, panels.menu];
+  const bind = (id: 'mobile.pages' | 'mobile.search' | 'mobile.menu', own: Surface): void => {
+    find(document, id).addEventListener('click', () => {
+      const want = !own.isOpen();
+      for (const p of all) if (p !== own && p.isOpen()) p.set(false);
+      own.set(want);
+      if (want && own === panels.pages && readRoot(rootEl(), 'chrome') !== 'minimal') {
+        setParam(find(document, 'inspector.panel'), 'sheet', 'closed');
+      }
+    });
+  };
+  bind('mobile.pages', panels.pages);
+  bind('mobile.search', panels.search);
+  bind('mobile.menu', panels.menu);
+  if (ctx === undefined) return;
+  find(document, 'mobile.fit').addEventListener('click', () => ctx.camera.fit(true));
+  find(document, 'mobile.title').addEventListener('click', () => openAboutDialog(ctx));
 }
 
 /** Mark the segmented-control button for `value` active. */

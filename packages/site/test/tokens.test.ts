@@ -110,8 +110,8 @@ function declsFor(css: string, selector: string): string {
 describe('chrome modes in the stylesheet', () => {
   const css = buildStylesheet();
 
-  test('minimal chrome has no sidebar backdrop and no mobile bar', () => {
-    for (const sel of ['.m-sidebar', '.m-sidebar-backdrop', '.m-mobile-bar']) {
+  test('minimal chrome has no sidebar backdrop, no phone tab bar and no top strip', () => {
+    for (const sel of ['.m-sidebar', '.m-sidebar-backdrop', '.m-mobile-bar', '.m-mobile-strip']) {
       expect(declsFor(css, `html[data-chrome="minimal"] ${sel}`), sel).toContain('display: none !important');
     }
   });
@@ -121,7 +121,24 @@ describe('chrome modes in the stylesheet', () => {
     for (const sel of ['.m-controls .m-btn', '.m-inspector-close', '.m-sidebar-close']) {
       expect(declsFor(touch, sel), sel).toContain('min-height: 44px');
     }
-    expect(declsFor(media(css, '(max-width: 767px)'), '.m-mob-selector-btn')).toContain('min-height: 44px');
+  });
+
+  test('phones: a 56 px tab bar of full-width tabs, a 36 px strip, no floating zoom stack', () => {
+    const phone = media(css, '(max-width: 767px)');
+    expect(declsFor(phone, ':root')).toContain('--mobile-nav-height: 56px');
+    expect(declsFor(phone, ':root')).toContain('--strip-height: 36px');
+    const tab = declsFor(phone, '.m-tab');
+    expect(tab).toContain('min-width: 44px');
+    expect(tab).toContain('height: var(--mobile-nav-height)');
+    expect(declsFor(phone, '.m-mobile-bar')).toContain('grid-auto-columns: minmax(0, 1fr)');
+    expect(declsFor(phone, '.m-strip-theme')).toMatch(/width: 36px; height: 36px/);
+    expect(declsFor(phone, '.m-controls')).toContain('display: none !important');
+    // the watermark keeps only its attribution line on a phone
+    expect(declsFor(phone, '.m-watermark span')).toContain('display: none !important');
+    expect(declsFor(phone, '.m-wm-attr')).toContain('10px');
+    // outside the phone block the phone chrome is hidden
+    const base = css.slice(css.indexOf('/* phone-only chrome'), css.indexOf('/* ── Tablet'));
+    for (const sel of ['.m-mobile-bar', '.m-mobile-strip', '.m-side-picker', '.m-wm-attr']) expect(declsFor(base, sel), sel).toContain('display: none');
   });
 
   test('the minimap sits in the stage frame, clear of the controls', () => {
@@ -136,7 +153,7 @@ describe('chrome modes in the stylesheet', () => {
     expect(tokens).toContain('--bg: #eeeeee'); // the light palette, with overrides
     expect(tokens).toContain(`--ink: ${DEFAULT_LIGHT_PALETTE.ink}`);
     const print = media(css, 'print');
-    for (const sel of ['.m-command-bar', '.m-mobile-bar', '.m-watermark', '.m-sidebar-backdrop', '.m-backdrop', '.m-controls']) {
+    for (const sel of ['.m-command-bar', '.m-mobile-bar', '.m-mobile-strip', '.m-watermark', '.m-sidebar-backdrop', '.m-backdrop', '.m-controls']) {
       expect(declsFor(print, sel), sel).toContain('display: none !important');
     }
     expect(declsFor(print, 'html')).toMatch(/height: auto !important; overflow: visible !important/);

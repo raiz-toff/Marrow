@@ -34,7 +34,7 @@ export type PageKind = 'stage' | 'inventory';
 
 export interface HookSpec {
   /** Element the hook must sit on — checked by `localName` at lookup. */
-  tag: 'element' | 'input' | 'ul' | 'canvas' | 'svg' | 'g';
+  tag: 'element' | 'input' | 'select' | 'ul' | 'canvas' | 'svg' | 'g';
   /** `one`: at most one per page (`find` / `maybe`). `many`: any number (`findAll`). */
   count: 'one' | 'many';
   /** Page kinds that always carry the hook. Empty means conditional —
@@ -102,8 +102,17 @@ export const HOOKS = {
   'about.close': { tag: 'element', count: 'one', on: BOTH },
   'shortcuts.dialog': { tag: 'element', count: 'one', on: BOTH },
   'shortcuts.close': { tag: 'element', count: 'one', on: BOTH },
-  // mobile
-  'mobile.selector': { tag: 'element', count: 'one', on: BOTH },
+  // phone chrome (< 768 px): the bottom tab bar, the top strip, and the page
+  // picker in the sidebar sheet (Site pages only)
+  'mobile.bar': { tag: 'element', count: 'one', on: BOTH },
+  'mobile.pages': { tag: 'element', count: 'one', on: BOTH },
+  'mobile.search': { tag: 'element', count: 'one', on: BOTH },
+  'mobile.fit': { tag: 'element', count: 'one', on: STAGE },
+  'mobile.menu': { tag: 'element', count: 'one', on: BOTH },
+  'mobile.strip': { tag: 'element', count: 'one', on: STAGE },
+  'mobile.title': { tag: 'element', count: 'one', on: STAGE },
+  'mobile.theme': { tag: 'element', count: 'one', on: STAGE },
+  'mobile.selector': { tag: 'select', count: 'one', on: NONE },
   // inventory page
   'inventory.filter': { tag: 'input', count: 'one', on: INVENTORY },
   'inventory.view': { tag: 'element', count: 'many', on: INVENTORY },

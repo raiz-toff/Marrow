@@ -13,7 +13,7 @@ import type { Brand } from './brand.js';
 import { brandLogo, brandName, brandNote } from './chrome/brand-mark.js';
 import { aboutDialog, shortcutsDialog, spotlight } from './chrome/dialogs.js';
 import { I } from './chrome/icons.js';
-import { cameraControls, commandBar, inspector, mobileBar } from './chrome/panels.js';
+import { cameraControls, commandBar, inspector, mobileBar, mobileStrip } from './chrome/panels.js';
 import { sidebar } from './chrome/sidebar.js';
 import { escapeHtml as esc } from '@marrow/visual';
 import { buildStylesheet, SITE_CSS } from './styles.js';
@@ -64,6 +64,10 @@ export interface ChromeOptions {
   watermark?: WatermarkConfig;
 }
 
+/** The watermark's attribution line (ADR-0018). Phones show only this line,
+ *  in place of the title; wider screens keep the title and hide it. */
+const WM_ATTRIBUTION = `<em class="m-wm-attr">${I.logo}<b>Marrow</b></em>`;
+
 export function renderChrome(o: ChromeOptions): string {
   const css =
     o.assets.mode === 'inline'
@@ -99,7 +103,7 @@ export function renderChrome(o: ChromeOptions): string {
 
   const watermark =
     o.stage && wmEnabled && wmMode !== 'off'
-      ? `<div class="m-watermark" ${wmAttrs.join(' ')}${wmStyle} aria-hidden="true"><span>${wmText}</span>${wmSub}</div>`
+      ? `<div class="m-watermark" ${wmAttrs.join(' ')}${wmStyle} aria-hidden="true"><span>${wmText}</span>${wmSub}${WM_ATTRIBUTION}</div>`
       : '';
   /* the top strip always carries a mark: the company logo + brand name when
      configured, the Marrow product mark otherwise */
@@ -140,7 +144,7 @@ ${sidebar(o)}
 <div class="m-sidebar-backdrop"></div>
 <div class="m-main-column">
 ${commandBar(o, crumbs)}
-<div class="m-stage-body">
+${o.stage ? `${mobileStrip(o)}\n` : ''}<div class="m-stage-body">
 <div class="m-stage-wrap">
 ${main}
 ${watermark}

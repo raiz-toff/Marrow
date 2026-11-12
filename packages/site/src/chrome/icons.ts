@@ -61,6 +61,18 @@ export const I = {
     '<path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>',
   ),
   chevronRight: ic('<path d="m9 18 6-6-6-6"/>', 12),
+  /* phone tab bar: 20px, icon over label */
+  tabPages: ic('<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/>', 20),
+  tabSearch: ic('<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>', 20),
+  tabFit: ic(
+    '<path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>',
+    20,
+  ),
+  tabMenu: ic('<path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/>', 20),
+  /* phone top strip theme toggle: shows the theme a tap switches to */
+  sun16: ic(
+    '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
+  ),
   command: ic('<path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3"/>'),
 };
 

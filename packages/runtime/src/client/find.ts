@@ -9,6 +9,7 @@ import { HOOK_ATTR, HOOKS, hookSelector, ATTR, type HookId, type OneHook, type P
 interface TagElements {
   element: HTMLElement;
   input: HTMLInputElement;
+  select: HTMLSelectElement;
   ul: HTMLUListElement;
   canvas: HTMLCanvasElement;
   svg: SVGSVGElement;

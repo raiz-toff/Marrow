@@ -39,10 +39,10 @@ describe('kiosk / embed URL on a diagram page', () => {
     expect((STAGE_W / 2 - c.x) / c.k).toBeCloseTo(120, 5);
     expect((STAGE_H / 2 - c.y) / c.k).toBeCloseTo(80, 5);
 
-    // minimal chrome has no sidebar: not open at boot, not from the mobile bar
+    // minimal chrome has no sidebar: not open at boot, not from the phone tab bar
     const sidebar = hook('sidebar.panel');
     expect(sidebar.classList.contains('open')).toBe(false);
-    click(hook('mobile.selector'));
+    click(hook('mobile.pages'));
     expect(sidebar.classList.contains('open')).toBe(false);
 
     // selecting a device writes d= (and the camera) but keeps every kiosk pair

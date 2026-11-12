@@ -60,6 +60,27 @@ describe('renderChrome', () => {
     expect(count(doc, 'settings.seg')).toBe(1); // doc pages get the theme control in the sidebar
   });
 
+  test('phone chrome: a four-tab bar and a title strip on diagram pages, three tabs and no strip on documents', () => {
+    const tabsOf = (html: string): string[] =>
+      [.../<nav class="m-mobile-bar"[^>]*>([\s\S]*?)<\/nav>/.exec(html)![1]!.matchAll(/data-m="([^"]+)"/g)].map((m) => m[1]!);
+    const stage = renderChrome(stageOptions);
+    expect(tabsOf(stage)).toEqual(['mobile.pages', 'mobile.search', 'mobile.fit', 'mobile.menu']);
+    expect(stage).toMatch(/data-m="mobile.title"[^>]*>Test Topology<\/button>/);
+    expect(tabsOf(renderChrome(docOptions))).toEqual(['mobile.pages', 'mobile.search', 'mobile.menu']);
+    expect(count(renderChrome(docOptions), 'mobile.strip')).toBe(0);
+    // the brand and the page pill left the bar; the command bar has no phone-only buttons
+    expect(stage).not.toContain('m-mob-brand');
+    expect(stage).not.toContain('m-mob-selector-btn');
+    expect(count(stage, 'theme.toggle')).toBe(1);
+  });
+
+  test('the page picker lists a Site\'s pages in the drawer header; single files have none', () => {
+    const html = renderChrome({ ...stageOptions, navLinks: [...stageOptions.navLinks!, { label: 'Edge', href: 'zones/edge.html' }] });
+    const picker = /<select data-m="mobile.selector">([\s\S]*?)<\/select>/.exec(html)![1]!;
+    expect(picker).toBe('<option value="index.html" selected>Core DC</option><option value="zones/edge.html">Edge</option>');
+    expect(count(renderChrome({ ...stageOptions, navLinks: [] }), 'mobile.selector')).toBe(0);
+  });
+
   test('the payload round-trips through the page', () => {
     const html = renderChrome(stageOptions);
     const text = /<script type="application\/json" id="marrow-data">([\s\S]*?)<\/script>/.exec(html)![1];
@@ -97,6 +118,8 @@ describe('renderChrome', () => {
     expect(html).toContain('href="https://marrowdiagram.vercel.app"');
     expect(html).toContain('href="https://github.com/raiz-toff/Marrow"');
     expect(html).toContain('Engineered with <strong>Marrow</strong>');
+    // the watermark carries the attribution line phones show in place of the title
+    expect(html).toMatch(/<div class="m-watermark"[^>]*>[\s\S]*?<em class="m-wm-attr">[\s\S]*?<b>Marrow<\/b><\/em><\/div>/);
   });
 
   test('watermark respects modular modes (minimal, blueprint, off)', () => {
