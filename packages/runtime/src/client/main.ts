@@ -1519,7 +1519,7 @@ function setupSpotlight(ctx: Ctx | undefined, data: EmbeddedData): Surface {
           run: () => set('motion', stored('motion', 'on') !== 'off' ? 'off' : 'on'),
         });
       }
-      const showMinimap = readRoot(root, 'minimap') !== 'off' && ctx.data.devices.length >= 2;
+      const showMinimap = readRoot(root, 'minimap') !== 'off' && ctx.data.devices.length >= 2 && window.innerWidth >= 768; // the minimap is hidden on phones
       if (showMinimap) {
         cmds.push({
           label: 'Minimap',
@@ -1858,7 +1858,7 @@ function setupMenubar(ctx: Ctx | undefined): Surface {
         (ctx.data.links.some((l) => Boolean(l.from.port || l.to.port)) ||
           ctx.data.devices.some((d) => Array.isArray(d.interfaces) && d.interfaces.length > 0));
       const hasMotion = ctx !== undefined && ctx.data.links.some((l) => Boolean(l.animated));
-      const showMinimap = ctx !== undefined && readRoot(rootEl(), 'minimap') !== 'off' && ctx.data.devices.length >= 2;
+      const showMinimap = ctx !== undefined && readRoot(rootEl(), 'minimap') !== 'off' && ctx.data.devices.length >= 2 && window.innerWidth >= 768; // the minimap is hidden on phones
       const hasAnyToggle = hasDevices || hasPorts || hasMotion || showMinimap;
       return (
         (stage
@@ -2035,7 +2035,7 @@ function setupContextMenu(ctx: Ctx): void {
         ctx.data.links.some((l) => Boolean(l.from.port || l.to.port)) ||
         ctx.data.devices.some((d) => Array.isArray(d.interfaces) && d.interfaces.length > 0);
       const hasMotion = ctx.data.links.some((l) => Boolean(l.animated));
-      const showMinimap = readRoot(rootEl(), 'minimap') !== 'off' && ctx.data.devices.length >= 2;
+      const showMinimap = readRoot(rootEl(), 'minimap') !== 'off' && ctx.data.devices.length >= 2 && window.innerWidth >= 768; // the minimap is hidden on phones
       const hasAnyToggle = hasDevices || hasPorts || hasMotion || showMinimap;
       menu.innerHTML =
         item('fit', 'Fit view', { shortcut: 'F' }) +
