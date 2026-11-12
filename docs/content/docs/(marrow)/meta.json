@@ -6,7 +6,6 @@
   "pages": [
     "---Overview---",
     "index",
-    "demo",
     "why",
     "getting-started",
     "---Authoring & Reference---",
@@ -14,7 +13,6 @@
     "reference",
     "glossary",
     "---Ecosystem---",
-    "contributing",
-    "showcase"
+    "contributing"
   ]
 }

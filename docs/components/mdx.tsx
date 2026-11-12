@@ -2,7 +2,6 @@ import defaultMdxComponents from 'fumadocs-ui/mdx';
 import type { MDXComponents } from 'mdx/types';
 import { MarrowEmbed, CableBadge, DeviceLink } from '@marrow/ui';
 import { ComponentPreview } from './component-preview';
-import { DemoStudio } from './demo-studio';
 import {
   ReloadWorkflowVisual,
   CompilePipelineVisual,
@@ -18,7 +17,6 @@ import {
 export function getMDXComponents(components?: MDXComponents) {
   return {
     ...defaultMdxComponents,
-    DemoStudio,
     ComponentPreview,
     ReloadWorkflowVisual,
     CompilePipelineVisual,

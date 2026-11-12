@@ -14,6 +14,9 @@ const config = {
   },
   async redirects() {
     return [
+      // the demo studio moved into the showcase
+      { source: '/demo', destination: '/docs/showcase/studio', permanent: true },
+      { source: '/docs/demo', destination: '/docs/showcase/studio', permanent: true },
       {
         source: '/getting-started',
         destination: '/docs/getting-started/quickstart',
