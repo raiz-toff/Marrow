@@ -18,6 +18,7 @@ dist-npm/
 docs/.next/
 docs/.source/
 docs/public/demo/*.html
+docs/public/demo/scale-site/
 
 # vendor icon packs fetched per-user — never committed (vendor terms allow
 # diagram use, not redistribution). Fetched whole, manifest generated on fetch:

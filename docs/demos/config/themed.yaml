@@ -1,0 +1,12 @@
+# The showcase's theming example: a different accent, a status colour and
+# heavier 10G links, applied to every diagram built with this file.
+theme:
+  dark:
+    bg: "#0c1412"
+    accent: "#f59e0b"
+    up: "#2dd4bf"
+  light:
+    accent: "#b45309"
+    up: "#0f766e"
+  links:
+    width_10g: 4.5
