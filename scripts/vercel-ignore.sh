@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Runs from whatever Vercel's Root Directory is (repo root or docs/): work from the repo top.
+cd "$(git rev-parse --show-toplevel)" || exit 1
 
 # Vercel Ignored Build Step Script
 # Exit 0: Skip build (no docs/registry/toolchain changes detected)
