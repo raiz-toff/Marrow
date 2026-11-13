@@ -11,6 +11,18 @@
 
 📖 **[Full Documentation](https://marrowdiagram.vercel.app)** · 🎯 **[Live Showcase](https://marrowdiagram.vercel.app/docs/showcase)** · ⚡ **[Quickstart](https://marrowdiagram.vercel.app/docs/getting-started/quickstart)** · 🧩 **[React / shadcn Components](https://marrowdiagram.vercel.app/docs/components)**
 
+<!-- Exported from docs/demos/tiered.yaml with the diagram's own Export → Export SVG, once per theme. -->
+<p align="center">
+  <a href="https://marrowdiagram.vercel.app/demo/tiered.html">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="docs/public/readme/tiered-dark.svg">
+      <img src="docs/public/readme/tiered-light.svg" alt="An enterprise campus backbone compiled by Marrow: an HA firewall pair, two core switches in a port-channel, access stacks on VLAN trunks and an IPsec tunnel to AWS" width="720">
+    </picture>
+  </a>
+  <br>
+  <sub>Compiled from <a href="docs/demos/tiered.yaml">tiered.yaml</a>. Click it to open the interactive version.</sub>
+</p>
+
 ---
 
 ## Why this exists
