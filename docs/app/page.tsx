@@ -152,6 +152,10 @@ export default function HomePage() {
       <div className="mx-auto w-full max-w-[1240px] px-4 sm:px-8">
         <section className="grid items-center gap-12 pt-12 pb-16 sm:pt-20 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] lg:pb-24">
           <div>
+            <div className="mb-8 flex items-center gap-3 text-sm text-ink-dim">
+              <PixelArt sprite={S.FIBRE} scale={3} />
+              <span>The network, down to the core.</span>
+            </div>
             <h1 className="text-[clamp(2.1rem,0.45rem+7.3vw,4rem)] lg:text-[min(calc(0.25rem+4.6vw),4.1rem)] font-normal leading-[1.02] tracking-[-0.045em] text-ink">
               Describe the network.
               <br />

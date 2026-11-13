@@ -26,13 +26,8 @@ a fresh clone.
 <div class="my-6 max-w-xl mx-auto rounded-xl border border-border/60 bg-muted/20 p-3 shadow-lg not-prose">
   <div class="flex items-center justify-between px-3 py-2 border-b border-border/40 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
     <div class="flex items-center gap-2">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" class="flex-none">
-        <path d="M5 20V10a4 4 0 0 1 4-4" stroke="currentColor" stroke-width="2.2"/>
-        <path d="M13 20V10" stroke="currentColor" stroke-width="2.2"/>
-        <path d="M13 10a4 4 0 0 1 4-4h2" stroke="#2563eb" stroke-width="2.2"/>
-        <path d="m17.2 4.2 1.8 1.8-1.8 1.8" stroke="#2563eb" stroke-width="2.2"/>
-      </svg>
-      <span class="text-foreground font-semibold">Marrow</span>
+      <img src="/wordmark.svg" alt="Marrow" width="114" height="18" class="dark:hidden" />
+      <img src="/wordmark-dark.svg" alt="Marrow" width="114" height="18" class="hidden dark:block" />
     </div>
     <span class="text-[10px] font-mono text-muted-foreground/60">Brand Strip</span>
   </div>
@@ -178,10 +173,33 @@ Color values accept hex, `rgb()`, `rgba()`, `hsl()`, `hsla()`, `oklch()`, and `c
 
 When editing `marrow.config.yaml` during an active `npm run dev` session, the server automatically detects file modifications. The build pipeline updates token stylesheets and triggers hot-reloads across connected browsers without restarting the process.
 
-## Falling back
+## Falling back to Marrow's own brand
 
-Delete a key, or leave it blank, and Marrow uses its own mark. An empty
-`note: ""` means no footer line at all.
+Delete a key, or leave it blank, and Marrow uses its own brand. An empty
+`note: ""` means no footer line at all. With no `brand.name` and no
+`brand.logo`, the chrome shows the mark beside the block wordmark. With only
+`brand.name`, it shows the mark and your name.
+
+Marrow's brand is fibre. The mark is a fibre with its jacket stripped back to
+the glass core, light leaving the cleaved end; the core is the marrow. The
+square icon is the same strand seen from its end. The tagline is "The network,
+down to the core."
+
+The colours come from TIA-598-C, the standard that fixes a jacket colour for
+each fibre type:
+
+| Role | Colour | Hex | Jacket in TIA-598-C |
+|---|---|---|---|
+| Brand, dark-theme accent | Aqua | `#19A9B8` | OM3 / OM4 multimode |
+| Light-theme accent | Deep aqua | `#0B7480` | (a darker aqua for 4.5:1 on white) |
+| Highlight | Yellow | `#E8B923` | OS2 single-mode |
+| Extra | Violet | `#7046A6` | OM4+ |
+| Extra | Lime | `#8BC53F` | OM5 |
+
+Text on the accent is dark (`#18181b`) in the dark theme and white in the
+light theme. The mark and wordmark are pixel art on a 9-row grid, so they stay
+crisp at heights that are whole multiples of 9 px. A configured `brand` or
+`theme` replaces all of this ([ADR-0003](/docs/decisions/0003-branding-is-global-only)).
 
 Unknown keys in the config produce warnings rather than errors, and `x-`
 prefixed keys are preserved and ignored, same as in topology files.

@@ -1,6 +1,6 @@
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/public/wordmark-dark.svg">
-  <img src="docs/public/wordmark.svg" alt="Marrow" width="232" height="48">
+  <img src="docs/public/wordmark.svg" alt="Marrow" width="285" height="45">
 </picture>
 
 **Use any AI agent locally to compile declarative network topologies into self-contained, interactive, offline HTML, SVG, and PNG network diagrams.**

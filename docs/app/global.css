@@ -32,7 +32,7 @@
 }
 
 /* Landing page. Values come from Marrow's own visual language (packages/visual
-   tokens): zinc ink, the diagram canvas as paper, the selection-ring blue as the
+   tokens): zinc ink, the diagram canvas as paper, the brand aqua as the
    signal, and the status colours for LEDs. */
 @theme {
   --color-paper: #f1f1ee;
@@ -40,7 +40,7 @@
   --color-ink: #18181b;
   --color-ink-dim: #52525b;
   --color-rule: #d4d4d8;
-  --color-signal: #2563eb;
+  --color-signal: #0B7480;
   --color-sig-ok: #15803d;
   --color-sig-warn: #a16207;
   --color-sig-err: #b91c1c;
@@ -59,7 +59,7 @@
   --color-ink: #fafafa;
   --color-ink-dim: #a1a1aa;
   --color-rule: #27272a;
-  --color-signal: #3b82f6;
+  --color-signal: #19A9B8;
   --color-sig-ok: #4ade80;
   --color-sig-warn: #fbbf24;
   --color-sig-err: #f87171;

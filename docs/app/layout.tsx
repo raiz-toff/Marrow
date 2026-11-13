@@ -35,6 +35,7 @@ export const metadata = {
     template: '%s | Marrow',
     default: 'Marrow — Declarative Network Topology Studio',
   },
+  icons: { icon: [{ url: '/icon.svg', type: 'image/svg+xml' }, { url: '/favicon.ico', sizes: '16x16 32x32 48x48' }] },
   description:
     'Compile declarative network topology YAML into interactive, offline, self-contained HTML network diagrams.',
 };

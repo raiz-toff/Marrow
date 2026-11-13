@@ -1,16 +1,12 @@
 import type { BaseLayoutProps } from 'fumadocs-ui/layouts/shared';
 import { appName, gitConfig } from './shared';
-import { MarrowIcon } from '@/app/layout.client';
+import { PixelArt } from '@/components/pixel-art';
+import { LOCKUP } from '@/components/pixel-sprites';
 
 export function baseOptions(): BaseLayoutProps {
   return {
     nav: {
-      title: (
-        <>
-          <MarrowIcon className="size-5 shrink-0" />
-          <span className="font-semibold tracking-tight">{appName}</span>
-        </>
-      ),
+      title: <PixelArt sprite={LOCKUP} scale={2} label={appName} className="shrink-0" />,
     },
     links: [
       {
