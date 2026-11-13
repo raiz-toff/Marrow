@@ -4,10 +4,18 @@
 import type { ChromeOptions } from '../chrome.js';
 import { escapeHtml as esc } from '@marrow/visual';
 import { I } from './icons.js';
+import { fibreLockup, fibreMark } from './fibre.js';
 
-/** The logo mark: the company logo when configured, the Marrow mark otherwise. */
+/** The logo mark: the company logo when configured, the Marrow fibre mark otherwise. */
 export function brandLogo(o: ChromeOptions): string {
-  return o.brand?.logo !== undefined ? `<span class="m-brand-logo">${o.brand.logo}</span>` : I.logo;
+  return o.brand?.logo !== undefined ? `<span class="m-brand-logo">${o.brand.logo}</span>` : fibreMark();
+}
+
+/** Logo and name together. With neither configured, Marrow's own lockup: the
+ *  fibre mark beside the block wordmark. */
+export function brandLine(o: ChromeOptions): string {
+  if (o.brand?.logo === undefined && o.brand?.name === undefined) return fibreLockup();
+  return `${brandLogo(o)}<span>${brandName(o)}</span>`;
 }
 
 /** The brand name shown next to the logo. */
@@ -24,7 +32,7 @@ export function brandNote(o: ChromeOptions): string | undefined {
  *  With brand.link set it becomes a hyperlink — navigation only, never a
  *  resource load, so the page still renders fully offline. */
 export function brandFoot(o: ChromeOptions): string {
-  const mark = `${brandLogo(o)}<span>${brandName(o)}</span>`;
+  const mark = brandLine(o);
   const linked =
     o.brand?.link !== undefined
       ? `<a class="m-brand-link" href="${esc(o.brand.link)}" target="_blank" rel="noopener noreferrer">${mark}</a>`

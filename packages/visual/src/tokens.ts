@@ -110,9 +110,11 @@ const TOKEN_ROWS: readonly TokenRow[] = [
   pal('--chip', 'chip', '#18181b', '#ffffff'),
   pal('--chip-line', 'chipLine', '#27272a', '#d4d4d8'),
   pal('--grid-dot', 'gridDot', '#1e293b', '#e4e4e7'),
-  pal('--m-accent', 'accent', '#3b82f6', '#2563eb'),
-  pal('--m-accent-ink', 'accentInk', '#ffffff', '#ffffff'),
-  pal('--ring', 'ring', '#3b82f6', '#2563eb'),
+  // Marrow's brand aqua (TIA-598-C OM3/OM4 jacket). Light uses a deeper shade
+  // so the accent and its ink both clear 4.5:1 against their surfaces.
+  pal('--m-accent', 'accent', '#19A9B8', '#0B7480'),
+  pal('--m-accent-ink', 'accentInk', '#18181b', '#ffffff'),
+  pal('--ring', 'ring', '#19A9B8', '#0B7480'),
   pal('--zone', 'zone', '#71717a', '#71717a'),
   st('up', '#22c55e', '#16a34a'),
   st('down', '#ef4444', '#dc2626'),

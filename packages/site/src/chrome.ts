@@ -10,7 +10,8 @@
 import type { WatermarkConfig } from '@marrow/model';
 import { DATA_SCRIPT_ID, encodePageData, getPrebootSource, hookAttr, ROOT_ATTR, type EmbeddedData } from '@marrow/runtime';
 import type { Brand } from './brand.js';
-import { brandLogo, brandName, brandNote } from './chrome/brand-mark.js';
+import { brandLine, brandNote } from './chrome/brand-mark.js';
+import { fibreLockup } from './chrome/fibre.js';
 import { aboutDialog, shortcutsDialog, spotlight } from './chrome/dialogs.js';
 import { I } from './chrome/icons.js';
 import { cameraControls, commandBar, inspector, mobileBar, mobileStrip } from './chrome/panels.js';
@@ -66,7 +67,7 @@ export interface ChromeOptions {
 
 /** The watermark's attribution line (ADR-0018). Phones show only this line,
  *  in place of the title; wider screens keep the title and hide it. */
-const WM_ATTRIBUTION = `<em class="m-wm-attr">${I.logo}<b>Marrow</b></em>`;
+const WM_ATTRIBUTION = `<em class="m-wm-attr">${fibreLockup(9)}</em>`;
 
 export function renderChrome(o: ChromeOptions): string {
   const css =
@@ -107,10 +108,9 @@ export function renderChrome(o: ChromeOptions): string {
       : '';
   /* the top strip always carries a mark: the company logo + brand name when
      configured, the Marrow product mark otherwise */
-  const brandLine = `${brandLogo(o)}<span>${brandName(o)}</span>`;
   const note = brandNote(o);
   const backdrop = o.stage
-    ? `<div class="m-backdrop" aria-hidden="true"><span class="m-backdrop-text">${brandLine}</span>${note !== undefined ? `<span class="m-backdrop-note">${esc(note)}</span>` : ''}</div>`
+    ? `<div class="m-backdrop" aria-hidden="true"><span class="m-backdrop-text">${brandLine(o)}</span>${note !== undefined ? `<span class="m-backdrop-note">${esc(note)}</span>` : ''}</div>`
     : '';
   /* one chrome for every page: unified command bar, workspace row,
      sidebar, inspector with tabs, status bar, and mobile bottom nav */

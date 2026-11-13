@@ -10,8 +10,9 @@
 
 brand:
   # Shown beside the logo in the sidebar footer, the inspector drawer, and the
-  # brand strip along the top of every page.
-  name: Marrow
+  # brand strip along the top of every page. Leave name and logo unset to show
+  # Marrow's own fibre mark and block wordmark.
+  # name: Your Company
 
   # Footer line — e.g. a classification banner.
   note: ""
@@ -31,7 +32,6 @@ brand:
 
 theme:
   dark:
-    accent: "#f43f5e"        # Rose red (selection, traced paths, switches, badges)
     up: "#10b981"            # Emerald green status LEDs
   links:
     width_default: 3.5       # Bold 3.5px links across the entire topology (default is 1.5px)

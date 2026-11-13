@@ -3,7 +3,7 @@
 import { ATTR, BUILTIN_TABS, hookAttr, type BuiltinTab } from '@marrow/runtime';
 import type { ChromeOptions } from '../chrome.js';
 import { escapeHtml as esc } from '@marrow/visual';
-import { brandFoot, brandLogo, brandName } from './brand-mark.js';
+import { brandFoot, brandLine } from './brand-mark.js';
 import { I } from './icons.js';
 
 const TAB_LABEL: Record<BuiltinTab, string> = {
@@ -20,7 +20,7 @@ export function commandBar(o: ChromeOptions, crumbs: string): string {
     <button class="m-icon-btn m-sidebar-btn" ${hookAttr('sidebar.toggle')} type="button" aria-label="Toggle navigation (Ctrl+B)" title="Toggle navigation (Ctrl+B)">
       ${I.panelLeft}
     </button>
-    <div class="m-brand-mark">${brandLogo(o)}<span>${brandName(o)}</span></div>
+    <div class="m-brand-mark">${brandLine(o)}</div>
     <span class="m-header-sep" aria-hidden="true">/</span>
     <nav class="m-breadcrumbs" aria-label="Breadcrumb">${crumbs}</nav>
   </div>

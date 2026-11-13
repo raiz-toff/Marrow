@@ -971,8 +971,6 @@ a.m-side-row.active i, a.m-side-row.active em { color: var(--sidebar-fg); }
     letter-spacing: .14em; text-transform: uppercase;
     color: color-mix(in srgb, var(--ink) 32%, transparent);
   }
-  .m-wm-attr svg { width: 12px; height: 12px; }
-  .m-wm-attr b { font-weight: 600; }
   .m-inspector-tabs .m-tab-btn {
     min-height: 38px;
     padding: 8px 14px;
@@ -1162,6 +1160,8 @@ a.m-side-row.active i, a.m-side-row.active em { color: var(--sidebar-fg); }
   color: color-mix(in srgb, var(--ink) 45%, transparent);
 }
 .m-drawer-foot svg { flex: none; width: 14px; height: 14px; }
+/* the fibre mark is pixel art: its own width/height attributes keep whole-pixel cells */
+.m-side-foot svg.m-fibre, .m-drawer-foot svg.m-fibre { width: auto; height: 18px; }
 .m-inspector-body h3 { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; font-weight: 600; color: var(--ink-dim); margin: 16px 0 8px; }
 .m-inspector-section {
   margin-top: 10px;
@@ -1502,12 +1502,6 @@ a.m-side-row.active i, a.m-side-row.active em { color: var(--sidebar-fg); }
   position: absolute; right: 8px; bottom: 44px; z-index: 0; pointer-events: none; user-select: none;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   opacity: 0.04; color: var(--ink);
-}
-.m-about-wm-svg {
-  width: 220px; height: 220px;
-}
-.m-about-watermark span {
-  font-size: 26px; font-weight: 900; letter-spacing: .25em; margin-top: -12px;
 }
 .m-about-head {
   position: relative; z-index: 1; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;

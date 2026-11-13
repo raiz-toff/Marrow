@@ -2,15 +2,13 @@
  *  guide and the ⌘K command center (spotlight). */
 import { hookAttr } from '@marrow/runtime';
 import { I } from './icons.js';
+import { fibreLockup, fibreMark } from './fibre.js';
 
 export function aboutDialog(): string {
   return `<div class="m-about-dialog" ${hookAttr('about.dialog')} hidden>
   <div class="m-about-box" role="dialog" aria-modal="true" aria-labelledby="m-about-title">
     <div class="m-about-watermark" aria-hidden="true">
-      <svg class="m-about-wm-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M5 20V10a4 4 0 0 1 4-4"/><path d="M13 20V10"/><path d="M13 10a4 4 0 0 1 4-4h2"/><path d="m17.2 4.2 1.8 1.8-1.8 1.8"/>
-      </svg>
-      <span>MARROW</span>
+      ${fibreLockup(54)}
     </div>
     <div class="m-about-head">
       <div class="m-about-title-wrap">
@@ -23,7 +21,7 @@ export function aboutDialog(): string {
     <div class="m-about-foot">
       <div class="m-about-credit">
         <a class="m-about-credit-link" href="https://marrowdiagram.vercel.app" target="_blank" rel="noopener noreferrer">
-          <span class="m-about-credit-mark">${I.logo}</span>
+          <span class="m-about-credit-mark">${fibreMark()}</span>
           <span>Engineered with <strong>Marrow</strong> · Declarative Network Topology Compiler</span>
         </a>
         <a class="m-about-credit-gh" href="https://github.com/raiz-toff/Marrow" target="_blank" rel="noopener noreferrer" aria-label="GitHub repository" title="GitHub repository">${I.github}</a>

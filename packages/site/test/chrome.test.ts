@@ -114,12 +114,23 @@ describe('renderChrome', () => {
 
   test('about dialog carries the Marrow watermark and attribution credit', () => {
     const html = renderChrome(stageOptions);
-    expect(html).toContain('MARROW');
+    expect(html).toMatch(/<div class="m-about-watermark"[^>]*>\s*<svg class="m-fibre"[^>]*aria-label="Marrow"/);
     expect(html).toContain('href="https://marrowdiagram.vercel.app"');
     expect(html).toContain('href="https://github.com/raiz-toff/Marrow"');
     expect(html).toContain('Engineered with <strong>Marrow</strong>');
     // the watermark carries the attribution line phones show in place of the title
-    expect(html).toMatch(/<div class="m-watermark"[^>]*>[\s\S]*?<em class="m-wm-attr">[\s\S]*?<b>Marrow<\/b><\/em><\/div>/);
+    expect(html).toMatch(/<div class="m-watermark"[^>]*>[\s\S]*?<em class="m-wm-attr"><svg class="m-fibre"[^>]*aria-label="Marrow"[\s\S]*?<\/svg><\/em><\/div>/);
+  });
+
+  test('the fibre lockup is the default brand; a configured name keeps the mark and shows the name', () => {
+    const header = (html: string) => html.match(/<div class="m-brand-mark">([\s\S]*?)<\/div>/)![1]!;
+    const plain = header(renderChrome(stageOptions));
+    expect(plain).toMatch(/^<svg class="m-fibre" width="114" height="18"[^>]*aria-label="Marrow"/);
+    const named = header(renderChrome({ ...stageOptions, brand: { name: 'Acme' } }));
+    expect(named).toMatch(/^<svg class="m-fibre"[^>]*aria-hidden="true"/);
+    expect(named).toContain('<span>Acme</span>');
+    const logo = header(renderChrome({ ...stageOptions, brand: { logo: '<svg id="ACME"></svg>' } }));
+    expect(logo).not.toContain('m-fibre');
   });
 
   test('watermark respects modular modes (minimal, blueprint, off)', () => {
